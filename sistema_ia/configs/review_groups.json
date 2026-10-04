@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "groups": {
+    "ceasa_pavilhao_a": "train"
+  },
+  "note": "Todas as fotos do CEASA ficam no mesmo grupo. Validação e teste dependem de outras edificações; não inventar grupos para os recortes deste relatório."
+}

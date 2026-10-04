@@ -1,0 +1,23 @@
+# Ambientes e caches locais podem ser recriados a partir das dependencias.
+**/.venv/
+**/__pycache__/
+**/*.py[cod]
+**/*.egg-info/
+**/.pytest_cache/
+**/.mypy_cache/
+**/.ruff_cache/
+**/Ultralytics/
+**/.env
+**/.env.*
+!**/.env.example
+!**/.env.sample
+**/Thumbs.db
+**/.DS_Store
+
+# Estado e logs do servidor temporario; backups e registros do projeto ficam incluidos.
+sistema_ia/.runtime/*.log
+sistema_ia/.runtime/review_server.json
+
+# Documentos pessoais aguardam a decisao sobre publicacao/visibilidade.
+/Documentos PUCTEC/*
+!/Documentos PUCTEC/Apresentação DRONECAMP PUCTEC.pdf

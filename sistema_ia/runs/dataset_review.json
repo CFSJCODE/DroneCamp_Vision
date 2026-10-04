@@ -1,0 +1,35 @@
+{
+  "valid": false,
+  "errors": [
+    "train: o diretório de imagens não existe: E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\dataset\\images\\train",
+    "val: o diretório de imagens não existe: E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\dataset\\images\\val",
+    "test: o diretório de imagens não existe: E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\dataset\\images\\test"
+  ],
+  "warnings": [],
+  "counts": {
+    "train": {
+      "images": 0,
+      "labels": 0,
+      "objects": 0,
+      "negative_images": 0
+    },
+    "val": {
+      "images": 0,
+      "labels": 0,
+      "objects": 0,
+      "negative_images": 0
+    },
+    "test": {
+      "images": 0,
+      "labels": 0,
+      "objects": 0,
+      "negative_images": 0
+    },
+    "total": {
+      "images": 0,
+      "labels": 0,
+      "objects": 0,
+      "negative_images": 0
+    }
+  }
+}

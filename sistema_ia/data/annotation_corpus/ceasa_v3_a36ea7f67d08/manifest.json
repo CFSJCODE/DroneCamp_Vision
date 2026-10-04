@@ -1,0 +1,301 @@
+{
+  "schema_version": 1,
+  "kind": "historical_human_annotation_corpus",
+  "ready_for_training": false,
+  "active_classes_at_review": [
+    "telha_quebrada",
+    "telha_ausente",
+    "residuos_telha",
+    "reparo_telha",
+    "rufo_ausente",
+    "rufo_quebrado",
+    "residuos_calha",
+    "vegetacao_calha",
+    "pedaco_telha",
+    "rufo_deslocado"
+  ],
+  "taxonomy_sha256": "91277c4431ff391c716069ecca01fc02a3acc1461297d7bb1cc799df12f49021",
+  "taxonomy_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\configs\\taxonomy_ceasa_v3_pedaco_telha_rufo_deslocado.json",
+  "source_registry_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reviews\\ceasa_v3_humana_a36ea7f67d08\\registry.json",
+  "source_registry_sha256": "3ed3017b0f5944e70afbd2d242c9c73c2d9ea44c15b19c88f18d89ccaf752bdc",
+  "human_approved_images_for_original_taxonomy": 33,
+  "boxes_by_class_id": {
+    "5": 22,
+    "3": 17,
+    "0": 14,
+    "2": 35,
+    "6": 9,
+    "1": 1,
+    "9": 1,
+    "8": 2,
+    "4": 4,
+    "7": 3
+  },
+  "samples": [
+    {
+      "image": "images/08772654ea11f2c6d0c3184748a7fffc3525cac35d7042656818500db18458be.jpg",
+      "image_sha256": "08772654ea11f2c6d0c3184748a7fffc3525cac35d7042656818500db18458be",
+      "label": "labels/08772654ea11f2c6d0c3184748a7fffc3525cac35d7042656818500db18458be.txt",
+      "label_sha256": "78720d495bfbb69e3536f9865105d92950a3e9ebc9b4caeb06b163561068fb7f",
+      "building_group": "ceasa_pavilhao_a",
+      "approved_taxonomy_sha256": "91277c4431ff391c716069ecca01fc02a3acc1461297d7bb1cc799df12f49021"
+    },
+    {
+      "image": "images/68a5aa9ef07b199298b238f1f81a0b54de86bd771b10d99f151459cea880426d.jpg",
+      "image_sha256": "68a5aa9ef07b199298b238f1f81a0b54de86bd771b10d99f151459cea880426d",
+      "label": "labels/68a5aa9ef07b199298b238f1f81a0b54de86bd771b10d99f151459cea880426d.txt",
+      "label_sha256": "09768acbd5f08b21cb4db42b171ecae18c258040775c2308c732da3f81d744e0",
+      "building_group": "ceasa_pavilhao_a",
+      "approved_taxonomy_sha256": "91277c4431ff391c716069ecca01fc02a3acc1461297d7bb1cc799df12f49021"
+    },
+    {
+      "image": "images/8052814489da66c77231ff5ffccbee3236719d83408ce298d31fe13f7132aee4.jpg",
+      "image_sha256": "8052814489da66c77231ff5ffccbee3236719d83408ce298d31fe13f7132aee4",
+      "label": "labels/8052814489da66c77231ff5ffccbee3236719d83408ce298d31fe13f7132aee4.txt",
+      "label_sha256": "05a5c7228f1650c2c02f7513abbf806e3c9e2ec7e6bb83a4c5918b2adbbeefb3",
+      "building_group": "ceasa_pavilhao_a",
+      "approved_taxonomy_sha256": "91277c4431ff391c716069ecca01fc02a3acc1461297d7bb1cc799df12f49021"
+    },
+    {
+      "image": "images/f55d62a3174c6ebb620fca7ebb863ac08893e9c1c2b8c7e20b8d5bd7fd139e99.jpg",
+      "image_sha256": "f55d62a3174c6ebb620fca7ebb863ac08893e9c1c2b8c7e20b8d5bd7fd139e99",
+      "label": "labels/f55d62a3174c6ebb620fca7ebb863ac08893e9c1c2b8c7e20b8d5bd7fd139e99.txt",
+      "label_sha256": "11bf48e4b7e4d53154c0d05a9d907ef2a2eabf0499953167ae25864fea53f140",
+      "building_group": "ceasa_pavilhao_a",
+      "approved_taxonomy_sha256": "91277c4431ff391c716069ecca01fc02a3acc1461297d7bb1cc799df12f49021"
+    },
+    {
+      "image": "images/88b54f26e06a9b1505ee0804e82ffe0d78f490183db9f2707203c3760c2d0dc5.jpg",
+      "image_sha256": "88b54f26e06a9b1505ee0804e82ffe0d78f490183db9f2707203c3760c2d0dc5",
+      "label": "labels/88b54f26e06a9b1505ee0804e82ffe0d78f490183db9f2707203c3760c2d0dc5.txt",
+      "label_sha256": "7348aae7e4a283cda4f1e08212fa7ba877384530f01470a6adaebc81fce12e88",
+      "building_group": "ceasa_pavilhao_a",
+      "approved_taxonomy_sha256": "91277c4431ff391c716069ecca01fc02a3acc1461297d7bb1cc799df12f49021"
+    },
+    {
+      "image": "images/d12131ddee51d3d84ab6bbf5b8f54abdad769800215b5d068e5e8d22b73265cc.jpg",
+      "image_sha256": "d12131ddee51d3d84ab6bbf5b8f54abdad769800215b5d068e5e8d22b73265cc",
+      "label": "labels/d12131ddee51d3d84ab6bbf5b8f54abdad769800215b5d068e5e8d22b73265cc.txt",
+      "label_sha256": "903cb6628339f0ead7f2b480e9ca838fb7b3ce21226f97597c546e0e8140c8a7",
+      "building_group": "ceasa_pavilhao_a",
+      "approved_taxonomy_sha256": "91277c4431ff391c716069ecca01fc02a3acc1461297d7bb1cc799df12f49021"
+    },
+    {
+      "image": "images/68b395f07b3c64efec2bd9c20c917dfb715130797e5f9187738dca2d6a0a21eb.jpg",
+      "image_sha256": "68b395f07b3c64efec2bd9c20c917dfb715130797e5f9187738dca2d6a0a21eb",
+      "label": "labels/68b395f07b3c64efec2bd9c20c917dfb715130797e5f9187738dca2d6a0a21eb.txt",
+      "label_sha256": "111a59cae1bf261d2d54367936ac4df6306987463c33f475e20c47d7682e051d",
+      "building_group": "ceasa_pavilhao_a",
+      "approved_taxonomy_sha256": "91277c4431ff391c716069ecca01fc02a3acc1461297d7bb1cc799df12f49021"
+    },
+    {
+      "image": "images/beebf15ccef412efa39902b3fb0753c5aabf2c0423d26937efedf14027a8d11d.jpg",
+      "image_sha256": "beebf15ccef412efa39902b3fb0753c5aabf2c0423d26937efedf14027a8d11d",
+      "label": "labels/beebf15ccef412efa39902b3fb0753c5aabf2c0423d26937efedf14027a8d11d.txt",
+      "label_sha256": "d08c08a69bba17f6a4e04d4ae7a16ccfe29fd0c6fb1c472ef12a964aa51a435a",
+      "building_group": "ceasa_pavilhao_a",
+      "approved_taxonomy_sha256": "91277c4431ff391c716069ecca01fc02a3acc1461297d7bb1cc799df12f49021"
+    },
+    {
+      "image": "images/e59d70812f26fd7a93d9d7020983643e74855ab66410883fedba2ae0646a8b52.jpg",
+      "image_sha256": "e59d70812f26fd7a93d9d7020983643e74855ab66410883fedba2ae0646a8b52",
+      "label": "labels/e59d70812f26fd7a93d9d7020983643e74855ab66410883fedba2ae0646a8b52.txt",
+      "label_sha256": "bbd9444f2be0fa2cc828b00b4481b88e46e29adebb6b0f826bf76d719c1be404",
+      "building_group": "ceasa_pavilhao_a",
+      "approved_taxonomy_sha256": "91277c4431ff391c716069ecca01fc02a3acc1461297d7bb1cc799df12f49021"
+    },
+    {
+      "image": "images/4704f37da1bfe6741cf1cd51e1c0856fa0525abeddb9d7a77649393718c8ac26.jpg",
+      "image_sha256": "4704f37da1bfe6741cf1cd51e1c0856fa0525abeddb9d7a77649393718c8ac26",
+      "label": "labels/4704f37da1bfe6741cf1cd51e1c0856fa0525abeddb9d7a77649393718c8ac26.txt",
+      "label_sha256": "d848271f2df00bf83c2a4ac350c67e7864d8f2c8037c9c1cbf1e2fca5561a1be",
+      "building_group": "ceasa_pavilhao_a",
+      "approved_taxonomy_sha256": "91277c4431ff391c716069ecca01fc02a3acc1461297d7bb1cc799df12f49021"
+    },
+    {
+      "image": "images/9ab86531dec3f81564cc1d51bc5d534cd10d156f60af7ca55c592f5ff5b3b802.jpg",
+      "image_sha256": "9ab86531dec3f81564cc1d51bc5d534cd10d156f60af7ca55c592f5ff5b3b802",
+      "label": "labels/9ab86531dec3f81564cc1d51bc5d534cd10d156f60af7ca55c592f5ff5b3b802.txt",
+      "label_sha256": "eac86bf790002030752dc3c19af65524527794c99583a12015fd03a2aa359673",
+      "building_group": "ceasa_pavilhao_a",
+      "approved_taxonomy_sha256": "91277c4431ff391c716069ecca01fc02a3acc1461297d7bb1cc799df12f49021"
+    },
+    {
+      "image": "images/36ef7a9ce5bd317bbd359ae04e5fb48b671a00b681a82e822a91c284a3c2434a.jpg",
+      "image_sha256": "36ef7a9ce5bd317bbd359ae04e5fb48b671a00b681a82e822a91c284a3c2434a",
+      "label": "labels/36ef7a9ce5bd317bbd359ae04e5fb48b671a00b681a82e822a91c284a3c2434a.txt",
+      "label_sha256": "4c20a54fc2c2eb3185c1fab1acbec2b2c07323efee76be25432853274bfac308",
+      "building_group": "ceasa_pavilhao_a",
+      "approved_taxonomy_sha256": "91277c4431ff391c716069ecca01fc02a3acc1461297d7bb1cc799df12f49021"
+    },
+    {
+      "image": "images/2ff55c50b1e0a6786404a911e2634bff041762ddd98d0d6f86f83be8061c517b.jpg",
+      "image_sha256": "2ff55c50b1e0a6786404a911e2634bff041762ddd98d0d6f86f83be8061c517b",
+      "label": "labels/2ff55c50b1e0a6786404a911e2634bff041762ddd98d0d6f86f83be8061c517b.txt",
+      "label_sha256": "51f793a8d4e7f322332f8a83cb21396e646824ccc51d5d6be67568e28e44afcc",
+      "building_group": "ceasa_pavilhao_a",
+      "approved_taxonomy_sha256": "91277c4431ff391c716069ecca01fc02a3acc1461297d7bb1cc799df12f49021"
+    },
+    {
+      "image": "images/4c5cb2622f40cf26657de0a09a453ae41aee6b41f611fd4a67f7b6cd4c037dd1.jpg",
+      "image_sha256": "4c5cb2622f40cf26657de0a09a453ae41aee6b41f611fd4a67f7b6cd4c037dd1",
+      "label": "labels/4c5cb2622f40cf26657de0a09a453ae41aee6b41f611fd4a67f7b6cd4c037dd1.txt",
+      "label_sha256": "db798399d456814d8b8b68d6363bc09546335c8a818b183bfc2f69245967a433",
+      "building_group": "ceasa_pavilhao_a",
+      "approved_taxonomy_sha256": "91277c4431ff391c716069ecca01fc02a3acc1461297d7bb1cc799df12f49021"
+    },
+    {
+      "image": "images/985fdab586b64fa0344bdb3d840e2552524d5405e354617938f22443def526e9.jpg",
+      "image_sha256": "985fdab586b64fa0344bdb3d840e2552524d5405e354617938f22443def526e9",
+      "label": "labels/985fdab586b64fa0344bdb3d840e2552524d5405e354617938f22443def526e9.txt",
+      "label_sha256": "180672eb75d06ed616456a5e2ce1662cb33ae345ce7229f54452cc41de634bc7",
+      "building_group": "ceasa_pavilhao_a",
+      "approved_taxonomy_sha256": "91277c4431ff391c716069ecca01fc02a3acc1461297d7bb1cc799df12f49021"
+    },
+    {
+      "image": "images/a498d247ae429d0d23701b29a148958e86a3dad6f7e7e01b5186e05c06949a3a.jpg",
+      "image_sha256": "a498d247ae429d0d23701b29a148958e86a3dad6f7e7e01b5186e05c06949a3a",
+      "label": "labels/a498d247ae429d0d23701b29a148958e86a3dad6f7e7e01b5186e05c06949a3a.txt",
+      "label_sha256": "9b7ffb95fc3b0b3a2c1102927387d9495b6e1504b30b520eef6babde6168e918",
+      "building_group": "ceasa_pavilhao_a",
+      "approved_taxonomy_sha256": "91277c4431ff391c716069ecca01fc02a3acc1461297d7bb1cc799df12f49021"
+    },
+    {
+      "image": "images/0315a58d3dd318107b1cf55b387a7fdfe7c6a7df9e36faebd862f7dcd2e15c69.jpg",
+      "image_sha256": "0315a58d3dd318107b1cf55b387a7fdfe7c6a7df9e36faebd862f7dcd2e15c69",
+      "label": "labels/0315a58d3dd318107b1cf55b387a7fdfe7c6a7df9e36faebd862f7dcd2e15c69.txt",
+      "label_sha256": "51170046cee09b76bb032777fb6c0186d7c97bb4ce646d7fc57a887e3a13ca3f",
+      "building_group": "ceasa_pavilhao_a",
+      "approved_taxonomy_sha256": "91277c4431ff391c716069ecca01fc02a3acc1461297d7bb1cc799df12f49021"
+    },
+    {
+      "image": "images/1b9f5c82a8ae7d21572b1ede62c904d0d0050c5683c5f7cb916992774950bc49.jpg",
+      "image_sha256": "1b9f5c82a8ae7d21572b1ede62c904d0d0050c5683c5f7cb916992774950bc49",
+      "label": "labels/1b9f5c82a8ae7d21572b1ede62c904d0d0050c5683c5f7cb916992774950bc49.txt",
+      "label_sha256": "0e886f24062b3c0efaea6e35925f29cbf74bcfc37e5e8ff6671cfd618e80fc9b",
+      "building_group": "ceasa_pavilhao_a",
+      "approved_taxonomy_sha256": "91277c4431ff391c716069ecca01fc02a3acc1461297d7bb1cc799df12f49021"
+    },
+    {
+      "image": "images/814749e34f1e79fbaf554ffa613901e29147e5e6a088222fd54b6545dc714a3b.jpg",
+      "image_sha256": "814749e34f1e79fbaf554ffa613901e29147e5e6a088222fd54b6545dc714a3b",
+      "label": "labels/814749e34f1e79fbaf554ffa613901e29147e5e6a088222fd54b6545dc714a3b.txt",
+      "label_sha256": "d23c655a26ca29867e2b44badfd50271ac684978a655872366d6f8ca422e700f",
+      "building_group": "ceasa_pavilhao_a",
+      "approved_taxonomy_sha256": "91277c4431ff391c716069ecca01fc02a3acc1461297d7bb1cc799df12f49021"
+    },
+    {
+      "image": "images/3aa2001d038ca9fef5d597345cc776ec5bf3a6967a2601cda511fe0d58150351.jpg",
+      "image_sha256": "3aa2001d038ca9fef5d597345cc776ec5bf3a6967a2601cda511fe0d58150351",
+      "label": "labels/3aa2001d038ca9fef5d597345cc776ec5bf3a6967a2601cda511fe0d58150351.txt",
+      "label_sha256": "056eec59ee374a857695b76a4bcafa21bced708fa7ac7434afdccffd744f11e9",
+      "building_group": "ceasa_pavilhao_a",
+      "approved_taxonomy_sha256": "91277c4431ff391c716069ecca01fc02a3acc1461297d7bb1cc799df12f49021"
+    },
+    {
+      "image": "images/d86cc412a1856b2c5fbc85aeb9e3e83fe6a39ca0e14e9dcca2aee6a61fa6b6a5.jpg",
+      "image_sha256": "d86cc412a1856b2c5fbc85aeb9e3e83fe6a39ca0e14e9dcca2aee6a61fa6b6a5",
+      "label": "labels/d86cc412a1856b2c5fbc85aeb9e3e83fe6a39ca0e14e9dcca2aee6a61fa6b6a5.txt",
+      "label_sha256": "772af99d580249a5124bbd376e2861b21fe61682be9964b8c2cf6ca93805ccba",
+      "building_group": "ceasa_pavilhao_a",
+      "approved_taxonomy_sha256": "91277c4431ff391c716069ecca01fc02a3acc1461297d7bb1cc799df12f49021"
+    },
+    {
+      "image": "images/7b8b0c035e2292d990fa0c493c5f25163cdf5572bfd68098ecd9d8f7f2f7ea3b.jpg",
+      "image_sha256": "7b8b0c035e2292d990fa0c493c5f25163cdf5572bfd68098ecd9d8f7f2f7ea3b",
+      "label": "labels/7b8b0c035e2292d990fa0c493c5f25163cdf5572bfd68098ecd9d8f7f2f7ea3b.txt",
+      "label_sha256": "5ab52696d48b82700b962d50e0de35de243400f288eee7e66b0c4a576a119d19",
+      "building_group": "ceasa_pavilhao_a",
+      "approved_taxonomy_sha256": "91277c4431ff391c716069ecca01fc02a3acc1461297d7bb1cc799df12f49021"
+    },
+    {
+      "image": "images/23074d75889dd3540178b4f4967277d6dca6fc7066aa3062868c6a4386c3dd38.jpg",
+      "image_sha256": "23074d75889dd3540178b4f4967277d6dca6fc7066aa3062868c6a4386c3dd38",
+      "label": "labels/23074d75889dd3540178b4f4967277d6dca6fc7066aa3062868c6a4386c3dd38.txt",
+      "label_sha256": "39a0e5c001d7c83a1307001b9cb32dfd49b50abf7ddc405b5fba228b3a85b199",
+      "building_group": "ceasa_pavilhao_a",
+      "approved_taxonomy_sha256": "91277c4431ff391c716069ecca01fc02a3acc1461297d7bb1cc799df12f49021"
+    },
+    {
+      "image": "images/bca8f6e02e3f00fe307634bb55cde6ce2fb37cd10f6724a7d814be664ded6a1c.jpg",
+      "image_sha256": "bca8f6e02e3f00fe307634bb55cde6ce2fb37cd10f6724a7d814be664ded6a1c",
+      "label": "labels/bca8f6e02e3f00fe307634bb55cde6ce2fb37cd10f6724a7d814be664ded6a1c.txt",
+      "label_sha256": "97c4023a8e895a63b5421167b7377086fa439d0f4eab8f054f03a044b19a1e64",
+      "building_group": "ceasa_pavilhao_a",
+      "approved_taxonomy_sha256": "91277c4431ff391c716069ecca01fc02a3acc1461297d7bb1cc799df12f49021"
+    },
+    {
+      "image": "images/d7dcb606c5b1ff4b0f3ccb31f913ab53f98cc7635c38b2ad9107faed0b6addc6.jpg",
+      "image_sha256": "d7dcb606c5b1ff4b0f3ccb31f913ab53f98cc7635c38b2ad9107faed0b6addc6",
+      "label": "labels/d7dcb606c5b1ff4b0f3ccb31f913ab53f98cc7635c38b2ad9107faed0b6addc6.txt",
+      "label_sha256": "267454c88da5cf82e0ef5b304bcc0d5a347e92ccb4c07d7600171eb253b6a378",
+      "building_group": "ceasa_pavilhao_a",
+      "approved_taxonomy_sha256": "91277c4431ff391c716069ecca01fc02a3acc1461297d7bb1cc799df12f49021"
+    },
+    {
+      "image": "images/399d7cea73e4de2b057c2ec9863fc2dcf51e68f4aff2d32070c735c208cf36f5.jpg",
+      "image_sha256": "399d7cea73e4de2b057c2ec9863fc2dcf51e68f4aff2d32070c735c208cf36f5",
+      "label": "labels/399d7cea73e4de2b057c2ec9863fc2dcf51e68f4aff2d32070c735c208cf36f5.txt",
+      "label_sha256": "f65f8e5b34004ea290b7419dac89930228526672cd201f44ace7ca001410b2ec",
+      "building_group": "ceasa_pavilhao_a",
+      "approved_taxonomy_sha256": "91277c4431ff391c716069ecca01fc02a3acc1461297d7bb1cc799df12f49021"
+    },
+    {
+      "image": "images/f5b9ef7de70622b39b748bc2ee654166b5facc42a7c5e1ee8c37054f9217588c.jpg",
+      "image_sha256": "f5b9ef7de70622b39b748bc2ee654166b5facc42a7c5e1ee8c37054f9217588c",
+      "label": "labels/f5b9ef7de70622b39b748bc2ee654166b5facc42a7c5e1ee8c37054f9217588c.txt",
+      "label_sha256": "ebaaf56bc6c02a7a65d0ba1bd1b9d38240cbf550589de2621b6f198018a8bc0d",
+      "building_group": "ceasa_pavilhao_a",
+      "approved_taxonomy_sha256": "91277c4431ff391c716069ecca01fc02a3acc1461297d7bb1cc799df12f49021"
+    },
+    {
+      "image": "images/50f69e0ccb9519d6aa2f58754218c1bf0fbda162a7612c885bd95d875c323ecb.jpg",
+      "image_sha256": "50f69e0ccb9519d6aa2f58754218c1bf0fbda162a7612c885bd95d875c323ecb",
+      "label": "labels/50f69e0ccb9519d6aa2f58754218c1bf0fbda162a7612c885bd95d875c323ecb.txt",
+      "label_sha256": "62758b2c3e8370624f17a36d83e5ebc806945bb5595e8743769e4202618c3ccc",
+      "building_group": "ceasa_pavilhao_a",
+      "approved_taxonomy_sha256": "91277c4431ff391c716069ecca01fc02a3acc1461297d7bb1cc799df12f49021"
+    },
+    {
+      "image": "images/73218070524752bc3173ea9ea6926dcf7bbd6dadb8a0800e4d7ed95d2e5bb971.jpg",
+      "image_sha256": "73218070524752bc3173ea9ea6926dcf7bbd6dadb8a0800e4d7ed95d2e5bb971",
+      "label": "labels/73218070524752bc3173ea9ea6926dcf7bbd6dadb8a0800e4d7ed95d2e5bb971.txt",
+      "label_sha256": "a20479ddb79798138cfca65f9b7c0d6cab17cd36642d6b618b231feeae98036c",
+      "building_group": "ceasa_pavilhao_a",
+      "approved_taxonomy_sha256": "91277c4431ff391c716069ecca01fc02a3acc1461297d7bb1cc799df12f49021"
+    },
+    {
+      "image": "images/a64803dabcfcaad82852da022b2a6bc85f6773ffba2e29095c4e67a51c66ff0e.jpg",
+      "image_sha256": "a64803dabcfcaad82852da022b2a6bc85f6773ffba2e29095c4e67a51c66ff0e",
+      "label": "labels/a64803dabcfcaad82852da022b2a6bc85f6773ffba2e29095c4e67a51c66ff0e.txt",
+      "label_sha256": "c679238a9894b4dd2f26cb92bb49c646e6deab84ef2cc1628082bab81b3f80b4",
+      "building_group": "ceasa_pavilhao_a",
+      "approved_taxonomy_sha256": "91277c4431ff391c716069ecca01fc02a3acc1461297d7bb1cc799df12f49021"
+    },
+    {
+      "image": "images/32a3cd23e01454b5e1ffaf38b4df5cd0de526914b65fa973f8398c84d57ec5e2.jpg",
+      "image_sha256": "32a3cd23e01454b5e1ffaf38b4df5cd0de526914b65fa973f8398c84d57ec5e2",
+      "label": "labels/32a3cd23e01454b5e1ffaf38b4df5cd0de526914b65fa973f8398c84d57ec5e2.txt",
+      "label_sha256": "187471a5aa45483b35068fcb8076b7917224b3c8f6f88d562da26c39131f066e",
+      "building_group": "ceasa_pavilhao_a",
+      "approved_taxonomy_sha256": "91277c4431ff391c716069ecca01fc02a3acc1461297d7bb1cc799df12f49021"
+    },
+    {
+      "image": "images/0f729b3e9a0bab66f6c0f309e403a5eef269f7743702e285122d3ef2d76bf89a.jpg",
+      "image_sha256": "0f729b3e9a0bab66f6c0f309e403a5eef269f7743702e285122d3ef2d76bf89a",
+      "label": "labels/0f729b3e9a0bab66f6c0f309e403a5eef269f7743702e285122d3ef2d76bf89a.txt",
+      "label_sha256": "1bf40faaa2f40760e1737f98fd254dfb6cec868f2e821685ebc9e12ff2570f5c",
+      "building_group": "ceasa_pavilhao_a",
+      "approved_taxonomy_sha256": "91277c4431ff391c716069ecca01fc02a3acc1461297d7bb1cc799df12f49021"
+    },
+    {
+      "image": "images/73eefa51e56b97c53d83b5ba4e6d0c05e4f3b97bb0a936b3cb32ca6e889db1cc.jpg",
+      "image_sha256": "73eefa51e56b97c53d83b5ba4e6d0c05e4f3b97bb0a936b3cb32ca6e889db1cc",
+      "label": "labels/73eefa51e56b97c53d83b5ba4e6d0c05e4f3b97bb0a936b3cb32ca6e889db1cc.txt",
+      "label_sha256": "f1a187dd92eb73d6a41e9f0dc4a14988705ff65ccc66158fa4228f42eef11485",
+      "building_group": "ceasa_pavilhao_a",
+      "approved_taxonomy_sha256": "91277c4431ff391c716069ecca01fc02a3acc1461297d7bb1cc799df12f49021"
+    }
+  ],
+  "note": "Referência humana da v3, dez classes. Conferência das classes atuais e validação/teste independentes pendentes."
+}

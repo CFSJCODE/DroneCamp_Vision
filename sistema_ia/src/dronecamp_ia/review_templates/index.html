@@ -1,0 +1,864 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DroneCamp · Revisão das imagens</title>
+<style>
+:root {
+  --ink: #183142;
+  --muted: #556776;
+  --paper: #f4f6f8;
+  --line: #ced8df;
+  --primary: #215b7b;
+  --space: 8px
+}
+
+* {
+  box-sizing: border-box
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font: 16px/1.5 system-ui,"Segoe UI",sans-serif
+}
+
+button,input,select,textarea {
+  font: inherit
+}
+
+button {
+  cursor: pointer;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 16px;
+  background: white;
+  color: var(--ink);
+  min-height: 44px
+}
+
+button:disabled {
+  opacity: .5;
+  cursor: default
+}
+
+button.primary {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary)
+}
+
+button:hover:not(:disabled) {
+  filter: brightness(.94)
+}
+
+:focus-visible {
+  outline: 3px solid #ad6400;
+  outline-offset: 3px
+}
+
+header {
+  background: white;
+  border-bottom: 1px solid var(--line);
+  padding: 24px 32px
+}
+
+header h1 {
+  font-size: 30px;
+  line-height: 1.2;
+  margin: 0 0 8px
+}
+
+p {
+  margin: 8px 0 16px
+}
+
+.notice {
+  padding: 16px;
+  background: #fff6df;
+  border: 1px solid #ead59c;
+  border-radius: 8px;
+  max-width: 1050px
+}
+
+main {
+  display: grid;
+  grid-template-columns: 280px minmax(0,1fr);
+  gap: 24px;
+  padding: 24px 32px
+}
+
+.panel {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px;
+  min-width: 0
+}
+
+h2 {
+  font-size: 22px;
+  line-height: 1.25;
+  margin: 0 0 16px
+}
+
+h3 {
+  font-size: 18px;
+  margin: 16px 0 8px
+}
+
+.muted {
+  color: var(--muted)
+}
+
+label {
+  display: block;
+  margin: 8px 0 4px
+}
+
+input,select,textarea {
+  width: 100%;
+  border: 1px solid #aabcc8;
+  border-radius: 6px;
+  padding: 8px;
+  background: white;
+  color: var(--ink);
+  min-height: 44px
+}
+
+textarea {
+  min-height: 100px;
+  resize: vertical
+}
+
+.inline {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center
+}
+
+.inline>* {
+  flex: 0 1 auto
+}
+
+.checks {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start
+}
+
+.checks input {
+  width: 20px;
+  min-height: 20px;
+  margin-top: 4px
+}
+
+.checks label {
+  margin: 0
+}
+
+.queue {
+  max-height: 68vh;
+  overflow: auto;
+  margin: 16px 0
+}
+
+.queue button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  margin: 0 0 8px;
+  padding: 8px 12px
+}
+
+.queue button[aria-current=true] {
+  border: 2px solid var(--primary);
+  background: #edf5fa
+}
+
+.queue small {
+  display: block;
+  color: var(--muted)
+}
+
+.viewer {
+  position: relative;
+  margin: 16px 0;
+  background: #e4eaef;
+  border: 1px solid var(--line)
+}
+
+.viewer canvas {
+  display: block;
+  width: 100%;
+  height: auto
+}
+
+.viewer.drawing canvas {
+  touch-action: none;
+  cursor: crosshair
+}
+
+.status {
+  font-size: 14px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: #e8f0f5;
+  display: inline-block
+}
+
+.tools {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px
+}
+
+.coordinates {
+  display: grid;
+  grid-template-columns: repeat(4,1fr);
+  gap: 8px
+}
+
+.coordinates input {
+  min-width: 0
+}
+
+.boxes {
+  max-height: 280px;
+  overflow: auto
+}
+
+.boxes button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  margin: 8px 0;
+  border-left: 6px solid var(--box-color)
+}
+
+.suggestions .suggestion {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  margin: 8px 0;
+  padding: 8px 12px;
+  border: 1px dashed var(--box-color);
+  border-left: 6px dashed var(--box-color);
+  border-radius: 8px
+}
+
+.suggestion button {
+  flex: 0 0 auto
+}
+
+.box-caption {
+  font-size: 14px;
+  color: var(--muted)
+}
+
+#message {
+  padding: 12px;
+  margin: 16px 0;
+  border-radius: 6px;
+  background: #e8f0f5;
+  min-height: 44px
+}
+
+#message.error {
+  background: #fde9e8;
+  color: #812525
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: space-between
+}
+
+.stats {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-weight: 600
+}
+
+.footer {
+  font-size: 14px;
+  padding: 24px 32px;
+  color: var(--muted)
+}
+
+a {
+  color: #155d86
+}
+
+.hidden {
+  display: none!important
+}
+
+@media(max-width:1000px) {
+  main {
+    grid-template-columns: 1fr;
+    padding: 16px
+  }
+  .queue {
+    max-height: 240px
+  }
+  .tools {
+    grid-template-columns: 1fr
+  }
+  header {
+    padding: 24px 16px
+  }
+}
+
+@media(max-width:480px) {
+  header h1 {
+    font-size: 26px
+  }
+  .coordinates {
+    grid-template-columns: repeat(2,1fr)
+  }
+  .panel {
+    padding: 12px
+  }
+  button {
+    padding: 10px 12px
+  }
+  .controls button {
+    flex: 1
+  }
+  .inline {
+    align-items: stretch
+  }
+  .inline button {
+    flex: 1
+  }
+}
+
+@media(prefers-reduced-motion:reduce) {
+  * {
+    scroll-behavior: auto!important
+  }
+}
+</style>
+</head>
+<body>
+<header>
+<h1>DroneCamp · Revisão das imagens</h1>
+<p>Confira a foto, ajuste as caixas e registre sua decisão.</p>
+<div class="notice"><strong>Propostas visuais por IA, aguardando sua revisão.</strong> Esta página não certifica a condição do telhado. Correções registradas poderão compor um próximo conjunto de treinamento depois de validadas.</div>
+<p class="notice hidden" id="taxonomyNotice"></p>
+</header>
+<main>
+<aside class="panel" aria-label="Fila de revisão">
+<h2>Fotos para revisão</h2><div class="stats" id="stats"></div>
+<label for="filter">Filtrar propostas</label><select id="filter"><option value="all">Todas as fotos</option><option value="positive">Com ocorrências propostas</option><option value="negative">Negativas propostas</option><option value="ambiguous">Ambíguas</option><option value="excluded">Excluídas</option><option value="pending">Sem sua decisão</option></select>
+<div class="queue" id="queue"></div>
+<label for="reviewer">Seu identificador de revisão</label><input id="reviewer" maxlength="100" placeholder="Ex.: revisor_01" autocomplete="off">
+<p class="muted">Use um identificador interno; não precisa informar dados pessoais.</p>
+<button class="primary" id="export">Salvar arquivo de revisão</button>
+<p class="muted">O navegador guarda um rascunho local. O botão baixa suas decisões para importação no sistema; não modifica o modelo.</p>
+</aside>
+<section class="panel" aria-labelledby="photoTitle">
+<div class="controls"><button id="previous">← Foto anterior</button><button id="next">Próxima foto →</button></div>
+<h2 id="photoTitle" style="margin-top:16px"></h2><p id="photoMeta" class="muted"></p><p id="historyNotice" class="notice hidden"></p>
+<div class="inline"><span class="status" id="proposalStatus"></span><label class="checks"><input type="checkbox" id="showBoxes" checked>Mostrar caixas propostas</label><label class="checks hidden" id="showSuggestionsLabel"><input type="checkbox" id="showSuggestions" checked>Mostrar sugestões do modelo</label><button id="drawToggle" aria-pressed="false">Desenhar nova caixa</button><a id="originalLink" target="_blank" rel="noopener">Abrir foto original</a></div>
+<div class="viewer" id="viewer"><canvas id="canvas" tabindex="0" aria-label="Fotografia com caixas propostas. Use os campos de coordenadas abaixo para anotar com teclado."></canvas></div>
+<details><summary>Observações da proposta inicial</summary><p id="proposalNotes"></p></details><h3>Observações da revisão visual</h3><p id="auditNotes"></p>
+<div id="message" role="status" aria-live="polite">Selecione uma foto para começar.</div>
+<div class="tools">
+<section><h3>Ocorrências na foto</h3><p class="muted">Selecione uma caixa para corrigir. Para criar uma nova, desenhe sobre a foto ou preencha as coordenadas.</p><div class="boxes" id="boxes"></div>
+<div id="suggestionPanel" class="hidden"><h3>Sugestões do modelo</h3><p class="muted" id="suggestionMeta"></p><div class="boxes suggestions" id="suggestions"></div></div>
+<label for="classId">Categoria da caixa</label><select id="classId"></select>
+<div class="coordinates"><div><label for="x1">X inicial</label><input id="x1" type="number" min="0" step="1"></div><div><label for="y1">Y inicial</label><input id="y1" type="number" min="0" step="1"></div><div><label for="x2">X final</label><input id="x2" type="number" min="0" step="1"></div><div><label for="y2">Y final</label><input id="y2" type="number" min="0" step="1"></div></div>
+<div class="inline" style="margin-top:16px"><button id="applyBox">Adicionar caixa</button><button id="newBox">Nova caixa</button><button id="deleteBox" disabled>Excluir selecionada</button></div>
+</section>
+<section><h3>Sua decisão sobre a foto</h3><label for="decision">Situação da revisão</label><select id="decision"><option value="pending">Pendente</option><option value="positive">Revisei: há ocorrências</option><option value="negative">Revisei: nenhuma das classes ativas</option><option value="ambiguous">Há dúvida: precisa de análise técnica</option><option value="excluded">Excluir do treinamento</option></select>
+<label for="notes">Correções, dúvidas ou motivo da decisão</label><textarea id="notes" placeholder="Descreva o que você conferiu ou o que ainda precisa esclarecer."></textarea>
+<div class="checks"><input id="confirmed" type="checkbox"><label for="confirmed">Conferi a foto inteira e confirmei as classes e caixas registradas.</label></div>
+<button class="primary" id="saveDecision" style="margin-top:16px">Registrar minha decisão</button><p class="muted">Imagem negativa exige nenhuma caixa e revisão completa. Severidade permanece pendente de avaliação técnica.</p>
+</section>
+</div>
+</section>
+</main>
+<div class="footer">Caixas em fotos semelhantes podem repetir o mesmo defeito. Não há medição física, avaliação hidráulica ou aprovação técnica automática.</div>
+<script>
+// Caixas podem incluir correções humanas históricas; aprovação atual começa pendente.
+const DATA = __REVIEW_DATA__;
+const $ = id => document.getElementById(id);
+const names = {
+  positive: 'Positiva proposta',
+  negative: 'Negativa proposta',
+  ambiguous: 'Ambígua',
+  excluded: 'Excluída'
+};
+const storageKey = 'dronecamp-review-' + DATA.registry_sha256;
+let saved = {};
+try {
+  saved = JSON.parse(localStorage.getItem(storageKey) || '{}')
+} catch {}
+let state = {
+  index: 0,
+  selected: -1,
+  drawing: false,
+  start: null,
+  img: new Image(),
+  drafts: saved.images || {},
+  reviewer: saved.reviewer || ''
+};
+const clone = value => JSON.parse(JSON.stringify(value));
+const item = () => DATA.images[state.index];
+const draft = () => state.drafts[item().image_sha256] || {
+  boxes: clone(item().boxes),
+  status: 'pending',
+  notes: item().human_notes || '',
+  confirmed_complete: false
+};
+let active = draft();
+
+function message(text, error = false) {
+  $('message').textContent = text;
+  $('message').classList.toggle('error', error)
+}
+
+// Guardar o rascunho no navegador não aprova dados nem atualiza pesos do modelo.
+function persist() {
+  state.drafts[item().image_sha256] = clone(active);
+  state.reviewer = $('reviewer').value;
+  try {
+    localStorage.setItem(storageKey, JSON.stringify({
+      images: state.drafts,
+      reviewer: state.reviewer
+    }))
+  } catch {
+    message('O navegador não conseguiu guardar o rascunho. Salve um arquivo de revisão.', true)
+  }
+}
+
+function queue() {
+  const filter = $('filter').value;
+  $('queue').replaceChildren();
+  let decided = 0;
+  DATA.images.forEach((photo, index) => {
+    const decision = state.drafts[photo.image_sha256];
+    if (decision && decision.status !== 'pending') decided++;
+    if (filter !== 'all' && (
+      filter === 'pending'
+        ? decision && decision.status !== 'pending'
+        : photo.status !== filter
+    )) return;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.setAttribute('aria-current', index === state.index);
+    button.textContent = photo.pages && photo.pages.length
+      ? `${index+1}. Páginas ${photo.pages.join(', ')}`
+      : `${index+1}. ${photo.filename}`;
+    const small = document.createElement('small');
+    small.textContent = decision && decision.status !== 'pending'
+      ? 'Sua decisão registrada'
+      : photo.previous_human_approved
+        ? 'Correções anteriores preservadas · conferir novas categorias'
+        : names[photo.status];
+    button.append(small);
+    button.onclick = () => openPhoto(index);
+    $('queue').append(button)
+  });
+  $('stats').textContent = `${DATA.images.length} fotos · ${decided} decisões`
+}
+
+function resetSelection() {
+  state.selected = -1;
+  ['x1', 'y1', 'x2', 'y2'].forEach(id => $(id).value = '');
+  $('applyBox').textContent = 'Adicionar caixa';
+  $('deleteBox').disabled = true
+}
+
+function renderBoxes() {
+  const list = $('boxes');
+  list.replaceChildren();
+  active.boxes.forEach((box, index) => {
+    const button = document.createElement('button');
+    const category = DATA.classes.find(value => value.id === box.class_id);
+    button.style.setProperty('--box-color', category.color);
+    button.textContent = `${index+1}. ${category.label}`;
+    const caption = document.createElement('div');
+    caption.className = 'box-caption';
+    caption.textContent = box.bbox_xyxy.map(Math.round).join(', ') + ' pixels';
+    button.append(caption);
+    button.onclick = () => {
+      state.selected = index;
+      $('classId').value = box.class_id;
+      ['x1', 'y1', 'x2', 'y2'].forEach((id, position) => $(id).value = box.bbox_xyxy[position]);
+      $('applyBox').textContent = 'Atualizar caixa';
+      $('deleteBox').disabled = false;
+      paint()
+    };
+    list.append(button)
+  });
+  if (!active.boxes.length) list.textContent = 'Nenhuma caixa registrada nesta foto.';
+  renderSuggestions();
+  paint()
+}
+
+// Sugestões do modelo são apenas candidatas: aceitar uma copia a caixa para
+// a revisão e exige nova confirmação da foto inteira.
+const sameBox = (a, b) => a.class_id === b.class_id && a.bbox_xyxy.every((value, i) => Math.round(value) === Math.round(b.bbox_xyxy[i]));
+function pendingSuggestions() {
+  return (item().model_suggestions || [])
+    .map((suggestion, index) => ({ suggestion, index }))
+    .filter(({ suggestion }) => !active.boxes.some(box => sameBox(box, suggestion)) && !(active.dismissed_suggestions || []).includes(suggestion.id))
+}
+
+function renderSuggestions() {
+  const meta = DATA.suggestions;
+  $('suggestionPanel').classList.toggle('hidden', !meta);
+  $('showSuggestionsLabel').classList.toggle('hidden', !meta);
+  if (!meta) return;
+  $('suggestionMeta').textContent = `${meta.model_label} · confiança mínima ${Math.round(meta.conf*100)}%. ${meta.warning}`;
+  const list = $('suggestions');
+  list.replaceChildren();
+  const pending = pendingSuggestions();
+  pending.forEach(({ suggestion, index }) => {
+    const category = DATA.classes.find(value => value.id === suggestion.class_id);
+    const row = document.createElement('div');
+    row.className = 'suggestion';
+    row.style.setProperty('--box-color', category.color);
+    const text = document.createElement('span');
+    text.textContent = `IA ${index+1}. ${category.label} · ${Math.round(suggestion.confidence*100)}%`;
+    const accept = document.createElement('button');
+    accept.type = 'button';
+    accept.textContent = 'Aceitar';
+    accept.onclick = () => {
+      active.boxes.push({
+        class_id: suggestion.class_id,
+        bbox_xyxy: suggestion.bbox_xyxy.map(Math.round),
+        note: `Sugestão do modelo aceita (confiança ${Math.round(suggestion.confidence*100)}%); conferida na revisão local.`
+      });
+      invalidateDecision('Sugestão aceita como caixa. Ajuste se necessário e confira a foto inteira antes de confirmar.')
+    };
+    const dismiss = document.createElement('button');
+    dismiss.type = 'button';
+    dismiss.textContent = 'Descartar';
+    dismiss.onclick = () => {
+      active.dismissed_suggestions = [...(active.dismissed_suggestions || []), suggestion.id];
+      persist();
+      renderBoxes();
+      message('Sugestão descartada nesta revisão.')
+    };
+    const actions = document.createElement('span');
+    actions.className = 'inline';
+    actions.append(accept, dismiss);
+    row.append(text, actions);
+    list.append(row)
+  });
+  if (!pending.length) list.textContent = (item().model_suggestions || []).length
+    ? 'Todas as sugestões desta foto foram aceitas ou descartadas.'
+    : 'O modelo não sugeriu caixas nesta foto acima da confiança mínima.';
+}
+
+function invalidateDecision(text) {
+  active.status = 'pending';
+  active.confirmed_complete = false;
+  $('decision').value = 'pending';
+  $('confirmed').checked = false;
+  persist();
+  resetSelection();
+  renderBoxes();
+  queue();
+  message(text)
+}
+
+function paint(preview) {
+  const canvas = $('canvas'), ctx = canvas.getContext('2d');
+  if (!state.img.complete || !state.img.naturalWidth) return;
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(state.img, 0, 0);
+  if ($('showBoxes').checked) {
+    active.boxes.forEach((box, index) => {
+      const [x1, y1, x2, y2] = box.bbox_xyxy;
+      const category = DATA.classes.find(value => value.id === box.class_id);
+      ctx.strokeStyle = category.color;
+      ctx.lineWidth = index === state.selected ? 5 : 3;
+      ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+      ctx.font = `${Math.max(14,Math.round(canvas.width/70))}px sans-serif`;
+      const text = `${index+1}: ${category.label}`;
+      const top = Math.max(0, y1 - 24);
+      ctx.fillStyle = category.color;
+      ctx.fillRect(x1, top, ctx.measureText(text).width + 12, 24);
+      ctx.fillStyle = 'white';
+      ctx.fillText(text, x1 + 5, top + 18)
+    })
+  }
+  if ($('showSuggestions').checked) {
+    pendingSuggestions().forEach(({ suggestion, index }) => {
+      const [x1, y1, x2, y2] = suggestion.bbox_xyxy;
+      const category = DATA.classes.find(value => value.id === suggestion.class_id);
+      ctx.setLineDash([10, 6]);
+      ctx.strokeStyle = category.color;
+      ctx.lineWidth = 3;
+      ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+      ctx.setLineDash([]);
+      ctx.font = `${Math.max(13,Math.round(canvas.width/80))}px sans-serif`;
+      const text = `IA ${index+1}: ${category.label} ${Math.round(suggestion.confidence*100)}%`;
+      const bottom = Math.min(canvas.height - 22, y2);
+      ctx.fillStyle = 'rgba(255,255,255,.88)';
+      ctx.fillRect(x1, bottom, ctx.measureText(text).width + 12, 22);
+      ctx.fillStyle = category.color;
+      ctx.fillText(text, x1 + 5, bottom + 16)
+    })
+  }
+  if (preview) {
+    ctx.setLineDash([8, 5]);
+    ctx.strokeStyle = '#173c5b';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(preview[0], preview[1], preview[2] - preview[0], preview[3] - preview[1]);
+    ctx.setLineDash([])
+  }
+}
+
+function openPhoto(index) {
+  persist();
+  state.index = index;
+  active = clone(draft());
+  resetSelection();
+  state.drawing = false;
+  $('drawToggle').setAttribute('aria-pressed', 'false');
+  $('viewer').classList.remove('drawing');
+  const photo = item();
+  $('photoTitle').textContent = `Foto ${index+1} de ${DATA.images.length}`;
+  $('photoMeta').textContent = [photo.filename, photo.pages && photo.pages.length ? `páginas ${photo.pages.join(', ')}` : null, `${photo.width} × ${photo.height}`].filter(Boolean).join(' · ');
+  $('proposalStatus').textContent = names[photo.status];
+  $('proposalNotes').textContent = photo.notes;
+  $('auditNotes').textContent = [photo.human_notes, photo.second_review_notes, photo.additional_candidate_note, photo.review_focus_note].filter(Boolean).join('\n\n') || 'Segunda leitura ainda não registrada.';
+  // A migração conserva a correção antiga e exige apenas a conferência faltante.
+  const reviewedClasses = photo.classes_reviewed_before_migration || [];
+  const pendingClasses = DATA.classes.filter(category => !reviewedClasses.includes(category.id)).map(category => category.label);
+  $('historyNotice').classList.toggle('hidden', !photo.previous_human_approved);
+  $('historyNotice').textContent = photo.previous_human_approved
+    ? `Suas caixas e categorias da revisão anterior foram preservadas. Confira a foto inteira para as categorias acrescentadas: ${pendingClasses.join('; ')}. Depois registre uma nova confirmação.`
+    : '';
+  $('taxonomyNotice').classList.toggle('hidden', !photo.taxonomy_recheck_pending);
+  $('taxonomyNotice').textContent = `Categorias que ainda precisam de conferência integral nesta foto: ${pendingClasses.join('; ')}.`;
+  $('originalLink').href = photo.image_url;
+  $('decision').value = active.status;
+  $('notes').value = active.notes;
+  $('confirmed').checked = active.confirmed_complete;
+  $('canvas').width = photo.width;
+  $('canvas').height = photo.height;
+  ['x1', 'x2'].forEach(id => $(id).max = photo.width);
+  ['y1', 'y2'].forEach(id => $(id).max = photo.height);
+  state.img = new Image();
+  state.img.onload = () => renderBoxes();
+  state.img.src = photo.image_url;
+  queue();
+  message('Ajuste as propostas e registre sua decisão depois de conferir a foto inteira.')
+}
+
+function validBox(coordinates) {
+  return coordinates.every(Number.isFinite)
+    && coordinates[0] >= 0
+    && coordinates[1] >= 0
+    && coordinates[2] <= item().width
+    && coordinates[3] <= item().height
+    && coordinates[2] > coordinates[0]
+    && coordinates[3] > coordinates[1]
+}
+
+// Toda edição invalida a confirmação anterior: a foto deve ser revista novamente.
+function commitBox(coordinates) {
+  coordinates = coordinates.map(Math.round);
+  if (!validBox(coordinates)) {
+    message('A caixa precisa ter área e ficar dentro da foto.', true);
+    return
+  }
+  const box = {
+    class_id: Number($('classId').value),
+    bbox_xyxy: coordinates,
+    note: 'Caixa conferida/editada na revisão local.'
+  };
+  if (state.selected < 0) active.boxes.push(box);
+  else active.boxes[state.selected] = box;
+  active.confirmed_complete = false;
+  active.status = 'pending';
+  $('confirmed').checked = false;
+  $('decision').value = 'pending';
+  persist();
+  renderBoxes();
+  resetSelection();
+  queue();
+  message('Caixa registrada. Confira a foto inteira antes de confirmar a decisão.')
+}
+
+$('applyBox').onclick = () => commitBox(
+  ['x1', 'y1', 'x2', 'y2'].map(id => $(id).value === '' ? NaN : Number($(id).value))
+);
+
+$('newBox').onclick = resetSelection;
+
+$('notes').oninput = () => {
+  active.notes = $('notes').value;
+  persist()
+};
+
+// Excluir uma caixa também exige nova decisão humana sobre a foto inteira.
+$('deleteBox').onclick = () => {
+  if (state.selected < 0) return;
+  active.boxes.splice(state.selected, 1);
+  active.status = 'pending';
+  active.confirmed_complete = false;
+  $('decision').value = 'pending';
+  $('confirmed').checked = false;
+  persist();
+  resetSelection();
+  renderBoxes();
+  queue()
+};
+
+$('drawToggle').onclick = () => {
+  state.drawing = !state.drawing;
+  resetSelection();
+  $('drawToggle').setAttribute('aria-pressed', state.drawing);
+  $('viewer').classList.toggle('drawing', state.drawing);
+  message(state.drawing
+    ? 'Arraste sobre a foto para criar uma caixa da categoria selecionada.'
+    : 'Desenho desativado.'
+  )
+};
+
+// Converta o toque/clique para pixels da foto original, sem depender do tamanho na tela.
+function point(event) {
+  const rect = $('canvas').getBoundingClientRect();
+  return [
+    Math.min(item().width, Math.max(0, (event.clientX - rect.left) * item().width / rect.width)),
+    Math.min(item().height, Math.max(0, (event.clientY - rect.top) * item().height / rect.height))
+  ]
+}
+
+$('canvas').onpointerdown = event => {
+  if (!state.drawing) return;
+  event.preventDefault();
+  state.start = point(event);
+  $('canvas').setPointerCapture(event.pointerId)
+};
+
+$('canvas').onpointermove = event => {
+  if (!state.start) return;
+  const end = point(event);
+  paint([
+    Math.min(state.start[0], end[0]),
+    Math.min(state.start[1], end[1]),
+    Math.max(state.start[0], end[0]),
+    Math.max(state.start[1], end[1])
+  ])
+};
+
+$('canvas').onpointerup = event => {
+  if (!state.start) return;
+  const end = point(event), start = state.start;
+  state.start = null;
+  commitBox([
+    Math.min(start[0], end[0]),
+    Math.min(start[1], end[1]),
+    Math.max(start[0], end[0]),
+    Math.max(start[1], end[1])
+  ])
+};
+
+$('canvas').onpointercancel = () => {
+  state.start = null;
+  paint()
+};
+
+$('showBoxes').onchange = () => paint();
+$('showSuggestions').onchange = () => paint();
+
+// A aprovação visual exige confirmação da revisão integral e caixas coerentes.
+$('saveDecision').onclick = () => {
+  const status = $('decision').value, confirmed = $('confirmed').checked;
+  if (['positive', 'negative'].includes(status) && !confirmed) {
+    message('Confirme que revisou a foto inteira antes de aprovar a anotação.', true);
+    return
+  }
+  if (status === 'positive' && !active.boxes.length) {
+    message('Uma foto com ocorrências precisa de pelo menos uma caixa.', true);
+    return
+  }
+  if (status === 'negative' && active.boxes.length) {
+    message('Uma foto negativa não pode ter caixas. Corrija a anotação ou escolha outra decisão.', true);
+    return
+  }
+  active.status = status;
+  active.notes = $('notes').value;
+  active.confirmed_complete = confirmed;
+  persist();
+  queue();
+  message(status === 'pending'
+    ? 'Rascunho guardado; decisão ainda pendente.'
+    : 'Sua decisão foi registrada no rascunho local. Salve o arquivo de revisão para importá-la.'
+  )
+};
+
+// O hash vincula o feedback ao registro exibido; exportar não executa treinamento.
+$('export').onclick = () => {
+  const reviewer = $('reviewer').value.trim();
+  if (!reviewer) {
+    message('Preencha seu identificador de revisão para salvar o arquivo.', true);
+    $('reviewer').focus();
+    return
+  }
+  const decisions = Object.entries(state.drafts)
+    .filter(([, value]) => value.status !== 'pending')
+    .map(([id, value]) => ({
+      image_sha256: id,
+      ...value
+    }));
+  if (!decisions.length) {
+    message('Registre pelo menos uma decisão antes de salvar.', true);
+    return
+  }
+  const feedback = {
+    schema_version: 1,
+    registry_sha256: DATA.registry_sha256,
+    reviewer_id: reviewer,
+    exported_at: new Date().toISOString(),
+    images: decisions
+  };
+  const url = URL.createObjectURL(new Blob([JSON.stringify(feedback, null, 2)], {
+    type: 'application/json'
+  }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'dronecamp-revisao-' + DATA.version + '.json';
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  message(`${decisions.length} decisões incluídas no arquivo de revisão.`)
+};
+
+$('previous').onclick = () => openPhoto(Math.max(0, state.index - 1));
+
+$('next').onclick = () => openPhoto(Math.min(DATA.images.length - 1, state.index + 1));
+
+$('filter').onchange = queue;
+$('reviewer').value = state.reviewer;
+
+$('reviewer').oninput = persist;
+DATA.classes.forEach(category => {
+  const option = document.createElement('option');
+  option.value = category.id;
+  option.textContent = category.label;
+  $('classId').append(option)
+});
+if (DATA.taxonomy_recheck_pending) {
+  // Os nomes vêm do catálogo e do histórico; não manter categorias antigas fixas no HTML.
+  const categories = (DATA.classes_requiring_review || DATA.classes.map(item => item.label)).join('; ');
+  $('taxonomyNotice').textContent = `Categorias que ainda precisam de conferência integral: ${categories}. Confira essas ocorrências em todas as fotos antes de registrar uma aprovação.`;
+  $('taxonomyNotice').classList.remove('hidden');
+}
+openPhoto(0);
+</script>
+</body></html>

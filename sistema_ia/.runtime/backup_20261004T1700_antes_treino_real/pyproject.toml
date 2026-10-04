@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dronecamp-ia"
+version = "0.1.0"
+description = "Detecção assistida de evidências em telhados industriais"
+requires-python = ">=3.12,<3.14"
+dependencies = ["ultralytics==8.4.172", "PyYAML>=6.0.2,<7", "Pillow>=11,<13"]
+
+[project.optional-dependencies]
+documents = ["pypdf>=6,<7"]
+export = ["onnx>=1.19,<2", "onnxruntime>=1.23,<2", "onnxscript>=0.5,<1"]
+
+[project.scripts]
+dronecamp-ia = "dronecamp_ia.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+dronecamp_ia = ["review_templates/*.html"]

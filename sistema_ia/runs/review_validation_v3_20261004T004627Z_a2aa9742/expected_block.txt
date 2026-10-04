@@ -1,0 +1,1 @@
+Etapa não concluída: Nenhuma imagem tem aprovação humana explícita; nenhum dataset foi criado.

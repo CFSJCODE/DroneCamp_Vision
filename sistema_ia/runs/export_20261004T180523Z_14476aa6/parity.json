@@ -1,0 +1,70 @@
+{
+  "conf": 0.1,
+  "iou_required": 0.9,
+  "confidence_tolerance": 0.02,
+  "pixel_tolerance": 1.0,
+  "images": [
+    {
+      "image": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p002_img01_009ed874.jpg",
+      "sha256": "009ed874804749c2747dcabde4c38bc2aa3a1a3575cb501b5ede6789d9af1dbb",
+      "reference_boxes": 3,
+      "exported_boxes": 3,
+      "matched": 3,
+      "missing_in_export": [],
+      "extra_in_export": [],
+      "worst_matched_iou": 1.0,
+      "worst_confidence_delta": 0.0,
+      "equivalent": true
+    },
+    {
+      "image": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p003_img01_abec366e.jpg",
+      "sha256": "abec366e27c1f5809636c55e9b037bd77134936456ff748e7b1c6852b5a48bb5",
+      "reference_boxes": 4,
+      "exported_boxes": 4,
+      "matched": 4,
+      "missing_in_export": [],
+      "extra_in_export": [],
+      "worst_matched_iou": 1.0,
+      "worst_confidence_delta": 0.0,
+      "equivalent": true
+    },
+    {
+      "image": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p004_img01_08772654.jpg",
+      "sha256": "08772654ea11f2c6d0c3184748a7fffc3525cac35d7042656818500db18458be",
+      "reference_boxes": 2,
+      "exported_boxes": 2,
+      "matched": 2,
+      "missing_in_export": [],
+      "extra_in_export": [],
+      "worst_matched_iou": 1.0,
+      "worst_confidence_delta": 0.0,
+      "equivalent": true
+    },
+    {
+      "image": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p004_img02_68a5aa9e.jpg",
+      "sha256": "68a5aa9ef07b199298b238f1f81a0b54de86bd771b10d99f151459cea880426d",
+      "reference_boxes": 4,
+      "exported_boxes": 4,
+      "matched": 4,
+      "missing_in_export": [],
+      "extra_in_export": [],
+      "worst_matched_iou": 1.0,
+      "worst_confidence_delta": 0.0,
+      "equivalent": true
+    },
+    {
+      "image": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p005_img01_80528144.jpg",
+      "sha256": "8052814489da66c77231ff5ffccbee3236719d83408ce298d31fe13f7132aee4",
+      "reference_boxes": 14,
+      "exported_boxes": 14,
+      "matched": 14,
+      "missing_in_export": [],
+      "extra_in_export": [],
+      "worst_matched_iou": 1.0,
+      "worst_confidence_delta": 0.0,
+      "equivalent": true
+    }
+  ],
+  "runtime_parity_validated": true,
+  "scope": "Paridade numérica PyTorch × ONNX Runtime na CPU deste computador; não avalia qualidade nem outro hardware."
+}

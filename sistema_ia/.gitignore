@@ -1,0 +1,10 @@
+# Dados, revisoes, modelos e resultados fazem parte da publicacao do projeto.
+# Pesos e exportacoes sao tratados pelo .gitattributes da raiz (Git LFS).
+.venv/
+__pycache__/
+*.egg-info/
+Ultralytics/
+.env
+.env.*
+!.env.example
+!.env.sample

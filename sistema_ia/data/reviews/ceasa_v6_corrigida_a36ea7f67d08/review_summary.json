@@ -1,0 +1,28 @@
+{
+  "unique_images": 38,
+  "image_status_counts": {
+    "ambiguous": 3,
+    "positive": 35
+  },
+  "boxes_by_class_id": {
+    "5": 23,
+    "3": 18,
+    "0": 14,
+    "2": 37,
+    "6": 10,
+    "1": 2,
+    "7": 4,
+    "9": 1,
+    "8": 2,
+    "4": 4
+  },
+  "total_proposed_boxes": 115,
+  "human_approved_images": 0,
+  "historical_human_review_images": 33,
+  "second_visual_review_images": 0,
+  "prior_taxonomy_second_visual_review_images": 38,
+  "taxonomy_recheck_pending_images": 38,
+  "independent_buildings": 1,
+  "ready_for_independent_evaluation": false,
+  "note": "Propostas visuais são revisáveis; uma única edificação não mede generalização para outros locais."
+}

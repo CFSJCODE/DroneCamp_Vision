@@ -1,0 +1,853 @@
+{
+  "annotator": "codex_visual_telhas",
+  "schema_version": 1,
+  "images": [
+    {
+      "image_sha256": "009ed874804749c2747dcabde4c38bc2aa3a1a3575cb501b5ede6789d9af1dbb",
+      "filename": "p002_img01_009ed874.jpg",
+      "width": 1077,
+      "height": 718,
+      "pages": [
+        2
+      ],
+      "status": "ambiguous",
+      "boxes": [],
+      "notes": "Imagem inteira inspecionada. Vista geral: diferenças de cor e pontos claros podem ser substituições/reparos ou textura, mas a resolução não permite delimitar ocorrência ativa com segurança. Não usar como negativo. Fonte: imagem incorporada ao laudo CEASA; páginas no campo pages. Proposta visual Codex; revisão técnica/humana pendente, sem aprovação para treinamento.",
+      "quality_flags": [
+        "pdf_compression",
+        "distant_view",
+        "insufficient_detail",
+        "ambiguous_regions"
+      ],
+      "scene_group": "ceasa_roof_overview"
+    },
+    {
+      "image_sha256": "abec366e27c1f5809636c55e9b037bd77134936456ff748e7b1c6852b5a48bb5",
+      "filename": "p003_img01_abec366e.jpg",
+      "width": 1090,
+      "height": 613,
+      "pages": [
+        3
+      ],
+      "status": "ambiguous",
+      "boxes": [],
+      "notes": "Imagem inteira e junção superior ampliada. A telha solta/sobreposta é identificável, mas sobreposição sem travamento pertence à fase 2. Canal sombreado e elemento parcialmente oculto impedem descartar resíduos com segurança; nenhum positivo ativo confirmado. Não usar como negativo. Fonte: imagem incorporada ao laudo CEASA; páginas no campo pages. Proposta visual Codex; revisão técnica/humana pendente, sem aprovação para treinamento.",
+      "quality_flags": [
+        "pdf_compression",
+        "shadow",
+        "occlusion",
+        "out_of_active_taxonomy"
+      ],
+      "scene_group": "ceasa_closeup_abec366e"
+    },
+    {
+      "image_sha256": "08772654ea11f2c6d0c3184748a7fffc3525cac35d7042656818500db18458be",
+      "filename": "p004_img01_08772654.jpg",
+      "width": 1096,
+      "height": 616,
+      "pages": [
+        4
+      ],
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            87,
+            98,
+            142,
+            149
+          ],
+          "note": "Ruptura irregular na ponta da onda da telha instalada sob o elemento transversal; não delimita o marcador metálico."
+        }
+      ],
+      "notes": "Imagem inteira inspecionada e ponta esquerda ampliada. Marcadores metálicos não são resíduos. As demais ondas/sombras são juntas de contexto, não ausências. Fonte: imagem incorporada ao laudo CEASA; páginas no campo pages. Proposta visual Codex; revisão técnica/humana pendente, sem aprovação para treinamento.",
+      "quality_flags": [
+        "pdf_compression",
+        "small_object"
+      ],
+      "scene_group": "ceasa_closeup_08772654"
+    },
+    {
+      "image_sha256": "68a5aa9ef07b199298b238f1f81a0b54de86bd771b10d99f151459cea880426d",
+      "filename": "p004_img02_68a5aa9e.jpg",
+      "width": 1097,
+      "height": 723,
+      "pages": [
+        4
+      ],
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            100,
+            565,
+            161,
+            723
+          ],
+          "note": "Faixa clara aderida sobre a telha, visível até o corte inferior; reparo proposto, sem inferir falha."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            140,
+            578,
+            195,
+            723
+          ],
+          "note": "Segunda faixa clara paralela, inspecionada em zoom; ocorrência cortada pela borda inferior."
+        }
+      ],
+      "notes": "Imagem inteira inspecionada. Anotadas apenas faixas de intervenção claras; telhas de cor mais clara não foram automaticamente classificadas como reparo. Elementos menores distantes permanecem inconclusivos. Fonte: imagem incorporada ao laudo CEASA; páginas no campo pages. Proposta visual Codex; revisão técnica/humana pendente, sem aprovação para treinamento.",
+      "quality_flags": [
+        "pdf_compression",
+        "distant_view",
+        "truncated_object",
+        "insufficient_detail_other_regions"
+      ],
+      "scene_group": "ceasa_roof_overview"
+    },
+    {
+      "image_sha256": "8052814489da66c77231ff5ffccbee3236719d83408ce298d31fe13f7132aee4",
+      "filename": "p005_img01_80528144.jpg",
+      "width": 1199,
+      "height": 675,
+      "pages": [
+        5
+      ],
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            0,
+            488,
+            184,
+            675
+          ],
+          "note": "Fratura irregular no corpo da telha instalada à esquerda, cortada pela borda inferior."
+        },
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            287,
+            476,
+            335,
+            675
+          ],
+          "note": "Ruptura longitudinal com borda irregular e abertura no painel instalado, junto ao fixador."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            704,
+            0,
+            815,
+            87
+          ],
+          "note": "Fragmento solto sobre a telha superior; não foi rotulado como dano no elemento instalado."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            662,
+            203,
+            698,
+            270
+          ],
+          "note": "Dois fragmentos próximos sobre a onda da telha."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            721,
+            283,
+            812,
+            374
+          ],
+          "note": "Acúmulo de fragmentos sobre a telha próximo à borda."
+        },
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            679,
+            378,
+            936,
+            480
+          ],
+          "note": "Fragmentos no canal horizontal entre as telhas; não inclui gravidade/vazão."
+        }
+      ],
+      "notes": "Imagem inteira inspecionada e fraturas inferiores ampliadas. O vão horizontal entre fiadas foi tratado como canal da calha, não como telha ausente. Partes de pilha sobre o capeamento lateral não foram atribuídas automaticamente à calha. Fonte: imagem incorporada ao laudo CEASA; páginas no campo pages. Proposta visual Codex; revisão técnica/humana pendente, sem aprovação para treinamento.",
+      "quality_flags": [
+        "pdf_compression",
+        "truncated_object",
+        "shadow",
+        "ambiguous_regions"
+      ],
+      "scene_group": "ceasa_closeup_corner_80528144"
+    },
+    {
+      "image_sha256": "f55d62a3174c6ebb620fca7ebb863ac08893e9c1c2b8c7e20b8d5bd7fd139e99",
+      "filename": "p006_img01_f55d62a3.jpg",
+      "width": 1091,
+      "height": 741,
+      "pages": [
+        6
+      ],
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 1,
+          "bbox_xyxy": [
+            516,
+            301,
+            546,
+            408
+          ],
+          "note": "Lacuna estreita entre painéis/bordas da faixa lateral; região ampliada mostra interior/estrutura onde a continuidade da telha vizinha fornece contexto. Confirmar projeto da borda na revisão técnica."
+        }
+      ],
+      "notes": "Imagem inteira e lacuna lateral ampliadas. Não foram rotulados os outros espaços escuros das juntas como ausências. A caixa proposta depende da confirmação técnica de que a abertura não é prevista. Fonte: imagem incorporada ao laudo CEASA; páginas no campo pages. Proposta visual Codex; revisão técnica/humana pendente, sem aprovação para treinamento.",
+      "quality_flags": [
+        "pdf_compression",
+        "distant_view",
+        "small_object",
+        "absence_requires_context"
+      ],
+      "scene_group": "ceasa_roof_overview"
+    },
+    {
+      "image_sha256": "9227be4e4aff0671548aff993d70008b62a2c51bccd68f1a30f267cceba3bea7",
+      "filename": "p006_img02_9227be4e.jpg",
+      "width": 1095,
+      "height": 616,
+      "pages": [
+        6
+      ],
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 1,
+          "bbox_xyxy": [
+            536,
+            259,
+            728,
+            616
+          ],
+          "note": "Lacuna ao lado da telha inferior: estrutura e interior expostos; limites parcialmente cortados pela imagem. Confirmar extensão prevista do painel na revisão técnica."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            363,
+            292,
+            547,
+            521
+          ],
+          "note": "Intervenção de peça/remendo com perímetro claro sobre a telha instalada; sem diagnóstico de execução."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            626,
+            0,
+            670,
+            93
+          ],
+          "note": "Fragmentos soltos sobre a telha superior; ocorrência parcialmente cortada."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            732,
+            0,
+            767,
+            97
+          ],
+          "note": "Segundo acúmulo de fragmentos sobre telha superior, acima do canal."
+        },
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            571,
+            102,
+            899,
+            265
+          ],
+          "note": "Detritos no canal da calha, incluindo pilha contígua à direita; limite não cobre o exterior todo."
+        },
+        {
+          "class_id": 7,
+          "bbox_xyxy": [
+            156,
+            22,
+            636,
+            177
+          ],
+          "note": "Ramos/vegetação ressecada e trechos verdes no canal sombreado da calha."
+        }
+      ],
+      "notes": "Imagem inteira inspecionada; perímetro claro do remendo ampliado. A definição técnica de ausência ao lado direito permanece pendente; os fragmentos soltos foram separados da telha instalada. Fonte: imagem incorporada ao laudo CEASA; páginas no campo pages. Proposta visual Codex; revisão técnica/humana pendente, sem aprovação para treinamento.",
+      "quality_flags": [
+        "pdf_compression",
+        "truncated_object",
+        "shadow",
+        "absence_requires_context"
+      ],
+      "scene_group": "ceasa_closeup_corner_80528144"
+    },
+    {
+      "image_sha256": "88b54f26e06a9b1505ee0804e82ffe0d78f490183db9f2707203c3760c2d0dc5",
+      "filename": "p007_img01_88b54f26.jpg",
+      "width": 1095,
+      "height": 616,
+      "pages": [
+        7,
+        34
+      ],
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            396,
+            113,
+            833,
+            162
+          ],
+          "note": "Faixa de sedimentos e pequenos resíduos delimitável no vale superior da telha."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            546,
+            166,
+            824,
+            212
+          ],
+          "note": "Resíduos/fragmentos no vale imediatamente abaixo; sombras do suporte ficam fora da evidência principal."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            278,
+            217,
+            448,
+            270
+          ],
+          "note": "Fragmentos e pequeno acúmulo sobre a telha, à esquerda do cabo."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            306,
+            351,
+            853,
+            428
+          ],
+          "note": "Faixa de detritos sobre telha, incluindo fragmentos claros próximos; cabo não é o alvo."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            560,
+            421,
+            702,
+            520
+          ],
+          "note": "Fragmento maior solto e detritos adjacentes no vale inferior."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            785,
+            322,
+            828,
+            363
+          ],
+          "note": "Pequeno fragmento solto fora do acúmulo inferior."
+        }
+      ],
+      "notes": "Imagem inteira e resíduos ampliados. Não foi rotulada vegetação porque os resíduos estão sobre telhas. A vedação escura em torno da chaminé não confirma reparo posterior sem informação adicional; nenhuma ausência de telha foi deduzida de sombras. Fonte: imagem incorporada ao laudo CEASA; páginas no campo pages. Proposta visual Codex; revisão técnica/humana pendente, sem aprovação para treinamento.",
+      "quality_flags": [
+        "pdf_compression",
+        "shadow",
+        "ambiguous_regions"
+      ],
+      "scene_group": "ceasa_closeup_roof_chimney_88b54f26"
+    },
+    {
+      "image_sha256": "d12131ddee51d3d84ab6bbf5b8f54abdad769800215b5d068e5e8d22b73265cc",
+      "filename": "p008_img01_d12131dd.jpg",
+      "width": 1093,
+      "height": 615,
+      "pages": [
+        8
+      ],
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            630,
+            30,
+            804,
+            117
+          ],
+          "note": "Rupturas irregulares visíveis no corpo da telha superior, distintas da linha do cabo."
+        },
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            1024,
+            113,
+            1093,
+            199
+          ],
+          "note": "Extremidade irregular quebrada da telha instalada à direita; ocorrência cortada."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            781,
+            190,
+            850,
+            277
+          ],
+          "note": "Fragmentos soltos sobre a telha inferior."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            946,
+            18,
+            1036,
+            117
+          ],
+          "note": "Acúmulo de fragmentos apoiados sobre a telha superior junto ao marcador."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            1024,
+            207,
+            1082,
+            273
+          ],
+          "note": "Fragmento separado sobre a onda direita."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            1008,
+            314,
+            1093,
+            490
+          ],
+          "note": "Peça solta alongada apoiada sobre a telha à direita; cortada pela imagem."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            802,
+            105,
+            872,
+            171
+          ],
+          "note": "Ruptura irregular na ponta do elemento transversal de rufo; requer confirmação da denominação do elemento."
+        }
+      ],
+      "notes": "Imagem inteira e lado direito ampliados. Região muito clara entre ondas à direita permanece ambígua entre intervenção, borda exposta e contraste; não foi anotada como reparo. Algumas pilhas podem encobrir quebra subjacente; não se criaram caixas ocultas. Fonte: imagem incorporada ao laudo CEASA; páginas no campo pages. Proposta visual Codex; revisão técnica/humana pendente, sem aprovação para treinamento.",
+      "quality_flags": [
+        "pdf_compression",
+        "truncated_object",
+        "occlusion",
+        "ambiguous_regions",
+        "element_identity_review"
+      ],
+      "scene_group": "ceasa_closeup_d12131dd"
+    },
+    {
+      "image_sha256": "68b395f07b3c64efec2bd9c20c917dfb715130797e5f9187738dca2d6a0a21eb",
+      "filename": "p008_img02_68b395f0.jpg",
+      "width": 1085,
+      "height": 610,
+      "pages": [
+        8
+      ],
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            454,
+            242,
+            605,
+            610
+          ],
+          "note": "Fratura irregular que se abre na parte inferior do painel instalado; inclui contexto lateral para diferenciar sobreposição normal."
+        },
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            674,
+            435,
+            797,
+            610
+          ],
+          "note": "Fratura e separação irregular na parte inferior da telha direita, cortadas pela imagem."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            731,
+            22,
+            775,
+            390
+          ],
+          "note": "Faixa de pequenos detritos acumulados no vale da telha, confirmada em zoom."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            369,
+            533,
+            407,
+            565
+          ],
+          "note": "Fragmento solto sobre a telha à esquerda."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            628,
+            550,
+            671,
+            610
+          ],
+          "note": "Fragmentos soltos próximos à borda inferior, parcialmente cortados."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            689,
+            511,
+            722,
+            539
+          ],
+          "note": "Pequeno fragmento claro solto sobre a onda da telha."
+        }
+      ],
+      "notes": "Imagem inteira e vale direito ampliados. O marcador metálico e sua sombra não foram anotados. A junção longitudinal reta superior não foi automaticamente tratada como quebra; caixa cobre a região irregular inferior. Fonte: imagem incorporada ao laudo CEASA; páginas no campo pages. Proposta visual Codex; revisão técnica/humana pendente, sem aprovação para treinamento.",
+      "quality_flags": [
+        "pdf_compression",
+        "truncated_object",
+        "small_object"
+      ],
+      "scene_group": "ceasa_closeup_68b395f0"
+    },
+    {
+      "image_sha256": "beebf15ccef412efa39902b3fb0753c5aabf2c0423d26937efedf14027a8d11d",
+      "filename": "p010_img01_beebf15c.jpg",
+      "width": 1096,
+      "height": 616,
+      "pages": [
+        10
+      ],
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            323,
+            269,
+            399,
+            398
+          ],
+          "note": "Remendo escuro com bordas e selante claro sobre a telha; sem concluir não conformidade técnica."
+        }
+      ],
+      "notes": "Imagem inteira inspecionada. A peça clara fora da cobertura, na via, está fora das classes de resíduos em telha/calha; não há caixa para ela. Fonte: imagem incorporada ao laudo CEASA; páginas no campo pages. Proposta visual Codex; revisão técnica/humana pendente, sem aprovação para treinamento.",
+      "quality_flags": [
+        "pdf_compression"
+      ],
+      "scene_group": "ceasa_closeup_beebf15c"
+    },
+    {
+      "image_sha256": "e59d70812f26fd7a93d9d7020983643e74855ab66410883fedba2ae0646a8b52",
+      "filename": "p010_img02_e59d7081.jpg",
+      "width": 1096,
+      "height": 616,
+      "pages": [
+        10
+      ],
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            252,
+            245,
+            395,
+            566
+          ],
+          "note": "Peça/remendo retangular com material escuro e perímetro de selante claro sobre a telha."
+        }
+      ],
+      "notes": "Imagem inteira inspecionada. A faixa superior sombreada é encontro de telhas, não evidência de ausência. Fonte: imagem incorporada ao laudo CEASA; páginas no campo pages. Proposta visual Codex; revisão técnica/humana pendente, sem aprovação para treinamento.",
+      "quality_flags": [
+        "pdf_compression"
+      ],
+      "scene_group": "ceasa_closeup_e59d7081"
+    },
+    {
+      "image_sha256": "4704f37da1bfe6741cf1cd51e1c0856fa0525abeddb9d7a77649393718c8ac26",
+      "filename": "p011_img01_4704f37d.jpg",
+      "width": 1099,
+      "height": 618,
+      "pages": [
+        11,
+        23
+      ],
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            247,
+            238,
+            309,
+            580
+          ],
+          "note": "Faixa de intervenção clara/metálica no vale da telha; não mede estanqueidade."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            55,
+            82,
+            215,
+            184
+          ],
+          "note": "Ruptura diagonal irregular atravessando o rufo instalado à esquerda."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            582,
+            21,
+            697,
+            144
+          ],
+          "note": "Trecho quebrado do rufo com parte destacada e lacuna irregular; elemento não inteiramente ausente."
+        }
+      ],
+      "notes": "Imagem inteira inspecionada. Telhas centrais mais claras não foram classificadas como reparo apenas pela cor. A junta reta de rufo no centro/esquerda não foi marcada como quebra. Fonte: imagem incorporada ao laudo CEASA; páginas no campo pages. Proposta visual Codex; revisão técnica/humana pendente, sem aprovação para treinamento.",
+      "quality_flags": [
+        "pdf_compression",
+        "shadow"
+      ],
+      "scene_group": "ceasa_closeup_rufo_reparo_4704f37d"
+    },
+    {
+      "image_sha256": "9ab86531dec3f81564cc1d51bc5d534cd10d156f60af7ca55c592f5ff5b3b802",
+      "filename": "p011_img02_9ab86531.jpg",
+      "width": 1098,
+      "height": 617,
+      "pages": [
+        11
+      ],
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            56,
+            130,
+            109,
+            471
+          ],
+          "note": "Faixa aderida de intervenção no vale esquerdo da telha."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            112,
+            317,
+            146,
+            473
+          ],
+          "note": "Segunda faixa curta de intervenção no vale ao lado."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            296,
+            125,
+            333,
+            467
+          ],
+          "note": "Faixa longitudinal clara/metálica no painel central esquerdo."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            137,
+            535,
+            254,
+            596
+          ],
+          "note": "Faixa clara de intervenção inclinada na telha inferior."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            350,
+            530,
+            459,
+            587
+          ],
+          "note": "Segunda faixa clara inclinada na telha inferior."
+        }
+      ],
+      "notes": "Imagem inteira e borda inferior ampliadas. Duas abas cinzas na borda inferior são ambíguas entre remendo, fragmento solto e ponta de telha quebrada; permanecem sem classe até revisão técnica, portanto não há anotação completa aprovada. Fonte: imagem incorporada ao laudo CEASA; páginas no campo pages. Proposta visual Codex; revisão técnica/humana pendente, sem aprovação para treinamento.",
+      "quality_flags": [
+        "pdf_compression",
+        "truncated_object",
+        "ambiguous_regions"
+      ],
+      "scene_group": "ceasa_closeup_9ab86531"
+    },
+    {
+      "image_sha256": "36ef7a9ce5bd317bbd359ae04e5fb48b671a00b681a82e822a91c284a3c2434a",
+      "filename": "p012_img01_36ef7a9c.jpg",
+      "width": 1096,
+      "height": 616,
+      "pages": [
+        12
+      ],
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            201,
+            279,
+            246,
+            379
+          ],
+          "note": "Remendo pequeno com perímetro claro sobre o vale da telha."
+        }
+      ],
+      "notes": "Imagem inteira inspecionada. Marcador horizontal e sombra não foram anotados; manchas pontuais não foram confundidas com detritos. Fonte: imagem incorporada ao laudo CEASA; páginas no campo pages. Proposta visual Codex; revisão técnica/humana pendente, sem aprovação para treinamento.",
+      "quality_flags": [
+        "pdf_compression",
+        "small_object"
+      ],
+      "scene_group": "ceasa_closeup_36ef7a9c"
+    },
+    {
+      "image_sha256": "2ff55c50b1e0a6786404a911e2634bff041762ddd98d0d6f86f83be8061c517b",
+      "filename": "p012_img02_2ff55c50.jpg",
+      "width": 1096,
+      "height": 740,
+      "pages": [
+        12
+      ],
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            205,
+            324,
+            310,
+            579
+          ],
+          "note": "Primeira faixa clara aderida sobre a telha, seguindo a perspectiva da onda."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            252,
+            327,
+            346,
+            579
+          ],
+          "note": "Segunda faixa clara paralela de intervenção."
+        },
+        {
+          "class_id": 1,
+          "bbox_xyxy": [
+            0,
+            606,
+            90,
+            740
+          ],
+          "note": "Abertura na faixa inferior à esquerda, mostrando estrutura onde o painel esperado se interrompe; ocorrência cortada. Confirmar que a abertura não foi prevista em projeto."
+        }
+      ],
+      "notes": "Imagem inteira inspecionada. Faixas grandes são visualmente delimitáveis, mas detalhes menores da vista geral são insuficientes; não anotar somente pela legenda. Abertura inferior precisa da confirmação técnica de uso previsto. Fonte: imagem incorporada ao laudo CEASA; páginas no campo pages. Proposta visual Codex; revisão técnica/humana pendente, sem aprovação para treinamento.",
+      "quality_flags": [
+        "pdf_compression",
+        "distant_view",
+        "truncated_object",
+        "absence_requires_context",
+        "insufficient_detail_other_regions"
+      ],
+      "scene_group": "ceasa_roof_overview"
+    },
+    {
+      "image_sha256": "4c5cb2622f40cf26657de0a09a453ae41aee6b41f611fd4a67f7b6cd4c037dd1",
+      "filename": "p013_img01_4c5cb262.jpg",
+      "width": 1096,
+      "height": 616,
+      "pages": [
+        13,
+        17,
+        19
+      ],
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            164,
+            41,
+            789,
+            124
+          ],
+          "note": "Peça/remendo longitudinal sobre a onda superior, com contorno delimitável."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            116,
+            264,
+            739,
+            382
+          ],
+          "note": "Peça/remendo longitudinal central sobre a telha."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            115,
+            505,
+            736,
+            616
+          ],
+          "note": "Peça/remendo inferior, com contorno irregular na ponta esquerda e borda cortada pela imagem."
+        }
+      ],
+      "notes": "Imagem inteira e região direita ampliadas. Peças sobrepostas foram tratadas como intervenção visual, não como prova de inadequação. Pequenas manchas e grãos junto ao elemento lateral não têm definição suficiente para caixa de resíduos confiável. Fonte: imagem incorporada ao laudo CEASA; páginas no campo pages. Proposta visual Codex; revisão técnica/humana pendente, sem aprovação para treinamento.",
+      "quality_flags": [
+        "pdf_compression",
+        "truncated_object"
+      ],
+      "scene_group": "ceasa_closeup_roof_chimney_88b54f26"
+    }
+  ]
+}

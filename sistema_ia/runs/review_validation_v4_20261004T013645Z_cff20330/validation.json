@@ -1,0 +1,60 @@
+{
+  "original_images_and_copies_verified": 38,
+  "previous_109_boxes_preserved": true,
+  "active_classes": [
+    "telha_quebrada",
+    "telha_ausente",
+    "residuos_telha",
+    "reparo_telha",
+    "rufo_ausente",
+    "rufo_quebrado",
+    "residuos_calha",
+    "vegetacao_calha",
+    "pedaco_telha",
+    "rufo_deslocado",
+    "pedaco_telha_sobreposto",
+    "fixador_telha_frouxo"
+  ],
+  "new_class_boxes": {
+    "10": 0,
+    "11": 0
+  },
+  "total_proposed_boxes": 109,
+  "human_approved_images": 0,
+  "taxonomy_recheck_pending_images": 38,
+  "actual_previous_review_scope": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "preserved_files_verified": 333,
+  "tests_run": 124,
+  "tests_passed": true,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "python_and_javascript_syntax_ok": true,
+  "unapproved_dataset_blocked_without_output": true,
+  "legacy_batches_blocked": true,
+  "model_weights_unchanged": true,
+  "model_sha256": "9fe3c544f2b19bebad7ea41e76d7ad3d88b7c2f10d11d24430c5311f6b32db26",
+  "specialized_training_executed": false,
+  "run_directory": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\runs\\review_validation_v4_20261004T013645Z_cff20330",
+  "local_document_links_checked": 61,
+  "broken_document_links": 0,
+  "fixator_reference_verified": {
+    "pdf_page": 17,
+    "item": 17,
+    "figure": 23
+  },
+  "new_page_visual_browser_validation": false,
+  "server_update_blocked_by_execution_policy": true,
+  "in_app_browser_file_protocol_blocked": true,
+  "existing_server_url": "http://127.0.0.1:8765/",
+  "existing_server_version": "ceasa_v3"
+}

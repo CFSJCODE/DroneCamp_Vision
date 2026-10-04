@@ -1,0 +1,7 @@
+{
+  "source_files": 1,
+  "processed_images_or_frames": 1,
+  "complete": true,
+  "unique_physical_defects_count": null,
+  "note": "Caixas em frames diferentes podem mostrar a mesma ocorrência; não somar como defeitos únicos."
+}

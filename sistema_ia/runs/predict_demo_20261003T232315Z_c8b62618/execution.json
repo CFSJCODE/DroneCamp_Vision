@@ -1,0 +1,28 @@
+{
+  "mode": "demo_pesos_genericos",
+  "taxonomy_version": "ceasa-v1-proposta",
+  "taxonomy_sha256": "bdf33bb00baf14acdcbf1c0301aaef2944125de330252d47831863ea69ab82ed",
+  "runtime": {
+    "python": "3.12.14",
+    "ultralytics": "8.4.172",
+    "torch": "2.14.1+cpu",
+    "device_requested": "cpu",
+    "checkpoint": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\models\\yolo26l.pt",
+    "checkpoint_sha256": "9fe3c544f2b19bebad7ea41e76d7ad3d88b7c2f10d11d24430c5311f6b32db26",
+    "requested_future_model": "yolo27l.pt"
+  },
+  "parameters": {
+    "imgsz": 1024,
+    "conf": 0.25,
+    "iou": 0.7,
+    "nms": false,
+    "max_det": 300
+  },
+  "warning": "Demonstração técnica sem reconhecimento treinado de patologias.",
+  "files": [
+    {
+      "path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p030_img01_50f69e0c.jpg",
+      "sha256": "50f69e0ccb9519d6aa2f58754218c1bf0fbda162a7612c885bd95d875c323ecb"
+    }
+  ]
+}

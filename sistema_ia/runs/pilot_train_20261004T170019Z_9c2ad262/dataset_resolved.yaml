@@ -1,0 +1,18 @@
+names:
+- telha_quebrada
+- telha_ausente
+- residuos_telha
+- reparo_telha
+- rufo_ausente
+- rufo_quebrado
+- residuos_calha
+- vegetacao_calha
+- pedaco_telha
+- rufo_deslocado
+- pedaco_telha_sobreposto
+- fixador_telha_frouxo
+- reparo_rufo
+path: E:\Acadêmico\Faculdade - PUC\PUC TEC - Drone Camp\sistema_ia\data\pilot\ceasa_v7_piloto_s42
+test: E:\Acadêmico\Faculdade - PUC\PUC TEC - Drone Camp\sistema_ia\data\pilot\ceasa_v7_piloto_s42\images\test
+train: E:\Acadêmico\Faculdade - PUC\PUC TEC - Drone Camp\sistema_ia\data\pilot\ceasa_v7_piloto_s42\images\train
+val: E:\Acadêmico\Faculdade - PUC\PUC TEC - Drone Camp\sistema_ia\data\pilot\ceasa_v7_piloto_s42\images\val

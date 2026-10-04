@@ -1,0 +1,420 @@
+{
+  "schema_version": 1,
+  "reviewer": "codex_visual_calhas",
+  "images": [
+    {
+      "image_sha256": "57321a0dfb9ae889ee64d983d2f8422f0075b12ab082934792f0e43d35272a48",
+      "status": "negative",
+      "boxes": [],
+      "notes": "Segunda leitura independente da imagem integral: confirmo negativa proposta para as classes 0–7. Juntas verticais e pontos pequenos de fixação não são rupturas delimitáveis; envelhecimento superficial não constitui acúmulo de resíduos. A negativa não certifica conformidade nem o estado dos fixadores. Esta é segunda revisão por IA; não constitui aprovação humana explícita nem autorização para treinar."
+    },
+    {
+      "image_sha256": "985fdab586b64fa0344bdb3d840e2552524d5405e354617938f22443def526e9",
+      "status": "ambiguous",
+      "boxes": [
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            285,
+            258,
+            311,
+            285
+          ],
+          "note": "Segunda leitura visual: Pequeno remendo azul sobre a telha; não inferir falha do reparo."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            485,
+            253,
+            504,
+            286
+          ],
+          "note": "Segunda leitura visual: Pequeno remendo azul sobre a telha, próximo a fixador; revisar distinção entre reparo de telha e intervenção exclusiva no fixador."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            905,
+            115,
+            941,
+            150
+          ],
+          "note": "Segunda leitura visual: Acúmulo elevado e irregular no sulco da telha; composição não determinada."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            979,
+            151,
+            1018,
+            188
+          ],
+          "note": "Segunda leitura visual: Segundo acúmulo separado no sulco; não confundir com mancha."
+        },
+        {
+          "class_id": 4,
+          "bbox_xyxy": [
+            0,
+            238,
+            634,
+            309
+          ],
+          "note": "Segunda leitura visual: Candidato: trecho superior esquerdo sem a faixa de rufo presente à direita; confirmar se o elemento deveria continuar ao longo da borda."
+        }
+      ],
+      "notes": "Segunda leitura independente: mantenho ambígua. Os dois remendos azulados são visíveis, mas falta decidir se a intervenção é exclusiva dos fixadores (fase2) ou reparo de telha. Os dois pequenos acúmulos elevados à direita existem, embora depósito solto versus incrustação precise de revisão. O rufo superior termina em x≈629; a falta de faixa à esquerda exige confirmação técnica de continuidade esperada. A faixa escura entre bordas não é telha ausente. Esta é segunda revisão por IA; não constitui aprovação humana explícita nem autorização para treinar."
+    },
+    {
+      "image_sha256": "a498d247ae429d0d23701b29a148958e86a3dad6f7e7e01b5186e05c06949a3a",
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            524,
+            283,
+            797,
+            360
+          ],
+          "note": "Segunda leitura visual: Faixa de rufo superior preservada com perda irregular de material; elemento instalado, não fragmento solto."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            241,
+            392,
+            731,
+            500
+          ],
+          "note": "Segunda leitura visual: caixa reduzida à região de perda e margem rompida do rufo inferior; retirada faixa íntegra à esquerda."
+        }
+      ],
+      "notes": "Segunda leitura independente: confirmo perdas irregulares nos rufos instalados superior e inferior. Corrigi a caixa inferior de [77,392,731,500] para [241,392,731,500], retirando grande faixa íntegra à esquerda e preservando o canto rompido e a área com perda de faixa. Material branco em fixadores e a passagem de tubulação/fiação são fase2; não foram rotulados reparo_telha. O canal escuro não é ausência de telha. Esta é segunda revisão por IA; não constitui aprovação humana explícita nem autorização para treinar."
+    },
+    {
+      "image_sha256": "0315a58d3dd318107b1cf55b387a7fdfe7c6a7df9e36faebd862f7dcd2e15c69",
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 4,
+          "bbox_xyxy": [
+            266,
+            93,
+            1098,
+            157
+          ],
+          "note": "Segunda leitura visual: Borda superior exposta em toda a extensão observável, sem faixa de rufo; contexto da parede/junção visível. Conferir expectativa técnica do elemento na aprovação."
+        }
+      ],
+      "notes": "Segunda leitura independente: borda superior da cobertura termina sem a faixa de rufo correspondente às junções documentadas. Confirmo a caixa candidata de rufo_ausente, condicionada à expectativa técnica do elemento já registrada no laudo e à revisão humana. A faixa metálica distante com oxidação e o fundo dos equipamentos não devem ser incluídos como defeito de telha. Não há outra classe ativa inequívoca. Esta é segunda revisão por IA; não constitui aprovação humana explícita nem autorização para treinar."
+    },
+    {
+      "image_sha256": "1b9f5c82a8ae7d21572b1ede62c904d0d0050c5683c5f7cb916992774950bc49",
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            748,
+            178,
+            894,
+            268
+          ],
+          "note": "Segunda leitura visual: Ruptura irregular no rufo inferior expondo telha abaixo; incluir margem do trecho preservado."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            988,
+            212,
+            1098,
+            274
+          ],
+          "note": "Segunda leitura visual: Outra perda irregular no rufo inferior, parcialmente cortada pela margem direita."
+        }
+      ],
+      "notes": "Segunda leitura independente: confirmo duas perdas com bordas irregulares no rufo inferior; a direita está cortada pelo limite da imagem. O sulco escuro da telha é textura/deposito de tipo não resolvido e não fornece positivo inequívoco de resíduo solto. A terminação superior à direita não foi rotulada automaticamente como ausência. Fixadores são fase2. Esta é segunda revisão por IA; não constitui aprovação humana explícita nem autorização para treinar."
+    },
+    {
+      "image_sha256": "814749e34f1e79fbaf554ffa613901e29147e5e6a088222fd54b6545dc714a3b",
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            650,
+            52,
+            715,
+            140
+          ],
+          "note": "Segunda leitura visual: Fratura na extremidade superior do rufo vertical com borda irregular."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            603,
+            190,
+            730,
+            397
+          ],
+          "note": "Segunda leitura visual: Perda irregular extensa no rufo lateral instalado; inclui suas margens preservadas."
+        }
+      ],
+      "notes": "Segunda leitura independente: confirmo duas rupturas do rufo lateral instalado: fissura/perda junto à extremidade superior e ruptura ampla no trecho central. A abertura escura ao lado é canal/perímetro, não lacuna de telha. A linha transversal regular entre as telhas é junta; não acrescentei telha_quebrada ou telha_ausente. Esta é segunda revisão por IA; não constitui aprovação humana explícita nem autorização para treinar."
+    },
+    {
+      "image_sha256": "3aa2001d038ca9fef5d597345cc776ec5bf3a6967a2601cda511fe0d58150351",
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            786,
+            148,
+            864,
+            280
+          ],
+          "note": "Segunda leitura visual: Perda irregular junto ao extremo do rufo inferior; incluir pequeno fragmento ainda adjacente para contexto."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            1002,
+            163,
+            1096,
+            250
+          ],
+          "note": "Segunda leitura visual: Ruptura irregular à direita no rufo inferior, parcialmente cortada pela imagem."
+        }
+      ],
+      "notes": "Segunda leitura independente: confirmo duas regiões de rufo inferior rompido, incluindo o remanescente adjacente no primeiro intervalo. A linha oblíqua do rufo superior é junta entre peças; não há perda inequívoca nela. O pequeno objeto claro no sulco da telha é item fora da taxonomia ativa, sem tipo confirmado; não foi convertido automaticamente em resíduo. Esta é segunda revisão por IA; não constitui aprovação humana explícita nem autorização para treinar."
+    },
+    {
+      "image_sha256": "1dc91db4ec36a6dad462d3a4b6b6f202c57e0d79d8cd83ec12a45fbfc423b6ee",
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            109,
+            191,
+            222,
+            282
+          ],
+          "note": "Segunda leitura visual: Ruptura no rufo superior parcialmente coberta por fita; evidência exposta no intervalo à direita da fita."
+        }
+      ],
+      "notes": "Segunda leitura independente: confirmo ruptura no rufo superior parcialmente coberta por fita. As fitas cobrem o rufo e não recebem classe reparo_telha. Mantive a caixa que cobre bordas preservadas e a lacuna ao lado da fita. A faixa negra central é o canal; juntas regulares não foram rotuladas ausência ou quebra. Esta é segunda revisão por IA; não constitui aprovação humana explícita nem autorização para treinar."
+    },
+    {
+      "image_sha256": "d86cc412a1856b2c5fbc85aeb9e3e83fe6a39ca0e14e9dcca2aee6a61fa6b6a5",
+      "status": "ambiguous",
+      "boxes": [
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            703,
+            418,
+            875,
+            506
+          ],
+          "note": "Segunda leitura visual: Perda parcial da faixa do rufo: resta uma estreita borda inferior e há margem irregular à direita. Revisar quebra versus peça completamente ausente."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            73,
+            285,
+            100,
+            423
+          ],
+          "note": "Segunda leitura visual: Depósito escuro irregular num sulco à esquerda; candidato a resíduos, exige distinção de incrustação/textura."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            110,
+            247,
+            139,
+            423
+          ],
+          "note": "Segunda leitura visual: Segundo sulco com material em relevo; candidato separado do primeiro."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            279,
+            324,
+            309,
+            383
+          ],
+          "note": "Segunda leitura visual: Pequeno acúmulo no sulco, separado dos demais; composição não confirmada."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            491,
+            310,
+            524,
+            406
+          ],
+          "note": "Segunda leitura visual: Material elevado no sulco central; distinguir depósito de textura biológica na revisão."
+        }
+      ],
+      "notes": "Segunda leitura independente: mantenho ambígua. Há lacuna entre os trechos do rufo com remanescente inferior, mas a fronteira quebra versus trecho ausente precisa de decisão técnica. Os quatro sulcos com material elevado continuam candidatos por falta de distinção segura entre fragmentos soltos, incrustação e envelhecimento. Preservo as cinco caixas como propostas, sem promovê-las. Esta é segunda revisão por IA; não constitui aprovação humana explícita nem autorização para treinar."
+    },
+    {
+      "image_sha256": "7b8b0c035e2292d990fa0c493c5f25163cdf5572bfd68098ecd9d8f7f2f7ea3b",
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            0,
+            18,
+            141,
+            130
+          ],
+          "note": "Segunda leitura visual: Rufo superior com perda irregular no canto esquerdo, parcialmente truncado pela imagem."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            146,
+            192,
+            746,
+            305
+          ],
+          "note": "Segunda leitura visual: Grande ruptura no rufo inferior com borda diagonal irregular e perda de material."
+        }
+      ],
+      "notes": "Segunda leitura independente: confirmo ruptura superior esquerda e perda ampla no rufo inferior, com bordas irregulares preservadas. A junta superior à direita é regular; o mastro, fios e material localizado na passagem não são reparo_telha. Não contei a sombra ou a abertura do canal como lacuna de telha. Esta é segunda revisão por IA; não constitui aprovação humana explícita nem autorização para treinar."
+    },
+    {
+      "image_sha256": "23074d75889dd3540178b4f4967277d6dca6fc7066aa3062868c6a4386c3dd38",
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            361,
+            245,
+            660,
+            342
+          ],
+          "note": "Segunda leitura visual: Rufo superior com perda irregular central e fragmento adjacente; classificar o elemento instalado rompido, não cada fragmento."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            960,
+            243,
+            1063,
+            327
+          ],
+          "note": "Segunda leitura visual: Perda irregular separada no rufo superior à direita."
+        }
+      ],
+      "notes": "Segunda leitura independente: confirmo duas perdas irregulares separadas no rufo superior. A caixa central identifica a peça instalada danificada, incluindo contexto e fragmento adjacente, sem contar o fragmento como outra peça instalada. Pequena área escura da telha inferior não distingue com segurança resíduo solto de incrustação; não acrescentei classe2 por inferência. Esta é segunda revisão por IA; não constitui aprovação humana explícita nem autorização para treinar."
+    },
+    {
+      "image_sha256": "bca8f6e02e3f00fe307634bb55cde6ce2fb37cd10f6724a7d814be664ded6a1c",
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            64,
+            241,
+            870,
+            328
+          ],
+          "note": "Segunda leitura visual: Extensa ruptura/perda de material do rufo superior entre trechos preservados; bordas irregulares e remanescentes justificam quebra parcial."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            0,
+            331,
+            128,
+            400
+          ],
+          "note": "Segunda leitura visual: Fratura separada no rufo inferior à esquerda, parcialmente truncada."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            416,
+            326,
+            962,
+            398
+          ],
+          "note": "Segunda leitura visual: Extensa perda irregular no rufo inferior, com elementos preservados nas duas extremidades."
+        }
+      ],
+      "notes": "Segunda leitura independente: confirmo os três intervalos de rufo rompido; há remanescentes e margens que sustentam quebra parcial. A peça tubular e a haste no topo são objetos fora do MVP, sem conversão automática em resíduos_telha. As bordas onduladas das telhas e a sobreposição central não bastam para atribuir quebra ou ausência de telha. Esta é segunda revisão por IA; não constitui aprovação humana explícita nem autorização para treinar."
+    },
+    {
+      "image_sha256": "d7dcb606c5b1ff4b0f3ccb31f913ab53f98cc7635c38b2ad9107faed0b6addc6",
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            505,
+            1,
+            603,
+            334
+          ],
+          "note": "Segunda leitura visual: Acúmulo de detritos visíveis no segmento superior do canal da calha; material não confirmado."
+        },
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            505,
+            408,
+            601,
+            618
+          ],
+          "note": "Segunda leitura visual: Segundo acúmulo no segmento inferior, separado por trecho escuro sem detritos delimitáveis."
+        }
+      ],
+      "notes": "Segunda leitura independente: confirmo dois agrupamentos delimitáveis de detritos dentro do canal escuro, apesar de a legenda temática tratar da junta do rufo. A junta horizontal do rufo lateral é regular. O elemento fino semelhante a ramo permanece sem classe7 por resolução/sombra insuficiente; não inferi água, obstrução, composição ou severidade. Esta é segunda revisão por IA; não constitui aprovação humana explícita nem autorização para treinar."
+    },
+    {
+      "image_sha256": "399d7cea73e4de2b057c2ec9863fc2dcf51e68f4aff2d32070c735c208cf36f5",
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            33,
+            365,
+            177,
+            462
+          ],
+          "note": "Segunda leitura visual: Ruptura/perda irregular no rufo superior esquerdo, expondo a extremidade da telha."
+        }
+      ],
+      "notes": "Segunda leitura independente: confirmo perda irregular no rufo superior à esquerda, com margem remanescente. As duas juntas verticais não são rupturas. O remendo branco cobre rufo inferior, não telha; continua fora da classe3. A abertura central não é telha_ausente. Esta é segunda revisão por IA; não constitui aprovação humana explícita nem autorização para treinar."
+    },
+    {
+      "image_sha256": "f5b9ef7de70622b39b748bc2ee654166b5facc42a7c5e1ee8c37054f9217588c",
+      "status": "ambiguous",
+      "boxes": [
+        {
+          "class_id": 4,
+          "bbox_xyxy": [
+            855,
+            269,
+            1091,
+            371
+          ],
+          "note": "Segunda leitura visual: Candidato: rufo superior termina e a borda da cobertura segue sem faixa à direita. Confirmar se é ausência de peça esperada ou terminação prevista; extensão sai da imagem."
+        }
+      ],
+      "notes": "Segunda leitura independente: mantenho ambígua. A faixa de rufo superior termina em x≈864 enquanto a cobertura continua à direita; é necessário confirmar se a continuação do rufo seria esperada. A caixa candidata não vira aprovação. Mudança de nível da telha inferior não fornece por si só ruptura ou falta de telha; pontos de fixação são fase2. Esta é segunda revisão por IA; não constitui aprovação humana explícita nem autorização para treinar."
+    }
+  ]
+}

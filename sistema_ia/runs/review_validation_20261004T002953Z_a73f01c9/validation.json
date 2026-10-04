@@ -1,0 +1,17 @@
+{
+  "tests_run": 98,
+  "tests_passed": true,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "python_compilation_ok": true,
+  "source_occurrences_integrity_verified": 48,
+  "unique_images_with_second_ai_review": 38,
+  "human_approved_images": 0,
+  "original_copies_integrity_verified": 38,
+  "unapproved_dataset_blocked_without_output": true,
+  "model_weights_sha256": "9fe3c544f2b19bebad7ea41e76d7ad3d88b7c2f10d11d24430c5311f6b32db26",
+  "model_weights_unchanged": true,
+  "specialized_training_executed": false,
+  "run_directory": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\runs\\review_validation_20261004T002953Z_a73f01c9"
+}

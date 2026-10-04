@@ -1,0 +1,13 @@
+{
+  "valid": true,
+  "kind": "piloto_edificacao_unica",
+  "pilot_sha256": "425c6c08e6bbe6a2a5d74b534f4c7160cc262c77b6e10820f5ec6bf24ccdbfc8",
+  "buildings": [
+    "ceasa_pavilhao_a"
+  ],
+  "independent_evaluation": false,
+  "classes_without_training_boxes": [
+    "reparo_rufo"
+  ],
+  "warning": "Piloto com fotos de uma única edificação: validação e teste não são independentes. Use os pesos apenas para sugerir caixas à revisão humana."
+}

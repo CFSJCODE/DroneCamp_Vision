@@ -1,0 +1,653 @@
+{
+  "schema_version": 1,
+  "reviewer": "codex_visual_rufos",
+  "images": [
+    {
+      "image_sha256": "009ed874804749c2747dcabde4c38bc2aa3a1a3575cb501b5ede6789d9af1dbb",
+      "status": "ambiguous",
+      "boxes": [],
+      "notes": "Segunda leitura independente de original, overlay e regiões ampliadas quando necessário. Vista geral conferida integralmente: mantenho ausência de caixas, pois pontos claros e espaços nas fiadas não oferecem detalhe para rótulos confiáveis. A imagem não é negativa; diferenças de cor não provam reparo. Decisão visual de IA, sem aprovação técnica/humana e sem autorização de uso no treino."
+    },
+    {
+      "image_sha256": "abec366e27c1f5809636c55e9b037bd77134936456ff748e7b1c6852b5a48bb5",
+      "status": "ambiguous",
+      "boxes": [],
+      "notes": "Segunda leitura independente de original, overlay e regiões ampliadas quando necessário. Sobreposição visível pertence à fase 2. A peça na junção e o canal estão parcialmente ocultos/sombreados; nenhuma ausência ou quebra do MVP foi inferida apenas da abertura. Mantenho sem caixas. Decisão visual de IA, sem aprovação técnica/humana e sem autorização de uso no treino."
+    },
+    {
+      "image_sha256": "08772654ea11f2c6d0c3184748a7fffc3525cac35d7042656818500db18458be",
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            87,
+            98,
+            142,
+            149
+          ],
+          "note": "Ruptura irregular na ponta da onda da telha instalada sob o elemento transversal; não delimita o marcador metálico."
+        }
+      ],
+      "notes": "Segunda leitura independente de original, overlay e regiões ampliadas quando necessário. A ampliação confirma ruptura na ponta da onda da telha instalada. Mantenho a caixa de classe 0. A borda do elemento transversal imediatamente acima não permite atribuir outra quebra com segurança. Suportes metálicos e sombras não são resíduos. Decisão visual de IA, sem aprovação técnica/humana e sem autorização de uso no treino."
+    },
+    {
+      "image_sha256": "68a5aa9ef07b199298b238f1f81a0b54de86bd771b10d99f151459cea880426d",
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            100,
+            565,
+            161,
+            723
+          ],
+          "note": "Faixa clara aderida sobre a telha, visível até o corte inferior; reparo proposto, sem inferir falha."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            140,
+            578,
+            195,
+            723
+          ],
+          "note": "Segunda faixa clara paralela, inspecionada em zoom; ocorrência cortada pela borda inferior."
+        }
+      ],
+      "notes": "Segunda leitura independente de original, overlay e regiões ampliadas quando necessário. Conferidas as duas faixas claras de intervenção e seus limites até a borda inferior. Mantenho caixas de classe 3. Painéis mais claros e pontos pequenos distantes não foram rotulados automaticamente. Decisão visual de IA, sem aprovação técnica/humana e sem autorização de uso no treino."
+    },
+    {
+      "image_sha256": "8052814489da66c77231ff5ffccbee3236719d83408ce298d31fe13f7132aee4",
+      "status": "ambiguous",
+      "boxes": [
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            0,
+            488,
+            184,
+            675
+          ],
+          "note": "Fratura irregular no corpo da telha instalada à esquerda, cortada pela borda inferior."
+        },
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            287,
+            476,
+            335,
+            675
+          ],
+          "note": "Caixa candidata: abertura longitudinal junto ao fixador. Classe 0 ainda ambígua entre ruptura instalada e junção aberta; não aprovada."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            704,
+            0,
+            815,
+            87
+          ],
+          "note": "Fragmento solto sobre a telha superior; não foi rotulado como dano no elemento instalado."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            662,
+            203,
+            698,
+            270
+          ],
+          "note": "Dois fragmentos próximos sobre a onda da telha."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            721,
+            283,
+            812,
+            374
+          ],
+          "note": "Acúmulo de fragmentos sobre a telha próximo à borda."
+        },
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            677,
+            376,
+            891,
+            481
+          ],
+          "note": "Detritos no canal da calha; caixa reduzida para evitar a pilha apoiada sobre o capeamento lateral à direita."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            371,
+            397,
+            487,
+            560
+          ],
+          "note": "Fragmento grande claro solto sobre a telha inferior, inclinado e com sombra; não é uma quebra do corpo instalado nem reparo confirmado."
+        }
+      ],
+      "notes": "Segunda leitura independente de original, overlay e regiões ampliadas quando necessário. Confirmo fratura irregular à esquerda e resíduos superiores; acrescento o fragmento grande claro sobre a telha inferior, distinto de quebra no elemento instalado. Reduzo a caixa de resíduos da calha para evitar material sobre o capeamento lateral. A abertura longitudinal junto ao fixador permanece candidata a ruptura, mas sua borda relativamente reta exige distinguir quebra de junção aberta; anotação completa ainda pendente. Não infiro rufo ausente apenas do canal. Decisão visual de IA, sem aprovação técnica/humana e sem autorização de uso no treino."
+    },
+    {
+      "image_sha256": "f55d62a3174c6ebb620fca7ebb863ac08893e9c1c2b8c7e20b8d5bd7fd139e99",
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 1,
+          "bbox_xyxy": [
+            516,
+            301,
+            546,
+            408
+          ],
+          "note": "Lacuna estreita entre painéis/bordas da faixa lateral; região ampliada mostra interior/estrutura onde a continuidade da telha vizinha fornece contexto. Confirmar projeto da borda na revisão técnica."
+        }
+      ],
+      "notes": "Segunda leitura independente de original, overlay e regiões ampliadas quando necessário. Ampliação lateral confirma lacuna delimitável e estrutura exposta entre fiadas onde o painel vizinho oferece contexto. Mantenho a caixa de classe 1; a aprovação técnica deverá confirmar uso previsto da abertura. Outros espaços escuros da vista geral não foram anotados como ausência. Decisão visual de IA, sem aprovação técnica/humana e sem autorização de uso no treino."
+    },
+    {
+      "image_sha256": "9227be4e4aff0671548aff993d70008b62a2c51bccd68f1a30f267cceba3bea7",
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 1,
+          "bbox_xyxy": [
+            536,
+            259,
+            728,
+            616
+          ],
+          "note": "Lacuna ao lado da telha inferior: estrutura e interior expostos; limites parcialmente cortados pela imagem. Confirmar extensão prevista do painel na revisão técnica."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            363,
+            292,
+            547,
+            521
+          ],
+          "note": "Intervenção de peça/remendo com perímetro claro sobre a telha instalada; sem diagnóstico de execução."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            626,
+            0,
+            670,
+            93
+          ],
+          "note": "Fragmentos soltos sobre a telha superior; ocorrência parcialmente cortada."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            732,
+            0,
+            767,
+            97
+          ],
+          "note": "Segundo acúmulo de fragmentos sobre telha superior, acima do canal."
+        },
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            571,
+            102,
+            899,
+            265
+          ],
+          "note": "Detritos no canal da calha, incluindo pilha contígua à direita; limite não cobre o exterior todo."
+        },
+        {
+          "class_id": 7,
+          "bbox_xyxy": [
+            156,
+            22,
+            636,
+            177
+          ],
+          "note": "Ramos/vegetação ressecada e trechos verdes no canal sombreado da calha."
+        }
+      ],
+      "notes": "Segunda leitura independente de original, overlay e regiões ampliadas quando necessário. Confirmo as seis caixas: lacuna de telha, remendo com perímetro branco, dois grupos de fragmentos sobre telha, resíduos e ramos na calha. Não transformo fragmentos soltos em telha quebrada. A pilha à direita cruza o capeamento; sua extensão lateral e a expectativa técnica da lacuna precisam da aprovação humana. Não acrescento rufo ausente sem geometria suficiente. Decisão visual de IA, sem aprovação técnica/humana e sem autorização de uso no treino."
+    },
+    {
+      "image_sha256": "88b54f26e06a9b1505ee0804e82ffe0d78f490183db9f2707203c3760c2d0dc5",
+      "status": "ambiguous",
+      "boxes": [
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            396,
+            113,
+            833,
+            162
+          ],
+          "note": "Faixa de sedimentos e pequenos resíduos delimitável no vale superior da telha."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            546,
+            166,
+            824,
+            212
+          ],
+          "note": "Resíduos/fragmentos no vale imediatamente abaixo; sombras do suporte ficam fora da evidência principal."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            278,
+            217,
+            448,
+            270
+          ],
+          "note": "Fragmentos e pequeno acúmulo sobre a telha, à esquerda do cabo."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            306,
+            351,
+            853,
+            428
+          ],
+          "note": "Faixa de detritos sobre telha, incluindo fragmentos claros próximos; cabo não é o alvo."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            560,
+            421,
+            702,
+            520
+          ],
+          "note": "Fragmento maior solto e detritos adjacentes no vale inferior."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            785,
+            322,
+            828,
+            363
+          ],
+          "note": "Pequeno fragmento solto fora do acúmulo inferior."
+        }
+      ],
+      "notes": "Segunda leitura independente de original, overlay e regiões ampliadas quando necessário. Conferidos os seis acúmulos/fragmentos sobre telha. O fragmento claro pequeno à direita tem sombra e aparência solta, portanto mantenho classe 2. A peça grande sobreposta na parte inferior e a pequena área azul à esquerda podem ser intervenção, fragmento ou mancha; não acrescento reparo sem esclarecer aderência. Chaminé, cabo e sombra não são ausência de telha. A imagem segue incompleta para treinamento até adjudicar essas regiões. Decisão visual de IA, sem aprovação técnica/humana e sem autorização de uso no treino."
+    },
+    {
+      "image_sha256": "d12131ddee51d3d84ab6bbf5b8f54abdad769800215b5d068e5e8d22b73265cc",
+      "status": "ambiguous",
+      "boxes": [
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            630,
+            30,
+            804,
+            117
+          ],
+          "note": "Rupturas irregulares visíveis no corpo da telha superior, distintas da linha do cabo."
+        },
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            1024,
+            113,
+            1093,
+            199
+          ],
+          "note": "Extremidade irregular quebrada da telha instalada à direita; ocorrência cortada."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            781,
+            190,
+            850,
+            277
+          ],
+          "note": "Fragmentos soltos sobre a telha inferior."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            946,
+            18,
+            1036,
+            117
+          ],
+          "note": "Acúmulo de fragmentos apoiados sobre a telha superior junto ao marcador."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            1024,
+            207,
+            1082,
+            273
+          ],
+          "note": "Fragmento separado sobre a onda direita."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            1008,
+            314,
+            1093,
+            490
+          ],
+          "note": "Peça solta alongada apoiada sobre a telha à direita; cortada pela imagem."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            802,
+            105,
+            872,
+            171
+          ],
+          "note": "Ruptura irregular na ponta do elemento transversal de rufo; requer confirmação da denominação do elemento."
+        }
+      ],
+      "notes": "Segunda leitura independente de original, overlay e regiões ampliadas quando necessário. Confirmo as caixas de fragmentos e a ruptura do rufo. As duas rupturas superiores delimitam corpos instalados visíveis, sem rotular pilhas ocultantes como telha quebrada. A região muito branca sobre a telha direita permanece inconclusiva entre reparo, fratura exposta e contraste; não acrescento classe 3. Status ambíguo porque há região candidata sem classe resolvida. Decisão visual de IA, sem aprovação técnica/humana e sem autorização de uso no treino."
+    },
+    {
+      "image_sha256": "68b395f07b3c64efec2bd9c20c917dfb715130797e5f9187738dca2d6a0a21eb",
+      "status": "ambiguous",
+      "boxes": [
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            454,
+            242,
+            605,
+            610
+          ],
+          "note": "Fratura irregular que se abre na parte inferior do painel instalado; inclui contexto lateral para diferenciar sobreposição normal."
+        },
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            674,
+            435,
+            797,
+            610
+          ],
+          "note": "Caixa candidata de classe 0: aba inferior direita pode corresponder a ruptura instalada ou fragmento solto sobre a telha. Ambiguidade não resolvida; não aprovada."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            731,
+            22,
+            775,
+            390
+          ],
+          "note": "Faixa de pequenos detritos acumulados no vale da telha, confirmada em zoom."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            369,
+            533,
+            407,
+            565
+          ],
+          "note": "Fragmento solto sobre a telha à esquerda."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            628,
+            550,
+            671,
+            610
+          ],
+          "note": "Fragmentos soltos próximos à borda inferior, parcialmente cortados."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            689,
+            511,
+            722,
+            539
+          ],
+          "note": "Pequeno fragmento claro solto sobre a onda da telha."
+        }
+      ],
+      "notes": "Segunda leitura independente de original, overlay e regiões ampliadas quando necessário. Confirmo a fratura longitudinal esquerda e os pequenos resíduos do vale e borda inferior. A classe 0 da caixa direita inferior permanece candidata: a ampliação mostra uma aba/segmento que também pode ser fragmento solto sobre painel contínuo. Não aprovo essa caixa como ruptura instalada nem atribuo simultaneamente classe 2 ao mesmo segmento; a distinção exige revisão técnica. Decisão visual de IA, sem aprovação técnica/humana e sem autorização de uso no treino."
+    },
+    {
+      "image_sha256": "beebf15ccef412efa39902b3fb0753c5aabf2c0423d26937efedf14027a8d11d",
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            323,
+            269,
+            399,
+            398
+          ],
+          "note": "Remendo escuro com bordas e selante claro sobre a telha; sem concluir não conformidade técnica."
+        }
+      ],
+      "notes": "Segunda leitura independente de original, overlay e regiões ampliadas quando necessário. Mantenho a caixa do remendo escuro com perímetro de material claro. Conferência integral não revelou outras ocorrências ativas claras. O material na via está fora de telha/calha; suporte e sua sombra não recebem rótulo. Decisão visual de IA, sem aprovação técnica/humana e sem autorização de uso no treino."
+    },
+    {
+      "image_sha256": "e59d70812f26fd7a93d9d7020983643e74855ab66410883fedba2ae0646a8b52",
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            252,
+            245,
+            395,
+            566
+          ],
+          "note": "Peça/remendo retangular com material escuro e perímetro de selante claro sobre a telha."
+        }
+      ],
+      "notes": "Segunda leitura independente de original, overlay e regiões ampliadas quando necessário. Mantenho a caixa que engloba peça retangular, selante claro e intervenção escura contígua. Não infiro dano subjacente ou inadequação da execução. Faixa superior de encontro/sombra não é ausência. Decisão visual de IA, sem aprovação técnica/humana e sem autorização de uso no treino."
+    },
+    {
+      "image_sha256": "4704f37da1bfe6741cf1cd51e1c0856fa0525abeddb9d7a77649393718c8ac26",
+      "status": "ambiguous",
+      "boxes": [
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            247,
+            238,
+            309,
+            580
+          ],
+          "note": "Faixa de intervenção clara/metálica no vale da telha; não mede estanqueidade."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            55,
+            82,
+            215,
+            184
+          ],
+          "note": "Ruptura diagonal irregular atravessando o rufo instalado à esquerda."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            582,
+            21,
+            697,
+            144
+          ],
+          "note": "Trecho quebrado do rufo com parte destacada e lacuna irregular; elemento não inteiramente ausente."
+        }
+      ],
+      "notes": "Segunda leitura independente de original, overlay e regiões ampliadas quando necessário. Confirmo reparo longitudinal de telha e duas rupturas do rufo superior. A extensa região inferior central sem faixa semelhante às laterais é candidata a rufo ausente, mas existe outra peça clara na junção e a geometria foi alterada; não acrescento caixa de classe 4 sem confirmar qual detalhe deveria estar presente. Telhas claras isoladamente não viram reparo. Mantenho as três caixas claras e status ambíguo pela região candidata omitida. Decisão visual de IA, sem aprovação técnica/humana e sem autorização de uso no treino."
+    },
+    {
+      "image_sha256": "9ab86531dec3f81564cc1d51bc5d534cd10d156f60af7ca55c592f5ff5b3b802",
+      "status": "ambiguous",
+      "boxes": [
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            56,
+            130,
+            109,
+            471
+          ],
+          "note": "Faixa aderida de intervenção no vale esquerdo da telha."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            112,
+            317,
+            146,
+            473
+          ],
+          "note": "Segunda faixa curta de intervenção no vale ao lado."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            296,
+            125,
+            333,
+            467
+          ],
+          "note": "Faixa longitudinal clara/metálica no painel central esquerdo."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            137,
+            535,
+            254,
+            596
+          ],
+          "note": "Faixa clara de intervenção inclinada na telha inferior."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            350,
+            530,
+            459,
+            587
+          ],
+          "note": "Segunda faixa clara inclinada na telha inferior."
+        }
+      ],
+      "notes": "Segunda leitura independente de original, overlay e regiões ampliadas quando necessário. Confirmo cinco intervenções claras de classe 3 após inspeção das bordas. A ampliação mantém indefinidas duas abas cinzas na borda inferior entre fragmento, remendo e telha quebrada; não invento classes para elas. Pequeno fragmento/haste no centro é candidato a objeto estranho da fase 2. Como há regiões ativas possivelmente omitidas, a imagem não está completa para treinamento. Decisão visual de IA, sem aprovação técnica/humana e sem autorização de uso no treino."
+    },
+    {
+      "image_sha256": "36ef7a9ce5bd317bbd359ae04e5fb48b671a00b681a82e822a91c284a3c2434a",
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            201,
+            279,
+            246,
+            379
+          ],
+          "note": "Remendo pequeno com perímetro claro sobre o vale da telha."
+        }
+      ],
+      "notes": "Segunda leitura independente de original, overlay e regiões ampliadas quando necessário. Mantenho caixa do remendo com perímetro claro. A imagem inteira não sustenta outras classes ativas; manchas, fixadores, suporte e sombra permanecem fora das caixas. Não inferir qualidade técnica do remendo. Decisão visual de IA, sem aprovação técnica/humana e sem autorização de uso no treino."
+    },
+    {
+      "image_sha256": "2ff55c50b1e0a6786404a911e2634bff041762ddd98d0d6f86f83be8061c517b",
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            205,
+            324,
+            310,
+            579
+          ],
+          "note": "Primeira faixa clara aderida sobre a telha, seguindo a perspectiva da onda."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            252,
+            327,
+            346,
+            579
+          ],
+          "note": "Segunda faixa clara paralela de intervenção."
+        },
+        {
+          "class_id": 1,
+          "bbox_xyxy": [
+            0,
+            606,
+            90,
+            740
+          ],
+          "note": "Abertura na faixa inferior à esquerda, mostrando estrutura onde o painel esperado se interrompe; ocorrência cortada. Confirmar que a abertura não foi prevista em projeto."
+        }
+      ],
+      "notes": "Segunda leitura independente de original, overlay e regiões ampliadas quando necessário. Mantenho duas faixas de reparo seguindo a perspectiva e a lacuna inferior esquerda com estrutura exposta. A lacuna sai da imagem; delimitação e uso previsto exigem confirmação técnica antes de aprovação. Outros detalhes distantes não oferecem caixa confiável. Decisão visual de IA, sem aprovação técnica/humana e sem autorização de uso no treino."
+    },
+    {
+      "image_sha256": "4c5cb2622f40cf26657de0a09a453ae41aee6b41f611fd4a67f7b6cd4c037dd1",
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            164,
+            41,
+            789,
+            124
+          ],
+          "note": "Peça/remendo longitudinal sobre a onda superior, com contorno delimitável."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            116,
+            264,
+            739,
+            382
+          ],
+          "note": "Peça/remendo longitudinal central sobre a telha."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            0,
+            501,
+            738,
+            616
+          ],
+          "note": "Remendo/intervenção inferior com contorno que continua até a borda esquerda; caixa inclui sua extensão truncada e a borda inferior."
+        }
+      ],
+      "notes": "Segunda leitura independente de original, overlay e regiões ampliadas quando necessário. Confirmo três remendos longitudinais. Amplio a caixa inferior à margem esquerda, pois o contorno preto continua até a borda e a peça/intervenção segue truncada. Pequenas manchas e grãos junto ao perímetro não sustentam resíduos adicionais; não inferir estanqueidade, falha ou gravidade. Decisão visual de IA, sem aprovação técnica/humana e sem autorização de uso no treino."
+    }
+  ]
+}

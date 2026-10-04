@@ -1,0 +1,623 @@
+{
+  "schema_version": 1,
+  "annotator": "codex_visual_rufos",
+  "images": [
+    {
+      "image_sha256": "57321a0dfb9ae889ee64d983d2f8422f0075b12ab082934792f0e43d35272a48",
+      "filename": "p014_img01_57321a0d.jpg",
+      "width": 1095,
+      "height": 616,
+      "pages": [
+        14
+      ],
+      "status": "negative",
+      "boxes": [],
+      "notes": "Revisão integral: telhas, juntas e fixadores visíveis; sem ocorrência delimitável das oito classes ativas. Pontos de fixação são assunto da fase 2, e esta foto não comprova aperto/estanqueidade. Negativo visual proposto, sem aprovação humana.",
+      "quality_flags": [
+        "pdf_compression",
+        "small_fasteners",
+        "human_review_pending"
+      ],
+      "scene_group": "ceasa_roof_fastener_details"
+    },
+    {
+      "image_sha256": "985fdab586b64fa0344bdb3d840e2552524d5405e354617938f22443def526e9",
+      "filename": "p014_img02_985fdab5.jpg",
+      "width": 1095,
+      "height": 616,
+      "pages": [
+        14,
+        15
+      ],
+      "status": "ambiguous",
+      "boxes": [
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            285,
+            258,
+            311,
+            285
+          ],
+          "note": "Pequeno remendo azul sobre a telha; não inferir falha do reparo."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            485,
+            253,
+            504,
+            286
+          ],
+          "note": "Pequeno remendo azul sobre a telha, próximo a fixador; revisar distinção entre reparo de telha e intervenção exclusiva no fixador."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            905,
+            115,
+            941,
+            150
+          ],
+          "note": "Acúmulo elevado e irregular no sulco da telha; composição não determinada."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            979,
+            151,
+            1018,
+            188
+          ],
+          "note": "Segundo acúmulo separado no sulco; não confundir com mancha."
+        },
+        {
+          "class_id": 4,
+          "bbox_xyxy": [
+            0,
+            238,
+            634,
+            309
+          ],
+          "note": "Candidato: trecho superior esquerdo sem a faixa de rufo presente à direita; confirmar se o elemento deveria continuar ao longo da borda."
+        }
+      ],
+      "notes": "Há remendos, acúmulos sobre telha e lacuna candidata de rufo. A classificação da lacuna e dos pequenos remendos próximos a fixadores requer adjudicação; nenhuma caixa é aprovada para treino. O canal preto entre bordas não é prova isolada de ausência.",
+      "quality_flags": [
+        "pdf_compression",
+        "rufo_presence_context_pending",
+        "repair_scope_pending",
+        "human_review_pending"
+      ],
+      "scene_group": "ceasa_roof_junction_details"
+    },
+    {
+      "image_sha256": "a498d247ae429d0d23701b29a148958e86a3dad6f7e7e01b5186e05c06949a3a",
+      "filename": "p015_img01_a498d247.jpg",
+      "width": 1098,
+      "height": 618,
+      "pages": [
+        15,
+        18,
+        29
+      ],
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            524,
+            283,
+            797,
+            360
+          ],
+          "note": "Faixa de rufo superior preservada com perda irregular de material; elemento instalado, não fragmento solto."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            77,
+            392,
+            731,
+            500
+          ],
+          "note": "Rufo inferior com recortes/rupturas e extensa perda de material entre trechos preservados; caixa inclui contexto para distinguir a ruptura da junta."
+        }
+      ],
+      "notes": "Revisão integral: perda de material dos rufos superior e inferior junto a equipamentos/cabos. Fixadores, aplicação localizada de material branco e instalação elétrica são itens fora do MVP. Cabos parcialmente ocultam a borda. Não classificar o canal escuro como telha ausente.",
+      "quality_flags": [
+        "pdf_compression",
+        "cable_occlusion",
+        "partial_element_visible",
+        "human_review_pending"
+      ],
+      "scene_group": "ceasa_service_junction"
+    },
+    {
+      "image_sha256": "0315a58d3dd318107b1cf55b387a7fdfe7c6a7df9e36faebd862f7dcd2e15c69",
+      "filename": "p016_img01_0315a58d.jpg",
+      "width": 1098,
+      "height": 617,
+      "pages": [
+        16,
+        20
+      ],
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 4,
+          "bbox_xyxy": [
+            266,
+            93,
+            1098,
+            157
+          ],
+          "note": "Borda superior exposta em toda a extensão observável, sem faixa de rufo; contexto da parede/junção visível. Conferir expectativa técnica do elemento na aprovação."
+        }
+      ],
+      "notes": "A foto reaparece na página 20. A proposta de rufo ausente usa a borda exposta e o contexto visível, e não o título da página. Há fixadores pequenos cuja ausência/corrosão pertence à fase 2; sem atribuição de severidade.",
+      "quality_flags": [
+        "pdf_compression",
+        "right_edge_truncated",
+        "technical_context_confirmation_pending",
+        "small_fasteners",
+        "human_review_pending"
+      ],
+      "scene_group": "ceasa_roof_wall_termination"
+    },
+    {
+      "image_sha256": "1b9f5c82a8ae7d21572b1ede62c904d0d0050c5683c5f7cb916992774950bc49",
+      "filename": "p019_img01_1b9f5c82.jpg",
+      "width": 1098,
+      "height": 617,
+      "pages": [
+        19,
+        25
+      ],
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            748,
+            178,
+            894,
+            268
+          ],
+          "note": "Ruptura irregular no rufo inferior expondo telha abaixo; incluir margem do trecho preservado."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            988,
+            212,
+            1098,
+            274
+          ],
+          "note": "Outra perda irregular no rufo inferior, parcialmente cortada pela margem direita."
+        }
+      ],
+      "notes": "Fixadores ausentes ou degradados são candidatos fora do MVP. O sulco escuro da telha no centro inferior pode ser textura/mancha ou depósito; não foi anotado como resíduo sem evidência suficiente. Trecho superior direito sem faixa pode ser outra ausência, mas a borda e a geometria não permitem delimitar com confiança nesta vista.",
+      "quality_flags": [
+        "pdf_compression",
+        "right_edge_truncated",
+        "trough_texture_ambiguity",
+        "human_review_pending"
+      ],
+      "scene_group": "ceasa_roof_junction_details"
+    },
+    {
+      "image_sha256": "814749e34f1e79fbaf554ffa613901e29147e5e6a088222fd54b6545dc714a3b",
+      "filename": "p021_img01_814749e3.jpg",
+      "width": 1096,
+      "height": 616,
+      "pages": [
+        21
+      ],
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            650,
+            52,
+            715,
+            140
+          ],
+          "note": "Fratura na extremidade superior do rufo vertical com borda irregular."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            603,
+            190,
+            730,
+            397
+          ],
+          "note": "Perda irregular extensa no rufo lateral instalado; inclui suas margens preservadas."
+        }
+      ],
+      "notes": "Sem rotular telha ausente: a abertura lateral é a calha/perímetro e está fora do corpo da cobertura. O rufo quebrado permanece parcialmente instalado. Variações de cor na telha não foram tratadas como resíduos.",
+      "quality_flags": [
+        "pdf_compression",
+        "oblique_view",
+        "human_review_pending"
+      ],
+      "scene_group": "ceasa_perimeter_gutter"
+    },
+    {
+      "image_sha256": "3aa2001d038ca9fef5d597345cc776ec5bf3a6967a2601cda511fe0d58150351",
+      "filename": "p021_img02_3aa2001d.jpg",
+      "width": 1096,
+      "height": 616,
+      "pages": [
+        21
+      ],
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            786,
+            148,
+            864,
+            280
+          ],
+          "note": "Perda irregular junto ao extremo do rufo inferior; incluir pequeno fragmento ainda adjacente para contexto."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            1002,
+            163,
+            1096,
+            250
+          ],
+          "note": "Ruptura irregular à direita no rufo inferior, parcialmente cortada pela imagem."
+        }
+      ],
+      "notes": "A linha oblíqua no rufo superior é uma junta entre peças, não foi tratada como quebra. Pequeno objeto claro na telha em x≈635/y≈409 é candidato a objeto estranho da fase 2, sem tipo/material confirmado. Sulcos escuros podem ser mancha/textura.",
+      "quality_flags": [
+        "pdf_compression",
+        "right_edge_truncated",
+        "trough_texture_ambiguity",
+        "out_of_mvp_object",
+        "human_review_pending"
+      ],
+      "scene_group": "ceasa_roof_junction_details"
+    },
+    {
+      "image_sha256": "1dc91db4ec36a6dad462d3a4b6b6f202c57e0d79d8cd83ec12a45fbfc423b6ee",
+      "filename": "p022_img01_1dc91db4.jpg",
+      "width": 1097,
+      "height": 617,
+      "pages": [
+        22
+      ],
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            109,
+            191,
+            222,
+            282
+          ],
+          "note": "Ruptura no rufo superior parcialmente coberta por fita; evidência exposta no intervalo à direita da fita."
+        }
+      ],
+      "notes": "Fitas claras estão SOBRE O RUFO, não sobre telha; não atribuir classe reparo_telha a elas. Registrar intervenção fora do MVP. A junta entre peças e a abertura normal do canal não foram anotadas como ausência.",
+      "quality_flags": [
+        "pdf_compression",
+        "repair_occlusion",
+        "repair_on_rufo_out_of_mvp",
+        "human_review_pending"
+      ],
+      "scene_group": "ceasa_roof_junction_details"
+    },
+    {
+      "image_sha256": "d86cc412a1856b2c5fbc85aeb9e3e83fe6a39ca0e14e9dcca2aee6a61fa6b6a5",
+      "filename": "p022_img02_d86cc412.jpg",
+      "width": 1097,
+      "height": 617,
+      "pages": [
+        22
+      ],
+      "status": "ambiguous",
+      "boxes": [
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            703,
+            418,
+            875,
+            506
+          ],
+          "note": "Perda parcial da faixa do rufo: resta uma estreita borda inferior e há margem irregular à direita. Revisar quebra versus peça completamente ausente."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            73,
+            285,
+            100,
+            423
+          ],
+          "note": "Depósito escuro irregular num sulco à esquerda; candidato a resíduos, exige distinção de incrustação/textura."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            110,
+            247,
+            139,
+            423
+          ],
+          "note": "Segundo sulco com material em relevo; candidato separado do primeiro."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            279,
+            324,
+            309,
+            383
+          ],
+          "note": "Pequeno acúmulo no sulco, separado dos demais; composição não confirmada."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            491,
+            310,
+            524,
+            406
+          ],
+          "note": "Material elevado no sulco central; distinguir depósito de textura biológica na revisão."
+        }
+      ],
+      "notes": "A perda do rufo tem evidência de ruptura parcial, mas a convenção quebra/ausência merece revisão. Os depósitos nos sulcos são visualmente elevados; permanecem candidatos por possível confusão com incrustação/envelhecimento. Não usar esta imagem como negativo.",
+      "quality_flags": [
+        "pdf_compression",
+        "rupture_absence_boundary_pending",
+        "deposit_texture_ambiguity",
+        "human_review_pending"
+      ],
+      "scene_group": "ceasa_roof_junction_details"
+    },
+    {
+      "image_sha256": "7b8b0c035e2292d990fa0c493c5f25163cdf5572bfd68098ecd9d8f7f2f7ea3b",
+      "filename": "p023_img01_7b8b0c03.jpg",
+      "width": 1099,
+      "height": 618,
+      "pages": [
+        23,
+        35
+      ],
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            0,
+            18,
+            141,
+            130
+          ],
+          "note": "Rufo superior com perda irregular no canto esquerdo, parcialmente truncado pela imagem."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            146,
+            192,
+            746,
+            305
+          ],
+          "note": "Grande ruptura no rufo inferior com borda diagonal irregular e perda de material."
+        }
+      ],
+      "notes": "Junta vertical no rufo superior direito não é uma quebra. Mastro, fiação e selante localizado na passagem pela telha são elementos/intervenções fora do MVP; não concluir estanqueidade. Resíduo no sulco direito pode ser textura, sem caixa positiva.",
+      "quality_flags": [
+        "pdf_compression",
+        "left_edge_truncated",
+        "cable_occlusion",
+        "out_of_mvp_penetration",
+        "human_review_pending"
+      ],
+      "scene_group": "ceasa_service_junction"
+    },
+    {
+      "image_sha256": "23074d75889dd3540178b4f4967277d6dca6fc7066aa3062868c6a4386c3dd38",
+      "filename": "p024_img01_23074d75.jpg",
+      "width": 1098,
+      "height": 618,
+      "pages": [
+        24
+      ],
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            361,
+            245,
+            660,
+            342
+          ],
+          "note": "Rufo superior com perda irregular central e fragmento adjacente; classificar o elemento instalado rompido, não cada fragmento."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            960,
+            243,
+            1063,
+            327
+          ],
+          "note": "Perda irregular separada no rufo superior à direita."
+        }
+      ],
+      "notes": "Não classificar a abertura escura entre rufos como telha ausente. Pequeno material escuro sobre a telha inferior em x≈484/y≈467 permanece duvidoso entre depósito, incrustação e elemento pequeno; precisa de revisão antes de eventual classe 2.",
+      "quality_flags": [
+        "pdf_compression",
+        "small_deposit_ambiguity",
+        "human_review_pending"
+      ],
+      "scene_group": "ceasa_roof_junction_details"
+    },
+    {
+      "image_sha256": "bca8f6e02e3f00fe307634bb55cde6ce2fb37cd10f6724a7d814be664ded6a1c",
+      "filename": "p024_img02_bca8f6e0.jpg",
+      "width": 1098,
+      "height": 618,
+      "pages": [
+        24
+      ],
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            64,
+            241,
+            870,
+            328
+          ],
+          "note": "Extensa ruptura/perda de material do rufo superior entre trechos preservados; bordas irregulares e remanescentes justificam quebra parcial."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            0,
+            331,
+            128,
+            400
+          ],
+          "note": "Fratura separada no rufo inferior à esquerda, parcialmente truncada."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            416,
+            326,
+            962,
+            398
+          ],
+          "note": "Extensa perda irregular no rufo inferior, com elementos preservados nas duas extremidades."
+        }
+      ],
+      "notes": "Tubo solto e haste sobre telhas são objetos estranhos da fase 2; não foram classificados como resíduos acumulados. A cobertura central sobreposta não é automaticamente uma telha quebrada. A foto mostra outro ângulo/trecho da junção; possíveis cenas relacionadas precisam permanecer no grupo CEASA.",
+      "quality_flags": [
+        "pdf_compression",
+        "oblique_view",
+        "left_edge_truncated",
+        "out_of_mvp_objects",
+        "human_review_pending"
+      ],
+      "scene_group": "ceasa_roof_junction_details"
+    },
+    {
+      "image_sha256": "d7dcb606c5b1ff4b0f3ccb31f913ab53f98cc7635c38b2ad9107faed0b6addc6",
+      "filename": "p026_img01_d7dcb606.jpg",
+      "width": 1098,
+      "height": 618,
+      "pages": [
+        26
+      ],
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            505,
+            1,
+            603,
+            334
+          ],
+          "note": "Acúmulo de detritos visíveis no segmento superior do canal da calha; material não confirmado."
+        },
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            505,
+            408,
+            601,
+            618
+          ],
+          "note": "Segundo acúmulo no segmento inferior, separado por trecho escuro sem detritos delimitáveis."
+        }
+      ],
+      "notes": "Revisão integral: detritos no canal, mesmo sendo a página sobre juntas de rufo. A junta horizontal no rufo lateral não é quebra. Um elemento fino semelhante a ramo no canal central não sustenta vegetacao_calha sem revisão; não inferir água, vazão ou obstrução total.",
+      "quality_flags": [
+        "pdf_compression",
+        "deep_shadow",
+        "top_bottom_truncated",
+        "vegetation_candidate_ambiguous",
+        "human_review_pending"
+      ],
+      "scene_group": "ceasa_perimeter_gutter"
+    },
+    {
+      "image_sha256": "399d7cea73e4de2b057c2ec9863fc2dcf51e68f4aff2d32070c735c208cf36f5",
+      "filename": "p027_img01_399d7cea.jpg",
+      "width": 1083,
+      "height": 609,
+      "pages": [
+        27
+      ],
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            33,
+            365,
+            177,
+            462
+          ],
+          "note": "Ruptura/perda irregular no rufo superior esquerdo, expondo a extremidade da telha."
+        }
+      ],
+      "notes": "O pequeno remendo branco em x≈480/y≈543 está sobre o rufo inferior, não sobre telha; registro de intervenção fora do MVP. Fixadores e selantes são fase 2. A linha vertical em x≈477 no rufo superior e x≈520 no inferior são juntas, sem evidência isolada de ruptura.",
+      "quality_flags": [
+        "pdf_compression",
+        "repair_on_rufo_out_of_mvp",
+        "small_fasteners",
+        "human_review_pending"
+      ],
+      "scene_group": "ceasa_roof_junction_details"
+    },
+    {
+      "image_sha256": "f5b9ef7de70622b39b748bc2ee654166b5facc42a7c5e1ee8c37054f9217588c",
+      "filename": "p028_img01_f5b9ef7d.jpg",
+      "width": 1091,
+      "height": 613,
+      "pages": [
+        28
+      ],
+      "status": "ambiguous",
+      "boxes": [
+        {
+          "class_id": 4,
+          "bbox_xyxy": [
+            855,
+            269,
+            1091,
+            371
+          ],
+          "note": "Candidato: rufo superior termina e a borda da cobertura segue sem faixa à direita. Confirmar se é ausência de peça esperada ou terminação prevista; extensão sai da imagem."
+        }
+      ],
+      "notes": "Sem caixa definitiva para corrosão dos fixadores: fase 2 e resolução limitada. Há terminação de faixa que sugere ausência à direita; a geometria precisa de revisão técnica. A telha inferior muda de nível na extremidade, o que não foi interpretado como ausência/quebra. Não usar como negativo.",
+      "quality_flags": [
+        "pdf_compression",
+        "right_edge_truncated",
+        "rufo_presence_context_pending",
+        "human_review_pending"
+      ],
+      "scene_group": "ceasa_roof_junction_details"
+    }
+  ]
+}

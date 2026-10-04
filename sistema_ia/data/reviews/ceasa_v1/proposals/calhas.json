@@ -1,0 +1,364 @@
+{
+  "schema_version": 1,
+  "annotator": "codex_visual_calhas",
+  "images": [
+    {
+      "image_sha256": "50f69e0ccb9519d6aa2f58754218c1bf0fbda162a7612c885bd95d875c323ecb",
+      "filename": "p030_img01_50f69e0c.jpg",
+      "width": 1095,
+      "height": 616,
+      "pages": [
+        30
+      ],
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            0,
+            318,
+            273,
+            421
+          ],
+          "note": "Acúmulo contíguo de fragmentos dentro da faixa escura do canal; tocando a borda esquerda da imagem."
+        },
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            337,
+            338,
+            454,
+            413
+          ],
+          "note": "Segundo acúmulo espacialmente separado no canal; caixa inclui fragmentos próximos deste agrupamento."
+        },
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            549,
+            405,
+            572,
+            432
+          ],
+          "note": "Fragmento isolado visível no canal, próximo à borda inferior."
+        },
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            584,
+            354,
+            614,
+            404
+          ],
+          "note": "Pequenos fragmentos separados à direita no canal; não são rufo ou telha instalada."
+        },
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            8,
+            502,
+            26,
+            533
+          ],
+          "note": "Perfuração irregular com perda visível de material na telha inferior; distinguir dos furos regulares de fixação."
+        },
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            48,
+            482,
+            78,
+            535
+          ],
+          "note": "Grupo contíguo de rupturas na mesma crista da telha, com bordas irregulares."
+        },
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            101,
+            441,
+            128,
+            490
+          ],
+          "note": "Ruptura irregular abaixo do ponto de fixação; inclui a pequena região com perda de material."
+        },
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            283,
+            575,
+            318,
+            616
+          ],
+          "note": "Ruptura parcialmente cortada pelo limite inferior da fotografia."
+        }
+      ],
+      "notes": "Imagem integral e recorte ampliado da telha inferior examinados. A classe resíduos_calha corresponde à discussão com o usuário, mas estas caixas são propostas visuais e não têm aprovação humana explícita. Não há água diretamente visível; não atribuir vazão, obstrução percentual, severidade ou composição verificada. Não confundir a cabine do caminhão com achado do projeto. Agrupamentos separados adotados provisoriamente como ocorrências distintas.",
+      "quality_flags": [
+        "compressao_pdf",
+        "objetos_pequenos",
+        "ocorrencia_cortada_na_borda",
+        "agrupamento_residuos_provisorio"
+      ],
+      "scene_group": "ceasa_gutter_closeup_50f69e0c"
+    },
+    {
+      "image_sha256": "73218070524752bc3173ea9ea6926dcf7bbd6dadb8a0800e4d7ed95d2e5bb971",
+      "filename": "p030_img02_73218070.jpg",
+      "width": 1098,
+      "height": 617,
+      "pages": [
+        30
+      ],
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            476,
+            0,
+            634,
+            384
+          ],
+          "note": "Ruptura longa e perda de material no corpo da telha; o dano continua fora da borda superior."
+        },
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            702,
+            251,
+            819,
+            375
+          ],
+          "note": "Quebra na borda da telha instalada; contexto distingue a ruptura de junta normal."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            649,
+            321,
+            690,
+            397
+          ],
+          "note": "Agrupamento de fragmentos soltos apoiados sobre a telha."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            753,
+            353,
+            792,
+            432
+          ],
+          "note": "Segundo agrupamento de fragmentos soltos na telha; não rotular cada fragmento como telha instalada quebrada."
+        },
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            698,
+            450,
+            932,
+            596
+          ],
+          "note": "Acúmulo de fragmentos na extremidade visível do canal da calha; inclui peças dispersas relacionadas ao mesmo acúmulo."
+        },
+        {
+          "class_id": 7,
+          "bbox_xyxy": [
+            178,
+            430,
+            715,
+            579
+          ],
+          "note": "Ramos e vegetação seca identificáveis dentro do canal; não é uma medida hidráulica."
+        }
+      ],
+      "notes": "Imagem integral examinada. Positivos de várias classes coexistem. Objetos sobre a telha e dentro da calha foram separados pelo suporte visível. Não há aprovação humana explícita destas caixas. Local e composição dos fragmentos além do que está visível não foram inferidos. Sombras e manchas não foram usadas como água acumulada. Revisar se vegetação e fragmentos parcialmente encobertos exigem ajuste das caixas.",
+      "quality_flags": [
+        "compressao_pdf",
+        "oclusao_parcial",
+        "ocorrencia_cortada_na_borda",
+        "agrupamento_residuos_provisorio"
+      ],
+      "scene_group": "ceasa_gutter_closeup_73218070"
+    },
+    {
+      "image_sha256": "a64803dabcfcaad82852da022b2a6bc85f6773ffba2e29095c4e67a51c66ff0e",
+      "filename": "p031_img01_a64803da.jpg",
+      "width": 1098,
+      "height": 618,
+      "pages": [
+        31
+      ],
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 7,
+          "bbox_xyxy": [
+            294,
+            344,
+            545,
+            618
+          ],
+          "note": "Folhas e ramos atravessam a região reconhecível da calha; parte da planta fica fora da borda inferior. A raiz está oculta."
+        }
+      ],
+      "notes": "Imagem integral examinada. Vegetação visível sobre o canal. A origem exata da raiz não é verificável, pois está encoberta; revisão técnica deve confirmar a convenção de vegetação associada à calha. Não há aprovação humana explícita. A sombra da planta sobre a telha não foi anotada como vegetação; bordas onduladas normais e junta vertical não foram tratadas como rupturas. Não inferir presença de água, contagem total de plantas nem risco estrutural.",
+      "quality_flags": [
+        "compressao_pdf",
+        "raiz_oculta",
+        "ocorrencia_cortada_na_borda"
+      ],
+      "scene_group": "ceasa_gutter_closeup_a64803da"
+    },
+    {
+      "image_sha256": "32a3cd23e01454b5e1ffaf38b4df5cd0de526914b65fa973f8398c84d57ec5e2",
+      "filename": "p033_img01_32a3cd23.jpg",
+      "width": 1098,
+      "height": 617,
+      "pages": [
+        33
+      ],
+      "status": "negative",
+      "boxes": [],
+      "notes": "Imagem integral visualmente revisada: nenhuma ocorrência inequívoca das classes ativas 0 a 7 foi encontrada. A pipa e os fios são objetos estranhos, previstos na classe de fase 2 (ID17), não resíduos de construção sobre a telha. Pequenos pontos próximos a fixações não têm detalhe suficiente para rotular ruptura. Negativa proposta somente para a taxonomia ativa; não certifica conformidade e não tem aprovação humana explícita. Não exportar como anotação aprovada sem revisão.",
+      "quality_flags": [
+        "compressao_pdf",
+        "objeto_fora_taxonomia_ativa",
+        "objetos_pequenos"
+      ],
+      "scene_group": "ceasa_roof_foreign_object_32a3cd23"
+    },
+    {
+      "image_sha256": "0f729b3e9a0bab66f6c0f309e403a5eef269f7743702e285122d3ef2d76bf89a",
+      "filename": "p033_img02_0f729b3e.jpg",
+      "width": 1095,
+      "height": 526,
+      "pages": [
+        33
+      ],
+      "status": "negative",
+      "boxes": [],
+      "notes": "Imagem integral visualmente revisada: nenhuma ocorrência inequívoca das classes ativas 0 a 7 foi encontrada. Um objeto semelhante a parafuso solto em torno de x660,y258 pertence potencialmente ao ID17 de fase 2; não foi transformado em resíduos_telha. Equipamento e suporte sobre a cobertura não comprovam quebra ou reparo. Negativa proposta para classes ativas, sem aprovação humana explícita; não é certificado de conformidade.",
+      "quality_flags": [
+        "compressao_pdf",
+        "objeto_fora_taxonomia_ativa",
+        "objetos_pequenos"
+      ],
+      "scene_group": "ceasa_roof_foreign_object_0f729b3e"
+    },
+    {
+      "image_sha256": "73eefa51e56b97c53d83b5ba4e6d0c05e4f3b97bb0a936b3cb32ca6e889db1cc",
+      "filename": "p035_img01_73eefa51.jpg",
+      "width": 1095,
+      "height": 616,
+      "pages": [
+        35
+      ],
+      "status": "ambiguous",
+      "boxes": [
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            146,
+            0,
+            346,
+            292
+          ],
+          "note": "Ruptura longitudinal e canto ausente na telha instalada da metade superior esquerda; parcialmente cortada no topo."
+        },
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            429,
+            202,
+            593,
+            294
+          ],
+          "note": "Perda irregular de material na borda inferior da telha instalada central."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            485,
+            0,
+            654,
+            289
+          ],
+          "note": "Pilha de fragmentos soltos sobre a telha superior direita; caixa toca a borda superior e exige adjudicação do limite entre pilha e peça instalada."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            109,
+            117,
+            153,
+            193
+          ],
+          "note": "Pequeno acúmulo de fragmentos na canaleta superficial da telha superior esquerda."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            631,
+            388,
+            662,
+            433
+          ],
+          "note": "Fragmentos soltos sobre a telha inferior, próximos aos pontos de fixação."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            519,
+            531,
+            612,
+            616
+          ],
+          "note": "Fragmento apoiado sobre a telha na borda inferior; a imagem corta parte da peça e a classificação como material solto deve ser confirmada."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            307,
+            494,
+            327,
+            520
+          ],
+          "note": "Fragmento pequeno apoiado sobre a telha inferior; não interpretar a sombra do tirante como ruptura."
+        },
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            546,
+            250,
+            838,
+            416
+          ],
+          "note": "Acúmulo de fragmentos na extremidade da calha. O limite direita/canal e eventual material no apoio precisam de revisão."
+        },
+        {
+          "class_id": 7,
+          "bbox_xyxy": [
+            244,
+            322,
+            343,
+            370
+          ],
+          "note": "Ramos secos reconhecíveis dentro da faixa da calha; não inferir água ou percentual de obstrução."
+        }
+      ],
+      "notes": "Imagem integral, metade superior e metade inferior ampliadas examinadas. Há positivos claros, mas a imagem inteira fica ambígua enquanto se decide se a faixa em x60–165,y354–616 é fragmento solto ou telha instalada quebrada e se o fragmento inferior em x519–612,y531–616 está apoiado ou integra a peça. Há passagem de tirante/elemento metálico pela cobertura (fase2 ID18), sem conclusão de vedação nesta revisão. A pilha e o extremo da calha também exigem adjudicação de caixas. Não tem aprovação humana explícita; não promover esta imagem a treino com rótulos incompletos.",
+      "quality_flags": [
+        "compressao_pdf",
+        "oclusao_parcial",
+        "ocorrencia_cortada_na_borda",
+        "fragmento_vs_peca_instalada_ambiguo",
+        "limite_calha_ambiguo",
+        "objeto_fora_taxonomia_ativa",
+        "agrupamento_residuos_provisorio"
+      ],
+      "scene_group": "ceasa_gutter_closeup_73eefa51"
+    }
+  ]
+}

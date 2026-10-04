@@ -1,0 +1,19 @@
+{
+  "runtime": {
+    "python": "3.12.14",
+    "ultralytics": "8.4.172",
+    "torch": "2.14.1+cpu",
+    "device_requested": "cpu",
+    "checkpoint": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\runs\\export_demo_20261003T232634Z_840d545c\\model.pt",
+    "checkpoint_sha256": "9fe3c544f2b19bebad7ea41e76d7ad3d88b7c2f10d11d24430c5311f6b32db26",
+    "requested_future_model": "yolo27l.pt"
+  },
+  "artifact": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\runs\\export_demo_20261003T232634Z_840d545c\\model.onnx",
+  "sha256": "87cdbff1fd8fd969ddf9df3c7bd9b6460b2d1cfec9c072a18ec3a0ebda139952",
+  "format": "onnx",
+  "quantize": 32,
+  "nms": false,
+  "demo": true,
+  "runtime_parity_validated": false,
+  "human_acceptance": "pendente"
+}

@@ -1,0 +1,11 @@
+﻿ordem,filename,reference_page,image_sha256,candidate_class_id,candidate_class,scene_group,review_status,box_status,notes
+1,p005_img01_80528144.jpg,5,8052814489da66c77231ff5ffccbee3236719d83408ce298d31fe13f7132aee4,0,telha_quebrada,ceasa_pavilhao_a,pendente,nao_anotada,Distinguir ruptura de junta ou sombra.
+2,p006_img01_f55d62a3.jpg,6,f55d62a3174c6ebb620fca7ebb863ac08893e9c1c2b8c7e20b8d5bd7fd139e99,1,telha_ausente,ceasa_pavilhao_a,pendente,nao_anotada,Delimitar lacuna; verificar se a abertura é prevista.
+3,p007_img01_88b54f26.jpg,7,88b54f26e06a9b1505ee0804e82ffe0d78f490183db9f2707203c3760c2d0dc5,2,residuos_telha,ceasa_pavilhao_a,pendente,nao_anotada,Distinguir material sobre telha de material dentro da calha; cena também aparece na página34.
+4,p010_img01_beebf15c.jpg,10,beebf15ccef412efa39902b3fb0753c5aabf2c0423d26937efedf14027a8d11d,3,reparo_telha,ceasa_pavilhao_a,pendente,nao_anotada,Presença de intervenção não comprova inadequação técnica.
+5,p020_img01_0315a58d.jpg,20,0315a58d3dd318107b1cf55b387a7fdfe7c6a7df9e36faebd862f7dcd2e15c69,4,rufo_ausente,ceasa_pavilhao_a,pendente,nao_anotada,Mesma imagem aparece na página16; revisar contexto e outras ocorrências.
+6,p021_img01_814749e3.jpg,21,814749e34f1e79fbaf554ffa613901e29147e5e6a088222fd54b6545dc714a3b,5,rufo_quebrado,ceasa_pavilhao_a,pendente,nao_anotada,Distinguir fratura de junta ou ausência completa.
+7,p030_img01_50f69e0c.jpg,30,50f69e0ccb9519d6aa2f58754218c1bf0fbda162a7612c885bd95d875c323ecb,6,residuos_calha,ceasa_pavilhao_a,pendente,nao_anotada,Exemplo discutido: detritos no canal; rejeitar classes genéricas sobre caminhão.
+8,p031_img01_a64803da.jpg,31,a64803dabcfcaad82852da022b2a6bc85f6773ffba2e29095c4e67a51c66ff0e,7,vegetacao_calha,ceasa_pavilhao_a,pendente,nao_anotada,Confirmar vegetação dentro da calha; quantidade X no laudo não está resolvida.
+9,p030_img02_73218070.jpg,30,73218070524752bc3173ea9ea6926dcf7bbd6dadb8a0800e4d7ed95d2e5bb971,6,residuos_calha,ceasa_pavilhao_a,pendente,nao_anotada,Admitir outras classes na foto; revisão completa obrigatória.
+10,p004_img01_08772654.jpg,4,08772654ea11f2c6d0c3184748a7fffc3525cac35d7042656818500db18458be,,,ceasa_pavilhao_a,pendente,nao_anotada,"Triagem de contexto, juntas e sombras; não assumir negativo pela página."

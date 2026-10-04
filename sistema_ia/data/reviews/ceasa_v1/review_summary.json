@@ -1,0 +1,24 @@
+{
+  "unique_images": 38,
+  "image_status_counts": {
+    "ambiguous": 13,
+    "positive": 23,
+    "negative": 2
+  },
+  "boxes_by_class_id": {
+    "0": 15,
+    "3": 19,
+    "2": 33,
+    "6": 10,
+    "1": 3,
+    "7": 4,
+    "5": 21,
+    "4": 3
+  },
+  "total_proposed_boxes": 108,
+  "human_approved_images": 0,
+  "second_visual_review_images": 38,
+  "independent_buildings": 1,
+  "ready_for_independent_evaluation": false,
+  "note": "Propostas visuais são revisáveis; uma única edificação não mede generalização para outros locais."
+}
