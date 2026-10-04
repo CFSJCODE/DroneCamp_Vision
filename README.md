@@ -29,10 +29,12 @@ Os arquivos `.pt`, `.onnx` e `.engine` usam [Git Large File Storage](https://doc
 
 ```powershell
 git lfs install
-git clone https://github.com/CFSJCODE/DroneCamp_Vision.git
+git clone -c core.longpaths=true https://github.com/CFSJCODE/DroneCamp_Vision.git
 cd DroneCamp_Vision
 git lfs pull
 ```
+
+No Windows, `core.longpaths=true` permite receber as pastas de anotacoes com nomes baseados em hashes, mesmo em um diretorio de clonagem longo. A opcao fica restrita ao repositorio clonado.
 
 Para instalar o sistema, siga [Ambiente local](sistema_ia/README.md#ambiente-local). O ambiente `.venv` da maquina de origem nao faz parte do repositorio; as dependencias estao em `pyproject.toml` e `requirements-lock.txt`.
 

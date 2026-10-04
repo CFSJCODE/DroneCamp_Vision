@@ -1,3 +1,6 @@
+# Preserve os bytes originais, incluindo quebras de linha, para validar os hashes.
+* -text
+
 # Pesos e exportacoes do modelo sao armazenados no Git LFS.
 *.pt filter=lfs diff=lfs merge=lfs -text
 *.onnx filter=lfs diff=lfs merge=lfs -text
