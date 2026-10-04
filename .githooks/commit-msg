@@ -1,0 +1,32 @@
+#!/bin/sh
+# Validate only the subject; the contributor guide covers bodies and footers.
+
+if [ "$#" -ne 1 ] || [ ! -r "$1" ]; then
+    printf '%s\n' 'commit-msg: arquivo de mensagem ausente ou ilegível.' >&2
+    exit 2
+fi
+
+# Git strips template comments; normalize CRLF and select the first real line.
+cr=$(printf '\r')
+subject=$(sed "s/$cr\$//; /^[[:space:]]*#/d; /^[[:space:]]*$/d" "$1" | sed -n '1p')
+
+# Preserve Git-generated merge messages only during an actual merge operation.
+case "$subject" in
+    'Merge '*)
+        merge_head=$(git rev-parse --git-path MERGE_HEAD 2>/dev/null)
+        if [ -n "$merge_head" ] && [ -f "$merge_head" ]; then
+            exit 0
+        fi
+        ;;
+esac
+
+# Additional types are allowed; alphabetic casing is deliberately unrestricted.
+if printf '%s\n' "$subject" | LC_ALL=C grep -Eq '^[A-Za-z][A-Za-z0-9-]*(\([^()[:space:]]+\))?!?: [[:blank:]]*[^[:space:]].*$'; then
+    exit 0
+fi
+
+printf '%s\n' \
+    'Mensagem de commit inválida. Use: tipo(escopo opcional)!: descrição' \
+    'Exemplo: docs: melhorar descrição e navegação do projeto' \
+    'Consulte CONTRIBUTING.md. O escopo e o ! são opcionais.' >&2
+exit 1

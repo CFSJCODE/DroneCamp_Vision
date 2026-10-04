@@ -1,0 +1,11 @@
+# tipo(escopo opcional)!: descrição da mudança
+#
+# Tipos: feat, fix, docs, refactor, test, perf, build, ci, chore, style, revert.
+# Escopos sugeridos: cli, dataset, review, taxonomy, training, prediction,
+# export, docs, repo. Escopo e ! são opcionais; prefira minúsculas.
+# Exemplo: docs: melhorar navegação do projeto
+#
+# Corpo opcional: motivo, efeito e validação. Separe-o do título por linha vazia.
+#
+# BREAKING CHANGE: explique impacto incompatível e migração, se necessário.
+# Refs: referência opcional de issue ou commit
