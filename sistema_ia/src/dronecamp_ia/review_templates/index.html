@@ -1,399 +1,921 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="dark">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>DroneCamp · Revisão das imagens</title>
+<!-- Preenchido só quando a página vem do servidor local (comando platform); vazio no arquivo em disco. -->
+<meta name="dronecamp-server" content="">
+<link rel="icon" href="data:,">
+<title>DroneCamp Vision · Operações YOLO</title>
 <style>
+/* -------------------------------------------------------------------------
+   Plataforma de operações DroneCamp Vision — Fluent 2 + Liquid Glass (Moonlight).
+
+   Uma única linguagem visual consistente:
+   - Fluent 2: Segoe UI Variable, rampa modular de tipo 1.25 (11 · 12 · 14 · 16 · 20 · 28),
+     cantos de 6px nos controles e 12px nos cartões, elevação por sombras suaves
+     (2 · 8 · 16 · 28), foco com anel duplo e transições ágeis (100–250ms);
+   - Liquid Glass (Glassmorphism & Acrílico Fluent): superfícies translúcidas com
+     alto desfoque ótico (blur 28px saturate 180%), refração de luz e borda especular
+     delicada de 1px com realce no topo (inset 0 1px 1px).
+   - Paleta Moonlight: base escura cósmica profunda, acento primário em ciano celestial
+     (--primary: #38bdf8), sugestões da IA em âmbar/laranja luminoso (--ai: #fb923c),
+     e decisões confirmadas com brilho esmeralda suave (--ok: #10b981).
+   data-theme = dark | light troca apenas os tokens sem perder a linguagem visual.
+   Os nomes --primary, --ai, --ok, --warn, --bad, --muted, --line-strong e
+   --chart-grid também são lidos pelo JS (gráficos e barras); mantidos intactos.
+   ------------------------------------------------------------------------- */
 :root {
-  --ink: #183142;
-  --muted: #556776;
-  --paper: #f4f6f8;
-  --line: #ced8df;
-  --primary: #215b7b;
-  --space: 8px
+  color-scheme: dark;
+  --rail: 68px;
+  --font-body: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Inter", sans-serif;
+  --font-display: "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, "Inter", sans-serif;
+  --font-mono: "Cascadia Code", "Cascadia Mono", Consolas, ui-monospace, monospace;
+
+  /* Fluent: cantos e movimento */
+  --radius-ctl: 6px;
+  --radius-card: 12px;
+  --radius-pill: 999px;
+  --ease: cubic-bezier(.33, 0, .67, 1);
+  --ease-out: cubic-bezier(0, 0, 0, 1);
+  --fast: .12s;
+  --normal: .22s;
+
+  /* Neutros Moonlight (tema escuro profundo) */
+  --bg: #0b0f17;
+  --ink: #f8fafc;
+  --ink-2: #cbd5e1;
+  --muted: #8295ab;
+  --line: rgba(255, 255, 255, .08);
+  --line-strong: rgba(255, 255, 255, .18);
+  --stroke-accessible: rgba(255, 255, 255, .38);
+  --subtle-hover: rgba(255, 255, 255, .06);
+  --subtle-pressed: rgba(255, 255, 255, .03);
+  --surface-strong: #111726;
+  --control: rgba(255, 255, 255, .05);
+  --control-hover: rgba(255, 255, 255, .09);
+  --control-pressed: rgba(255, 255, 255, .03);
+  --control-border: rgba(255, 255, 255, .10);
+  --control-border-bottom: rgba(255, 255, 255, .22);
+  --field: rgba(8, 12, 20, .65);
+  --disabled-ink: #556579;
+  --viewer: #06090f;
+  --terminal: #070b12;
+  --terminal-ink: #cbd5e1;
+  --chart-grid: rgba(255, 255, 255, .06);
+
+  /* Acentos Luminosos Moonlight */
+  --primary: #38bdf8;
+  --primary-bg: #0284c7;
+  --primary-hover: #0ea5e9;
+  --primary-pressed: #0369a1;
+  --primary-ink: #ffffff;
+  --primary-soft: rgba(56, 189, 248, .14);
+  --primary-glow: 0 0 24px rgba(56, 189, 248, .35);
+
+  /* IA: Laranja/Âmbar luminoso */
+  --ai: #fb923c;
+  --ai-hover: #f97316;
+  --ai-soft: rgba(251, 146, 60, .15);
+  --ai-glow: 0 0 20px rgba(251, 146, 60, .3);
+
+  /* Decisão / Ok: Verde esmeralda Moonlight */
+  --ok: #10b981;
+  --ok-soft: rgba(16, 185, 129, .15);
+  --ok-glow: 0 0 24px rgba(16, 185, 129, .4);
+
+  /* Alertas / Erros */
+  --warn: #fbbf24;
+  --warn-soft: rgba(251, 191, 36, .14);
+  --bad: #f43f5e;
+  --bad-soft: rgba(244, 63, 94, .15);
+  --focus-outer: #38bdf8;
+  --focus-inner: #0b0f17;
+
+  /* Elevação e Sombras Difusas Fluent */
+  --shadow-2: 0 1px 3px rgba(0, 0, 0, .3), 0 1px 2px rgba(0, 0, 0, .24);
+  --shadow-8: 0 4px 16px rgba(0, 0, 0, .35), 0 2px 4px rgba(0, 0, 0, .2);
+  --shadow-16: 0 8px 30px rgba(0, 0, 0, .45), 0 4px 10px rgba(0, 0, 0, .3);
+  --shadow-28: 0 16px 48px rgba(0, 0, 0, .55), 0 6px 16px rgba(0, 0, 0, .35);
+
+  /* Liquid Glass: acrílico óptico com borda especular */
+  --glass: rgba(15, 23, 38, .62);
+  --glass-strong: rgba(15, 23, 38, .85);
+  --glass-border: rgba(255, 255, 255, .09);
+  --glass-highlight: rgba(255, 255, 255, .18);
+  --glass-blur: blur(28px) saturate(180%);
+  --inset: rgba(0, 0, 0, .28);
+
+  /* Fundo Mica Moonlight atmosférico com gradientes etéreos */
+  --mica: radial-gradient(1200px 700px at 15% -10%, rgba(30, 58, 138, .26), transparent 65%),
+          radial-gradient(900px 600px at 95% 5%, rgba(14, 116, 144, .20), transparent 60%),
+          radial-gradient(1000px 800px at 50% 115%, rgba(49, 46, 129, .22), transparent 65%),
+          linear-gradient(180deg, #0b0f17 0%, #070a10 100%);
 }
 
-* {
-  box-sizing: border-box
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f8fafc;
+  --ink: #0f172a;
+  --ink-2: #1e293b;
+  --muted: #475569;
+  --line: rgba(15, 23, 42, .08);
+  --line-strong: rgba(15, 23, 42, .18);
+  --stroke-accessible: rgba(15, 23, 42, .4);
+  --subtle-hover: rgba(15, 23, 42, .05);
+  --subtle-pressed: rgba(15, 23, 42, .09);
+  --surface-strong: #ffffff;
+  --control: rgba(255, 255, 255, .8);
+  --control-hover: rgba(255, 255, 255, .95);
+  --control-pressed: rgba(241, 245, 249, .9);
+  --control-border: rgba(15, 23, 42, .12);
+  --control-border-bottom: rgba(15, 23, 42, .24);
+  --field: rgba(255, 255, 255, .88);
+  --disabled-ink: #94a3b8;
+  --viewer: #e2e8f0;
+  --terminal: #0f172a;
+  --terminal-ink: #f8fafc;
+  --chart-grid: rgba(15, 23, 42, .08);
+
+  --primary: #0284c7;
+  --primary-bg: #0284c7;
+  --primary-hover: #0369a1;
+  --primary-pressed: #075985;
+  --primary-ink: #ffffff;
+  --primary-soft: rgba(2, 132, 199, .10);
+  --primary-glow: 0 0 20px rgba(2, 132, 199, .2);
+
+  --ai: #ea580c;
+  --ai-hover: #c2410c;
+  --ai-soft: rgba(234, 88, 12, .12);
+  --ai-glow: 0 0 16px rgba(234, 88, 12, .2);
+
+  --ok: #059669;
+  --ok-soft: rgba(5, 150, 105, .12);
+  --ok-glow: 0 0 20px rgba(5, 150, 105, .25);
+
+  --warn: #d97706;
+  --warn-soft: rgba(217, 119, 6, .12);
+  --bad: #e11d48;
+  --bad-soft: rgba(225, 29, 72, .10);
+  --focus-outer: #0284c7;
+  --focus-inner: #ffffff;
+
+  --shadow-2: 0 1px 3px rgba(0, 0, 0, .08), 0 1px 2px rgba(0, 0, 0, .05);
+  --shadow-8: 0 4px 16px rgba(0, 0, 0, .1), 0 2px 4px rgba(0, 0, 0, .06);
+  --shadow-16: 0 8px 24px rgba(0, 0, 0, .12), 0 3px 8px rgba(0, 0, 0, .08);
+  --shadow-28: 0 16px 40px rgba(0, 0, 0, .14), 0 4px 12px rgba(0, 0, 0, .08);
+
+  --glass: rgba(255, 255, 255, .72);
+  --glass-strong: rgba(255, 255, 255, .92);
+  --glass-border: rgba(255, 255, 255, .8);
+  --glass-highlight: rgba(255, 255, 255, .95);
+  --inset: rgba(15, 23, 42, .04);
+
+  --mica: radial-gradient(1200px 700px at 15% -10%, rgba(186, 230, 253, .45), transparent 65%),
+          radial-gradient(900px 600px at 95% 5%, rgba(207, 250, 254, .35), transparent 60%),
+          radial-gradient(1000px 800px at 50% 115%, rgba(224, 231, 255, .4), transparent 65%),
+          linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
 }
+
+* { box-sizing: border-box }
+
+html, body { min-height: 100% }
 
 body {
   margin: 0;
-  background: var(--paper);
   color: var(--ink);
-  font: 16px/1.5 system-ui,"Segoe UI",sans-serif
+  background: var(--mica);
+  background-color: var(--bg);
+  background-attachment: fixed;
+  font: 400 14px/20px var(--font-body);
+  -webkit-font-smoothing: antialiased;
 }
 
-button,input,select,textarea {
-  font: inherit
-}
+button, input, select, textarea { font: inherit; color: inherit }
 
+/* ---------- Botões (Fluent Button) ---------- */
 button {
   cursor: pointer;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 10px 16px;
-  background: white;
-  color: var(--ink);
-  min-height: 44px
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 32px;
+  padding: 5px 12px;
+  border: 1px solid var(--control-border);
+  border-bottom-color: var(--control-border-bottom);
+  border-radius: var(--radius-ctl);
+  background: var(--control);
+  font-weight: 600;
+  transition: background var(--fast) var(--ease), border-color var(--fast) var(--ease), color var(--fast) var(--ease);
 }
-
-button:disabled {
-  opacity: .5;
-  cursor: default
-}
+button:hover:not(:disabled) { background: var(--control-hover) }
+button:active:not(:disabled) { background: var(--control-pressed); border-bottom-color: var(--control-border) }
+button:disabled { cursor: default; color: var(--disabled-ink); background: var(--subtle-pressed); border-color: var(--line) }
 
 button.primary {
-  background: var(--primary);
-  color: white;
-  border-color: var(--primary)
+  background: linear-gradient(180deg, var(--primary-hover) 0%, var(--primary-bg) 100%);
+  color: var(--primary-ink);
+  border: 1px solid rgba(255, 255, 255, .15);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .25), 0 2px 8px rgba(2, 132, 199, .35);
 }
-
-button:hover:not(:disabled) {
-  filter: brightness(.94)
+button.primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, var(--primary) 0%, var(--primary-hover) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35), 0 4px 14px rgba(56, 189, 248, .45);
 }
-
-:focus-visible {
-  outline: 3px solid #ad6400;
-  outline-offset: 3px
+button.primary:active:not(:disabled) {
+  background: var(--primary-pressed);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, .4);
 }
-
-header {
-  background: white;
-  border-bottom: 1px solid var(--line);
-  padding: 24px 32px
+button.primary:disabled {
+  background: var(--subtle-pressed);
+  color: var(--disabled-ink);
+  border-color: var(--line);
+  box-shadow: none;
 }
-
-header h1 {
-  font-size: 30px;
-  line-height: 1.2;
-  margin: 0 0 8px
+button.ai {
+  color: var(--ai);
+  border-color: color-mix(in srgb, var(--ai) 55%, transparent);
+  box-shadow: 0 0 10px rgba(251, 146, 60, .15);
 }
-
-p {
-  margin: 8px 0 16px
+button.ai:hover:not(:disabled) {
+  background: var(--ai-soft);
+  box-shadow: 0 0 16px rgba(251, 146, 60, .3);
 }
+button.ghost { background: transparent; border-color: transparent }
+button.ghost:hover:not(:disabled) { background: var(--subtle-hover) }
+button.small { min-height: 26px; padding: 2px 10px; font-size: 12px; line-height: 16px }
 
-.notice {
-  padding: 16px;
-  background: #fff6df;
-  border: 1px solid #ead59c;
-  border-radius: 8px;
-  max-width: 1050px
-}
+/* Foco Fluent: anel duplo (externo contrastante, interno separador). */
+:focus-visible { outline: 2px solid var(--focus-outer); outline-offset: 1px; box-shadow: 0 0 0 1px var(--focus-inner) }
 
-main {
-  display: grid;
-  grid-template-columns: 280px minmax(0,1fr);
-  gap: 24px;
-  padding: 24px 32px
-}
+a { color: var(--primary); text-underline-offset: 2px }
+a:hover { text-decoration-thickness: 2px }
 
-.panel {
-  background: white;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 16px;
-  min-width: 0
-}
+/* Rampa de tipo Fluent 2 (DESIGN.md - Escala Modular 1.25 Major Third) */
+h1, h2, h3 { margin: 0 }
+h1 { font: 600 28px/36px var(--font-display); letter-spacing: -0.02em }
+h2 { font: 600 20px/26px var(--font-display); letter-spacing: -0.015em }
+h3 { font: 600 16px/22px var(--font-body); letter-spacing: -0.01em; margin: 16px 0 8px }
+p { margin: 4px 0 12px; font-size: 14px; line-height: 20px }
 
-h2 {
-  font-size: 22px;
-  line-height: 1.25;
-  margin: 0 0 16px
-}
+label { display: block; margin: 12px 0 4px; font-size: 12px; line-height: 16px; font-weight: 500; color: var(--muted); letter-spacing: +0.01em }
 
-h3 {
-  font-size: 18px;
-  margin: 16px 0 8px
-}
-
-.muted {
-  color: var(--muted)
-}
-
-label {
-  display: block;
-  margin: 8px 0 4px
-}
-
-input,select,textarea {
+/* ---------- Campos (Fluent Input/Select): sublinhado de destaque no foco ---------- */
+input, select, textarea {
   width: 100%;
-  border: 1px solid #aabcc8;
-  border-radius: 6px;
-  padding: 8px;
-  background: white;
-  color: var(--ink);
-  min-height: 44px
+  min-height: 32px;
+  padding: 6px 12px;
+  border: 1px solid var(--control-border);
+  border-bottom-color: var(--stroke-accessible);
+  border-radius: var(--radius-ctl);
+  background: var(--field);
+  transition: border-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
+}
+input:hover, select:hover, textarea:hover { border-color: var(--line-strong); border-bottom-color: var(--ink-2) }
+input:focus, select:focus, textarea:focus { outline: none; border-bottom-color: var(--primary); box-shadow: inset 0 -1px 0 var(--primary) }
+input:focus-visible, select:focus-visible, textarea:focus-visible { outline: none }
+input[type="checkbox"], input[type="range"] { border: 0; background: transparent; box-shadow: none }
+select option { background: var(--surface-strong); color: var(--ink) }
+
+textarea { min-height: 88px; resize: vertical }
+
+.muted { color: var(--muted) }
+.small-text { font-size: 12px; line-height: 16px; letter-spacing: +0.01em }
+.hidden { display: none !important }
+.mono { font-family: var(--font-mono); font-size: 12px }
+
+/* ---------- Estrutura: navegação (NavigationView compacta) + conteúdo ---------- */
+.app { position: relative; display: grid; grid-template-columns: var(--rail) minmax(0, 1fr); min-height: 100vh }
+
+.rail {
+  position: sticky; top: 0; z-index: 5;
+  height: 100vh;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 16px 0;
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+  border-right: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-8);
 }
 
-textarea {
-  min-height: 100px;
-  resize: vertical
+.brand {
+  width: 42px; height: 42px; margin-bottom: 16px;
+  display: grid; place-items: center;
+  border-radius: var(--radius-ctl);
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-bg) 100%);
+  color: var(--primary-ink);
+  font: 700 16px/1 var(--font-display);
+  box-shadow: 0 0 20px rgba(56, 189, 248, .35), var(--shadow-2);
 }
 
-.inline {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  align-items: center
-}
-
-.inline>* {
-  flex: 0 1 auto
-}
-
-.checks {
-  display: flex;
-  gap: 8px;
-  align-items: flex-start
-}
-
-.checks input {
-  width: 20px;
-  min-height: 20px;
-  margin-top: 4px
-}
-
-.checks label {
-  margin: 0
-}
-
-.queue {
-  max-height: 68vh;
-  overflow: auto;
-  margin: 16px 0
-}
-
-.queue button {
-  display: block;
-  width: 100%;
-  text-align: left;
-  margin: 0 0 8px;
-  padding: 8px 12px
-}
-
-.queue button[aria-current=true] {
-  border: 2px solid var(--primary);
-  background: #edf5fa
-}
-
-.queue small {
-  display: block;
-  color: var(--muted)
-}
-
-.viewer {
+.rail button {
   position: relative;
-  margin: 16px 0;
-  background: #e4eaef;
-  border: 1px solid var(--line)
+  width: 48px; height: 42px; min-height: 42px; padding: 0;
+  border: 0; border-radius: var(--radius-ctl);
+  background: transparent;
+  color: var(--ink-2);
+  transition: background var(--fast) var(--ease), color var(--fast) var(--ease), transform var(--fast) var(--ease);
+}
+.rail button svg { width: 20px; height: 20px }
+.rail button:hover:not(:disabled) { background: var(--subtle-hover); color: var(--ink) }
+.rail button:active:not(:disabled) { background: var(--subtle-pressed); transform: scale(.96) }
+.rail button[aria-current="page"] { background: var(--primary-soft); color: var(--primary) }
+/* Indicador de seleção Fluent: traço vertical de 3×18px na cor de destaque com brilho */
+.rail button[aria-current="page"]::before {
+  content: ""; position: absolute; left: 0; top: 50%; width: 3px; height: 18px; margin-top: -9px;
+  border-radius: var(--radius-pill); background: var(--primary);
+  box-shadow: 0 0 10px var(--primary);
+}
+.rail button .tip {
+  position: absolute; left: 56px; top: 50%; transform: translateY(-50%);
+  white-space: nowrap; pointer-events: none; opacity: 0;
+  padding: 4px 8px; border-radius: var(--radius-ctl);
+  background: var(--surface-strong); color: var(--ink); border: 1px solid var(--line);
+  box-shadow: var(--shadow-8); font-size: 12px; font-weight: 400; line-height: 16px;
+  transition: opacity var(--fast) var(--ease);
+}
+.rail button:hover .tip, .rail button:focus-visible .tip { opacity: 1 }
+.rail .spacer { flex: 1 }
+.rail .badge-dot { position: absolute; top: 6px; right: 8px; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); border: 1px solid var(--bg); box-shadow: 0 0 8px var(--ok) }
+
+.shell { min-width: 0; display: flex; flex-direction: column }
+
+.topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 20px 32px 12px }
+.topbar .sub { margin: 4px 0 0; color: var(--muted); font-size: 12px; line-height: 16px }
+.top-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap }
+.top-actions input { width: 200px }
+
+/* Badge Fluent (aparência tint com transparência suave). */
+.chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  min-height: 22px; padding: 0 10px;
+  border-radius: var(--radius-pill); border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
+  background: var(--primary-soft); color: var(--primary);
+  font-size: 12px; font-weight: 600; line-height: 18px; white-space: nowrap;
+}
+.chip.ok { background: var(--ok-soft); color: var(--ok) }
+.chip.warn { background: var(--warn-soft); color: var(--warn) }
+.chip.bad { background: var(--bad-soft); color: var(--bad) }
+.chip.ai { background: var(--ai-soft); color: var(--ai); box-shadow: 0 0 10px rgba(251, 146, 60, .15) }
+.chip.neutral { background: var(--subtle-hover); color: var(--muted) }
+.chip .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor }
+.chip.live .dot { animation: pulse 1.6s var(--ease) infinite }
+@keyframes pulse { 50% { opacity: .35 } }
+
+/* MessageBar Fluent (aviso) em Liquid Glass. */
+.notice-strip { padding: 0 32px }
+.notice {
+  margin: 0 0 12px; padding: 10px 14px;
+  border: 1px solid color-mix(in srgb, var(--warn) 35%, transparent);
+  border-left: 3px solid var(--warn);
+  border-radius: var(--radius-ctl);
+  background: linear-gradient(var(--warn-soft), var(--warn-soft)), var(--glass);
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+  font-size: 13px; line-height: 18px;
 }
 
-.viewer canvas {
-  display: block;
-  width: 100%;
-  height: auto
-}
+main { padding: 4px 32px 32px; min-width: 0 }
+.view { display: none; animation: enter var(--normal) var(--ease-out) }
+.view.active { display: block }
+@keyframes enter { from { opacity: 0; transform: translateY(4px) } to { opacity: 1; transform: none } }
 
-.viewer.drawing canvas {
-  touch-action: none;
-  cursor: crosshair
+/* ---------- Cartão em Vidro Líquido (Liquid Glass & Glassmorphism) ---------- */
+.card {
+  position: relative;
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-card);
+  background: var(--glass);
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+  /* Liquid Glass: realce especular de 1px no topo + elevação difusa */
+  box-shadow: inset 0 1px 1px var(--glass-highlight), var(--shadow-8);
+  transition: border-color var(--normal) var(--ease), box-shadow var(--normal) var(--ease);
 }
-
-.status {
-  font-size: 14px;
-  padding: 4px 8px;
-  border-radius: 6px;
-  background: #e8f0f5;
-  display: inline-block
+.card:hover {
+  border-color: rgba(255, 255, 255, .14);
 }
+.card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 14px }
+.card-head h2 { font-size: 18px; line-height: 24px; font-weight: 600 }
 
-.tools {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px
+.grid { display: grid; gap: 16px }
+.kpis { grid-template-columns: repeat(5, minmax(0, 1fr)) }
+.two { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) }
+.halves { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+
+.kpi .label { font-size: 12px; line-height: 16px; color: var(--muted); font-weight: 500 }
+.kpi .value { font: 600 28px/36px var(--font-display); margin: 6px 0; font-variant-numeric: tabular-nums; letter-spacing: -0.02em }
+.kpi .hint { font-size: 12px; line-height: 16px; color: var(--muted) }
+
+/* Cartão de destaque: vidro tingido em ciano com reflexo especular */
+.kpi.accent {
+  background: linear-gradient(135deg, rgba(2, 132, 199, .45) 0%, rgba(14, 116, 144, .25) 100%), var(--glass);
+  color: var(--primary-ink);
+  border-color: rgba(56, 189, 248, .35);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, .3), 0 0 24px rgba(56, 189, 248, .18), var(--shadow-8);
 }
+.kpi.accent .label, .kpi.accent .hint { color: rgba(255, 255, 255, .9) }
 
-.coordinates {
-  display: grid;
-  grid-template-columns: repeat(4,1fr);
-  gap: 8px
+.bar-row { display: grid; grid-template-columns: minmax(120px, 1.2fr) minmax(0, 2fr) 64px; gap: 12px; align-items: center; margin: 8px 0; font-size: 13px }
+.bar-row .name { display: flex; align-items: center; gap: 8px; min-width: 0 }
+.bar-row .name span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.swatch { width: 10px; height: 10px; border-radius: 2px; flex: 0 0 auto; background: var(--c) }
+.bar { height: 8px; border-radius: var(--radius-pill); background: var(--inset); overflow: hidden; display: flex }
+.bar i { display: block; height: 100% }
+.bar i.human { background: var(--c) }
+.bar i.ai { background: repeating-linear-gradient(45deg, var(--ai), var(--ai) 4px, transparent 4px, transparent 7px) }
+.bar-row .count { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted) }
+
+/* ProgressBar Fluent. */
+.progress { height: 4px; border-radius: var(--radius-pill); background: var(--inset); overflow: hidden }
+.progress i { display: block; height: 100%; border-radius: inherit; background: var(--primary); transition: width var(--normal) var(--ease) }
+.kpi.accent .progress i { background: #ffffff }
+
+/* ---------- Revisão ---------- */
+.review-grid { display: grid; grid-template-columns: 272px minmax(0, 1fr) 340px; gap: 16px; align-items: start }
+.queue-card { position: sticky; top: 12px }
+.queue { max-height: calc(100vh - 300px); overflow: auto; margin: 8px -8px 0; padding: 0 8px }
+.queue button {
+  display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 12px; align-items: center;
+  width: 100%; margin: 0 0 4px; padding: 6px 8px; min-height: 52px;
+  text-align: left; font-weight: 400;
+  border-color: transparent; background: transparent;
 }
+.queue button:hover:not(:disabled), .boxes button:hover:not(:disabled) { background: var(--subtle-hover) }
+.queue button[aria-current="true"] { position: relative; background: var(--primary-soft) }
+.queue button[aria-current="true"]::before { content: ""; position: absolute; left: 0; top: 50%; width: 3px; height: 16px; margin-top: -8px; border-radius: var(--radius-pill); background: var(--primary) }
+.queue img { width: 56px; height: 40px; object-fit: cover; border-radius: var(--radius-ctl); background: var(--viewer) }
+.queue .q-title { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.queue small { display: block; color: var(--muted); font-size: 12px; line-height: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.q-state { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--line-strong) }
+.q-state.positive { background: var(--ok); border-color: var(--ok) }
+.q-state.negative { background: var(--primary); border-color: var(--primary) }
+.q-state.ambiguous { background: var(--warn); border-color: var(--warn) }
+.q-state.excluded { background: var(--muted); border-color: var(--muted) }
 
-.coordinates input {
-  min-width: 0
+.stage-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap }
+.stage-title { min-width: 0; flex: 1 }
+.stage-title h2 { font-size: 16px }
+.stage-title p { margin: 0; font-size: 12px; line-height: 16px; color: var(--muted) }
+/* Toolbar Fluent: superfície sutil, divisores verticais. */
+.toolbar {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  margin: 12px 0; padding: 4px 8px; min-height: 40px;
+  border: 1px solid var(--line); border-radius: var(--radius-ctl);
+  background: var(--inset);
 }
+.toolbar .sep { width: 1px; height: 20px; background: var(--line-strong) }
+.toggle { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-size: 13px; color: var(--ink); cursor: pointer }
+.toggle input { width: 16px; min-height: 16px; height: 16px; margin: 0; accent-color: var(--primary-bg) }
+.range { display: inline-flex; align-items: center; gap: 8px; margin: 0; font-size: 13px; color: var(--ink) }
+.range input { width: 110px; min-height: 0; padding: 0; accent-color: var(--ai) }
+#drawToggle[aria-pressed="true"] { background: var(--primary-bg); color: var(--primary-ink); border-color: transparent }
 
-.boxes {
-  max-height: 280px;
-  overflow: auto
-}
+.viewer { position: relative; display: grid; place-items: center; overflow: hidden; background: var(--viewer); border: 1px solid var(--line); border-radius: var(--radius-card) }
+.viewer canvas { display: block; max-width: 100%; max-height: calc(100vh - 300px); width: auto; height: auto }
+.viewer.drawing canvas { touch-action: none; cursor: crosshair }
 
+#message { min-height: 36px; margin: 12px 0 0; padding: 8px 12px; border-radius: var(--radius-ctl); border-left: 3px solid var(--primary); background: var(--primary-soft); font-size: 13px; line-height: 18px }
+#message.error { border-left-color: var(--bad); background: var(--bad-soft); color: var(--bad) }
+
+details { margin-top: 12px; font-size: 13px }
+details summary { cursor: pointer; color: var(--muted) }
+details summary:hover { color: var(--ink) }
+details p { white-space: pre-line }
+
+.inspector { display: grid; gap: 16px }
+.section-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px }
+.section-title h2 { font-size: 16px; line-height: 22px }
+.boxes { max-height: 260px; overflow: auto; font-size: 13px }
 .boxes button {
-  display: block;
-  width: 100%;
-  text-align: left;
-  margin: 8px 0;
-  border-left: 6px solid var(--box-color)
+  display: block; width: 100%; margin: 4px 0; padding: 8px 12px;
+  text-align: left; font-weight: 400;
+  border: 1px solid var(--line); border-left: 4px solid var(--box-color); border-radius: var(--radius-ctl); background: var(--inset);
+  transition: background var(--fast) var(--ease), border-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
 }
+.boxes button:hover:not(:disabled) { background: var(--subtle-hover); border-color: var(--line-strong) }
+.boxes button.selected { background: var(--primary-soft); border-color: var(--primary); border-left-color: var(--box-color); box-shadow: 0 0 12px var(--primary-soft) }
+.box-caption { font-size: 12px; line-height: 16px; color: var(--muted) }
 
-.suggestions .suggestion {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  justify-content: space-between;
-  margin: 8px 0;
-  padding: 8px 12px;
-  border: 1px dashed var(--box-color);
-  border-left: 6px dashed var(--box-color);
-  border-radius: 8px
+/* Sugestões da IA: Laranja/Âmbar luminoso com borda tracejada e brilho */
+.suggestion {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 8px; align-items: center;
+  margin: 6px 0; padding: 10px 12px;
+  border: 1px dashed var(--box-color); border-left: 4px solid var(--ai); border-radius: var(--radius-ctl);
+  background: var(--ai-soft);
+  box-shadow: 0 0 12px rgba(251, 146, 60, .14);
+  font-size: 13px;
+  transition: box-shadow var(--fast) var(--ease), border-color var(--fast) var(--ease);
 }
-
-.suggestion button {
-  flex: 0 0 auto
+.suggestion:hover {
+  box-shadow: 0 0 18px rgba(251, 146, 60, .28);
 }
+.suggestion .conf { grid-column: 1 / -1; height: 4px; border-radius: var(--radius-pill); background: var(--inset); overflow: hidden }
+.suggestion .conf i { display: block; height: 100%; background: var(--ai); box-shadow: 0 0 8px var(--ai) }
+.suggestion .actions { display: flex; gap: 4px }
 
-.box-caption {
-  font-size: 14px;
-  color: var(--muted)
+.coordinates { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px }
+.coordinates input { min-width: 0 }
+.row-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px }
+.checks { display: flex; gap: 8px; align-items: flex-start; margin-top: 12px }
+.checks input { width: 16px; min-height: 16px; height: 16px; margin-top: 2px; accent-color: var(--primary-bg) }
+.checks label { margin: 0; font-size: 13px; line-height: 18px; color: var(--ink) }
+.shortcuts { margin-top: 12px; font-size: 12px; line-height: 20px; color: var(--muted) }
+kbd { font: 11px/16px var(--font-mono); padding: 0 5px; border: 1px solid var(--control-border); border-bottom-width: 2px; border-radius: var(--radius-ctl); background: var(--control); color: var(--ink) }
+
+/* ---------- Treino, monitoramento, modelos ---------- */
+.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; counter-reset: step }
+.step { min-width: 0; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--inset); transition: border-color var(--fast) var(--ease) }
+.step:hover { border-color: var(--line-strong) }
+.step::before { counter-increment: step; content: counter(step); display: inline-grid; place-items: center; width: 24px; height: 24px; margin-bottom: 8px; border-radius: 50%; background: var(--primary-soft); color: var(--primary); font-size: 12px; font-weight: 600 }
+.step.done::before { content: "✓"; background: var(--ok); color: #ffffff; box-shadow: 0 0 10px var(--ok) }
+.step h3 { margin: 0 0 4px }
+.step p { margin: 0 0 8px; font-size: 12px; line-height: 16px; color: var(--muted) }
+
+.command {
+  position: relative; margin: 8px 0 0; padding: 10px 76px 10px 12px;
+  border: 1px solid var(--line); border-radius: var(--radius-ctl);
+  background: var(--terminal); color: var(--terminal-ink);
+  font: 12px/18px var(--font-mono); white-space: pre-wrap; word-break: break-all;
 }
+.command button { position: absolute; top: 6px; right: 6px; min-height: 24px; padding: 2px 8px; font-size: 12px; background: rgba(255, 255, 255, .08); color: var(--terminal-ink); border-color: rgba(255, 255, 255, .16) }
+.command button:hover:not(:disabled) { background: rgba(255, 255, 255, .16) }
 
-#message {
-  padding: 12px;
-  margin: 16px 0;
-  border-radius: 6px;
-  background: #e8f0f5;
-  min-height: 44px
+.form-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 12px }
+.form-grid .wide { grid-column: 1 / -1 }
+
+/* DataGrid Fluent. */
+table { width: 100%; border-collapse: collapse; font-size: 13px }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top }
+th { font-size: 12px; line-height: 16px; color: var(--muted); font-weight: 600 }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums }
+tbody tr { transition: background var(--fast) var(--ease) }
+tbody tr.clickable { cursor: pointer }
+tbody tr.clickable:hover, tbody tr[aria-selected="true"] { background: var(--subtle-hover) }
+tbody tr[aria-selected="true"] td:first-child { box-shadow: inset 3px 0 0 var(--primary) }
+.table-wrap { overflow-x: auto }
+.cell-bad { color: var(--bad); font-weight: 600 }
+.cell-warn { color: var(--warn); font-weight: 600 }
+
+.chart { width: 100%; min-height: 220px; position: relative }
+.chart svg { width: 100%; height: 220px; display: block }
+.chart .legend { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; font-size: 12px; color: var(--muted) }
+.chart .legend span { display: inline-flex; align-items: center; gap: 6px }
+.chart .legend i { width: 14px; height: 3px; border-radius: 2px; background: var(--c) }
+.chart .tooltip { position: absolute; pointer-events: none; white-space: nowrap; padding: 6px 10px; border: 1px solid var(--line); border-radius: var(--radius-ctl); background: var(--glass-strong); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); box-shadow: var(--shadow-16); font-size: 12px }
+.empty { padding: 24px; text-align: center; color: var(--muted); font-size: 13px }
+
+.plots { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-top: 12px }
+.plots a { display: block; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--viewer); transition: box-shadow var(--fast) var(--ease) }
+.plots a:hover { box-shadow: var(--shadow-8) }
+.plots img { display: block; width: 100%; height: 150px; object-fit: contain }
+.plots span { display: block; padding: 6px 8px; font-size: 12px; color: var(--muted); background: var(--glass-strong) }
+
+/* ProgressRing do treino: traço na cor de destaque sobre trilho neutro. */
+.ring-wrap { display: flex; gap: 24px; align-items: center; flex-wrap: wrap }
+.ring { width: 132px; height: 132px; flex: 0 0 auto }
+.ring circle { fill: none; stroke-width: 8 }
+.ring .track { stroke: var(--inset) }
+.ring .value { stroke: var(--primary); stroke-linecap: round; transform: rotate(-90deg); transform-origin: 50% 50%; transition: stroke-dashoffset var(--normal) var(--ease) }
+.ring text { fill: var(--ink); font: 600 20px var(--font-display) }
+.ring .ring-sub { fill: var(--muted); font-size: 11px; font-weight: 400 }
+.facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 24px; font-size: 13px }
+.facts dt { color: var(--muted); font-size: 12px; line-height: 16px }
+.facts dd { margin: 0; font-weight: 600 }
+.metric-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px }
+.metric-tiles .tile { padding: 12px; border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--inset) }
+.metric-tiles .tile b { display: block; font: 600 20px/28px var(--font-display); font-variant-numeric: tabular-nums }
+.metric-tiles .tile span { font-size: 12px; line-height: 16px; color: var(--muted) }
+.delta.up { color: var(--ok) } .delta.down { color: var(--bad) }
+pre.log { max-height: 260px; overflow: auto; margin: 8px 0 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-ctl); background: var(--terminal); color: var(--terminal-ink); font: 12px/18px var(--font-mono); white-space: pre-wrap }
+
+.verdict { display: flex; gap: 12px; align-items: flex-start; padding: 12px; border: 1px solid color-mix(in srgb, var(--bad) 30%, transparent); border-left: 3px solid var(--bad); border-radius: var(--radius-ctl); background: var(--bad-soft) }
+.verdict.ok { border-color: color-mix(in srgb, var(--ok) 30%, transparent); border-left-color: var(--ok); background: var(--ok-soft) }
+.verdict ul { margin: 6px 0 0; padding-left: 18px; font-size: 13px }
+
+/* Toast Fluent em Liquid Glass com brilho esmeralda Moonlight */
+#toast {
+  position: fixed; right: 24px; bottom: 24px; z-index: 20;
+  display: flex; gap: 12px; align-items: center;
+  max-width: 400px; padding: 14px 18px;
+  border: 1px solid rgba(16, 185, 129, .4); border-left: 4px solid var(--ok); border-radius: var(--radius-card);
+  background: var(--glass-strong);
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
+  box-shadow: 0 0 28px rgba(16, 185, 129, .35), inset 0 1px 1px var(--glass-highlight), var(--shadow-28);
+  opacity: 0; transform: translateY(12px); pointer-events: none;
+  transition: opacity var(--normal) var(--ease-out), transform var(--normal) var(--ease-out);
 }
+#toast.show { opacity: 1; transform: none }
+#toast .check { width: 28px; height: 28px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 50%; background: var(--ok); color: #ffffff; font-weight: 700; box-shadow: 0 0 12px rgba(16, 185, 129, .6) }
+#toast b { display: block; font-weight: 600 }
+#toast span { font-size: 12px; line-height: 16px; color: var(--muted) }
 
-#message.error {
-  background: #fde9e8;
-  color: #812525
-}
-
-.controls {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: space-between
-}
-
-.stats {
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
-  font-weight: 600
-}
-
-.footer {
-  font-size: 14px;
-  padding: 24px 32px;
-  color: var(--muted)
-}
-
-a {
-  color: #155d86
-}
-
-.hidden {
-  display: none!important
-}
-
-@media(max-width:1000px) {
-  main {
-    grid-template-columns: 1fr;
-    padding: 16px
+/* Brilho verde quando uma decisão é registrada */
+@keyframes decisionPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.75), inset 0 0 15px rgba(16, 185, 129, 0.35);
+    border-color: var(--ok);
   }
-  .queue {
-    max-height: 240px
+  40% {
+    box-shadow: 0 0 32px 6px rgba(16, 185, 129, 0.55), inset 0 0 25px rgba(16, 185, 129, 0.25);
+    border-color: var(--ok);
   }
-  .tools {
-    grid-template-columns: 1fr
-  }
-  header {
-    padding: 24px 16px
-  }
-}
-
-@media(max-width:480px) {
-  header h1 {
-    font-size: 26px
-  }
-  .coordinates {
-    grid-template-columns: repeat(2,1fr)
-  }
-  .panel {
-    padding: 12px
-  }
-  button {
-    padding: 10px 12px
-  }
-  .controls button {
-    flex: 1
-  }
-  .inline {
-    align-items: stretch
-  }
-  .inline button {
-    flex: 1
+  100% {
+    box-shadow: inset 0 1px 1px var(--glass-highlight), var(--shadow-8);
+    border-color: var(--glass-border);
   }
 }
+.glow-decision {
+  animation: decisionPulse 1.2s cubic-bezier(0, 0, 0.2, 1) !important;
+}
 
-@media(prefers-reduced-motion:reduce) {
-  * {
-    scroll-behavior: auto!important
-  }
+.footer { padding: 0 32px 24px; font-size: 12px; line-height: 16px; color: var(--muted) }
+
+@media (max-width: 1350px) {
+  .review-grid { grid-template-columns: 240px minmax(0, 1fr) }
+  .inspector { grid-column: 1 / -1; grid-template-columns: repeat(2, minmax(0, 1fr)) }
+  .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)) }
+  .steps { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+}
+
+@media (max-width: 1000px) {
+  .app { grid-template-columns: 1fr }
+  .rail { position: fixed; top: auto; bottom: 0; left: 0; right: 0; height: auto; flex-direction: row; justify-content: space-around; padding: 4px; border-right: 0; border-top: 1px solid var(--glass-border); box-shadow: var(--shadow-16) }
+  .rail button[aria-current="page"]::before { left: 50%; top: auto; bottom: 0; width: 16px; height: 3px; margin: 0 0 0 -8px }
+  .rail .brand, .rail .spacer, .rail button .tip { display: none }
+  .shell { padding-bottom: 64px }
+  .topbar, .notice-strip, main, .footer { padding-left: 16px; padding-right: 16px }
+  h1 { font-size: 24px; line-height: 32px }
+  .review-grid, .two, .halves, .inspector { grid-template-columns: 1fr }
+  .queue-card { position: static }
+  .queue { max-height: 260px }
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+  .steps { grid-template-columns: 1fr }
+  .form-grid { grid-template-columns: 1fr 1fr }
+  .metric-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+  .viewer canvas { max-height: 60vh }
+  #toast { left: 16px; right: 16px; bottom: 72px; max-width: none }
+}
+
+@media (max-width: 480px) {
+  .kpis, .steps, .form-grid { grid-template-columns: 1fr }
+  .coordinates { grid-template-columns: repeat(2, 1fr) }
+  .top-actions, .top-actions input { width: 100% }
+  .top-actions button { flex: 1 }
+  .bar-row { grid-template-columns: minmax(0, 1fr) 54px }
+  .bar-row .bar { grid-column: 1 / -1; grid-row: 2 }
+  .stage-title { flex-basis: 100%; order: -1 }
+}
+
+/* Sem suporte a backdrop-filter: vidro vira superfície opaca legível. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .card, .rail, #toast, .notice, .chart .tooltip { background: var(--surface-strong) }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .card, .rail, #toast, .chart .tooltip { background: var(--surface-strong); -webkit-backdrop-filter: none; backdrop-filter: none }
 }
 </style>
 </head>
 <body>
-<header>
-<h1>DroneCamp · Revisão das imagens</h1>
-<p>Confira a foto, ajuste as caixas e registre sua decisão.</p>
-<div class="notice"><strong>Propostas visuais por IA, aguardando sua revisão.</strong> Esta página não certifica a condição do telhado. Correções registradas poderão compor um próximo conjunto de treinamento depois de validadas.</div>
-<p class="notice hidden" id="taxonomyNotice"></p>
+<div class="app">
+<nav class="rail" aria-label="Seções da plataforma">
+  <div class="brand" aria-hidden="true">DC</div>
+  <button type="button" data-view="overview" aria-label="Visão geral"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg><span class="tip">Visão geral</span></button>
+  <button type="button" data-view="review" aria-label="Revisão e classificação"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2"/><rect x="8" y="8" width="8" height="8" rx="1.5"/></svg><span class="tip">Revisão e classificação</span></button>
+  <button type="button" data-view="training" aria-label="Treinamento e fine-tuning"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v3M12 18v3M4.2 7.5l2.6 1.5M17.2 15l2.6 1.5M4.2 16.5 6.8 15M17.2 9l2.6-1.5"/><circle cx="12" cy="12" r="4"/></svg><span class="tip">Treinamento e fine-tuning</span></button>
+  <button type="button" data-view="monitor" aria-label="Monitoramento"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg><span class="tip">Monitoramento</span><span class="badge-dot hidden" id="liveDot"></span></button>
+  <button type="button" data-view="models" aria-label="Modelos e comparação"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="m3 13 9 5 9-5"/></svg><span class="tip">Modelos e comparação</span></button>
+  <div class="spacer"></div>
+  <button type="button" id="themeToggle" aria-label="Alternar tema claro/escuro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg><span class="tip">Tema claro/escuro</span></button>
+</nav>
+
+<div class="shell">
+<header class="topbar">
+  <div>
+    <h1 id="viewTitle">Visão geral</h1>
+    <p class="sub">DroneCamp Vision · inspeção assistida de telhados · registro <span id="versionLabel"></span></p>
+  </div>
+  <div class="top-actions">
+    <span class="chip neutral" id="modeChip"><span class="dot"></span>Instantâneo offline</span>
+    <label for="reviewer" class="hidden">Seu identificador de revisão</label>
+    <input id="reviewer" maxlength="100" placeholder="Identificador de revisão" autocomplete="off" aria-label="Seu identificador de revisão">
+    <button class="primary" id="export" type="button">Salvar arquivo de revisão</button>
+  </div>
 </header>
-<main>
-<aside class="panel" aria-label="Fila de revisão">
-<h2>Fotos para revisão</h2><div class="stats" id="stats"></div>
-<label for="filter">Filtrar propostas</label><select id="filter"><option value="all">Todas as fotos</option><option value="positive">Com ocorrências propostas</option><option value="negative">Negativas propostas</option><option value="ambiguous">Ambíguas</option><option value="excluded">Excluídas</option><option value="pending">Sem sua decisão</option></select>
-<div class="queue" id="queue"></div>
-<label for="reviewer">Seu identificador de revisão</label><input id="reviewer" maxlength="100" placeholder="Ex.: revisor_01" autocomplete="off">
-<p class="muted">Use um identificador interno; não precisa informar dados pessoais.</p>
-<button class="primary" id="export">Salvar arquivo de revisão</button>
-<p class="muted">O navegador guarda um rascunho local. O botão baixa suas decisões para importação no sistema; não modifica o modelo.</p>
-</aside>
-<section class="panel" aria-labelledby="photoTitle">
-<div class="controls"><button id="previous">← Foto anterior</button><button id="next">Próxima foto →</button></div>
-<h2 id="photoTitle" style="margin-top:16px"></h2><p id="photoMeta" class="muted"></p><p id="historyNotice" class="notice hidden"></p>
-<div class="inline"><span class="status" id="proposalStatus"></span><label class="checks"><input type="checkbox" id="showBoxes" checked>Mostrar caixas propostas</label><label class="checks hidden" id="showSuggestionsLabel"><input type="checkbox" id="showSuggestions" checked>Mostrar sugestões do modelo</label><button id="drawToggle" aria-pressed="false">Desenhar nova caixa</button><a id="originalLink" target="_blank" rel="noopener">Abrir foto original</a></div>
-<div class="viewer" id="viewer"><canvas id="canvas" tabindex="0" aria-label="Fotografia com caixas propostas. Use os campos de coordenadas abaixo para anotar com teclado."></canvas></div>
-<details><summary>Observações da proposta inicial</summary><p id="proposalNotes"></p></details><h3>Observações da revisão visual</h3><p id="auditNotes"></p>
-<div id="message" role="status" aria-live="polite">Selecione uma foto para começar.</div>
-<div class="tools">
-<section><h3>Ocorrências na foto</h3><p class="muted">Selecione uma caixa para corrigir. Para criar uma nova, desenhe sobre a foto ou preencha as coordenadas.</p><div class="boxes" id="boxes"></div>
-<div id="suggestionPanel" class="hidden"><h3>Sugestões do modelo</h3><p class="muted" id="suggestionMeta"></p><div class="boxes suggestions" id="suggestions"></div></div>
-<label for="classId">Categoria da caixa</label><select id="classId"></select>
-<div class="coordinates"><div><label for="x1">X inicial</label><input id="x1" type="number" min="0" step="1"></div><div><label for="y1">Y inicial</label><input id="y1" type="number" min="0" step="1"></div><div><label for="x2">X final</label><input id="x2" type="number" min="0" step="1"></div><div><label for="y2">Y final</label><input id="y2" type="number" min="0" step="1"></div></div>
-<div class="inline" style="margin-top:16px"><button id="applyBox">Adicionar caixa</button><button id="newBox">Nova caixa</button><button id="deleteBox" disabled>Excluir selecionada</button></div>
-</section>
-<section><h3>Sua decisão sobre a foto</h3><label for="decision">Situação da revisão</label><select id="decision"><option value="pending">Pendente</option><option value="positive">Revisei: há ocorrências</option><option value="negative">Revisei: nenhuma das classes ativas</option><option value="ambiguous">Há dúvida: precisa de análise técnica</option><option value="excluded">Excluir do treinamento</option></select>
-<label for="notes">Correções, dúvidas ou motivo da decisão</label><textarea id="notes" placeholder="Descreva o que você conferiu ou o que ainda precisa esclarecer."></textarea>
-<div class="checks"><input id="confirmed" type="checkbox"><label for="confirmed">Conferi a foto inteira e confirmei as classes e caixas registradas.</label></div>
-<button class="primary" id="saveDecision" style="margin-top:16px">Registrar minha decisão</button><p class="muted">Imagem negativa exige nenhuma caixa e revisão completa. Severidade permanece pendente de avaliação técnica.</p>
-</section>
+<div class="notice-strip">
+  <div class="notice"><strong>Propostas visuais por IA, aguardando sua revisão.</strong> Esta plataforma não certifica a condição do telhado. Correções registradas poderão compor um próximo conjunto de treinamento depois de validadas; treinar ou gerar pesos não comprova melhoria.</div>
+  <p class="notice hidden" id="taxonomyNotice"></p>
 </div>
+
+<main>
+<!-- ======================= VISÃO GERAL ======================= -->
+<section class="view" id="view-overview" aria-labelledby="viewTitle">
+  <div class="grid kpis">
+    <div class="card kpi accent"><div class="label">Fotos na revisão</div><div class="value" id="kpiPhotos">0</div><div class="hint" id="kpiPhotosHint"></div></div>
+    <div class="card kpi"><div class="label">Decisões registradas</div><div class="value" id="kpiDecisions">0</div><div class="progress" aria-hidden="true"><i id="kpiDecisionsBar" style="width:0"></i></div></div>
+    <div class="card kpi"><div class="label">Caixas atuais</div><div class="value" id="kpiBoxes">0</div><div class="hint">incluindo suas correções locais</div></div>
+    <div class="card kpi"><div class="label">Sugestões da IA pendentes</div><div class="value" id="kpiSuggestions">0</div><div class="hint" id="kpiSuggestionsHint"></div></div>
+    <div class="card kpi"><div class="label">Classes com poucos exemplos</div><div class="value" id="kpiSparse">0</div><div class="hint">menos de 5 caixas nesta revisão</div></div>
+  </div>
+  <div class="grid two" style="margin-top:16px">
+    <div class="card">
+      <div class="card-head"><h2>Cobertura por classe</h2><span class="muted small-text"><span class="chip neutral">sólido: caixas</span> <span class="chip ai">listrado: sugestões IA</span></span></div>
+      <div id="classBars"></div>
+    </div>
+    <div class="grid" style="align-content:start">
+      <div class="card">
+        <div class="card-head"><h2>Triagem das fotos</h2><button class="small" type="button" data-goto="review">Abrir revisão</button></div>
+        <div id="triageBars"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>Modelo das sugestões</h2><span id="modelChip"></span></div>
+        <div id="modelSummary" class="small-text"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>Último treino</h2><button class="small" type="button" data-goto="monitor">Monitorar</button></div>
+        <div id="lastRunSummary" class="small-text"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= REVISÃO ======================= -->
+<section class="view" id="view-review">
+  <div class="review-grid">
+    <aside class="card queue-card" aria-label="Fila de revisão">
+      <div class="card-head"><h2>Fotos para revisão</h2></div>
+      <div class="muted small-text" id="stats"></div>
+      <div class="progress" style="margin:8px 0 4px" aria-hidden="true"><i id="queueProgress" style="width:0"></i></div>
+      <label for="filter">Filtrar fila</label>
+      <select id="filter"><option value="all">Todas as fotos</option><option value="positive">Com ocorrências propostas</option><option value="negative">Negativas propostas</option><option value="ambiguous">Ambíguas</option><option value="excluded">Excluídas</option><option value="pending">Sem sua decisão</option><option value="suggested">Com sugestões da IA pendentes</option></select>
+      <div class="queue" id="queue"></div>
+    </aside>
+
+    <section class="card" aria-labelledby="photoTitle">
+      <div class="stage-bar">
+        <button id="previous" type="button" aria-label="Foto anterior">←</button>
+        <div class="stage-title"><h2 id="photoTitle"></h2><p id="photoMeta"></p></div>
+        <span class="chip" id="proposalStatus"></span>
+        <button id="next" type="button" aria-label="Próxima foto">→</button>
+      </div>
+      <div class="toolbar" role="toolbar" aria-label="Camadas e ferramentas">
+        <label class="toggle"><input type="checkbox" id="showBoxes" checked>Caixas</label>
+        <label class="toggle hidden" id="showSuggestionsLabel"><input type="checkbox" id="showSuggestions" checked>Sugestões IA</label>
+        <label class="range hidden" id="confFilterLabel" for="confFilter">Confiança ≥ <b id="confValue"></b><input type="range" id="confFilter" min="0" max="100" step="5"></label>
+        <span class="sep" aria-hidden="true"></span>
+        <button id="drawToggle" type="button" aria-pressed="false" class="small">Desenhar caixa (B)</button>
+        <a id="originalLink" target="_blank" rel="noopener" class="small-text">Abrir foto original</a>
+      </div>
+      <p id="historyNotice" class="notice hidden"></p>
+      <div class="viewer" id="viewer"><canvas id="canvas" tabindex="0" aria-label="Fotografia com caixas propostas. Use os campos de coordenadas ao lado para anotar com teclado."></canvas></div>
+      <div id="message" role="status" aria-live="polite">Selecione uma foto para começar.</div>
+      <details><summary>Observações da proposta inicial</summary><p id="proposalNotes"></p></details>
+      <details open><summary>Observações da revisão visual</summary><p id="auditNotes"></p></details>
+      <div class="shortcuts">Atalhos: <kbd>←</kbd> <kbd>→</kbd> fotos · <kbd>B</kbd> desenhar · <kbd>A</kbd> aceitar 1ª sugestão · <kbd>X</kbd> descartar 1ª sugestão · <kbd>Del</kbd> excluir caixa selecionada</div>
+    </section>
+
+    <aside class="inspector" aria-label="Inspetor da foto">
+      <section class="card hidden" id="suggestionPanel">
+        <div class="section-title"><h2>Sugestões do modelo</h2><span class="chip ai" id="suggestionCount"></span></div>
+        <p class="muted small-text" id="suggestionMeta"></p>
+        <div class="boxes suggestions" id="suggestions"></div>
+      </section>
+      <section class="card">
+        <div class="section-title"><h2>Ocorrências na foto</h2><span class="chip neutral" id="boxCount"></span></div>
+        <p class="muted small-text">Selecione uma caixa para corrigir. Para criar uma nova, desenhe sobre a foto ou preencha as coordenadas.</p>
+        <div class="boxes" id="boxes"></div>
+        <label for="classId">Categoria da caixa</label><select id="classId"></select>
+        <div class="coordinates"><div><label for="x1">X inicial</label><input id="x1" type="number" min="0" step="1"></div><div><label for="y1">Y inicial</label><input id="y1" type="number" min="0" step="1"></div><div><label for="x2">X final</label><input id="x2" type="number" min="0" step="1"></div><div><label for="y2">Y final</label><input id="y2" type="number" min="0" step="1"></div></div>
+        <div class="row-actions"><button id="applyBox" type="button">Adicionar caixa</button><button id="newBox" type="button">Nova caixa</button><button id="deleteBox" type="button" disabled>Excluir selecionada</button></div>
+      </section>
+      <section class="card">
+        <h2>Sua decisão sobre a foto</h2>
+        <label for="decision">Situação da revisão</label><select id="decision"><option value="pending">Pendente</option><option value="positive">Revisei: há ocorrências</option><option value="negative">Revisei: nenhuma das classes ativas</option><option value="ambiguous">Há dúvida: precisa de análise técnica</option><option value="excluded">Excluir do treinamento</option></select>
+        <label for="notes">Correções, dúvidas ou motivo da decisão</label><textarea id="notes" placeholder="Descreva o que você conferiu ou o que ainda precisa esclarecer."></textarea>
+        <div class="checks"><input id="confirmed" type="checkbox"><label for="confirmed">Conferi a foto inteira e confirmei as classes e caixas registradas.</label></div>
+        <button class="primary" id="saveDecision" type="button" style="margin-top:12px;width:100%">Registrar minha decisão</button>
+        <p class="muted small-text">Imagem negativa exige nenhuma caixa e revisão completa. Severidade permanece pendente de avaliação técnica.</p>
+      </section>
+    </aside>
+  </div>
+</section>
+
+<!-- ======================= TREINAMENTO ======================= -->
+<section class="view" id="view-training">
+  <div class="card">
+    <div class="card-head"><h2>Ciclo de fine-tuning com correções humanas</h2><span class="muted small-text">Cada etapa preserva a versão anterior; nada é adotado automaticamente.</span></div>
+    <div class="steps" id="cycleSteps"></div>
+  </div>
+  <div class="grid two" style="margin-top:16px">
+    <div class="card">
+      <div class="card-head"><h2>Execuções de treino</h2><span class="muted small-text" id="runsHint"></span></div>
+      <div class="table-wrap"><table><thead><tr><th>Execução</th><th>Estado</th><th class="num">Épocas</th><th class="num">Melhor mAP50</th><th class="num">s/época</th></tr></thead><tbody id="runsTable"></tbody></table></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Novo treino piloto</h2><span class="chip neutral" id="deviceChip"></span></div>
+      <div class="form-grid">
+        <div class="wide"><label for="trainData">Dataset piloto</label><select id="trainData"></select></div>
+        <div class="wide"><label for="trainWeights">Pesos iniciais</label><select id="trainWeights"></select></div>
+        <div><label for="trainEpochs">Épocas</label><input id="trainEpochs" type="number" min="1" max="1000"></div>
+        <div><label for="trainImgsz">imgsz</label><input id="trainImgsz" type="number" min="64" max="2048" step="32"></div>
+        <div><label for="trainBatch">batch</label><input id="trainBatch" type="number" min="1" max="64"></div>
+      </div>
+      <p class="muted small-text" id="trainEstimate"></p>
+      <div class="command" id="trainCommand"></div>
+      <div class="row-actions"><button class="primary" type="button" id="startTrain" disabled>Iniciar treino no servidor local</button></div>
+      <p class="muted small-text" id="trainServerHint"></p>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <div class="card-head"><h2 id="runDetailTitle">Detalhes da execução</h2><span id="runDetailChips"></span></div>
+    <div class="grid halves">
+      <div><h3>Perdas (treino e validação)</h3><div class="chart" id="runLossChart"></div></div>
+      <div><h3>Métricas de validação</h3><div class="chart" id="runMetricChart"></div></div>
+    </div>
+    <div class="plots" id="runPlots"></div>
+  </div>
+</section>
+
+<!-- ======================= MONITORAMENTO ======================= -->
+<section class="view" id="view-monitor">
+  <p class="notice" id="monitorOffline">Instantâneo gerado quando a página foi criada. Para acompanhar um treino ao vivo, abra a plataforma pelo atalho <b>Abrir plataforma DroneCamp.cmd</b> (servidor local).</p>
+  <div class="grid two">
+    <div class="card">
+      <div class="card-head"><h2 id="monitorTitle">Treino</h2><span id="monitorState"></span></div>
+      <div class="ring-wrap">
+        <svg class="ring" viewBox="0 0 132 132" role="img" aria-labelledby="ringLabel"><title id="ringLabel">Progresso do treino</title><circle class="track" cx="66" cy="66" r="54"/><circle class="value" id="ringValue" cx="66" cy="66" r="54" stroke-dasharray="339.3" stroke-dashoffset="339.3"/><text x="66" y="66" text-anchor="middle" id="ringText">0%</text><text x="66" y="86" text-anchor="middle" class="ring-sub" id="ringSub"></text></svg>
+        <dl class="facts" id="monitorFacts"></dl>
+      </div>
+      <h3>Última época</h3>
+      <div class="metric-tiles" id="monitorTiles"></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Tarefa no servidor local</h2><span id="jobState" class="chip neutral">sem tarefa</span></div>
+      <p class="muted small-text" id="jobHint">Disponível quando a plataforma é aberta pelo servidor local.</p>
+      <div class="form-grid">
+        <div class="wide"><label for="suggestWeights">Gerar sugestões nesta revisão com os pesos</label><select id="suggestWeights"></select></div>
+        <div><label for="suggestConf">Confiança mínima</label><input id="suggestConf" type="number" min="0.01" max="1" step="0.01"></div>
+      </div>
+      <div class="row-actions"><button type="button" class="ai" id="startSuggest" disabled>Gerar sugestões</button><button type="button" id="stopJob" disabled>Interromper tarefa</button></div>
+      <pre class="log" id="jobLog" aria-live="polite">—</pre>
+    </div>
+  </div>
+  <div class="grid halves" style="margin-top:16px">
+    <div class="card"><h2>Perdas ao vivo</h2><div class="chart" id="liveLossChart"></div></div>
+    <div class="card"><h2>Métricas ao vivo</h2><div class="chart" id="liveMetricChart"></div></div>
+  </div>
+</section>
+
+<!-- ======================= MODELOS ======================= -->
+<section class="view" id="view-models">
+  <div class="card">
+    <div class="card-head"><h2>Critério de adoção de uma nova versão</h2></div>
+    <div id="adoptionVerdict"></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <div class="card-head"><h2>Comparação entre modelos</h2><select id="compareSelect" aria-label="Arquivo de comparação" style="width:auto"></select></div>
+    <p class="muted small-text">Encontradas = caixas verdadeiras recuperadas (recall). Corretas/sugeridas = acertos entre as caixas sugeridas (precisão). Divisões marcadas como “visto no treino” não medem generalização.</p>
+    <div class="table-wrap" id="compareTable"></div>
+  </div>
+  <div class="grid halves" style="margin-top:16px">
+    <div class="card">
+      <div class="card-head"><h2>Caixas por classe no dataset do treino</h2><select id="coverageRun" aria-label="Execução" style="width:auto"></select></div>
+      <div class="table-wrap" id="coverageTable"></div>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Melhor mAP50 de validação por execução</h2></div>
+      <div id="leaderboard"></div>
+      <p class="muted small-text">A validação do piloto tem poucas fotos de uma única edificação: diferenças pequenas são ruído.</p>
+    </div>
+  </div>
 </section>
 </main>
-<div class="footer">Caixas em fotos semelhantes podem repetir o mesmo defeito. Não há medição física, avaliação hidráulica ou aprovação técnica automática.</div>
+<div class="footer">Caixas em fotos semelhantes podem repetir o mesmo defeito. Não há medição física, avaliação hidráulica ou aprovação técnica automática. Gravidade, diagnóstico e recomendações dependem de validação técnica.</div>
+</div>
+</div>
+<div id="toast" role="status" aria-live="polite"><div class="check" aria-hidden="true">✓</div><div><b id="toastTitle"></b><span id="toastText"></span></div></div>
+
 <script>
 // Caixas podem incluir correções humanas históricas; aprovação atual começa pendente.
 const DATA = __REVIEW_DATA__;
 const $ = id => document.getElementById(id);
+const OPS_EMPTY = { runs: [], comparisons: [], datasets: [], weights: [], pilot_defaults: {} };
+let OPS = DATA.operations || OPS_EMPTY;
+// Token presente = página servida pelo comando platform (monitoramento ao vivo e tarefas).
+const TOKEN = (document.querySelector('meta[name="dronecamp-server"]') || {}).content || '';
+const SERVER = Boolean(TOKEN) && location.protocol.startsWith('http');
 const names = {
   positive: 'Positiva proposta',
   negative: 'Negativa proposta',
+  ambiguous: 'Ambígua',
+  excluded: 'Excluída'
+};
+const decisionNames = {
+  positive: 'Há ocorrências',
+  negative: 'Negativa',
   ambiguous: 'Ambígua',
   excluded: 'Excluída'
 };
@@ -409,7 +931,9 @@ let state = {
   start: null,
   img: new Image(),
   drafts: saved.images || {},
-  reviewer: saved.reviewer || ''
+  reviewer: saved.reviewer || '',
+  view: 'overview',
+  run: null
 };
 const clone = value => JSON.parse(JSON.stringify(value));
 const item = () => DATA.images[state.index];
@@ -420,10 +944,31 @@ const draft = () => state.drafts[item().image_sha256] || {
   confirmed_complete: false
 };
 let active = draft();
+const classOf = id => DATA.classes.find(value => value.id === id);
+const pct = value => value == null ? '—' : `${(value * 100).toFixed(1)}%`;
+const el = (tag, props = {}, ...children) => {
+  const node = document.createElement(tag);
+  Object.entries(props).forEach(([key, value]) => {
+    if (key === 'class') node.className = value;
+    else if (key === 'style') node.setAttribute('style', value);
+    else if (key.startsWith('on')) node[key] = value;
+    else node.setAttribute(key, value)
+  });
+  children.flat().forEach(child => child != null && node.append(child));
+  return node
+};
 
 function message(text, error = false) {
   $('message').textContent = text;
   $('message').classList.toggle('error', error)
+}
+
+function toast(title, text) {
+  $('toastTitle').textContent = title;
+  $('toastText').textContent = text;
+  $('toast').classList.add('show');
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => $('toast').classList.remove('show'), 3200)
 }
 
 // Guardar o rascunho no navegador não aprova dados nem atualiza pesos do modelo.
@@ -440,6 +985,37 @@ function persist() {
   }
 }
 
+/* ======================= Navegação entre seções ======================= */
+const viewTitles = {
+  overview: 'Visão geral',
+  review: 'Revisão e classificação',
+  training: 'Treinamento e fine-tuning',
+  monitor: 'Monitoramento',
+  models: 'Modelos e comparação'
+};
+function showView(view) {
+  if (!viewTitles[view]) view = 'overview';
+  state.view = view;
+  document.querySelectorAll('.view').forEach(section => section.classList.toggle('active', section.id === 'view-' + view));
+  document.querySelectorAll('.rail button[data-view]').forEach(button => button.setAttribute('aria-current', button.dataset.view === view ? 'page' : 'false'));
+  $('viewTitle').textContent = viewTitles[view];
+  try { sessionStorage.setItem('dronecamp-view', view) } catch {}
+  if (location.hash !== '#' + view) history.replaceState(null, '', '#' + view);
+  if (view === 'overview') renderOverview();
+  if (view === 'review') paint();
+  if (view === 'training') renderTraining();
+  if (view === 'monitor') renderMonitor();
+  if (view === 'models') renderModels()
+}
+document.querySelectorAll('[data-view]').forEach(button => button.onclick = () => showView(button.dataset.view));
+document.querySelectorAll('[data-goto]').forEach(button => button.onclick = () => showView(button.dataset.goto));
+
+/* ======================= Revisão (lógica preservada) ======================= */
+function decidedStatus(photo) {
+  const decision = state.drafts[photo.image_sha256];
+  return decision && decision.status !== 'pending' ? decision.status : null
+}
+
 function queue() {
   const filter = $('filter').value;
   $('queue').replaceChildren();
@@ -447,28 +1023,31 @@ function queue() {
   DATA.images.forEach((photo, index) => {
     const decision = state.drafts[photo.image_sha256];
     if (decision && decision.status !== 'pending') decided++;
-    if (filter !== 'all' && (
+    if (filter === 'suggested') {
+      if (!pendingSuggestionsFor(photo, decision || { boxes: photo.boxes }).length) return
+    } else if (filter !== 'all' && (
       filter === 'pending'
         ? decision && decision.status !== 'pending'
         : photo.status !== filter
     )) return;
-    const button = document.createElement('button');
-    button.type = 'button';
-    button.setAttribute('aria-current', index === state.index);
-    button.textContent = photo.pages && photo.pages.length
+    const button = el('button', { type: 'button', 'aria-current': String(index === state.index) });
+    const thumb = el('img', { src: photo.image_url, alt: '', loading: 'lazy' });
+    const title = el('div', { class: 'q-title' }, photo.pages && photo.pages.length
       ? `${index+1}. Páginas ${photo.pages.join(', ')}`
-      : `${index+1}. ${photo.filename}`;
-    const small = document.createElement('small');
-    small.textContent = decision && decision.status !== 'pending'
-      ? 'Sua decisão registrada'
+      : `${index+1}. ${photo.filename}`);
+    const pendingAi = pendingSuggestionsFor(photo, decision || { boxes: photo.boxes }).length;
+    const small = el('small', {}, decision && decision.status !== 'pending'
+      ? `Sua decisão: ${decisionNames[decision.status]}`
       : photo.previous_human_approved
         ? 'Correções anteriores preservadas · conferir novas categorias'
-        : names[photo.status];
-    button.append(small);
+        : names[photo.status] + (pendingAi ? ` · ${pendingAi} sugest${pendingAi > 1 ? 'ões' : 'ão'} IA` : ''));
+    const dot = el('span', { class: 'q-state ' + (decision && decision.status !== 'pending' ? decision.status : ''), 'aria-hidden': 'true' });
+    button.append(thumb, el('div', {}, title, small), dot);
     button.onclick = () => openPhoto(index);
     $('queue').append(button)
   });
-  $('stats').textContent = `${DATA.images.length} fotos · ${decided} decisões`
+  $('stats').textContent = `${DATA.images.length} fotos · ${decided} decisões`;
+  $('queueProgress').style.width = `${DATA.images.length ? decided / DATA.images.length * 100 : 0}%`
 }
 
 function resetSelection() {
@@ -478,29 +1057,30 @@ function resetSelection() {
   $('deleteBox').disabled = true
 }
 
+function selectBox(index) {
+  const box = active.boxes[index];
+  state.selected = index;
+  $('classId').value = box.class_id;
+  ['x1', 'y1', 'x2', 'y2'].forEach((id, position) => $(id).value = box.bbox_xyxy[position]);
+  $('applyBox').textContent = 'Atualizar caixa';
+  $('deleteBox').disabled = false;
+  renderBoxes()
+}
+
 function renderBoxes() {
   const list = $('boxes');
   list.replaceChildren();
   active.boxes.forEach((box, index) => {
-    const button = document.createElement('button');
-    const category = DATA.classes.find(value => value.id === box.class_id);
+    const category = classOf(box.class_id);
+    const button = el('button', { type: 'button', class: index === state.selected ? 'selected' : '' });
     button.style.setProperty('--box-color', category.color);
     button.textContent = `${index+1}. ${category.label}` + (box.proposed_new_class ? ` · nova classe sugerida: ${box.proposed_new_class}` : '');
-    const caption = document.createElement('div');
-    caption.className = 'box-caption';
-    caption.textContent = box.bbox_xyxy.map(Math.round).join(', ') + ' pixels';
-    button.append(caption);
-    button.onclick = () => {
-      state.selected = index;
-      $('classId').value = box.class_id;
-      ['x1', 'y1', 'x2', 'y2'].forEach((id, position) => $(id).value = box.bbox_xyxy[position]);
-      $('applyBox').textContent = 'Atualizar caixa';
-      $('deleteBox').disabled = false;
-      paint()
-    };
+    button.append(el('div', { class: 'box-caption' }, box.bbox_xyxy.map(Math.round).join(', ') + ' pixels'));
+    button.onclick = () => selectBox(index);
     list.append(button)
   });
   if (!active.boxes.length) list.textContent = 'Nenhuma caixa registrada nesta foto.';
+  $('boxCount').textContent = `${active.boxes.length} caixa${active.boxes.length === 1 ? '' : 's'}`;
   renderSuggestions();
   paint()
 }
@@ -517,63 +1097,72 @@ function boxIou(a, b) {
 const coveringBox = suggestion => DATA.duplicate_iou
   ? active.boxes.findIndex(box => box.class_id === suggestion.class_id && boxIou(box.bbox_xyxy, suggestion.bbox_xyxy) >= DATA.duplicate_iou)
   : -1;
-function pendingSuggestions() {
-  return (item().model_suggestions || [])
+// Limite de exibição: esconder sugestões fracas não as descarta nem as aceita.
+const confThreshold = () => DATA.suggestions ? Number($('confFilter').value) / 100 : 0;
+function pendingSuggestionsFor(photo, decision) {
+  return (photo.model_suggestions || [])
     .map((suggestion, index) => ({ suggestion, index }))
-    .filter(({ suggestion }) => !active.boxes.some(box => sameBox(box, suggestion)) && !(active.dismissed_suggestions || []).includes(suggestion.id))
+    .filter(({ suggestion }) => !(decision.boxes || []).some(box => sameBox(box, suggestion)) && !(decision.dismissed_suggestions || []).includes(suggestion.id))
+}
+function pendingSuggestions() {
+  return pendingSuggestionsFor(item(), active).filter(({ suggestion }) => suggestion.confidence >= confThreshold() - 1e-9)
+}
+
+function acceptSuggestion(suggestion) {
+  const covered = coveringBox(suggestion);
+  const box = {
+    class_id: suggestion.class_id,
+    bbox_xyxy: suggestion.bbox_xyxy.map(Math.round),
+    note: `Sugestão do modelo aceita (confiança ${Math.round(suggestion.confidence*100)}%); conferida na revisão local.`
+  };
+  // Substituir troca só a geometria e a nota; campos como proposed_new_class ficam.
+  if (covered >= 0) active.boxes[covered] = { ...active.boxes[covered], ...box }; else active.boxes.push(box);
+  invalidateDecision(covered >= 0
+    ? `Caixa ${covered+1} substituída pela geometria da sugestão; nenhuma duplicata criada. Confira a foto inteira antes de confirmar.`
+    : 'Sugestão aceita como caixa. Ajuste se necessário e confira a foto inteira antes de confirmar.')
+}
+
+function dismissSuggestion(suggestion) {
+  active.dismissed_suggestions = [...(active.dismissed_suggestions || []), suggestion.id];
+  persist();
+  renderBoxes();
+  queue();
+  message('Sugestão descartada nesta revisão.')
 }
 
 function renderSuggestions() {
   const meta = DATA.suggestions;
   $('suggestionPanel').classList.toggle('hidden', !meta);
   $('showSuggestionsLabel').classList.toggle('hidden', !meta);
+  $('confFilterLabel').classList.toggle('hidden', !meta);
   if (!meta) return;
   $('suggestionMeta').textContent = `${meta.model_label} · confiança mínima ${Math.round(meta.conf*100)}%. ${meta.warning}`;
   const list = $('suggestions');
   list.replaceChildren();
   const pending = pendingSuggestions();
+  const hidden = pendingSuggestionsFor(item(), active).length - pending.length;
+  $('suggestionCount').textContent = `${pending.length} pendente${pending.length === 1 ? '' : 's'}`;
   pending.forEach(({ suggestion, index }) => {
-    const category = DATA.classes.find(value => value.id === suggestion.class_id);
-    const row = document.createElement('div');
-    row.className = 'suggestion';
-    row.style.setProperty('--box-color', category.color);
+    const category = classOf(suggestion.class_id);
     const covered = coveringBox(suggestion);
-    const text = document.createElement('span');
-    text.textContent = `IA ${index+1}. ${category.label} · ${Math.round(suggestion.confidence*100)}%`
-      + (covered >= 0 ? ` · mesmo objeto da caixa ${covered+1}` : '');
-    const accept = document.createElement('button');
-    accept.type = 'button';
-    accept.textContent = covered >= 0 ? `Substituir caixa ${covered+1}` : 'Aceitar';
-    accept.onclick = () => {
-      const box = {
-        class_id: suggestion.class_id,
-        bbox_xyxy: suggestion.bbox_xyxy.map(Math.round),
-        note: `Sugestão do modelo aceita (confiança ${Math.round(suggestion.confidence*100)}%); conferida na revisão local.`
-      };
-      // Substituir troca só a geometria e a nota; campos como proposed_new_class ficam.
-      if (covered >= 0) active.boxes[covered] = { ...active.boxes[covered], ...box }; else active.boxes.push(box);
-      invalidateDecision(covered >= 0
-        ? `Caixa ${covered+1} substituída pela geometria da sugestão; nenhuma duplicata criada. Confira a foto inteira antes de confirmar.`
-        : 'Sugestão aceita como caixa. Ajuste se necessário e confira a foto inteira antes de confirmar.')
-    };
-    const dismiss = document.createElement('button');
-    dismiss.type = 'button';
-    dismiss.textContent = 'Descartar';
-    dismiss.onclick = () => {
-      active.dismissed_suggestions = [...(active.dismissed_suggestions || []), suggestion.id];
-      persist();
-      renderBoxes();
-      message('Sugestão descartada nesta revisão.')
-    };
-    const actions = document.createElement('span');
-    actions.className = 'inline';
-    actions.append(accept, dismiss);
-    row.append(text, actions);
+    const row = el('div', { class: 'suggestion' });
+    row.style.setProperty('--box-color', category.color);
+    const text = el('span', {}, `IA ${index+1}. ${category.label} · ${Math.round(suggestion.confidence*100)}%`
+      + (covered >= 0 ? ` · mesmo objeto da caixa ${covered+1}` : ''));
+    const accept = el('button', { type: 'button', class: 'small ai' }, covered >= 0 ? `Substituir caixa ${covered+1}` : 'Aceitar');
+    accept.onclick = () => acceptSuggestion(suggestion);
+    const dismiss = el('button', { type: 'button', class: 'small' }, 'Descartar');
+    dismiss.onclick = () => dismissSuggestion(suggestion);
+    const bar = el('div', { class: 'conf', 'aria-hidden': 'true' }, el('i', { style: `width:${Math.round(suggestion.confidence*100)}%` }));
+    row.append(text, el('span', { class: 'actions' }, accept, dismiss), bar);
     list.append(row)
   });
   if (!pending.length) list.textContent = (item().model_suggestions || []).length
-    ? 'Todas as sugestões desta foto foram aceitas ou descartadas.'
+    ? (hidden > 0
+      ? `${hidden} sugest${hidden > 1 ? 'ões abaixo' : 'ão abaixo'} do limite de confiança escolhido.`
+      : 'Todas as sugestões desta foto foram aceitas ou descartadas.')
     : 'O modelo não sugeriu caixas nesta foto acima da confiança mínima.';
+  else if (hidden > 0) list.append(el('p', { class: 'muted small-text' }, `${hidden} oculta${hidden > 1 ? 's' : ''} abaixo de ${Math.round(confThreshold()*100)}%.`))
 }
 
 function invalidateDecision(text) {
@@ -596,11 +1185,11 @@ function paint(preview) {
   if ($('showBoxes').checked) {
     active.boxes.forEach((box, index) => {
       const [x1, y1, x2, y2] = box.bbox_xyxy;
-      const category = DATA.classes.find(value => value.id === box.class_id);
+      const category = classOf(box.class_id);
       ctx.strokeStyle = category.color;
       ctx.lineWidth = index === state.selected ? 5 : 3;
       ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
-      ctx.font = `${Math.max(14,Math.round(canvas.width/70))}px sans-serif`;
+      ctx.font = `600 ${Math.max(14,Math.round(canvas.width/70))}px system-ui, sans-serif`;
       const text = `${index+1}: ${category.label}`;
       const top = Math.max(0, y1 - 24);
       ctx.fillStyle = category.color;
@@ -609,19 +1198,19 @@ function paint(preview) {
       ctx.fillText(text, x1 + 5, top + 18)
     })
   }
-  if ($('showSuggestions').checked) {
+  if (DATA.suggestions && $('showSuggestions').checked) {
     pendingSuggestions().forEach(({ suggestion, index }) => {
       const [x1, y1, x2, y2] = suggestion.bbox_xyxy;
-      const category = DATA.classes.find(value => value.id === suggestion.class_id);
+      const category = classOf(suggestion.class_id);
       ctx.setLineDash([10, 6]);
       ctx.strokeStyle = category.color;
       ctx.lineWidth = 3;
       ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
       ctx.setLineDash([]);
-      ctx.font = `${Math.max(13,Math.round(canvas.width/80))}px sans-serif`;
+      ctx.font = `${Math.max(13,Math.round(canvas.width/80))}px system-ui, sans-serif`;
       const text = `IA ${index+1}: ${category.label} ${Math.round(suggestion.confidence*100)}%`;
       const bottom = Math.min(canvas.height - 22, y2);
-      ctx.fillStyle = 'rgba(255,255,255,.88)';
+      ctx.fillStyle = 'rgba(255,255,255,.9)';
       ctx.fillRect(x1, bottom, ctx.measureText(text).width + 12, 22);
       ctx.fillStyle = category.color;
       ctx.fillText(text, x1 + 5, bottom + 16)
@@ -629,7 +1218,7 @@ function paint(preview) {
   }
   if (preview) {
     ctx.setLineDash([8, 5]);
-    ctx.strokeStyle = '#173c5b';
+    ctx.strokeStyle = '#f5b942';
     ctx.lineWidth = 3;
     ctx.strokeRect(preview[0], preview[1], preview[2] - preview[0], preview[3] - preview[1]);
     ctx.setLineDash([])
@@ -646,8 +1235,9 @@ function openPhoto(index) {
   $('viewer').classList.remove('drawing');
   const photo = item();
   $('photoTitle').textContent = `Foto ${index+1} de ${DATA.images.length}`;
-  $('photoMeta').textContent = [photo.filename, photo.pages && photo.pages.length ? `páginas ${photo.pages.join(', ')}` : null, `${photo.width} × ${photo.height}`].filter(Boolean).join(' · ');
+  $('photoMeta').textContent = [photo.filename, photo.pages && photo.pages.length ? `páginas ${photo.pages.join(', ')}` : null, `${photo.width} × ${photo.height}`, photo.building_group].filter(Boolean).join(' · ');
   $('proposalStatus').textContent = names[photo.status];
+  $('proposalStatus').className = 'chip ' + ({ positive: 'bad', negative: '', ambiguous: 'warn', excluded: 'neutral' }[photo.status] || '');
   $('proposalNotes').textContent = photo.notes;
   $('auditNotes').textContent = [photo.human_notes, photo.second_review_notes, photo.additional_candidate_note, photo.review_focus_note].filter(Boolean).join('\n\n') || 'Segunda leitura ainda não registrada.';
   // A migração conserva a correção antiga e exige apenas a conferência faltante.
@@ -670,7 +1260,10 @@ function openPhoto(index) {
   state.img = new Image();
   state.img.onload = () => renderBoxes();
   state.img.src = photo.image_url;
+  renderBoxes();
   queue();
+  const current = $('queue').querySelector('[aria-current="true"]');
+  if (current) current.scrollIntoView({ block: 'nearest' });
   message('Ajuste as propostas e registre sua decisão depois de conferir a foto inteira.')
 }
 
@@ -703,8 +1296,8 @@ function commitBox(coordinates) {
   $('confirmed').checked = false;
   $('decision').value = 'pending';
   persist();
-  renderBoxes();
   resetSelection();
+  renderBoxes();
   queue();
   message('Caixa registrada. Confira a foto inteira antes de confirmar a decisão.')
 }
@@ -713,7 +1306,7 @@ $('applyBox').onclick = () => commitBox(
   ['x1', 'y1', 'x2', 'y2'].map(id => $(id).value === '' ? NaN : Number($(id).value))
 );
 
-$('newBox').onclick = resetSelection;
+$('newBox').onclick = () => { resetSelection(); renderBoxes() };
 
 $('notes').oninput = () => {
   active.notes = $('notes').value;
@@ -721,7 +1314,7 @@ $('notes').oninput = () => {
 };
 
 // Excluir uma caixa também exige nova decisão humana sobre a foto inteira.
-$('deleteBox').onclick = () => {
+function deleteSelected() {
   if (state.selected < 0) return;
   active.boxes.splice(state.selected, 1);
   active.status = 'pending';
@@ -731,19 +1324,23 @@ $('deleteBox').onclick = () => {
   persist();
   resetSelection();
   renderBoxes();
-  queue()
-};
+  queue();
+  message('Caixa excluída. Confira a foto inteira antes de confirmar a decisão.')
+}
+$('deleteBox').onclick = deleteSelected;
 
-$('drawToggle').onclick = () => {
+function toggleDrawing() {
   state.drawing = !state.drawing;
   resetSelection();
   $('drawToggle').setAttribute('aria-pressed', state.drawing);
   $('viewer').classList.toggle('drawing', state.drawing);
+  renderBoxes();
   message(state.drawing
     ? 'Arraste sobre a foto para criar uma caixa da categoria selecionada.'
     : 'Desenho desativado.'
   )
-};
+}
+$('drawToggle').onclick = toggleDrawing;
 
 // Converta o toque/clique para pixels da foto original, sem depender do tamanho na tela.
 function point(event) {
@@ -791,6 +1388,10 @@ $('canvas').onpointercancel = () => {
 
 $('showBoxes').onchange = () => paint();
 $('showSuggestions').onchange = () => paint();
+$('confFilter').oninput = () => {
+  $('confValue').textContent = `${$('confFilter').value}%`;
+  renderBoxes()
+};
 
 // A aprovação visual exige confirmação da revisão integral e caixas coerentes.
 $('saveDecision').onclick = () => {
@@ -815,13 +1416,23 @@ $('saveDecision').onclick = () => {
   message(status === 'pending'
     ? 'Rascunho guardado; decisão ainda pendente.'
     : 'Sua decisão foi registrada no rascunho local. Salve o arquivo de revisão para importá-la.'
-  )
+  );
+  if (status !== 'pending') {
+    const card = $('saveDecision').closest('.card');
+    if (card) {
+      card.classList.remove('glow-decision');
+      void card.offsetWidth;
+      card.classList.add('glow-decision');
+    }
+    toast('Decisão registrada', `Foto ${state.index+1}: ${decisionNames[status]}. Fica no rascunho local até salvar o arquivo.`);
+  }
 };
 
 // O hash vincula o feedback ao registro exibido; exportar não executa treinamento.
-$('export').onclick = () => {
+$('export').onclick = async () => {
   const reviewer = $('reviewer').value.trim();
   if (!reviewer) {
+    showView('review');
     message('Preencha seu identificador de revisão para salvar o arquivo.', true);
     $('reviewer').focus();
     return
@@ -833,6 +1444,7 @@ $('export').onclick = () => {
       ...value
     }));
   if (!decisions.length) {
+    showView('review');
     message('Registre pelo menos uma decisão antes de salvar.', true);
     return
   }
@@ -851,23 +1463,520 @@ $('export').onclick = () => {
   link.download = 'dronecamp-revisao-' + DATA.version + '.json';
   link.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
-  message(`${decisions.length} decisões incluídas no arquivo de revisão.`)
+  let where = '';
+  // Pelo servidor local, uma cópia também fica na pasta da revisão (feedback_inbox/).
+  if (SERVER) {
+    try {
+      const result = await api('/api/feedback', feedback);
+      where = ` Cópia salva em ${result.saved}.`
+    } catch (error) {
+      where = ` Cópia no projeto não foi salva: ${error.message}`
+    }
+  }
+  message(`${decisions.length} decisões incluídas no arquivo de revisão.${where}`);
+  toast('Arquivo de revisão salvo', `${decisions.length} decisões. Importe com import-review (etapa 2 do ciclo).${where}`)
 };
 
 $('previous').onclick = () => openPhoto(Math.max(0, state.index - 1));
-
 $('next').onclick = () => openPhoto(Math.min(DATA.images.length - 1, state.index + 1));
-
 $('filter').onchange = queue;
 $('reviewer').value = state.reviewer;
-
 $('reviewer').oninput = persist;
+
+// Atalhos de teclado só na revisão e fora de campos de texto.
+document.addEventListener('keydown', event => {
+  if (state.view !== 'review' || event.ctrlKey || event.metaKey || event.altKey) return;
+  const tag = (event.target.tagName || '').toLowerCase();
+  if (['input', 'select', 'textarea'].includes(tag)) return;
+  const first = pendingSuggestions()[0];
+  if (event.key === 'ArrowLeft') openPhoto(Math.max(0, state.index - 1));
+  else if (event.key === 'ArrowRight') openPhoto(Math.min(DATA.images.length - 1, state.index + 1));
+  else if (event.key.toLowerCase() === 'b') toggleDrawing();
+  else if (event.key.toLowerCase() === 'a' && first) acceptSuggestion(first.suggestion);
+  else if (event.key.toLowerCase() === 'x' && first) dismissSuggestion(first.suggestion);
+  else if (event.key === 'Delete') deleteSelected();
+  else return;
+  event.preventDefault()
+});
+
+/* ======================= Visão geral ======================= */
+function currentBoxes(photo) {
+  const decision = state.drafts[photo.image_sha256];
+  return decision ? decision.boxes : photo.boxes
+}
+
+function barRow(color, label, human, ai, max, countText) {
+  const row = el('div', { class: 'bar-row' });
+  row.style.setProperty('--c', color);
+  const bar = el('div', { class: 'bar', role: 'img', 'aria-label': `${label}: ${countText}` },
+    el('i', { class: 'human', style: `width:${max ? human / max * 100 : 0}%` }),
+    el('i', { class: 'ai', style: `width:${max ? ai / max * 100 : 0}%` }));
+  row.append(el('div', { class: 'name' }, el('span', { class: 'swatch' }), el('span', { title: label }, label)), bar, el('div', { class: 'count' }, countText));
+  return row
+}
+
+function renderOverview() {
+  const totals = Object.fromEntries(DATA.classes.map(category => [category.id, { boxes: 0, ai: 0 }]));
+  let boxes = 0, pendingAi = 0, decided = 0;
+  const triage = { positive: 0, negative: 0, ambiguous: 0, excluded: 0, pending: 0 };
+  DATA.images.forEach(photo => {
+    const decision = state.drafts[photo.image_sha256];
+    const status = decision && decision.status !== 'pending' ? decision.status : 'pending';
+    triage[status]++;
+    if (status !== 'pending') decided++;
+    currentBoxes(photo).forEach(box => { totals[box.class_id].boxes++; boxes++ });
+    pendingSuggestionsFor(photo, decision || { boxes: photo.boxes }).forEach(({ suggestion }) => { totals[suggestion.class_id].ai++; pendingAi++ })
+  });
+  const sparse = DATA.classes.filter(category => totals[category.id].boxes < 5);
+  $('kpiPhotos').textContent = DATA.images.length;
+  const groups = [...new Set(DATA.images.map(photo => photo.building_group).filter(Boolean))];
+  $('kpiPhotosHint').textContent = groups.length ? `${groups.length} edificaç${groups.length > 1 ? 'ões' : 'ão'}: ${groups.join(', ')}` : 'edificação não informada';
+  $('kpiDecisions').textContent = `${decided}/${DATA.images.length}`;
+  $('kpiDecisionsBar').style.width = `${DATA.images.length ? decided / DATA.images.length * 100 : 0}%`;
+  $('kpiBoxes').textContent = boxes;
+  $('kpiSuggestions').textContent = pendingAi;
+  $('kpiSuggestionsHint').textContent = DATA.suggestions ? `limite do modelo ${Math.round(DATA.suggestions.conf * 100)}%` : 'nenhum modelo aplicado';
+  $('kpiSparse').textContent = sparse.length;
+  const max = Math.max(1, ...Object.values(totals).map(value => value.boxes + value.ai));
+  $('classBars').replaceChildren(...DATA.classes.map(category => {
+    const total = totals[category.id];
+    const row = barRow(category.color, category.label, total.boxes, total.ai, max, `${total.boxes}${total.ai ? ' +' + total.ai : ''}`);
+    if (total.boxes === 0) row.querySelector('.count').classList.add('cell-bad');
+    else if (total.boxes < 5) row.querySelector('.count').classList.add('cell-warn');
+    return row
+  }));
+  const triageColors = { positive: 'var(--ok)', negative: 'var(--primary)', ambiguous: 'var(--warn)', excluded: 'var(--muted)', pending: 'var(--line-strong)' };
+  const triageLabels = { ...decisionNames, pending: 'Sem decisão' };
+  $('triageBars').replaceChildren(...Object.keys(triage).map(key => barRow(triageColors[key], triageLabels[key], triage[key], 0, DATA.images.length, String(triage[key]))));
+  // Modelo das sugestões: liga o SHA dos pesos à execução que os gerou (via comparações).
+  const meta = DATA.suggestions;
+  if (!meta) {
+    $('modelChip').replaceChildren(el('span', { class: 'chip neutral' }, 'sem sugestões'));
+    $('modelSummary').textContent = 'Esta revisão não recebeu sugestões de um modelo treinado. Use “Gerar sugestões” no Monitoramento (servidor local) ou o comando suggest.'
+  } else {
+    const run = runForWeights(meta.weights_sha256);
+    $('modelChip').replaceChildren(el('span', { class: 'chip warn' }, meta.pilot ? 'piloto · não validado' : 'não validado'));
+    $('modelSummary').replaceChildren(
+      el('p', {}, `${meta.model_label}. Confiança mínima ${Math.round(meta.conf * 100)}%.`),
+      el('p', { class: 'mono muted' }, `pesos ${String(meta.weights_sha256 || '').slice(0, 12)}…` + (run ? ` · ${run.id}` : '')),
+      run && run.best_epoch ? el('p', {}, `Melhor mAP50 de validação dessa execução: ${pct(run.best_epoch.map50)} (época ${run.best_epoch.epoch}).`) : null)
+  }
+  const last = OPS.runs.find(run => run.curves.length);
+  if (!last) $('lastRunSummary').textContent = 'Nenhum treino encontrado em runs/.';
+  else {
+    const chart = el('div', { class: 'chart' });
+    $('lastRunSummary').replaceChildren(
+      el('p', {}, el('span', { class: 'chip ' + stateClass(last.state) }, stateLabel(last.state)), ' ', el('span', { class: 'mono' }, last.id)),
+      el('p', { class: 'muted' }, `${last.epochs_done}/${last.epochs_planned || '?'} épocas · melhor mAP50 ${pct(last.best_epoch && last.best_epoch.map50)}`),
+      chart);
+    lineChart(chart, last.curves, [{ key: 'map50', label: 'mAP50', color: '#34d17a' }, { key: 'recall', label: 'Recall', color: '#3aa0d0' }], { height: 120, percent: true })
+  }
+}
+
+/* ======================= Gráficos SVG (sem bibliotecas externas) ======================= */
+function lineChart(container, points, series, options = {}) {
+  container.replaceChildren();
+  const height = options.height || 220, width = 640, pad = { l: 44, r: 12, t: 10, b: 24 };
+  const usable = series.filter(serie => points.some(point => point[serie.key] != null));
+  if (!points.length || !usable.length) {
+    container.append(el('div', { class: 'empty' }, options.empty || 'Sem dados de épocas ainda.'));
+    return
+  }
+  const xs = points.map(point => point.epoch);
+  const xMin = Math.min(...xs), xMax = Math.max(...xs, xMin + 1);
+  const values = usable.flatMap(serie => points.map(point => point[serie.key]).filter(value => value != null));
+  let yMax = options.percent ? Math.max(0.05, ...values) : Math.max(...values);
+  let yMin = options.percent ? 0 : Math.min(...values);
+  if (yMax === yMin) yMax = yMin + 1;
+  yMax += (yMax - yMin) * .05;
+  const sx = x => pad.l + (x - xMin) / (xMax - xMin) * (width - pad.l - pad.r);
+  const sy = y => pad.t + (1 - (y - yMin) / (yMax - yMin)) * (height - pad.t - pad.b);
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+  svg.setAttribute('preserveAspectRatio', 'none');
+  svg.style.height = height + 'px';
+  svg.setAttribute('role', 'img');
+  svg.setAttribute('aria-label', options.label || usable.map(serie => serie.label).join(', '));
+  const add = (tag, attrs) => { const node = document.createElementNS(ns, tag); Object.entries(attrs).forEach(([k, v]) => node.setAttribute(k, v)); svg.append(node); return node };
+  for (let i = 0; i <= 4; i++) {
+    const value = yMin + (yMax - yMin) * i / 4, y = sy(value);
+    add('line', { x1: pad.l, x2: width - pad.r, y1: y, y2: y, stroke: 'var(--chart-grid)', 'stroke-width': 1 });
+    const label = add('text', { x: pad.l - 6, y: y + 4, 'text-anchor': 'end', 'font-size': 11, fill: 'var(--muted)' });
+    label.textContent = options.percent ? `${Math.round(value * 100)}%` : value.toFixed(value >= 10 ? 0 : 2)
+  }
+  [xMin, Math.round((xMin + xMax) / 2), xMax].forEach(x => {
+    const label = add('text', { x: sx(x), y: height - 6, 'text-anchor': 'middle', 'font-size': 11, fill: 'var(--muted)' });
+    label.textContent = `ép. ${x}`
+  });
+  usable.forEach(serie => {
+    const path = points.filter(point => point[serie.key] != null).map((point, i) => `${i ? 'L' : 'M'}${sx(point.epoch).toFixed(1)},${sy(point[serie.key]).toFixed(1)}`).join('');
+    add('path', { d: path, fill: 'none', stroke: serie.color, 'stroke-width': 2, 'vector-effect': 'non-scaling-stroke', 'stroke-dasharray': serie.dashed ? '5 4' : '' })
+  });
+  if (options.marker != null) {
+    const x = sx(options.marker);
+    add('line', { x1: x, x2: x, y1: pad.t, y2: height - pad.b, stroke: 'var(--ai)', 'stroke-dasharray': '3 3', 'vector-effect': 'non-scaling-stroke' })
+  }
+  const cursor = add('line', { x1: 0, x2: 0, y1: pad.t, y2: height - pad.b, stroke: 'var(--line-strong)', visibility: 'hidden', 'vector-effect': 'non-scaling-stroke' });
+  const tip = el('div', { class: 'tooltip hidden' });
+  svg.addEventListener('pointermove', event => {
+    const rect = svg.getBoundingClientRect();
+    const epoch = xMin + (event.clientX - rect.left) / rect.width * width;
+    const nearest = points.reduce((best, point) => Math.abs(point.epoch - epoch) < Math.abs(best.epoch - epoch) ? point : best, points[0]);
+    const x = sx(nearest.epoch);
+    cursor.setAttribute('x1', x); cursor.setAttribute('x2', x); cursor.setAttribute('visibility', 'visible');
+    tip.textContent = `Época ${nearest.epoch} · ` + usable.map(serie => `${serie.label} ${nearest[serie.key] == null ? '—' : options.percent ? pct(nearest[serie.key]) : nearest[serie.key].toFixed(3)}`).join(' · ');
+    tip.classList.remove('hidden');
+    const left = Math.min(rect.width - tip.offsetWidth - 4, Math.max(0, x / width * rect.width + 8));
+    tip.style.left = left + 'px'; tip.style.top = '4px'
+  });
+  svg.addEventListener('pointerleave', () => { cursor.setAttribute('visibility', 'hidden'); tip.classList.add('hidden') });
+  container.append(svg, tip, el('div', { class: 'legend' }, ...usable.map(serie => {
+    const item = el('span', {}, el('i'), serie.label);
+    item.firstChild.style.setProperty('--c', serie.color);
+    return item
+  })))
+}
+const LOSS_SERIES = [
+  { key: 'train_box', label: 'box treino', color: '#3aa0d0' },
+  { key: 'train_cls', label: 'cls treino', color: '#a78bfa' },
+  { key: 'val_box', label: 'box val.', color: '#3aa0d0', dashed: true },
+  { key: 'val_cls', label: 'cls val.', color: '#a78bfa', dashed: true }
+];
+const METRIC_SERIES = [
+  { key: 'precision', label: 'Precisão', color: '#f59e0b' },
+  { key: 'recall', label: 'Recall', color: '#3aa0d0' },
+  { key: 'map50', label: 'mAP50', color: '#34d17a' },
+  { key: 'map50_95', label: 'mAP50-95', color: '#a78bfa' }
+];
+
+/* ======================= Treinamento ======================= */
+const stateLabel = value => ({ completed: 'concluído', running: 'em andamento', interrupted: 'interrompido', failed: 'falhou', prepared: 'preparado' }[value] || value);
+const stateClass = value => ({ completed: 'ok', running: 'live ok', interrupted: 'warn', failed: 'bad', prepared: 'neutral' }[value] || 'neutral');
+const winPath = path => String(path || '').replaceAll('/', '\\');
+const PY = '.\\.venv\\Scripts\\python.exe -m dronecamp_ia';
+function runForWeights(sha) {
+  if (!sha) return null;
+  for (const comparison of OPS.comparisons) {
+    const model = comparison.models.find(value => value.weights_sha256 === sha);
+    if (model && model.run_id) return OPS.runs.find(run => run.id === model.run_id) || { id: model.run_id }
+  }
+  return null
+}
+
+function commandBox(text) {
+  const box = el('div', { class: 'command' }, text);
+  const copy = el('button', { type: 'button' }, 'Copiar');
+  copy.onclick = async () => {
+    try { await navigator.clipboard.writeText(text); copy.textContent = 'Copiado' }
+    catch { copy.textContent = 'Selecione e copie' }
+    setTimeout(() => copy.textContent = 'Copiar', 1500)
+  };
+  box.append(copy);
+  return box
+}
+
+function nextVersionName() {
+  const match = String(DATA.version || '').match(/^([a-z]+)_v(\d+)/i);
+  return match ? `${match[1]}_v${Number(match[2]) + 1}_ID` : 'nova_versao_ID'
+}
+
+function renderCycle() {
+  const directory = winPath(OPS.review_directory || `data/reviews/${DATA.version}`);
+  const next = nextVersionName();
+  const decided = DATA.images.filter(photo => decidedStatus(photo)).length;
+  const latest = OPS.runs.find(run => run.weights && run.weights.best);
+  const previous = latest ? winPath(latest.weights.best) : 'runs\\PILOTO_ANTERIOR\\fit\\weights\\best.pt';
+  const steps = [
+    { title: 'Revisar e salvar', text: `${decided}/${DATA.images.length} fotos decididas nesta revisão. Salve o arquivo de revisão.`, done: decided > 0 && decided === DATA.images.length, action: () => showView('review') },
+    { title: 'Importar decisões', text: 'Cria um novo registro; o atual fica preservado.', command: `${PY} import-review --registry "${directory}\\registry.json" --feedback "SEU_ARQUIVO.json" --output "data\\reviews\\${next}\\registry.json"` },
+    { title: 'Montar dataset piloto', text: 'Só fotos com decisão humana completa; divisão por cena.', command: `${PY} build-pilot-data --registry "data\\reviews\\${next}\\registry.json" --output "data\\pilot\\${next}_piloto_s42"` },
+    { title: 'Treinar (fine-tuning)', text: 'Treino em CPU; acompanhe em Monitoramento.', command: `${PY} train-pilot --data "data\\pilot\\${next}_piloto_s42\\dataset.yaml"` },
+    { title: 'Comparar com o atual', text: 'Mesmo dataset, mesmas divisões; olhe classe por classe.', command: `.\\.venv\\Scripts\\python.exe scripts\\compare_pilot_models.py --data "data\\pilot\\${next}_piloto_s42\\dataset.yaml" --weights "${previous}" --weights "runs\\PILOTO_NOVO\\fit\\weights\\best.pt" --output "runs\\compare_${next}.json"` },
+    { title: 'Sugerir na revisão', text: 'Sugestões ficam pendentes até decisão humana.', command: `${PY} suggest --weights "runs\\PILOTO_NOVO\\fit\\weights\\best.pt" --registry "data\\reviews\\${next}\\registry.json"` }
+  ];
+  $('cycleSteps').replaceChildren(...steps.map(step => {
+    const node = el('div', { class: 'step' + (step.done ? ' done' : '') }, el('h3', {}, step.title), el('p', {}, step.text));
+    if (step.command) node.append(commandBox(step.command));
+    if (step.action) node.append(el('button', { type: 'button', class: 'small', onclick: step.action }, 'Abrir revisão'));
+    return node
+  }))
+}
+
+function fillSelect(select, options, selected) {
+  const previous = select.value;
+  select.replaceChildren(...options.map(([value, label]) => el('option', { value }, label)));
+  select.value = options.some(([value]) => value === previous) ? previous : (selected != null ? selected : (options[0] || [''])[0])
+}
+
+function estimateSeconds(imgsz) {
+  // Base: s/época das execuções concluídas no mesmo PC; escala ~ imgsz² quando muda o tamanho.
+  const done = OPS.runs.filter(run => run.seconds_per_epoch && run.parameters.imgsz && run.epochs_done > 3);
+  if (!done.length) return null;
+  const same = done.filter(run => run.parameters.imgsz === imgsz);
+  const base = same.length ? same : done;
+  const perEpoch = base.reduce((sum, run) => sum + run.seconds_per_epoch * (imgsz / run.parameters.imgsz) ** 2, 0) / base.length;
+  return { perEpoch, runs: base.length }
+}
+const duration = seconds => seconds == null ? '—' : seconds >= 3600 ? `${(seconds / 3600).toFixed(1)} h` : seconds >= 60 ? `${Math.round(seconds / 60)} min` : `${Math.round(seconds)} s`;
+
+function trainOptions() {
+  const integer = id => $(id).value === '' ? null : Number($(id).value);
+  return { data: $('trainData').value, weights: $('trainWeights').value, epochs: integer('trainEpochs'), imgsz: integer('trainImgsz'), batch: integer('trainBatch') }
+}
+
+function updateTrainCommand() {
+  const options = trainOptions();
+  let command = `${PY} train-pilot --data "${winPath(options.data || 'data/pilot/SEU_DATASET/dataset.yaml')}"`;
+  if (options.weights) command += ` --weights "${winPath(options.weights)}"`;
+  ['epochs', 'imgsz', 'batch'].forEach(key => { if (options[key] != null) command += ` --${key} ${options[key]}` });
+  $('trainCommand').replaceWith(Object.assign(commandBox(command), { id: 'trainCommand' }));
+  const estimate = estimateSeconds(options.imgsz || OPS.pilot_defaults.imgsz);
+  $('trainEstimate').textContent = estimate
+    ? `Estimativa em CPU: ≈ ${duration(estimate.perEpoch)} por época, ≈ ${duration(estimate.perEpoch * (options.epochs || OPS.pilot_defaults.epochs || 0))} no total (média de ${estimate.runs} execução(ões) anteriores).`
+    : 'Sem execuções anteriores para estimar a duração.'
+}
+
+function renderTraining() {
+  renderCycle();
+  $('deviceChip').textContent = `dispositivo: ${OPS.device || 'cpu'}`;
+  fillSelect($('trainData'), OPS.datasets.map(dataset => [dataset.path, `${dataset.name} · ${Object.entries(dataset.splits || {}).map(([k, v]) => `${k} ${v}`).join(' / ')}`]),
+    (OPS.datasets[OPS.datasets.length - 1] || {}).path);
+  fillSelect($('trainWeights'), [['', `Padrão do projeto (${OPS.base_model || 'yolo26l.pt'})`], ...OPS.weights.map(path => [path, path])], '');
+  const defaults = OPS.pilot_defaults || {};
+  ['epochs', 'imgsz', 'batch'].forEach(key => { const input = $('train' + key[0].toUpperCase() + key.slice(1)); if (input.value === '' && defaults[key] != null) input.value = defaults[key] });
+  updateTrainCommand();
+  $('startTrain').disabled = !SERVER || jobRunning();
+  $('trainServerHint').textContent = SERVER
+    ? 'O treino roda no servidor local deste PC; feche a página à vontade, o processo continua.'
+    : 'Aberta direto do disco, a página não inicia processos: copie o comando no terminal da pasta sistema_ia ou use o atalho Abrir plataforma DroneCamp.cmd.';
+  const body = $('runsTable');
+  body.replaceChildren();
+  $('runsHint').textContent = `${OPS.runs.length} execuções · atualizado ${new Date(OPS.generated_at || Date.now()).toLocaleString('pt-BR')}`;
+  if (!OPS.runs.length) body.append(el('tr', {}, el('td', { colspan: 5, class: 'empty' }, 'Nenhum treino encontrado em runs/.')));
+  OPS.runs.forEach(run => {
+    const row = el('tr', { class: 'clickable', tabindex: 0, 'aria-selected': String(state.run === run.id) },
+      el('td', {}, el('div', { class: 'mono' }, run.id), el('small', { class: 'muted' }, `${new Date(run.started_at).toLocaleString('pt-BR')} · ${run.checkpoint || ''}`)),
+      el('td', {}, el('span', { class: 'chip ' + stateClass(run.state) }, el('span', { class: 'dot' }), stateLabel(run.state))),
+      el('td', { class: 'num' }, `${run.epochs_done}/${run.epochs_planned || '?'}`),
+      el('td', { class: 'num' }, run.best_epoch ? `${pct(run.best_epoch.map50)} (ép. ${run.best_epoch.epoch})` : '—'),
+      el('td', { class: 'num' }, run.seconds_per_epoch ? Math.round(run.seconds_per_epoch) : '—'));
+    const select = () => { state.run = run.id; renderTraining() };
+    row.onclick = select;
+    row.onkeydown = event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); select() } };
+    body.append(row)
+  });
+  const run = OPS.runs.find(value => value.id === state.run) || OPS.runs.find(value => value.curves.length) || OPS.runs[0];
+  renderRunDetail(run)
+}
+
+function renderRunDetail(run) {
+  $('runDetailTitle').textContent = run ? `Detalhes · ${run.id}` : 'Detalhes da execução';
+  $('runDetailChips').replaceChildren(...(run ? Object.entries(run.parameters).map(([key, value]) => el('span', { class: 'chip neutral', style: 'margin:2px' }, `${key} ${value}`)) : []));
+  lineChart($('runLossChart'), run ? run.curves : [], LOSS_SERIES, { label: 'Perdas por época' });
+  lineChart($('runMetricChart'), run ? run.curves : [], METRIC_SERIES, { percent: true, marker: run && run.best_epoch ? run.best_epoch.epoch : null, label: 'Métricas de validação por época' });
+  const plotNames = { results: 'Curvas (Ultralytics)', confusion: 'Matriz de confusão normalizada', pr_curve: 'Curva precisão × recall', val_pred: 'Predições na validação', labels: 'Distribuição dos rótulos' };
+  // Caminhos relativos à pasta da revisão; pelo servidor, /runs/... é servido de sistema_ia/runs.
+  const plotUrl = path => SERVER ? '/' + path.replace(/^(\.\.\/)+/, '') : path;
+  $('runPlots').replaceChildren(...(run ? Object.entries(run.plots).map(([key, path]) =>
+    el('a', { href: plotUrl(path), target: '_blank', rel: 'noopener' }, el('img', { src: plotUrl(path), alt: plotNames[key] || key, loading: 'lazy' }), el('span', {}, plotNames[key] || key))) : []))
+}
+
+['trainData', 'trainWeights', 'trainEpochs', 'trainImgsz', 'trainBatch'].forEach(id => $(id).addEventListener('input', updateTrainCommand));
+
+/* ======================= Monitoramento ======================= */
+let job = { state: 'idle' };
+const jobRunning = () => job.state === 'running';
+
+function renderMonitor() {
+  $('monitorOffline').classList.toggle('hidden', SERVER);
+  // Treino recém-iniciado pela página ainda sem época gravada: mostra a execução mais nova.
+  const starting = jobRunning() && job.kind === 'train-pilot' ? OPS.runs[0] : null;
+  const run = OPS.runs.find(value => value.state === 'running') || starting || OPS.runs.find(value => value.curves.length) || OPS.runs[0];
+  $('liveDot').classList.toggle('hidden', !OPS.runs.some(value => value.state === 'running') && !jobRunning());
+  if (!run) {
+    $('monitorTitle').textContent = 'Nenhum treino encontrado';
+    $('monitorState').replaceChildren();
+    $('monitorFacts').replaceChildren();
+    $('monitorTiles').replaceChildren();
+  } else {
+    $('monitorTitle').textContent = run.id;
+    $('monitorState').replaceChildren(el('span', { class: 'chip ' + stateClass(run.state) }, el('span', { class: 'dot' }), stateLabel(run.state)));
+    const planned = run.epochs_planned || run.epochs_done || 1;
+    const fraction = Math.min(1, run.epochs_done / planned);
+    $('ringValue').setAttribute('stroke-dashoffset', (339.3 * (1 - fraction)).toFixed(1));
+    $('ringText').textContent = `${Math.round(fraction * 100)}%`;
+    $('ringSub').textContent = `época ${run.epochs_done}/${planned}`;
+    const elapsed = run.last && run.last.time;
+    const remaining = run.state === 'running' && run.seconds_per_epoch ? run.seconds_per_epoch * (planned - run.epochs_done) : null;
+    const facts = [
+      ['Tempo decorrido', duration(elapsed)],
+      ['Tempo restante', run.state === 'running' ? duration(remaining) : '—'],
+      ['Por época', duration(run.seconds_per_epoch)],
+      ['Dispositivo', run.device || OPS.device || '—'],
+      ['Pesos iniciais', run.checkpoint || '—'],
+      ['Última escrita', run.updated_at ? new Date(run.updated_at).toLocaleTimeString('pt-BR') : '—']
+    ];
+    $('monitorFacts').replaceChildren(...facts.flatMap(([key, value]) => [el('dt', {}, key), el('dd', {}, value)]));
+    const last = run.curves[run.curves.length - 1] || {}, before = run.curves[run.curves.length - 2] || {};
+    $('monitorTiles').replaceChildren(...METRIC_SERIES.map(serie => {
+      const value = last[serie.key], delta = value != null && before[serie.key] != null ? value - before[serie.key] : null;
+      return el('div', { class: 'tile' }, el('span', {}, serie.label), el('b', {}, pct(value)),
+        el('span', { class: 'delta ' + (delta > 0 ? 'up' : delta < 0 ? 'down' : '') }, delta == null ? '—' : `${delta >= 0 ? '+' : ''}${(delta * 100).toFixed(1)} p.p.`))
+    }))
+  }
+  lineChart($('liveLossChart'), run ? run.curves : [], LOSS_SERIES);
+  lineChart($('liveMetricChart'), run ? run.curves : [], METRIC_SERIES, { percent: true, marker: run && run.best_epoch ? run.best_epoch.epoch : null });
+  fillSelect($('suggestWeights'), OPS.weights.filter(path => path.startsWith('runs/')).map(path => [path, path]), (OPS.runs.find(value => value.weights.best) || { weights: {} }).weights.best);
+  if ($('suggestConf').value === '' && OPS.suggestion_conf) $('suggestConf').value = OPS.suggestion_conf;
+  renderJob()
+}
+
+function renderJob() {
+  const labels = { idle: 'sem tarefa', running: 'em andamento', finished: 'concluída', failed: 'falhou' };
+  $('jobState').textContent = labels[job.state] || job.state;
+  $('jobState').className = 'chip ' + ({ running: 'live ok', finished: 'ok', failed: 'bad' }[job.state] || 'neutral');
+  $('jobHint').textContent = SERVER
+    ? (job.kind ? `${job.kind} ${(job.arguments || []).join(' ')} · log em ${job.log}` + (job.kind === 'suggest' && job.state === 'finished' ? ' · recarregue a página para ver as novas sugestões.' : '') : 'Uma tarefa por vez. Pesos novos não são adotados automaticamente.')
+    : 'Disponível quando a plataforma é aberta pelo servidor local (Abrir plataforma DroneCamp.cmd).';
+  $('jobLog').textContent = (job.log_tail || []).join('\n') || '—';
+  $('jobLog').scrollTop = $('jobLog').scrollHeight;
+  $('startSuggest').disabled = !SERVER || jobRunning() || !$('suggestWeights').value;
+  $('stopJob').disabled = !SERVER || !jobRunning();
+  $('startTrain').disabled = !SERVER || jobRunning()
+}
+
+/* ======================= Modelos ======================= */
+function renderModels() {
+  const pilots = OPS.runs.filter(run => run.stage === 'pilot_train');
+  const independent = OPS.runs.some(run => run.independent_evaluation === true);
+  const buildings = [...new Set(DATA.images.map(photo => photo.building_group).filter(Boolean))];
+  const reasons = [];
+  if (!independent) reasons.push('Nenhuma execução tem avaliação em edificação independente (todas as divisões vêm do mesmo prédio).');
+  if (buildings.length < 3) reasons.push(`A revisão cobre ${buildings.length || 0} edificaç${buildings.length === 1 ? 'ão' : 'ões'}; o treino de produção exige 3 independentes.`);
+  if (!OPS.comparisons.length) reasons.push('Nenhuma comparação salva em runs/compare_*.json.');
+  reasons.push('Toda nova versão precisa de análise de regressões por classe e revisão técnica antes do uso em inspeções.');
+  const ok = independent && buildings.length >= 3 && OPS.comparisons.length;
+  $('adoptionVerdict').replaceChildren(el('div', { class: 'verdict' + (ok ? ' ok' : '') },
+    el('div', {}, el('b', {}, ok ? 'Critérios básicos atendidos; falta a análise por classe.' : 'Nenhuma versão pode ser adotada como modelo de produção.'),
+      el('ul', {}, ...reasons.map(reason => el('li', {}, reason))),
+      el('p', { class: 'muted small-text' }, `${pilots.length} treinos piloto registrados. O modelo atual das sugestões continua só como apoio à revisão.`))));
+  fillSelect($('compareSelect'), OPS.comparisons.map((comparison, index) => [String(index), comparison.file]), String(OPS.comparisons.length - 1));
+  renderCompare();
+  const withCounts = OPS.runs.filter(run => Object.keys(run.class_counts || {}).length);
+  fillSelect($('coverageRun'), withCounts.map(run => [run.id, run.id]), (withCounts[0] || {}).id);
+  renderCoverage();
+  const ranked = OPS.runs.filter(run => run.best_epoch).sort((a, b) => b.best_epoch.map50 - a.best_epoch.map50);
+  const max = Math.max(0.01, ...ranked.map(run => run.best_epoch.map50));
+  $('leaderboard').replaceChildren(...(ranked.length ? ranked.map(run => barRow('var(--ok)', run.id.replace('pilot_train_', ''), run.best_epoch.map50, 0, max, pct(run.best_epoch.map50))) : [el('div', { class: 'empty' }, 'Sem métricas.')]))
+}
+
+function renderCompare() {
+  const comparison = OPS.comparisons[Number($('compareSelect').value)];
+  if (!comparison) { $('compareTable').replaceChildren(el('div', { class: 'empty' }, 'Nenhuma comparação salva. Etapa 5 do ciclo de fine-tuning.')); return }
+  const splits = [...new Set(comparison.models.flatMap(model => Object.keys(model.splits)))];
+  const head = el('tr', {}, el('th', {}, 'Modelo'), ...splits.map(split => el('th', { class: 'num' }, split + (split.includes('visto') ? ' ⚠' : ''))));
+  const rows = comparison.models.map(model => el('tr', {}, el('td', {}, el('div', { class: 'mono' }, model.run_id || model.weights), el('small', { class: 'muted' }, `${model.file} · ${String(model.weights_sha256 || '').slice(0, 10)}…`)),
+    ...splits.map(split => {
+      const value = model.splits[split];
+      if (!value) return el('td', { class: 'num muted' }, '—');
+      const recall = value.truth ? value.found / value.truth : null, precision = value.suggestions ? value.correct / value.suggestions : null;
+      return el('td', { class: 'num' }, el('div', {}, `${value.found}/${value.truth} encontradas`), el('small', { class: 'muted' }, `${value.correct}/${value.suggestions} corretas · R ${pct(recall)} · P ${pct(precision)}`))
+    })));
+  $('compareTable').replaceChildren(el('table', {}, el('thead', {}, head), el('tbody', {}, ...rows)),
+    el('p', { class: 'muted small-text' }, `Dataset ${comparison.dataset || '—'} · confiança ${comparison.conf} · IoU de acerto ${comparison.iou_match}.`))
+}
+
+function renderCoverage() {
+  const run = OPS.runs.find(value => value.id === $('coverageRun').value);
+  if (!run) { $('coverageTable').replaceChildren(el('div', { class: 'empty' }, 'Sem contagens por classe registradas.')); return }
+  const splits = Object.keys(run.class_counts);
+  const classes = [...new Set(splits.flatMap(split => Object.keys(run.class_counts[split])))];
+  // class_counts segue a ordem dos IDs da taxonomia (mesma ordem de DATA.classes).
+  const label = slug => (DATA.classes[classes.indexOf(slug)] || {}).label || slug;
+  const rows = classes.map(slug => el('tr', {}, el('td', {}, label(slug)), ...splits.map(split => {
+    const value = run.class_counts[split][slug] || 0;
+    return el('td', { class: 'num ' + (value === 0 ? 'cell-bad' : value < 5 ? 'cell-warn' : '') }, String(value))
+  })));
+  $('coverageTable').replaceChildren(el('table', {}, el('thead', {}, el('tr', {}, el('th', {}, 'Classe'), ...splits.map(split => el('th', { class: 'num' }, split)))), el('tbody', {}, ...rows)),
+    el('p', { class: 'muted small-text' }, 'Vermelho: sem exemplos (a classe não é aprendida). Amarelo: menos de 5 caixas.'))
+}
+$('compareSelect').onchange = renderCompare;
+$('coverageRun').onchange = renderCoverage;
+
+/* ======================= Servidor local (opcional) ======================= */
+async function api(path, body) {
+  const response = await fetch(path, body === undefined ? {} : {
+    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-DroneCamp-Token': TOKEN }, body: JSON.stringify(body)
+  });
+  const value = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(value.error || `HTTP ${response.status}`);
+  return value
+}
+
+async function refreshOperations() {
+  try {
+    OPS = await api('/api/operations');
+    job = await api('/api/jobs');
+    if (state.view === 'monitor') renderMonitor();
+    else if (state.view === 'training') renderTraining();
+    else if (state.view === 'models') renderModels();
+    else if (state.view === 'overview') renderOverview();
+    renderJob();
+    $('liveDot').classList.toggle('hidden', !OPS.runs.some(value => value.state === 'running') && !jobRunning());
+    $('modeChip').className = 'chip ok live';
+    $('modeChip').replaceChildren(el('span', { class: 'dot' }), 'Servidor local conectado')
+  } catch {
+    $('modeChip').className = 'chip bad';
+    $('modeChip').replaceChildren(el('span', { class: 'dot' }), 'Servidor local desconectado')
+  }
+}
+
+async function startJob(kind, options) {
+  try {
+    job = await api('/api/jobs', { kind, options });
+    renderJob();
+    showView('monitor');
+    toast('Tarefa iniciada', `${kind} rodando no servidor local. Acompanhe o log e as curvas.`)
+  } catch (error) {
+    message(error.message, true);
+    $('jobLog').textContent = error.message;
+    alert(error.message)
+  }
+}
+$('startTrain').onclick = () => {
+  const options = trainOptions();
+  if (!confirm(`Iniciar treino piloto com ${options.epochs || '?'} épocas em ${OPS.device || 'cpu'}? O processo usa o PC até terminar.`)) return;
+  startJob('train-pilot', options)
+};
+$('startSuggest').onclick = () => startJob('suggest', { weights: $('suggestWeights').value, conf: $('suggestConf').value === '' ? null : Number($('suggestConf').value) });
+$('stopJob').onclick = async () => {
+  if (!confirm('Interromper a tarefa em andamento?')) return;
+  try { job = await api('/api/jobs/stop', {}); renderJob() } catch (error) { alert(error.message) }
+};
+$('suggestWeights').onchange = renderJob;
+
+/* ======================= Inicialização ======================= */
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  try { localStorage.setItem('dronecamp-theme', theme) } catch {}
+  if (state.view !== 'review') showView(state.view); else paint()
+}
+$('themeToggle').onclick = () => applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
+try { const theme = localStorage.getItem('dronecamp-theme'); if (theme) document.documentElement.dataset.theme = theme } catch {}
+
+$('versionLabel').textContent = DATA.version;
 DATA.classes.forEach(category => {
   const option = document.createElement('option');
   option.value = category.id;
   option.textContent = category.label;
   $('classId').append(option)
 });
+if (DATA.suggestions) {
+  $('confFilter').value = Math.round(DATA.suggestions.conf * 100);
+  $('confFilter').min = Math.round(DATA.suggestions.conf * 100);
+  $('confValue').textContent = `${$('confFilter').value}%`
+}
 if (DATA.taxonomy_recheck_pending) {
   // Os nomes vêm do catálogo e do histórico; não manter categorias antigas fixas no HTML.
   const categories = (DATA.classes_requiring_review || DATA.classes.map(item => item.label)).join('; ');
@@ -875,5 +1984,12 @@ if (DATA.taxonomy_recheck_pending) {
   $('taxonomyNotice').classList.remove('hidden');
 }
 openPhoto(0);
+let initialView = location.hash.slice(1);
+if (!viewTitles[initialView]) { try { initialView = sessionStorage.getItem('dronecamp-view') || 'overview' } catch { initialView = 'overview' } }
+showView(initialView);
+if (SERVER) {
+  refreshOperations();
+  setInterval(refreshOperations, 5000)
+}
 </script>
 </body></html>

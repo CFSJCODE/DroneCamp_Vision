@@ -17,6 +17,7 @@
 # Estado e logs do servidor temporario; backups e registros do projeto ficam incluidos.
 sistema_ia/.runtime/*.log
 sistema_ia/.runtime/review_server.json
+sistema_ia/.runtime/jobs/
 
 # Documentos pessoais aguardam a decisao sobre publicacao/visibilidade.
 /Documentos PUCTEC/*

@@ -10,6 +10,7 @@ Base local de **detecção assistida** para inspeção de telhados industriais. 
 
 ## Material entregue
 
+- [Plataforma de operações YOLO](docs/plataforma_operacoes.md): a página de revisão com visão geral, revisão e classificação, treinamento e fine-tuning, monitoramento ao vivo e comparação de modelos. Abra pelo [Abrir plataforma DroneCamp.cmd](../Abrir%20plataforma%20DroneCamp.cmd) (servidor local) ou, offline, pelo [Abrir revisao DroneCamp.cmd](../Abrir%20revisao%20DroneCamp.cmd).
 - [Análise documental e categorias](docs/analise_documental.md): pesquisa inicial do laudo, planos e apresentação, com oito classes ativas de origem documental; a taxonomia atual está em `configs/taxonomy.json`.
 - [Pedaço de telha](docs/categoria_pedaco_telha.md): critério da nova classe ativa ID 8 e distinção entre fragmento, dano instalado e resíduos.
 - [Rufo deslocado/desalinhado](docs/categoria_rufo_deslocado.md): critério da classe ativa ID 9, contexto de alinhamento e incerteza sobre a identidade do elemento.
