@@ -6,7 +6,7 @@ Data: 04/10/2026. Destino: [CFSJCODE/DroneCamp_Vision](https://github.com/CFSJCO
 
 A publicação contém o código, testes, configurações, documentação técnica, apresentação institucional, fotos de referência, revisões humanas, datasets, evidências, resultados, pesos e exportações do projeto. Backups e registros auxiliares úteis de `.runtime` também são preservados.
 
-O [inventário](inventario-publicacao.json) registra 1221 arquivos de conteúdo, 914,840,555 bytes e um SHA-256 por arquivo. Este relatório e o próprio inventário são incluídos no repositório, mas não entram nos hashes autorreferentes do inventário.
+O [inventário](inventario-publicacao.json) registra 1229 arquivos de conteúdo, 914,859,535 bytes e um SHA-256 por arquivo. Este relatório e o próprio inventário são incluídos no repositório, mas não entram nos hashes autorreferentes do inventário.
 
 Há 12 arquivos de modelos/exportações armazenados no Git LFS. Para recebê-los completos, instale Git LFS e execute `git lfs pull` após a clonagem.
 

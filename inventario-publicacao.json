@@ -14,15 +14,63 @@
       "storage": "git"
     },
     {
+      "path": ".githooks/README.md",
+      "bytes": 2441,
+      "sha256": "6dc67f506371495a54111d039e7dac4425c7be96aa2f8634e5d8325c2d691296",
+      "storage": "git"
+    },
+    {
+      "path": ".githooks/commit-msg",
+      "bytes": 1162,
+      "sha256": "da7eb36b080f9304cfff3fedc895eb02bc1c25863c749dadf70d11d091f9b46c",
+      "storage": "git"
+    },
+    {
+      "path": ".githooks/post-checkout",
+      "bytes": 360,
+      "sha256": "8d606e58cce98604696a4abcf3ae1ebde6f9f31ac72bb0d44e2444cc39f26030",
+      "storage": "git"
+    },
+    {
+      "path": ".githooks/post-commit",
+      "bytes": 356,
+      "sha256": "f3eb4d1f62924c09d481a0563a84b158c66eb2feb3431cfdb3e6760aab4d661d",
+      "storage": "git"
+    },
+    {
+      "path": ".githooks/post-merge",
+      "bytes": 354,
+      "sha256": "cecb594e8fa65831654fc95e96db9f1249e09c52810c6fbb2b428280aac22158",
+      "storage": "git"
+    },
+    {
+      "path": ".githooks/pre-push",
+      "bytes": 350,
+      "sha256": "a52d0510d0f8c75e27852156ec6f7791f0d8ed65fc58fcc368dd1de0a60a1d74",
+      "storage": "git"
+    },
+    {
       "path": ".gitignore",
       "bytes": 576,
       "sha256": "032fd1add18532aaa6e9436a2e0dba47308aeed03d153224c3e7b1658ad5bf89",
       "storage": "git"
     },
     {
+      "path": ".gitmessage",
+      "bytes": 544,
+      "sha256": "25810ba3d1d5008f99f2ac4f2fdc6089786901c9a3994ad427af0b601e79b89a",
+      "storage": "git"
+    },
+    {
       "path": "Abrir revisao DroneCamp.cmd",
       "bytes": 444,
       "sha256": "97f26db5f37a4c1514f0fd10b2af04cd2f9820aae48d6ce17de01ed5ba5cf785",
+      "storage": "git"
+    },
+    {
+      "path": "CONTRIBUTING.md",
+      "bytes": 4364,
+      "sha256": "2caaf9078eb29f8748a48f168b4251c671f02d65919352d91ad460b1a76f5089",
       "storage": "git"
     },
     {
@@ -93,8 +141,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 3769,
-      "sha256": "7c2f4d8dd71ca96d496babd4abf588ef7ce793bb05b9e403a926c8571ae69ffa",
+      "bytes": 12818,
+      "sha256": "a5924b08914830c80e7ee97b13dbb49f593f5a6ee3657207a8a20d1c3397c052",
       "storage": "git"
     },
     {
@@ -7334,6 +7382,6 @@
       "storage": "git"
     }
   ],
-  "file_count": 1221,
-  "total_bytes": 914840555
+  "file_count": 1229,
+  "total_bytes": 914859535
 }
