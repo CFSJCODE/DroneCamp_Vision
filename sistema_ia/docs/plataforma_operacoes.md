@@ -14,21 +14,23 @@ O tema escuro é o padrão; o botão da lua alterna para o tema claro, que mant�
 
 ## Design
 
-O design é fixo, sem seletor de material: um só material reúne várias linguagens visuais, cada uma com um papel definido. Os dois temas têm a mesma forma e mudam só as cores.
+Uma única linguagem visual: **Fluent 2** com **vidro acrílico** (glassmorphism). Os dois temas têm a mesma forma e mudam só os tokens de cor; o escuro é o padrão.
 
-| Linguagem | Onde aparece |
+| Elemento | Como é |
 | --- | --- |
-| Aurora UI | Manchas de cor em movimento lento no fundo |
-| Geometric Morphism | Malha triangular no fundo, logo e números das etapas em hexágono |
-| Liquid Glass / Glassmorphism | Cartões translúcidos com desfoque, borda refletiva e reflexo que segue o cursor |
-| Fluent UI | Textura acrílica no vidro, tipografia Segoe UI Variable e o brilho sob o cursor |
-| Claymorphism | Botões em volume macio que afundam ao clicar; campos em baixo-relevo |
-| Metalmorphism | Trilho de navegação, logo e blocos de métrica do monitoramento em metal escovado |
-| Woodmorphism | Bancada de ferramentas da revisão (camadas, confiança, desenhar caixa) |
-| Color Morphism | Cartão de destaque e barras de progresso com gradiente que migra; anel do treino que vai do âmbar ao verde |
-| Immersive Materials | Profundidade em camadas e leve inclinação 3D nos cartões de indicadores |
+| Tipografia | Segoe UI Variable; rampa Fluent 12 · 14 · 16 · 20 · 28 (título da tela em 28 semibold) |
+| Cantos e espaçamento | 4px em botões, campos, badges e avisos; 8px em cartões; ritmo de 4/8px |
+| Botões | Borda de 1px com traço inferior um pouco mais escuro; botão principal sólido na cor de destaque; botões "small" de 24px |
+| Campos | Fundo levemente rebaixado, traço inferior acessível e sublinhado na cor de destaque ao focar |
+| Navegação | Trilho compacto estilo NavigationView: item ativo com traço vertical de 3×16px na cor de destaque; no celular vira barra inferior com o traço horizontal |
+| Cartões e trilho | Vidro acrílico: translucidez, `backdrop-filter` com desfoque de 30px e saturação, ruído sutil e realce especular de 1px no topo |
+| Fundo | Mica estático em azul petróleo (gradientes suaves, sem animação), só para o vidro ter o que desfocar |
+| Elevação | Sombras Fluent 2/8/16/28 (cartões em 8, dicas e gráficos em 16, toast em 28) |
+| Foco | Anel duplo Fluent (externo contrastante, interno separador) |
+| Movimento | 100–250ms com curvas Fluent; desligado com "reduzir movimento" |
+| Cores | Azul petróleo do DroneCamp como destaque; laranja marca o que veio da IA; verde, âmbar e vermelho só indicam estado |
 
-Texturas são SVG embutidos no próprio HTML (sem downloads). Com "reduzir movimento" ativado no Windows, animações e inclinação ficam desligadas. Tudo fica em `review_templates/index.html`: os tokens no início do `<style>` e o reflexo e a inclinação no bloco "Material" do script.
+Sem suporte a `backdrop-filter`, ou com "reduzir transparência" ativado, o vidro vira superfície opaca. O ruído é um SVG embutido (sem downloads). Tudo fica em `review_templates/index.html`, com os tokens no início do `<style>`; os nomes `--primary`, `--ai`, `--ok`, `--warn`, `--muted`, `--line-strong` e `--chart-grid` também são lidos pelo script dos gráficos.
 
 ## Dois modos de abrir
 
