@@ -10,6 +10,7 @@ Comandos e onde está o código de cada um:
 - ``import-review`` / ``add-ai-proposals`` / ``migrate-review`` / ``prepare-review`` → ``review_data.py``
 - ``render-review`` → ``review_render.py``  |  ``build-reviewed-data`` → ``review_dataset.py``
 - ``extract-report`` → ``report_images.py``  |  ``categories`` → mostra a taxonomia
+- ``refresh-page`` → ``review_render.refresh_review_page``  |  ``platform`` → ``platform_server.py``
 
 Quando mexer: para criar um comando novo ou uma opção nova (``--algo``) em um
 comando existente. A lógica do comando fica no arquivo indicado acima.
@@ -67,6 +68,12 @@ def build_parser() -> argparse.ArgumentParser:
     review.add_argument("--audits", action="store_true", help="Exigir auditoria visual completa por outro revisor.")
     render = commands.add_parser("render-review", help="Gerar página local para conferir e corrigir caixas.")
     render.add_argument("--registry", type=Path, required=True)
+    refresh = commands.add_parser("refresh-page", help="Regravar só o index.html da revisão com o modelo e os treinos atuais.")
+    refresh.add_argument("--registry", type=Path, required=True)
+    platform = commands.add_parser("platform", help="Servidor local (127.0.0.1): monitorar e iniciar treinos pela página.")
+    platform.add_argument("--registry", type=Path, required=True)
+    platform.add_argument("--port", type=int, default=8765)
+    platform.add_argument("--no-browser", action="store_true", help="Não abrir o navegador automaticamente.")
     feedback = commands.add_parser("import-review", help="Importar decisões exportadas por revisor humano.")
     feedback.add_argument("--registry", type=Path, required=True)
     feedback.add_argument("--feedback", type=Path, required=True)
@@ -152,6 +159,13 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "render-review":
             from .review_render import render_review_package
             output = render_review_package(config, args.registry)
+        elif args.command == "refresh-page":
+            from .review_render import refresh_review_page
+            output = refresh_review_page(config, args.registry)
+        elif args.command == "platform":
+            from .platform_server import serve_platform
+            serve_platform(config, args.registry, args.port, not args.no_browser)
+            return 0
         elif args.command == "import-review":
             from .review_data import import_human_feedback
             import_human_feedback(config, args.registry, args.feedback, args.output)

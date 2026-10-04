@@ -65,7 +65,8 @@ DroneCamp_Vision/
 ├── CONTRIBUTING.md                    # Contribuições e mensagens de commit
 ├── PUBLICACAO.md                      # Escopo, exclusões e integridade
 ├── inventario-publicacao.json          # Arquivos, tamanhos e hashes SHA-256
-├── Abrir revisao DroneCamp.cmd         # Abre a revisão v7 no Windows
+├── Abrir revisao DroneCamp.cmd         # Abre a revisão v8 no Windows (offline)
+├── Abrir plataforma DroneCamp.cmd      # Plataforma com servidor local (treino e monitoramento ao vivo)
 ├── Documentação Do Projeto/            # Laudo técnico e propostas
 ├── Documentos PUCTEC/                  # Apresentação institucional publicada
 ├── Fotos_InsperçãoDeTelhadosIndustriais_Internet/
@@ -132,7 +133,9 @@ Os exemplos completos de predição, revisão, treinamento e exportação estão
 
 ## Abrir a revisão das imagens
 
-Na raiz do clone, dê dois cliques em **[Abrir revisao DroneCamp.cmd](Abrir%20revisao%20DroneCamp.cmd)**. O atalho encontra a pasta do próprio projeto e abre a [revisão v7](sistema_ia/data/reviews/ceasa_v7_revisao002_ba8cc323c8a1/index.html) no navegador local.
+Na raiz do clone, dê dois cliques em **[Abrir revisao DroneCamp.cmd](Abrir%20revisao%20DroneCamp.cmd)**. O atalho encontra a pasta do próprio projeto e abre a [revisão v8](sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/index.html) no navegador local, sem servidor.
+
+Para acompanhar treinos ao vivo e iniciar `train-pilot` ou `suggest` pela própria página, use **[Abrir plataforma DroneCamp.cmd](Abrir%20plataforma%20DroneCamp.cmd)**, que sobe um servidor local em `127.0.0.1:8765` com o `.venv` do `sistema_ia`. As seções da plataforma estão descritas em [Plataforma de operações YOLO](sistema_ia/docs/plataforma_operacoes.md).
 
 Também é possível abrir diretamente:
 

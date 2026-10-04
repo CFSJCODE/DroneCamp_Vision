@@ -7,8 +7,10 @@ chama este arquivo para mostrar as sugestões do modelo.
 O que faz (``render_review_package``):
 - copia as fotos para ``images/`` e desenha as caixas em ``evidence/``;
 - grava labels propostas em ``labels_proposed/<hash do registro>/``;
-- embute os dados (fotos, caixas, sugestões, classes) no modelo
+- embute os dados (fotos, caixas, sugestões, classes) e o painel de operações
+  (treinos, curvas, comparações; ``operations.py``) no modelo
   ``review_templates/index.html`` e grava ``index.html``;
+- ``refresh_review_page`` regrava só o ``index.html`` (comando ``refresh-page``).
 - grava ``review_results.csv``, ``review_summary.json`` e ``review_report.md``.
 
 Quando mexer: aparência das evidências (cores, fonte) ou dados enviados à
@@ -25,6 +27,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 from .config import ProjectConfig, detection_names, load_taxonomy
 from .io import file_hash, resolve_local_path, write_json
+from .operations import collect_operations
 from .review_data import boxes_to_yolo, review_image_size, validate_boxes, write_review_summary
 
 # Uma cor por classe (índice = ID da classe), usada nas evidências e na página.
@@ -54,6 +57,40 @@ def _load_suggestions(directory: Path, registry_path: Path, class_count: int) ->
             if not 0 <= float(value.get("confidence", -1)) <= 1:
                 raise ValueError("Sugestão com confiança inválida.")
     return suggestions
+
+
+def build_page(payload: dict, operations: dict | None) -> str:
+    """Preenche o modelo da plataforma com os dados da revisão e o painel de operações.
+
+    ``operations`` (treinos, curvas, comparações) é um instantâneo: aberta do
+    disco, a página mostra o estado do momento em que foi gerada; pelo servidor
+    local (``platform``) ela consulta o estado atual a cada poucos segundos.
+    """
+    template = (Path(__file__).parent / "review_templates/index.html").read_text(encoding="utf-8")
+    data = {**payload, "operations": operations}
+    # JSON embutido evita fetch de arquivos locais e fecha a possibilidade de </script> nos textos.
+    serialized = json.dumps(data, ensure_ascii=False, allow_nan=False).replace("<", "\\u003c")
+    return template.replace("__REVIEW_DATA__", serialized)
+
+
+def load_page_payload(registry_path: Path) -> dict:
+    """Dados já gerados por ``render-review``, conferidos contra o registro atual."""
+    payload = json.loads((registry_path.parent / "browser_data.json").read_text(encoding="utf-8"))
+    if payload.get("registry_sha256") != file_hash(registry_path):
+        raise ValueError("browser_data.json pertence a outra versão do registro; rode render-review novamente.")
+    return payload
+
+
+def refresh_review_page(config: ProjectConfig, registry_path: Path) -> Path:
+    """Regrava só o ``index.html`` com o modelo atual, sem copiar fotos nem redesenhar evidências.
+
+    Útil quando muda o modelo da página ou chegam novos treinos: fotos, caixas,
+    sugestões e rótulos propostos continuam exatamente os de ``browser_data.json``.
+    """
+    directory = registry_path.parent
+    page = build_page(load_page_payload(registry_path), collect_operations(config, directory))
+    (directory / "index.html").write_text(page, encoding="utf-8")
+    return directory / "index.html"
 
 
 def render_review_package(config: ProjectConfig, registry_path: Path) -> Path:
@@ -127,11 +164,8 @@ def render_review_package(config: ProjectConfig, registry_path: Path) -> Path:
                "classes": [{"id": key, "label": value, "color": COLORS[key]} for key,value in labels.items()],
                "duplicate_iou": config.pilot.get("duplicate_iou"),
                "suggestions": {key: suggestions[key] for key in ("model_label", "conf", "warning", "weights_sha256", "pilot")} if suggestions else None}
-    template = (Path(__file__).parent / "review_templates/index.html").read_text(encoding="utf-8")
-    # JSON embutido evita fetch de arquivos locais e fecha a possibilidade de </script> nos textos.
-    serialized = json.dumps(payload, ensure_ascii=False, allow_nan=False).replace("<", "\\u003c")
-    (directory / "index.html").write_text(template.replace("__REVIEW_DATA__", serialized), encoding="utf-8")
     write_json(directory / "browser_data.json", payload)
+    (directory / "index.html").write_text(build_page(payload, collect_operations(config, directory)), encoding="utf-8")
     # 5. Resumo e rascunho de relatório em Markdown com links para fotos e evidências.
     summary = write_review_summary(directory, registry)
     report = ["# Revisão visual do CEASA — rascunho para conferência", "",
