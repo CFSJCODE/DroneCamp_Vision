@@ -1,7 +1,22 @@
-"""Construa versões de dados a partir de revisão humana, sem treinar modelos.
+"""Dataset de PRODUÇÃO a partir da revisão humana (não treina modelos).
+
+Função no projeto: equivalente de produção do ``pilot.py``. Gera
+``data/versions/<versão>/`` com fotos, labels, ``groups.csv`` e
+``provenance.json``, usando a divisão por edificação de ``configs/review_groups.json``.
+É o comando ``build-reviewed-data``.
+
+O que faz:
+- ``_approved_images``: fotos com aprovação humana e grupo de edificação conhecido.
+- ``_write_samples``: copia fotos e escreve labels por split.
+- ``_readiness``: diz se o dataset já pode treinar (exige três edificações e
+  exemplos das classes); hoje, com só o CEASA, a resposta é "não".
+- ``build_approved_dataset``: executa tudo e devolve o relatório.
 
 Mais imagens só ajudam quando seus rótulos são confiáveis. Este módulo mantém
 aprovação, origem e grupos de edificações separados das propostas feitas por IA.
+
+Quando mexer: regras de prontidão para produção ou a lista ``MVP_NAMES``
+(sempre acrescentando classes ao fim, junto com a taxonomia).
 """
 
 from __future__ import annotations
@@ -20,6 +35,7 @@ from .dataset import IMAGE_EXTENSIONS, SPLITS, validate_dataset
 from .io import file_hash, write_json
 from .review_data import boxes_to_yolo, review_image_size, validate_boxes
 
+# As 13 classes ativas, na ordem dos IDs (precisa coincidir com configs/taxonomy.json).
 MVP_NAMES = (
     "telha_quebrada", "telha_ausente", "residuos_telha", "reparo_telha",
     "rufo_ausente", "rufo_quebrado", "residuos_calha", "vegetacao_calha",
@@ -146,6 +162,7 @@ def build_approved_dataset(config: ProjectConfig, registry_path: Path, assignmen
     ``assignments`` usa {schema_version: 1, groups: {building_group: split}}.
     Splits sem amostras ficam ausentes: um rascunho nunca simula diversidade.
     """
+    # 1. Saída nova, taxonomia do MVP e registro na mesma taxonomia.
     registry_path, assignments_path, directory = Path(registry_path), Path(assignments_path), Path(output_dir)
     if directory.exists() or directory.is_symlink():
         raise ValueError("Saída já existe; datasets são imutáveis. Escolha uma nova versão.")
@@ -155,6 +172,7 @@ def build_approved_dataset(config: ProjectConfig, registry_path: Path, assignmen
         raise ValueError("A taxonomia ativa deve manter os IDs e nomes do MVP.")
     if registry.get("taxonomy_sha256") != file_hash(config.taxonomy_path):
         raise ValueError("Taxonomia mudou; migre e revise o registro antes de construir dados.")
+    # 2. Cada edificação (building_group) vai inteira para um split, conforme o arquivo de grupos.
     groups = assignments.get("groups")
     if not isinstance(groups, dict) or any(not isinstance(group, str) or not group.strip() or split not in SPLITS for group, split in groups.items()):
         raise ValueError("Assignments deve mapear grupos para train, val ou test.")
@@ -164,6 +182,7 @@ def build_approved_dataset(config: ProjectConfig, registry_path: Path, assignmen
     directory = directory.resolve()
     # Toda aprovação, geometria e origem foi conferida antes da primeira escrita.
     directory.mkdir(parents=True, exist_ok=False)
+    # 3. Fotos, labels, dataset.yaml e provenance.json; por fim, a prontidão.
     provenance_images = _write_samples(directory, images)
     present_splits = {item["split"] for item in images}
     dataset_yaml = {"path": str(directory), **{split: f"images/{split}" for split in SPLITS if split in present_splits},

@@ -14,7 +14,8 @@ import os
 import unittest
 
 from dronecamp_ia.config import detection_names, load_config, load_taxonomy
-from dronecamp_ia.io import file_hash, write_json
+from dronecamp_ia.io import file_hash, resolve_local_path, write_json
+from dronecamp_ia.pilot import consolidate_duplicates
 from dronecamp_ia.review_data import boxes_to_yolo
 
 REAL = load_config()
@@ -42,7 +43,7 @@ class EndToEndUltralyticsTests(unittest.TestCase):
                               {"epochs": 1, "imgsz": 160, "batch": 8, "plots": False, "patience": 0})
         cls.best = cls.train_run / "fit" / "weights" / "best.pt"
         registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
-        cls.sample_images = [Path(item["source_path"]) for item in registry["images"][:2]]
+        cls.sample_images = [resolve_local_path(item["source_path"], REAL.root) for item in registry["images"][:2]]
 
     @classmethod
     def tearDownClass(cls):
@@ -60,11 +61,13 @@ class EndToEndUltralyticsTests(unittest.TestCase):
         self.assertTrue(all(len(splits) == 1 for splits in splits_by_scene.values()))
         self.assertEqual({sample["split"] for sample in manifest["images"]}, {"train", "val", "test"})
         reviewed = {item["image_sha256"]: item for item in json.loads(REGISTRY.read_text(encoding="utf-8"))["images"]}
+        duplicate_iou = (manifest.get("duplicate_policy") or {}).get("iou")
         for sample in manifest["images"]:
             item = reviewed[sample["image_sha256"]]
             self.assertTrue(item["human_approved"])
             label = (self.dataset / sample["label"]).read_text(encoding="utf-8")
-            self.assertEqual(label, boxes_to_yolo(item["boxes"], item["width"], item["height"]))
+            expected = consolidate_duplicates(item["boxes"], duplicate_iou)
+            self.assertEqual(label, boxes_to_yolo(expected, item["width"], item["height"]))
         approved = sum(item["human_approved"] is True for item in reviewed.values())
         self.assertEqual(len(manifest["images"]), approved)
 

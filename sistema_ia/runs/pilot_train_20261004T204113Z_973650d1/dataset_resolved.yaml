@@ -1,0 +1,18 @@
+names:
+- telha_quebrada
+- telha_ausente
+- residuos_telha
+- reparo_telha
+- rufo_ausente
+- rufo_quebrado
+- residuos_calha
+- vegetacao_calha
+- pedaco_telha
+- rufo_deslocado
+- pedaco_telha_sobreposto
+- fixador_telha_frouxo
+- reparo_rufo
+path: /home/user/DroneCamp_Vision/sistema_ia/data/pilot/ceasa_v8_piloto_s42
+test: /home/user/DroneCamp_Vision/sistema_ia/data/pilot/ceasa_v8_piloto_s42/images/test
+train: /home/user/DroneCamp_Vision/sistema_ia/data/pilot/ceasa_v8_piloto_s42/images/train
+val: /home/user/DroneCamp_Vision/sistema_ia/data/pilot/ceasa_v8_piloto_s42/images/val

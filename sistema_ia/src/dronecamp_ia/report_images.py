@@ -1,4 +1,14 @@
-"""Extração de imagens incorporadas no PDF com origem e revisão pendente."""
+"""Extração das fotos incorporadas no PDF do laudo (comando ``extract-report``).
+
+Função no projeto: foi o ponto de partida do acervo. Extrai as fotografias do
+laudo do CEASA para ``data/reference/ceasa/`` com página de origem e SHA-256.
+
+O que faz (``extract_report_images``): percorre as páginas, ignora ícones
+pequenos, salva cada imagem, marca duplicatas e grava ``manifest.json`` e
+``review_queue.csv``. Não cria labels nem aprova nada para treino.
+
+Quando mexer: para mudar o tamanho mínimo das imagens extraídas (300×200 px).
+"""
 
 from pathlib import Path
 from hashlib import sha256
@@ -17,6 +27,7 @@ def extract_report_images(pdf: Path, output: Path) -> dict:
     if output.exists():
         raise ValueError("A pasta de saída já existe; escolha uma nova para preservar a revisão anterior.")
     output.mkdir(parents=True)
+    # 1. Cada imagem de cada página: salva com nome p<página>_img<n>_<hash>.
     reader = PdfReader(pdf)
     records, hashes = [], {}
     for page_number, page in enumerate(reader.pages, start=1):
@@ -37,6 +48,7 @@ def extract_report_images(pdf: Path, output: Path) -> dict:
                 "annotation_status": "nao_anotada", "training_approved": False,
                 "review_note": "Verificar marcações, compressão, contexto e cenas repetidas antes de anotar.",
             })
+    # 2. manifest.json (origem e hashes) e review_queue.csv (fila de anotação).
     manifest = {
         "source_pdf": str(pdf), "source_pdf_sha256": file_hash(pdf),
         "purpose": "referencia_e_demonstracao", "training_dataset": False,

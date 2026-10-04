@@ -1,6 +1,6 @@
 # active-memory handoff: DroneCamp — núcleo de IA (sistema_ia)
 
-**Handoff #1** · 2026-10-04 · Lineage: #1 (2026-10-04): revisão do código, importação da revisão humana v6→v7, treino piloto real YOLO26l, sugestões do modelo na página, paridade ONNX, DirectML na APU, testes e2e sem mocks
+**Handoff #2** · 2026-10-04 · Lineage: #1 (2026-10-04): revisão do código, importação v6→v7, treino piloto real YOLO26l, sugestões na página, paridade ONNX, DirectML, e2e sem mocks · #2 (2026-10-04, sessão na nuvem, PRs CFSJCODE/DroneCamp_Vision#1 e seguinte): revisão v7→v8, consolidação de duplicatas, caminhos portáveis, retreino v8 (sem melhora mensurável), fotos da internet com caixas propostas pela IA, 4 classes sugeridas, código comentado
 
 ## 0. Instructions for Claude (read first)
 
@@ -46,6 +46,8 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | 2 | Disse que trabalharia o tempo todo só na CPU | Usar todos os núcleos e a APU; 16 GB de RAM livres (APU só serve para inferência ONNX via DirectML) |
 | 3 | Mostrou métricas do treino | Usuário pediu prova de que o treino aconteceu de verdade → fornecidas provas verificáveis (pesos 80→13 classes, 902/1080 tensores alterados, results.csv 80 épocas, comandos para conferir) |
 | 4 | Roteiro do assistente do projeto (`scripts/create_e2e_dataset.py`) copiaria 0 fotos | Corrigido para ler subpastas `images/` e `labels/` do acervo e executado |
+| 5 | Treino v8 com `patience 25` parou na época 66 e guardou a época 41 | Desligada a parada antecipada no piloto (`patience: 0`) e retreinado até a época 80 |
+| 6 | — | Usuário pediu: usar também as fotos antigas (todas as 34 do piloto v7 estão no v8), comentar cada arquivo do código (feito) e mesclar todas as branches no `main` |
 
 ## 6. Decisions
 | Decision | Why |
@@ -57,6 +59,10 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | Export ONNX confere paridade `.pt`×`.onnx` (`parity.json`) | `rect=False`, imgsz lido dos metadados ONNX, IoU ≥ 0,9 ou ≤ 1 px, Δconf ≤ 0,02 |
 | `onnxruntime` 1.30.0 → `onnxruntime-directml` 1.24.4 | Autorizado pelo usuário; APU 3× mais rápida em inferência |
 | Treino continua na CPU | Ultralytics treina só em CUDA/MPS; sem PyTorch para Radeon no Windows |
+| Duplicatas consolidadas só no dataset piloto (`pilot.duplicate_iou: 0.7`) | 91/246 caixas repetiam o objeto; registro humano intacto; página oferece "Substituir caixa N" |
+| `pilot.training.patience: 0` | Validação de 6 fotos/8 caixas é ruído; parada antecipada escolhia época subtreinada |
+| Sugestões com v8 `best.pt` (época 41) | Aprendeu com as caixas corrigidas; v8 com mais acertos em fotos não vistas |
+| Fotos da internet só como revisão (não treinam) | Sem aprovação humana; não contam como edificações independentes |
 
 ## 7. Changed / rejected
 - `onnxruntime==1.30.0` → `onnxruntime-directml==1.24.4` (APU via DirectML).
@@ -88,7 +94,16 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | Foto dos fixadores `57321a0d…` | única sugestão: residuos_telha 0.3401 |
 | Export | `runs/export_20261004T180523Z_14476aa6`, ONNX 640, paridade 27/27, Δconf 0.0 |
 | CPU × APU (ONNX 640) | 372 ms × 124 ms por imagem; 609/609 caixas iguais em 10 fotos |
-| Testes | 170 OK (156 antigos + 9 `test_pilot.py` + 5 `test_e2e_ultralytics.py`) |
+| Testes | 181 OK (inclui 11 de `test_learning_loop.py` e os 5 e2e reais) |
+| Feedback v7 (2ª rodada revisao002) | SHA-256 `ff34e226416cdffd253a42ba575f2500d9ffb6dafae0d748bb8db49d1145b076`, revisor `002`, exportado 2026-10-04T19:46:45.427Z |
+| Revisão v8 | `data/reviews/ceasa_v8_revisao002_ff34e226416c`: 37 aprovadas (36 positivas, 1 negativa), 1 ambígua, 246 caixas (129 sugestões aceitas, 41 descartadas) |
+| Dataset piloto v8 | `data/pilot/ceasa_v8_piloto_s42`: treino 22/114, val 6/8, teste 9/33; 246 → 155 caixas após duplicatas |
+| Treino v8 (80 épocas) | `runs/pilot_train_20261004T204113Z_973650d1`, 2818,6 s, `best.pt` = época 41 (SHA-256 `a7a4e0bd…`), `last.pt` = época 80 (`9c1fd92c…`) |
+| Treino v8 interrompido | `runs/pilot_train_20261004T195922Z_5cdfa63b`, parou na época 66; pesos não publicados (reproduzíveis) |
+| Fotos não vistas (humanas reencontradas) | v7 7/29 · v8 época 41 9/41 · v8 época 80 6/41 |
+| Fotos da internet (vs 29 caixas da IA) | v7 5 · v8 best 4 · v8 last 4 |
+| Export v8 | `runs/export_20261004T213131Z_e52142ab`, ONNX 640, paridade 11/11, IoU 1,0, Δconf 0,0 |
+| Sugestões v8 / internet | 179 em 27 fotos / 19 em 5 fotos (conf ≥ 0,15, 640 px) |
 | Roteiro manual e2e | 33 fotos; 1 época 3 min 8 s; mAP50 0.000633; predição .pt 0 caixas; ONNX 94,8 MB, 2 caixas a conf 0.01 (sem nms fixo) |
 
 ## 9. People, terms & names
@@ -99,7 +114,10 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 ## 10. Work state
 | Item | Status | Version / location | Notes |
 |---|---|---|---|
-| Revisão v7 + sugestões | pronta para revisão humana | `data/reviews/ceasa_v7_revisao002_ba8cc323c8a1/index.html` | abrir via `..\Abrir revisao DroneCamp.cmd` |
+| Revisão v8 + sugestões | pronta | `data/reviews/ceasa_v8_revisao002_ff34e226416c/index.html` | abrir via `..\Abrir revisao DroneCamp.cmd` |
+| Fotos da internet | pronta para revisão humana | `data/reviews/internet_v2_propostas_claude/index.html` | 29 caixas da IA + 19 sugestões; nenhuma aprovada |
+| Classes sugeridas | aguardando decisão | `sistema_ia/docs/novas_classes_propostas.md` | nenhuma ativada |
+| Treino piloto v8 | final | `runs/pilot_train_20261004T204113Z_973650d1/fit/weights/best.pt` | sem melhora mensurável sobre o v7 |
 | Treino piloto | final | `runs/pilot_train_20261004T170212Z_dd284411/fit/weights/best.pt` | não aprovado para uso |
 | ONNX piloto | final | `runs/export_20261004T180523Z_14476aa6/model.onnx` | paridade validada |
 | Docs | atualizadas | `docs/treino_piloto.md` (novo), README, `docs/decisoes.md`, `docs/validacao.md` | |
@@ -108,13 +126,14 @@ You are continuing work from a previous chat. That chat is gone; this file is th
 | Não validado | — | — | aparência visual da página (só testes por script); generalização; classes 11–12 |
 
 ## 11. Next steps
-1. **Next action:** quando o usuário enviar o novo JSON exportado da página v7, importar com `import-review --registry data\reviews\ceasa_v7_revisao002_ba8cc323c8a1\registry.json --feedback <json> --output data\reviews\ceasa_v8_<id>\registry.json`.
-2. Reconstruir piloto (`build-pilot-data` com todas as revisões), treinar de novo (considerar `cache: ram`, batch 8, 1024 px para fixadores), gerar `suggest` e `export`.
-3. Fotos de outras edificações via `suggest --source … --group …` (libera o treino de produção).
-4. Opcional: medir torch 6 × 12 threads.
+1. **Next action:** usuário revisar `internet_v2_propostas_claude` (aceitar/corrigir/descartar as caixas da IA) e exportar o JSON; importar com `import-review --registry data\reviews\internet_v2_propostas_claude\registry.json --feedback <json> --output data\reviews\internet_v3_<id>\registry.json`.
+2. Decidir as classes sugeridas; se ativar, nova taxonomia + `migrate-review`.
+3. Reconstruir o piloto com v8 + internet (`build-pilot-data --registry ... --registry ...`), treinar, comparar com `scripts/compare_pilot_models.py`.
+4. Fotos de outras edificações reais (libera produção e torna a validação útil).
 
 ## 12. Open questions ⚠️
-- Usar `cache: ram`, batch 8 e/ou 1024 px no próximo treino piloto? (Claude sugeriu; usuário não decidiu.)
+- Treino final com as 37 fotos (sem validação própria) só para sugestões? Proposto; usuário não respondeu.
+- Quais classes sugeridas ativar?
 - Haverá fotos de outras edificações? Quando?
 
 ## 13. Re-attach checklist

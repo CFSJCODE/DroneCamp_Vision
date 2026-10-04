@@ -1,0 +1,22 @@
+{
+  "runtime": {
+    "python": "3.12.3",
+    "ultralytics": "8.4.172",
+    "torch": "2.14.1+cu130",
+    "device_requested": "cpu",
+    "checkpoint": "/home/user/DroneCamp_Vision/sistema_ia/runs/export_20261004T213131Z_e52142ab/model.pt",
+    "checkpoint_sha256": "a7a4e0bde81ecaa62a0f86cadb38f5e0d80c22dfdbb06616ef796676a661c099",
+    "requested_future_model": "yolo27l.pt"
+  },
+  "artifact": "/home/user/DroneCamp_Vision/sistema_ia/runs/export_20261004T213131Z_e52142ab/model.onnx",
+  "sha256": "be2a59eea89f97df21ed1168ed18bae47e5f1a50bbfc8f028e6e8b10a3a8e9c0",
+  "format": "onnx",
+  "quantize": 32,
+  "nms": false,
+  "imgsz": 640,
+  "demo": false,
+  "source_weights": "runs/pilot_train_20261004T204113Z_973650d1/fit/weights/best.pt",
+  "runtime_parity_validated": true,
+  "parity_images": 5,
+  "human_acceptance": "pendente"
+}

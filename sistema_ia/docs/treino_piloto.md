@@ -68,3 +68,53 @@ O roteiro manual de integração pedido no projeto também foi executado: `scrip
 2. Fotografar outras edificações e abrir revisões com `suggest --source … --group …`; isso melhora o piloto e é o que libera o treino de produção.
 3. Reconstruir o piloto com todas as revisões e treinar de novo (considerar `cache: ram`, batch 8 e 1024 px para objetos pequenos como fixadores).
 4. Só considerar uso real depois de métricas por classe em edificações que não entraram no treino.
+
+## Rodada v8 — 2ª revisão da `revisao002` (04/10/2026)
+
+Origem: pedido do usuário para retreinar com o arquivo `dronecamp-revisao-ceasa_v7_revisao002_ba8cc323c8a1.json` (revisor `002`, exportado em 2026-10-04T19:46:45.427Z) e usar também as fotos antigas. Execução numa sessão na nuvem (4 vCPU Xeon 2,1 GHz, 15 GB), com `torch 2.14.1` e `onnxruntime 1.24.4` (CPU) do PyPI.
+
+### Revisão incorporada
+
+O feedback (SHA-256 `ff34e226…`) está vinculado ao registro v7 (`5cf15c7f…`). A importação gerou [a revisão v8](../data/reviews/ceasa_v8_revisao002_ff34e226416c/registry.json): **37 fotos aprovadas (36 positivas, 1 negativa), 1 ambígua (fixadores), 246 caixas**, das quais 129 são sugestões do modelo aceitas e 41 sugestões foram descartadas.
+
+**Duplicatas:** 91 caixas eram sugestões aceitas sobre caixas já desenhadas no mesmo objeto (mesma classe, IoU ≥ 0,7). Em três fotos havia mais de 10 duplicatas cada. O registro humano foi preservado; no dataset piloto cada objeto vira um único alvo (`pilot.duplicate_iou: 0.7`), ficando a caixa do revisor ou, entre sugestões, a de maior confiança: **246 → 155 caixas**. A página agora oferece **Substituir caixa N** quando a sugestão cobre uma caixa existente, para a duplicata não voltar.
+
+### Dataset e treinos
+
+| Item | Valor |
+| --- | --- |
+| Dataset | [`data/pilot/ceasa_v8_piloto_s42`](../data/pilot/ceasa_v8_piloto_s42/pilot.json): treino 22 fotos (114 caixas), val 6 (8, uma negativa), teste 9 (33). Todas as 34 fotos do piloto v7 estão incluídas |
+| Treino 1 | `runs/pilot_train_20261004T195922Z_5cdfa63b`: **parou na época 66** por `patience 25`; melhor época 41 (val mAP50 0,072 · mAP50-95 0,033). Pesos não publicados: reproduzíveis pelo treino 2 |
+| Treino 2 | `runs/pilot_train_20261004T204113Z_973650d1`: mesmos dados, `patience 0`, **80 épocas em 47 min**. Determinístico: idêntico ao treino 1 até a época 66 |
+| Pesos | `best.pt` = época 41 (SHA-256 `a7a4e0bd…`); `last.pt` = época 80 (`9c1fd92c…`); 13 classes, `complete: true` |
+
+A validação do piloto tem 6 fotos e 8 caixas: um acerto a mais ou a menos muda o mAP50 de 0,003 para 0,07. Por isso a parada antecipada escolheu a época 41, ainda subtreinada, e foi desligada no piloto (`patience: 0`).
+
+### Comparação com o piloto anterior
+
+Contagem com [`scripts/compare_pilot_models.py`](../scripts/compare_pilot_models.py): caixas humanas reencontradas (mesma classe, IoU ≥ 0,5, confiança ≥ 0,15), separando as fotos que cada modelo viu no treino.
+
+| Modelo | Fotos não vistas | Humanas reencontradas | Sugestões corretas | Fotos de treino |
+| --- | ---: | ---: | ---: | ---: |
+| Piloto v7 (80 épocas) | 14 | 7/29 (24%) | 7/26 | 75/93 |
+| v8 época 41 (`best.pt`) | 15 | 9/41 (22%) | 9/25 | 56/114 |
+| v8 época 80 (`last.pt`) | 15 | 6/41 (15%) | 6/16 | 88/114 |
+
+Nas 7 fotos da internet, contra as 29 caixas propostas pela IA: v7 reencontra 5, v8 `best.pt` 4, v8 `last.pt` 4.
+
+**Leitura:** o retreino com as anotações novas **não melhorou de forma mensurável** a generalização. As diferenças estão dentro do ruído de 14–15 fotos. O modelo memoriza as fotos de treino (até 77%) e acerta 15–24% nas outras. O gargalo é a quantidade e a diversidade de fotos (22 fotos de treino, uma edificação, 13 classes), não o treino. Para as sugestões foi escolhido o v8 `best.pt`: aprendeu com as caixas corrigidas e é o v8 com mais acertos em fotos não vistas.
+
+### Sugestões, fotos da internet e exportação
+
+- [Página v8](../data/reviews/ceasa_v8_revisao002_ff34e226416c/index.html): 179 sugestões em 27 fotos (o atalho da raiz abre esta página).
+- Fotos da internet: [`internet_v1_sugestoes_modelo`](../data/reviews/internet_v1_sugestoes_modelo/index.html) (originais congeladas + 19 sugestões em 5 fotos) e [`internet_v2_propostas_claude`](../data/reviews/internet_v2_propostas_claude/index.html) (as 29 caixas propostas pela IA + as mesmas sugestões). Nenhuma foto aprovada; elas só entram no treino depois da sua revisão. Classes sugeridas: [novas classes](novas_classes_propostas.md).
+- ONNX: `runs/export_20261004T213131Z_e52142ab`, 640 px, **paridade 11/11 caixas, IoU 1,0, Δconfiança 0,0**.
+- **Pesos ainda fora do repositório:** a rede da sessão na nuvem bloqueou `lfs.github.com`, então `best.pt`, `last.pt` e `model.onnx` desta rodada não foram enviados ao Git LFS. Metadados, métricas, gráficos e hashes estão versionados. Para reproduzir: `train-pilot --data data\pilot\ceasa_v8_piloto_s42\dataset.yaml` (mesmo seed; ~1 h no 4600G).
+- Testes: **181 OK**, incluindo os 5 e2e reais (treino, predição, ONNX e sugestões).
+
+### Próximos passos
+
+1. Revisar `internet_v2_propostas_claude` (aceitar, corrigir ou descartar as caixas da IA) e exportar o arquivo de revisão: são 7 fotos de outras coberturas, o tipo de dado que mais falta.
+2. Decidir quais classes sugeridas ativar.
+3. Fotografar outras edificações reais; com 50–100 fotos por classe ([plano de coleta](plano_coleta_imagens.md)) a validação passa a medir algo.
+4. Opcional: treino final com as 37 fotos (sem validação própria) só para gerar sugestões.

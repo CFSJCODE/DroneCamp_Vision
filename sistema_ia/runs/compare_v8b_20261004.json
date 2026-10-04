@@ -1,0 +1,99 @@
+{
+  "dataset": "data/pilot/ceasa_v8_piloto_s42/dataset.yaml",
+  "pilot_sha256": "5e2436e383ee8b053869099bc2f25df1f772573c8e5fa6f2a538f7da5c5313f2",
+  "conf": 0.15,
+  "iou_match": 0.5,
+  "models": [
+    {
+      "weights": "runs/pilot_train_20261004T170212Z_dd284411/fit/weights/best.pt",
+      "weights_sha256": "bca87539647c20aca752ce6bd481dc4b74525005fe1a776f8e1f6505cd3d15a9",
+      "imgsz": 640,
+      "splits": {
+        "test (visto no treino)": {
+          "images": 9,
+          "truth": 33,
+          "found": 26,
+          "suggestions": 33,
+          "correct": 26
+        },
+        "train": {
+          "images": 8,
+          "truth": 21,
+          "found": 3,
+          "suggestions": 15,
+          "correct": 3
+        },
+        "train (visto no treino)": {
+          "images": 14,
+          "truth": 93,
+          "found": 75,
+          "suggestions": 110,
+          "correct": 75
+        },
+        "val": {
+          "images": 6,
+          "truth": 8,
+          "found": 4,
+          "suggestions": 11,
+          "correct": 4
+        }
+      }
+    },
+    {
+      "weights": "runs/pilot_train_20261004T204113Z_973650d1/fit/weights/best.pt",
+      "weights_sha256": "a7a4e0bde81ecaa62a0f86cadb38f5e0d80c22dfdbb06616ef796676a661c099",
+      "imgsz": 640,
+      "splits": {
+        "test": {
+          "images": 9,
+          "truth": 33,
+          "found": 9,
+          "suggestions": 23,
+          "correct": 9
+        },
+        "train (visto no treino)": {
+          "images": 22,
+          "truth": 114,
+          "found": 56,
+          "suggestions": 154,
+          "correct": 56
+        },
+        "val": {
+          "images": 6,
+          "truth": 8,
+          "found": 0,
+          "suggestions": 2,
+          "correct": 0
+        }
+      }
+    },
+    {
+      "weights": "runs/pilot_train_20261004T204113Z_973650d1/fit/weights/last.pt",
+      "weights_sha256": "9c1fd92c755131c03c5cf5624cdaf9900a9a4c3c92cb041de8b36d173d73d3d1",
+      "imgsz": 640,
+      "splits": {
+        "test": {
+          "images": 9,
+          "truth": 33,
+          "found": 6,
+          "suggestions": 11,
+          "correct": 6
+        },
+        "train (visto no treino)": {
+          "images": 22,
+          "truth": 114,
+          "found": 88,
+          "suggestions": 200,
+          "correct": 88
+        },
+        "val": {
+          "images": 6,
+          "truth": 8,
+          "found": 0,
+          "suggestions": 5,
+          "correct": 0
+        }
+      }
+    }
+  ]
+}

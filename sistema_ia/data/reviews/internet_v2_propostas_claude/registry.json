@@ -1,0 +1,469 @@
+{
+  "schema_version": 1,
+  "version": "internet_v2_propostas_claude",
+  "taxonomy_sha256": "8e26946337edd42cd86973a5b4ac43cd8f988aeee24aa889fe8dc2c3a9ed4f9a",
+  "taxonomy_version": "ceasa-v5-proposta-reparo-rufo",
+  "sources": [
+    {
+      "folder": "/home/user/DroneCamp_Vision/Fotos_InsperçãoDeTelhadosIndustriais_Internet",
+      "files": 7
+    }
+  ],
+  "images": [
+    {
+      "image_sha256": "64d407d9c87c448663b58dc3a834370e648eea913e5d8ff4dd1142ca52560d7d",
+      "filename": "detritos-calha.webp",
+      "pages": [],
+      "width": 600,
+      "height": 800,
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 7,
+          "bbox_xyxy": [
+            152,
+            205,
+            398,
+            655
+          ],
+          "note": "Folhas e capim secos (resquícios de vegetação) dentro da calha."
+        },
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            110,
+            560,
+            398,
+            800
+          ],
+          "note": "Sedimento escuro e detritos no fundo da calha; não inferir obstrução ou água."
+        }
+      ],
+      "annotator": "claude_visual",
+      "notes": "Calha entre laje/parede e telha com folhas secas e sedimento. Parafuso com arruela na telha à direita parece fixação regular.",
+      "visual_review_status": "first_pass_ai",
+      "technical_status": "pending_human_review",
+      "human_approved": false,
+      "building_group": "internet_referencia",
+      "scene_group": "internet_referencia_64d407d9c87c",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/internet_v1_sugestoes_modelo/originals/64d407d9c87c448663b58dc3a834370e648eea913e5d8ff4dd1142ca52560d7d.webp",
+      "original_path": "/home/user/DroneCamp_Vision/Fotos_InsperçãoDeTelhadosIndustriais_Internet/detritos-calha.webp",
+      "severity": null
+    },
+    {
+      "image_sha256": "7a2b1cb1a06db525203fc17a6c90191eda420060b4375f97d013e92bc4f67939",
+      "filename": "detritos-sobre-telhado.webp",
+      "pages": [],
+      "width": 1000,
+      "height": 750,
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            385,
+            140,
+            662,
+            258
+          ],
+          "note": "Estrutura de perfis metálicos (cantoneiras) solta sobre a telha.",
+          "proposed_new_class": "objeto_estranho_cobertura"
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            308,
+            415,
+            548,
+            722
+          ],
+          "note": "Emaranhado de cabos elétricos (pretos e azuis) sobre a telha.",
+          "proposed_new_class": "objeto_estranho_cobertura"
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            548,
+            250,
+            762,
+            412
+          ],
+          "note": "Acúmulo de detritos junto à parede: fragmentos de chapa, sucata e folhas."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            603,
+            450,
+            778,
+            622
+          ],
+          "note": "Fragmentos escuros planos sobre a telha (pedaços de chapa ou manta?); identidade não confirmada."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            398,
+            300,
+            432,
+            348
+          ],
+          "note": "Folhas/galhos secos sobre a telha."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            428,
+            352,
+            470,
+            445
+          ],
+          "note": "Folhas/galhos secos sobre a telha."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            478,
+            335,
+            508,
+            388
+          ],
+          "note": "Folhas/galhos secos sobre a telha."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            518,
+            298,
+            548,
+            338
+          ],
+          "note": "Folhas/galhos secos sobre a telha."
+        }
+      ],
+      "annotator": "claude_visual",
+      "notes": "Perfis metálicos, cabos e detritos sobre a telha. Ganchos/fixadores escuros regulares nas cristas parecem instalados e não foram marcados.",
+      "visual_review_status": "first_pass_ai",
+      "technical_status": "pending_human_review",
+      "human_approved": false,
+      "building_group": "internet_referencia",
+      "scene_group": "internet_referencia_7a2b1cb1a06d",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/internet_v1_sugestoes_modelo/originals/7a2b1cb1a06db525203fc17a6c90191eda420060b4375f97d013e92bc4f67939.webp",
+      "original_path": "/home/user/DroneCamp_Vision/Fotos_InsperçãoDeTelhadosIndustriais_Internet/detritos-sobre-telhado.webp",
+      "severity": null
+    },
+    {
+      "image_sha256": "99746af6de1be10b63394ae4098e24150e76a496e000b69528898d11d06e871e",
+      "filename": "galhos-liquen-calha.webp",
+      "pages": [],
+      "width": 602,
+      "height": 800,
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 7,
+          "bbox_xyxy": [
+            283,
+            95,
+            452,
+            450
+          ],
+          "note": "Faixa contínua de musgo verde na lateral/fundo da calha.",
+          "proposed_new_class": "crescimento_biologico"
+        },
+        {
+          "class_id": 7,
+          "bbox_xyxy": [
+            170,
+            330,
+            485,
+            708
+          ],
+          "note": "Capim e galhos secos acumulados na calha."
+        },
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            95,
+            470,
+            335,
+            705
+          ],
+          "note": "Sedimento escuro/lodo no fundo da calha; não inferir água acumulada."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            478,
+            333,
+            553,
+            378
+          ],
+          "note": "Galho seco sobre a borda da telha."
+        }
+      ],
+      "annotator": "claude_visual",
+      "notes": "Calha larga com musgo, capim seco e sedimento escuro. Água acumulada não foi inferida (exclusão explícita da taxonomia).",
+      "visual_review_status": "first_pass_ai",
+      "technical_status": "pending_human_review",
+      "human_approved": false,
+      "building_group": "internet_referencia",
+      "scene_group": "internet_referencia_99746af6de1b",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/internet_v1_sugestoes_modelo/originals/99746af6de1be10b63394ae4098e24150e76a496e000b69528898d11d06e871e.webp",
+      "original_path": "/home/user/DroneCamp_Vision/Fotos_InsperçãoDeTelhadosIndustriais_Internet/galhos-liquen-calha.webp",
+      "severity": null
+    },
+    {
+      "image_sha256": "ac5a3da68c0046fe10430d7de5787d2ce8e072fb207364681b12be7c4e44600d",
+      "filename": "resto-manutencao-telhado.webp",
+      "pages": [],
+      "width": 1000,
+      "height": 750,
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            285,
+            168,
+            628,
+            500
+          ],
+          "note": "Pilha de tábuas e lascas de madeira deixadas sobre a telha, com parte apoiada junto ao canal central.",
+          "proposed_new_class": "objeto_estranho_cobertura"
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            398,
+            450,
+            480,
+            750
+          ],
+          "note": "Tábua longa e envelhecida apoiada ao longo da telha, com sujeira aderida; confirmar se não é peça do sistema.",
+          "proposed_new_class": "objeto_estranho_cobertura"
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            528,
+            140,
+            890,
+            240
+          ],
+          "note": "Conjunto de sacos/sacaria brancos sobre a telha.",
+          "proposed_new_class": "objeto_estranho_cobertura"
+        },
+        {
+          "class_id": 10,
+          "bbox_xyxy": [
+            195,
+            295,
+            395,
+            447
+          ],
+          "note": "Peça ondulada com borda livre e sombra por baixo, apoiada sobre o rufo/telha. Dúvida: pode ser o próprio arremate levantado (rufo_deslocado)."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            728,
+            374,
+            748,
+            390
+          ],
+          "note": "Pequeno fragmento escuro solto sobre a onda da telha."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            745,
+            455,
+            772,
+            478
+          ],
+          "note": "Fragmento alongado solto sobre a telha."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            878,
+            475,
+            900,
+            490
+          ],
+          "note": "Pequeno fragmento solto sobre a telha."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            22,
+            440,
+            268,
+            750
+          ],
+          "note": "Faixa branca irregular no vale da telha: possível tinta/argamassa/selante aderido. Dúvida: reflexo de luz.",
+          "proposed_new_class": "residuo_tinta_argamassa"
+        }
+      ],
+      "annotator": "claude_visual",
+      "notes": "Sobras de manutenção sobre cobertura ondulada: tábuas, sacaria e fragmentos. Antena parabólica e sobreposição regular entre chapas não foram marcadas (não são evidência).",
+      "visual_review_status": "first_pass_ai",
+      "technical_status": "pending_human_review",
+      "human_approved": false,
+      "building_group": "internet_referencia",
+      "scene_group": "internet_referencia_ac5a3da68c00",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/internet_v1_sugestoes_modelo/originals/ac5a3da68c0046fe10430d7de5787d2ce8e072fb207364681b12be7c4e44600d.webp",
+      "original_path": "/home/user/DroneCamp_Vision/Fotos_InsperçãoDeTelhadosIndustriais_Internet/resto-manutencao-telhado.webp",
+      "severity": null
+    },
+    {
+      "image_sha256": "254dcec36fe67dccb67d7820faf3ef0b732ac58503b9b2fdcf535a71dfdde2d0",
+      "filename": "resto-tinta-sobre-telhado.webp",
+      "pages": [],
+      "width": 1000,
+      "height": 750,
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            690,
+            0,
+            1000,
+            285
+          ],
+          "note": "Recipiente circular (balde/tambor) com crosta de material, sobre a telha.",
+          "proposed_new_class": "objeto_estranho_cobertura"
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            195,
+            290,
+            1000,
+            750
+          ],
+          "note": "Placas e grumos de material de obra solidificado (tinta/argamassa) cobrindo a telha.",
+          "proposed_new_class": "residuo_tinta_argamassa"
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            228,
+            95,
+            705,
+            590
+          ],
+          "note": "Pó/areia/sedimento acumulado sobre a telha ao redor do recipiente."
+        }
+      ],
+      "annotator": "claude_visual",
+      "notes": "Material de obra solidificado e recipiente sobre a telha. A peça ondulada clara à esquerda não foi marcada: pode ser a própria telha sob luz forte ou chapas empilhadas.",
+      "visual_review_status": "first_pass_ai",
+      "technical_status": "pending_human_review",
+      "human_approved": false,
+      "building_group": "internet_referencia",
+      "scene_group": "internet_referencia_254dcec36fe6",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/internet_v1_sugestoes_modelo/originals/254dcec36fe67dccb67d7820faf3ef0b732ac58503b9b2fdcf535a71dfdde2d0.webp",
+      "original_path": "/home/user/DroneCamp_Vision/Fotos_InsperçãoDeTelhadosIndustriais_Internet/resto-tinta-sobre-telhado.webp",
+      "severity": null
+    },
+    {
+      "image_sha256": "c367551ee526a7b13136434745402c8ca20b7a87452352ce0b1e2ccebe5b9fae",
+      "filename": "telhado-fibrocimento.webp",
+      "pages": [],
+      "width": 800,
+      "height": 600,
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            328,
+            172,
+            386,
+            600
+          ],
+          "note": "Trinca longitudinal contínua no corpo da telha de fibrocimento, sem separação aparente das partes; não é sombra (bordas irregulares e ramificação perto de y=490).",
+          "proposed_new_class": "telha_trincada"
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            0,
+            148,
+            800,
+            180
+          ],
+          "note": "Barra metálica (vergalhão/tubo) apoiada sobre as cristas, projetando sombra ondulada; confirmar se não é linha de vida.",
+          "proposed_new_class": "objeto_estranho_cobertura"
+        }
+      ],
+      "annotator": "claude_visual",
+      "notes": "Fibrocimento com trinca longitudinal. Faixas escuras verticais são sombras das sobreposições laterais; manchas escuras difusas sugerem crescimento biológico, sem caixa delimitável.",
+      "visual_review_status": "first_pass_ai",
+      "technical_status": "pending_human_review",
+      "human_approved": false,
+      "building_group": "internet_referencia",
+      "scene_group": "internet_referencia_c367551ee526",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/internet_v1_sugestoes_modelo/originals/c367551ee526a7b13136434745402c8ca20b7a87452352ce0b1e2ccebe5b9fae.webp",
+      "original_path": "/home/user/DroneCamp_Vision/Fotos_InsperçãoDeTelhadosIndustriais_Internet/telhado-fibrocimento.webp",
+      "severity": null
+    },
+    {
+      "image_sha256": "aefe259916a067aefbf2e3729f1f4321594d3354c0785827b975cb7ef0d2edb3",
+      "filename": "vegetacao-dentro-calha.webp",
+      "pages": [],
+      "width": 600,
+      "height": 800,
+      "status": "positive",
+      "boxes": [
+        {
+          "class_id": 7,
+          "bbox_xyxy": [
+            276,
+            118,
+            446,
+            452
+          ],
+          "note": "Planta viva (muda/capim) crescendo na calha entre o telhado e a parede."
+        },
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            300,
+            440,
+            452,
+            800
+          ],
+          "note": "Terra e detritos acumulados no fundo da calha."
+        }
+      ],
+      "annotator": "claude_visual",
+      "notes": "Planta crescendo na calha. Fixadores elevados e a borda da chapa em y≈390–495 à esquerda podem indicar soltura/levantamento, mas a foto não permite confirmar; sem caixa.",
+      "visual_review_status": "first_pass_ai",
+      "technical_status": "pending_human_review",
+      "human_approved": false,
+      "building_group": "internet_referencia",
+      "scene_group": "internet_referencia_aefe259916a0",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/internet_v1_sugestoes_modelo/originals/aefe259916a067aefbf2e3729f1f4321594d3354c0785827b975cb7ef0d2edb3.webp",
+      "original_path": "/home/user/DroneCamp_Vision/Fotos_InsperçãoDeTelhadosIndustriais_Internet/vegetacao-dentro-calha.webp",
+      "severity": null
+    }
+  ],
+  "scope": "fotos_novas_com_sugestoes_do_modelo_pendentes_de_revisao",
+  "ai_proposals": {
+    "sha256": "fcb091031d165bf3556ed85ac03e78bcfd6141593b6359eafedaa1e3240f5d25",
+    "annotator": "claude_visual",
+    "images": 7,
+    "source_registry_sha256": "9820fce0025d25adee96c15eb021f6c5408653d093073766112e49f4250faf28",
+    "proposed_new_classes": [
+      "crescimento_biologico",
+      "objeto_estranho_cobertura",
+      "residuo_tinta_argamassa",
+      "telha_trincada"
+    ]
+  },
+  "parent_registry_version": "internet_v1_sugestoes_modelo"
+}

@@ -1,7 +1,19 @@
-"""Revalide a aprovação e a integridade imediatamente antes de treinar.
+"""Guarda de procedência do treino de PRODUÇÃO, executada logo antes de treinar.
 
-Um YAML válido não comprova revisão humana. Esta guarda reconcilia cada amostra
-com a revisão de origem, sem confiar no indicador de prontidão salvo em disco.
+Função no projeto: ``training.prepare_dataset`` chama
+``validate_training_provenance`` para provar que cada foto e label do dataset
+de produção veio de uma aprovação humana registrada e não foi alterada.
+
+O que faz:
+- reconcilia cada amostra (foto, label, split, grupo) com o registro de revisão
+  de origem e com ``configs/review_groups.json``;
+- confere SHA-256 de fotos, labels e documentos de origem;
+- não confia no indicador de prontidão salvo em disco: recalcula tudo.
+
+Um YAML válido não comprova revisão humana. O piloto tem a sua própria guarda
+(``pilot.validate_pilot_dataset``).
+
+Quando mexer: só se o formato de ``provenance.json`` mudar em ``review_dataset.py``.
 """
 
 from __future__ import annotations
@@ -119,6 +131,7 @@ def validate_training_provenance(config: ProjectConfig, data_path: Path) -> dict
     A função é somente leitura. A integridade documental não autentica uma pessoa;
     a aprovação tem de ter sido obtida no fluxo humano de revisão do projeto.
     """
+    # 1. Taxonomia do MVP e estrutura do dataset.
     data_path = Path(data_path).resolve()
     taxonomy = load_taxonomy(config.taxonomy_path)
     names = detection_names(taxonomy)
@@ -130,6 +143,7 @@ def validate_training_provenance(config: ProjectConfig, data_path: Path) -> dict
     config_data = yaml.safe_load(data_path.read_text(encoding="utf-8-sig"))
     root_value = Path(config_data.get("path", ".")).expanduser()
     root = (data_path.parent / root_value).resolve() if not root_value.is_absolute() else root_value.resolve()
+    # 2. provenance.json e documentos de origem (registro humano e grupos) intactos.
     provenance_path = root / "provenance.json"
     provenance = _json(provenance_path)
     taxonomy_digest = file_hash(config.taxonomy_path)
@@ -154,6 +168,7 @@ def validate_training_provenance(config: ProjectConfig, data_path: Path) -> dict
         if not isinstance(digest, str) or len(digest) != 64 or any(c not in "0123456789abcdef" for c in digest) or digest in by_digest:
             raise ValueError("Imagem inválida ou duplicada no registro humano.")
         by_digest[digest] = item
+    # 3. Inventário real das pastas e conferência amostra a amostra.
     rows = _group_rows(root)
     inventory = set()
     for split in SPLITS:
@@ -176,6 +191,7 @@ def validate_training_provenance(config: ProjectConfig, data_path: Path) -> dict
         split_groups[sample["split"]].add(sample["building_group"])
         if sample["split"] == "train":
             train_counts.update(box["class_id"] for box in reviewed["boxes"])
+    # 4. Nada a mais ou a menos; todas as classes no treino; três edificações independentes.
     if declared != inventory or set(rows) != declared:
         raise ValueError("Inventário de imagens/grupos diverge da proveniência; há amostras extras ou ausentes.")
     approved_digests = {digest for digest, item in by_digest.items() if item.get("human_approved") is True and item.get("status") in {"positive", "negative"}}

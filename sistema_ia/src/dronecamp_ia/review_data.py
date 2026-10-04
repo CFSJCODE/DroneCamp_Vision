@@ -1,4 +1,24 @@
-"""Revisões versionadas: propostas visuais nunca viram aprovação humana sozinhas."""
+"""Registros de revisão: propostas, decisões humanas e migrações de taxonomia.
+
+Função no projeto: mantém os ``registry.json`` de ``data/reviews/<versão>/``,
+que dizem, para cada foto, as caixas, o status (positiva/negativa/ambígua) e
+quem decidiu. O treino só aprende com o que um humano aprovou aqui.
+
+O que faz:
+- ``review_image_size`` / ``validate_boxes`` / ``boxes_to_yolo``: utilidades de
+  foto e caixa usadas em todo o projeto.
+- ``build_review_registry`` / ``apply_visual_audits``: montam a revisão do CEASA a
+  partir de propostas e segunda leitura por IA (comando ``prepare-review``).
+- ``import_human_feedback``: importa o JSON exportado pela página (``import-review``).
+- ``apply_ai_proposals``: leva propostas visuais de IA como candidatas (``add-ai-proposals``).
+- ``migrate_review_taxonomy``: acrescenta classes preservando caixas (``migrate-review``).
+
+Toda saída é uma versão nova: registros anteriores nunca são sobrescritos.
+Propostas visuais nunca viram aprovação humana sozinhas.
+
+Quando mexer: para mudar o que o arquivo exportado pela página pode conter ou
+as regras de aprovação (ex.: exigir ``confirmed_complete``).
+"""
 
 from __future__ import annotations
 
@@ -13,9 +33,14 @@ from PIL import Image
 from .config import ProjectConfig, detection_names, load_taxonomy
 from .io import file_hash, resolve_local_path, write_json
 
+# Versão do formato dos registros e status possíveis de uma foto.
 REVIEW_SCHEMA = 1
 IMAGE_STATUSES = {"positive", "negative", "ambiguous", "excluded"}
 
+
+# ---------------------------------------------------------------------------
+# Utilidades de foto e caixa (usadas também por pilot.py e suggestions.py).
+# ---------------------------------------------------------------------------
 
 def review_image_size(path: Path) -> tuple[int, int]:
     """Use coordenadas nos pixels originais, sem rotação EXIF implícita.
@@ -51,13 +76,20 @@ def validate_boxes(boxes: list[dict], width: int, height: int, class_count: int)
 
 
 def boxes_to_yolo(boxes: list[dict], width: int, height: int) -> str:
-    """A conversão não aprova a anotação; a proveniência define seu uso."""
+    """A conversão não aprova a anotação; a proveniência define seu uso.
+
+    Formato YOLO: uma linha por caixa, ``classe cx cy largura altura`` normalizados (0–1).
+    """
     lines = []
     for box in boxes:
         x1, y1, x2, y2 = box["bbox_xyxy"]
         lines.append(f"{box['class_id']} {(x1+x2)/(2*width):.8f} {(y1+y2)/(2*height):.8f} {(x2-x1)/width:.8f} {(y2-y1)/height:.8f}")
     return "\n".join(lines) + ("\n" if lines else "")
 
+
+# ---------------------------------------------------------------------------
+# Revisão inicial do CEASA: propostas por IA e segunda leitura (prepare-review).
+# ---------------------------------------------------------------------------
 
 def build_review_registry(config: ProjectConfig, directory: Path) -> dict:
     """Consolide lotes sem perder duplicatas documentais ou inventar decisões."""
@@ -123,6 +155,7 @@ def build_review_registry(config: ProjectConfig, directory: Path) -> dict:
 
 
 def write_review_summary(directory: Path, registry: dict) -> dict:
+    """review_summary.json: contagens de fotos, caixas por classe e aprovações."""
     counts = Counter(item["status"] for item in registry["images"])
     per_class = Counter(box["class_id"] for item in registry["images"] for box in item["boxes"])
     summary = {
@@ -189,8 +222,13 @@ def apply_visual_audits(config: ProjectConfig, directory: Path) -> dict:
     return registry
 
 
+# ---------------------------------------------------------------------------
+# Decisões humanas exportadas pela página (import-review).
+# ---------------------------------------------------------------------------
+
 def import_human_feedback(config: ProjectConfig, registry_path: Path, feedback_path: Path, output: Path) -> dict:
     """Valide arquivo exportado pelo revisor e preserve o registro anterior."""
+    # 1. O feedback precisa ter sido gerado a partir desta versão exata do registro (hash).
     registry = json.loads(registry_path.read_text(encoding="utf-8"))
     feedback = json.loads(feedback_path.read_text(encoding="utf-8"))
     if not isinstance(registry, dict) or registry.get("schema_version") != REVIEW_SCHEMA:
@@ -213,6 +251,7 @@ def import_human_feedback(config: ProjectConfig, registry_path: Path, feedback_p
     by_id = {item["image_sha256"]: item for item in registry["images"]}
     if len(by_id) != len(registry["images"]):
         raise ValueError("Imagem duplicada no registro de revisão.")
+    # 2. Cada decisão: foto conhecida e intacta, caixas válidas, revisão integral confirmada.
     decisions = feedback.get("images")
     if not isinstance(decisions, list) or not decisions:
         raise ValueError("Feedback deve conter uma lista não vazia de decisões.")
@@ -240,11 +279,13 @@ def import_human_feedback(config: ProjectConfig, registry_path: Path, feedback_p
             raise ValueError("Aprovação exige confirmação explícita da revisão integral.")
         if (status == "negative" and boxes) or (status == "positive" and not boxes):
             raise ValueError("Status positivo/negativo incompatível com ocorrências.")
+        # Positiva/negativa confirmada = aprovada para treino; ambígua continua pendente.
         item.update(status=status, boxes=boxes, human_approved=approved,
                     technical_status="human_visual_reviewed" if approved else "pending_human_review",
                     human_reviewer=reviewer, human_notes=decision.get("notes", ""),
                     human_review_at=feedback.get("exported_at"), severity=None,
                     taxonomy_recheck_pending=not approved)
+    # 3. Grava a nova versão com o hash do feedback e o vínculo com o registro anterior.
     registry["human_feedback"] = {"sha256": file_hash(feedback_path), "reviewer_id": reviewer,
                                   "reviewed_images": len(seen), "source_registry_sha256": file_hash(registry_path)}
     registry["parent_registry_version"] = registry.get("version")
@@ -253,6 +294,11 @@ def import_human_feedback(config: ProjectConfig, registry_path: Path, feedback_p
     return registry
 
 
+# ---------------------------------------------------------------------------
+# Propostas visuais de IA (add-ai-proposals) e migração de taxonomia.
+# ---------------------------------------------------------------------------
+
+# Nome de classe sugerida: minúsculas, números e "_" (ex.: telha_trincada).
 PROPOSED_CLASS_SLUG = re.compile(r"[a-z][a-z0-9_]{2,60}")
 
 

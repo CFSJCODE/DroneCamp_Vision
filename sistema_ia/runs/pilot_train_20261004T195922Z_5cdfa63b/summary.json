@@ -1,0 +1,68 @@
+{
+  "schema_version": 1,
+  "stage": "fine_tuning",
+  "complete": true,
+  "reasons": [],
+  "weights_directory": "/home/user/DroneCamp_Vision/sistema_ia/runs/pilot_train_20261004T195922Z_5cdfa63b/fit/weights",
+  "test_evaluated": false,
+  "human_acceptance": "pendente",
+  "checkpoint_functional_validation": false,
+  "export_parity_verified": false,
+  "note": "Arquivos .pt não vazios não comprovam checkpoint funcional. Avaliar por classe e revisar erros antes de usar em inspeções.",
+  "state": "completed",
+  "artifacts": {
+    "best_weights": {
+      "path": "/home/user/DroneCamp_Vision/sistema_ia/runs/pilot_train_20261004T195922Z_5cdfa63b/fit/weights/best.pt",
+      "present": true,
+      "size_bytes": 52998629
+    },
+    "last_weights": {
+      "path": "/home/user/DroneCamp_Vision/sistema_ia/runs/pilot_train_20261004T195922Z_5cdfa63b/fit/weights/last.pt",
+      "present": true,
+      "size_bytes": 52998629
+    },
+    "results_csv": {
+      "path": "/home/user/DroneCamp_Vision/sistema_ia/runs/pilot_train_20261004T195922Z_5cdfa63b/fit/results.csv",
+      "present": true,
+      "size_bytes": 7889
+    }
+  },
+  "model_class_contract_verified": true,
+  "expected_class_names": [
+    "telha_quebrada",
+    "telha_ausente",
+    "residuos_telha",
+    "reparo_telha",
+    "rufo_ausente",
+    "rufo_quebrado",
+    "residuos_calha",
+    "vegetacao_calha",
+    "pedaco_telha",
+    "rufo_deslocado",
+    "pedaco_telha_sobreposto",
+    "fixador_telha_frouxo",
+    "reparo_rufo"
+  ],
+  "epochs_recorded": 66,
+  "last_epoch": 66,
+  "last_metrics": {
+    "metrics/precision(B)": 0.00136,
+    "metrics/recall(B)": 0.3,
+    "metrics/mAP50(B)": 0.00178,
+    "metrics/mAP50-95(B)": 0.00107
+  },
+  "loss_columns_checked": [
+    "train/box_loss",
+    "train/cls_loss",
+    "train/l1_loss",
+    "val/box_loss",
+    "val/cls_loss",
+    "val/l1_loss"
+  ],
+  "pilot": true,
+  "production_ready": false,
+  "classes_without_training_boxes": [
+    "reparo_rufo"
+  ],
+  "warning": "Piloto com fotos de uma única edificação: validação e teste não são independentes. Use os pesos apenas para sugerir caixas à revisão humana."
+}
