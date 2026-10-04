@@ -8,25 +8,48 @@
 <title>DroneCamp Vision · Operações YOLO</title>
 <style>
 /* -------------------------------------------------------------------------
-   Plataforma de operações DroneCamp Vision.
-   Tema escuro (padrão) inspirado em painéis de vidro; tema claro mantém a
-   paleta original da revisão (azul petróleo #215b7b). Cores só em tokens.
+   Plataforma de operações DroneCamp Vision — design fixo.
+
+   Um único material composto por várias linguagens visuais, cada uma com um
+   papel definido (não há seletor; a forma é a mesma nos dois temas):
+   - Aurora UI: manchas de cor em movimento lento no fundo (.aurora);
+   - Geometric Morphism: malha triangular no fundo (.geo), logo e números
+     das etapas em hexágono;
+   - Liquid Glass / Glassmorphism: cartões translúcidos com desfoque, borda
+     refletiva (.card::before) e reflexo que segue o cursor (.card::after);
+   - Fluent UI: textura acrílica (ruído) no vidro, tipografia Segoe UI
+     Variable e o brilho de "reveal" sob o cursor;
+   - Claymorphism: botões em volume macio e campos afundados;
+   - Metalmorphism: trilho de navegação, logo e blocos de métrica em metal
+     escovado com bisel;
+   - Woodmorphism: bancada de ferramentas da revisão em madeira;
+   - Color Morphism: gradientes que migram de cor (cartão de destaque,
+     barras de progresso, anel do logo) e anel do treino que vai do âmbar
+     ao verde conforme as épocas avançam;
+   - Immersive Materials: profundidade em camadas e leve inclinação 3D (.tilt).
+   data-theme = dark | light troca só as cores. O azul petróleo do DroneCamp
+   continua sendo a cor primária e o laranja marca o que veio da IA.
    ------------------------------------------------------------------------- */
+@property --spin { syntax: '<angle>'; inherits: false; initial-value: 0deg }
+
 :root {
+  color-scheme: dark;
   --space: 8px;
-  --radius: 18px;
-  --radius-sm: 10px;
+  --radius: 20px;
+  --radius-sm: 12px;
   --rail: 76px;
-  --bg: #0b1117;
-  --bg-glow-1: rgba(47, 140, 186, .22);
-  --bg-glow-2: rgba(245, 158, 11, .10);
+  --font-body: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Inter", sans-serif;
+  --font-display: "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, "Inter", sans-serif;
+
+  /* Cores de leitura */
+  --bg: #070b12;
   --surface: rgba(22, 31, 40, .78);
   --surface-strong: #18222c;
   --surface-hover: rgba(255, 255, 255, .06);
   --line: rgba(255, 255, 255, .09);
   --line-strong: rgba(255, 255, 255, .18);
   --ink: #e8eef3;
-  --muted: #92a3b1;
+  --muted: #9aabb8;
   --primary: #3aa0d0;
   --primary-ink: #04131c;
   --primary-soft: rgba(58, 160, 208, .16);
@@ -42,23 +65,83 @@
   --viewer: #06090c;
   --shadow: 0 18px 50px rgba(0, 0, 0, .35);
   --chart-grid: rgba(255, 255, 255, .07);
+  --terminal: #070b0f;
+
+  /* Texturas geradas (SVG embutido, sem downloads). */
+  --noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --brushed: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='200'%3E%3Cfilter id='b'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.003 .85' numOctaves='2' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 .3 0 0 0 -.1'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23b)'/%3E%3C/svg%3E");
+  --brushed-dark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='200'%3E%3Cfilter id='b'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.003 .85' numOctaves='2' seed='7' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .15 0 0 0 0 .18 0 0 0 0 .2 .45 0 0 0 -.17'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23b)'/%3E%3C/svg%3E");
+  --grain-dark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='300'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.004 .09' numOctaves='4' seed='5' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .1 0 0 0 0 .05 0 0 0 0 .02 .9 0 0 0 -.38'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  --grain-light: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='300'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.004 .09' numOctaves='4' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .3 0 0 0 0 .16 .55 0 0 0 -.22'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+  --geo-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='48'%3E%3Cpath d='M0 0L28 48L56 0M0 48H56M0 0H56' fill='none' stroke='%23ffffff' stroke-width='.7'/%3E%3C/svg%3E");
+
+  /* Fundo: Aurora UI + malha geométrica */
+  --page-bg: linear-gradient(180deg, #070b12, #0a1018);
+  --aurora-1: #12a5c0;
+  --aurora-2: #3d5afe;
+  --aurora-3: #8e5cff;
+  --aurora-4: #f59e0b;
+  --aurora-opacity: .5;
+  --geo-opacity: .06;
+
+  /* Vidro líquido com acrílico Fluent (cartões) */
+  --glass-bg: var(--noise), linear-gradient(160deg, rgba(30, 42, 56, .62), rgba(14, 20, 28, .5));
+  --glass-border: rgba(255, 255, 255, .08);
+  --glass-shadow: 0 24px 60px rgba(0, 0, 0, .45), inset 0 1px 0 rgba(255, 255, 255, .08);
+  --glass-blur: blur(24px) saturate(170%);
+  --edge: linear-gradient(135deg, rgba(255, 255, 255, .5), rgba(255, 255, 255, 0) 32%, rgba(255, 255, 255, 0) 68%, rgba(140, 200, 255, .3));
+  --reveal: rgba(255, 255, 255, .09);
+  --inset-bg: rgba(255, 255, 255, .04);
+
+  /* Clay (botões e campos) */
+  --clay-bg: linear-gradient(160deg, #263240, #1a232d);
+  --clay-hover: linear-gradient(160deg, #2d3b4a, #1f2934);
+  --clay-border: rgba(255, 255, 255, .08);
+  --clay-shadow: 5px 7px 14px rgba(0, 0, 0, .45), -3px -3px 9px rgba(255, 255, 255, .03), inset 1px 1px 2px rgba(255, 255, 255, .12), inset -2px -3px 6px rgba(0, 0, 0, .3);
+  --clay-pressed: inset 3px 3px 8px rgba(0, 0, 0, .5), inset -2px -2px 6px rgba(255, 255, 255, .04);
+  --field-bg: #0c131a;
+  --field-border: rgba(255, 255, 255, .1);
+  --field-shadow: inset 3px 3px 7px rgba(0, 0, 0, .55), inset -2px -2px 5px rgba(255, 255, 255, .04);
+  --primary-bg: linear-gradient(160deg, #74cdf2, #2f8fc0);
+  --primary-shadow: 5px 7px 16px rgba(18, 90, 128, .45), inset 2px 2px 4px rgba(255, 255, 255, .5), inset -3px -4px 8px rgba(0, 50, 80, .35);
+
+  /* Metal escovado (trilho, logo, blocos de métrica) */
+  --metal-rail: var(--brushed), linear-gradient(90deg, #151b21, #242c33 55%, #192026);
+  --metal-tile: var(--brushed), linear-gradient(180deg, #2a323a, #1b2127);
+  --metal-border: #0a0d10;
+  --metal-shadow: 0 8px 18px rgba(0, 0, 0, .4), inset 0 1px 0 rgba(255, 255, 255, .14), inset 0 -1px 0 rgba(0, 0, 0, .55);
+  --rail-shadow: inset -1px 0 0 rgba(255, 255, 255, .07), 6px 0 24px rgba(0, 0, 0, .25);
+  --rail-ink: #a9b8c4;
+  --rail-hover: rgba(255, 255, 255, .08);
+
+  /* Madeira (bancada de ferramentas da revisão) */
+  --wood: var(--grain-dark), linear-gradient(180deg, #34251a, #261a11);
+  --wood-border: rgba(255, 214, 170, .14);
+  --wood-shadow: inset 0 1px 0 rgba(255, 225, 190, .1), inset 0 -2px 6px rgba(0, 0, 0, .35), 0 6px 14px rgba(0, 0, 0, .3);
+  --wood-ink: #f3e5d3;
+  --wood-line: rgba(255, 214, 170, .22);
+
+  /* Color morph */
+  --morph: linear-gradient(120deg, #15607f, #2f8fc0 25%, #6b5bd6 50%, #15607f 75%, #2f8fc0);
+  --morph-ink: #ffffff;
+  --progress: linear-gradient(90deg, #3aa0d0, #8e5cff, #34d17a, #3aa0d0);
+  --ring-lightness: 58%;
 }
 
 :root[data-theme="light"] {
+  color-scheme: light;
   --bg: #eef2f5;
-  --bg-glow-1: rgba(33, 91, 123, .10);
-  --bg-glow-2: rgba(173, 100, 0, .06);
   --surface: rgba(255, 255, 255, .92);
   --surface-strong: #ffffff;
-  --surface-hover: #edf5fa;
+  --surface-hover: rgba(33, 91, 123, .07);
   --line: #d6dfe6;
   --line-strong: #aabcc8;
   --ink: #183142;
-  --muted: #556776;
+  --muted: #4f6272;
   --primary: #215b7b;
   --primary-ink: #ffffff;
   --primary-soft: #e3eff6;
-  --ai: #b45f06;
+  --ai: #a85606;
   --ai-soft: #fff1dd;
   --ok: #1d7a46;
   --ok-soft: #e3f4ea;
@@ -68,46 +151,106 @@
   --bad-soft: #fde9e8;
   --focus: #ad6400;
   --viewer: #dfe6ec;
-  --shadow: 0 10px 30px rgba(24, 49, 66, .08);
+  --shadow: 0 10px 30px rgba(24, 49, 66, .1);
   --chart-grid: #e3e9ee;
+  --terminal: #0d1a24;
+
+  --geo-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='48'%3E%3Cpath d='M0 0L28 48L56 0M0 48H56M0 0H56' fill='none' stroke='%23183142' stroke-width='.7'/%3E%3C/svg%3E");
+  --page-bg: linear-gradient(180deg, #eef3f7, #e7edf2);
+  --aurora-1: #7fd3e6;
+  --aurora-2: #9db4ff;
+  --aurora-3: #d6b8ff;
+  --aurora-4: #ffd59a;
+  --aurora-opacity: .6;
+  --geo-opacity: .05;
+
+  --glass-bg: var(--noise), linear-gradient(160deg, rgba(255, 255, 255, .78), rgba(255, 255, 255, .56));
+  --glass-border: rgba(255, 255, 255, .85);
+  --glass-shadow: 0 18px 44px rgba(24, 49, 66, .12), inset 0 1px 0 rgba(255, 255, 255, .95);
+  --edge: linear-gradient(135deg, #ffffff, rgba(255, 255, 255, 0) 40%, rgba(255, 255, 255, .6));
+  --reveal: rgba(255, 255, 255, .6);
+  --inset-bg: rgba(33, 91, 123, .05);
+
+  --clay-bg: linear-gradient(160deg, #ffffff, #e8eef3);
+  --clay-hover: linear-gradient(160deg, #ffffff, #f1f5f8);
+  --clay-border: rgba(24, 49, 66, .12);
+  --clay-shadow: 4px 6px 12px rgba(24, 49, 66, .14), -4px -4px 10px rgba(255, 255, 255, .9), inset 1px 1px 2px #ffffff, inset -2px -3px 5px rgba(24, 49, 66, .06);
+  --clay-pressed: inset 3px 3px 7px rgba(24, 49, 66, .16), inset -2px -2px 5px #ffffff;
+  --field-bg: #f4f7f9;
+  --field-border: #aabcc8;
+  --field-shadow: inset 2px 2px 5px rgba(24, 49, 66, .12), inset -2px -2px 4px #ffffff;
+  --primary-bg: linear-gradient(160deg, #2c769c, #1d5170);
+  --primary-shadow: 4px 6px 14px rgba(33, 91, 123, .3), inset 2px 2px 3px rgba(255, 255, 255, .35), inset -3px -3px 6px rgba(0, 0, 0, .18);
+
+  --metal-rail: var(--brushed-dark), linear-gradient(90deg, #cdd4da, #eef1f3 55%, #d4dadf);
+  --metal-tile: var(--brushed-dark), linear-gradient(180deg, #fbfcfd, #e4e9ed);
+  --metal-border: #b9c2ca;
+  --metal-shadow: 0 6px 14px rgba(24, 49, 66, .12), inset 0 1px 0 #ffffff, inset 0 -1px 0 rgba(0, 0, 0, .1);
+  --rail-shadow: inset -1px 0 0 rgba(255, 255, 255, .8), 6px 0 24px rgba(24, 49, 66, .08);
+  --rail-ink: #34495a;
+  --rail-hover: rgba(24, 49, 66, .08);
+
+  --wood: var(--grain-light), linear-gradient(180deg, #f4e7d4, #e8d5bb);
+  --wood-border: #d6bf9f;
+  --wood-shadow: inset 0 1px 0 rgba(255, 255, 255, .7), 0 4px 10px rgba(90, 58, 30, .12);
+  --wood-ink: #3b2416;
+  --wood-line: #c9ab85;
+
+  --morph: linear-gradient(120deg, #1d5170, #2a6f93 25%, #4c43a0 50%, #1d5170 75%, #2a6f93);
+  --progress: linear-gradient(90deg, #215b7b, #5a4fb8, #1d7a46, #215b7b);
+  --ring-lightness: 36%;
 }
 
 * { box-sizing: border-box }
 
-html, body { height: 100% }
+html, body { min-height: 100% }
 
 body {
   margin: 0;
   color: var(--ink);
-  background:
-    radial-gradient(1100px 600px at 12% -10%, var(--bg-glow-1), transparent 60%),
-    radial-gradient(900px 500px at 100% 0%, var(--bg-glow-2), transparent 55%),
-    var(--bg);
+  background: var(--page-bg);
+  background-color: var(--bg);
   background-attachment: fixed;
-  font: 15px/1.5 "Inter", system-ui, "Segoe UI", sans-serif;
+  font: 15px/1.5 var(--font-body);
 }
+
+/* Aurora UI: manchas de cor em movimento lento atrás do vidro (só gradientes, sem blur caro). */
+.aurora { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; opacity: var(--aurora-opacity) }
+.aurora span { position: absolute; width: 70vmax; height: 70vmax; border-radius: 50%; animation: drift 36s ease-in-out infinite alternate }
+.aurora span:nth-child(1) { left: -20vmax; top: -30vmax; background: radial-gradient(circle, var(--aurora-1), transparent 62%) }
+.aurora span:nth-child(2) { right: -25vmax; top: -20vmax; background: radial-gradient(circle, var(--aurora-2), transparent 62%); animation-duration: 44s; animation-delay: -12s }
+.aurora span:nth-child(3) { left: 20vw; bottom: -45vmax; background: radial-gradient(circle, var(--aurora-3), transparent 62%); animation-duration: 52s; animation-delay: -20s }
+.aurora span:nth-child(4) { right: 5vw; bottom: -30vmax; width: 45vmax; height: 45vmax; background: radial-gradient(circle, var(--aurora-4), transparent 62%); opacity: .5; animation-duration: 40s }
+@keyframes drift { 0% { transform: translate3d(0, 0, 0) scale(1) } 50% { transform: translate3d(8vw, 6vh, 0) scale(1.12) } 100% { transform: translate3d(-6vw, 10vh, 0) scale(.94) } }
+/* Geometric Morphism: malha triangular que some em direção ao conteúdo. */
+.geo { position: fixed; inset: 0; z-index: 0; pointer-events: none; background-image: var(--geo-image); opacity: var(--geo-opacity); -webkit-mask-image: radial-gradient(ellipse at 85% 0%, #000, transparent 70%); mask-image: radial-gradient(ellipse at 85% 0%, #000, transparent 70%) }
+@keyframes morph { 0% { background-position: 0% 50% } 100% { background-position: 100% 50% } }
+@keyframes spin { to { --spin: 360deg } }
 
 button, input, select, textarea { font: inherit; color: inherit }
 
+/* Claymorphism: botões em volume macio que afundam ao clicar. */
 button {
   cursor: pointer;
-  border: 1px solid var(--line-strong);
+  border: 1px solid var(--clay-border);
   border-radius: var(--radius-sm);
   padding: 8px 14px;
-  background: var(--surface-strong);
+  background: var(--clay-bg);
+  box-shadow: var(--clay-shadow);
   min-height: 40px;
-  transition: background .15s, border-color .15s, transform .15s;
+  transition: background .15s, border-color .15s, box-shadow .2s, transform .15s, filter .15s;
 }
 
-button:hover:not(:disabled) { background: var(--surface-hover); border-color: var(--primary) }
-button:active:not(:disabled) { transform: translateY(1px) }
+button:hover:not(:disabled) { background: var(--clay-hover); border-color: color-mix(in srgb, var(--primary) 60%, transparent); transform: translateY(-1px) }
+button:active:not(:disabled) { transform: translateY(1px); box-shadow: var(--clay-pressed) }
 button:disabled { opacity: .45; cursor: default }
 
-button.primary { background: var(--primary); color: var(--primary-ink); border-color: var(--primary); font-weight: 600 }
-button.primary:hover:not(:disabled) { background: var(--primary); filter: brightness(1.08) }
-button.ai { border-color: var(--ai); color: var(--ai) }
+button.primary { background: var(--primary-bg); color: var(--primary-ink); border-color: transparent; box-shadow: var(--primary-shadow); font-weight: 600 }
+button.primary:hover:not(:disabled) { background: var(--primary-bg); border-color: transparent; filter: brightness(1.08) }
+button.primary:active:not(:disabled) { box-shadow: var(--clay-pressed) }
+button.ai { border-color: color-mix(in srgb, var(--ai) 70%, transparent); color: var(--ai) }
 button.ai:hover:not(:disabled) { background: var(--ai-soft); border-color: var(--ai) }
-button.ghost { background: transparent; border-color: transparent }
+button.ghost { background: transparent; border-color: transparent; box-shadow: none }
 button.small { min-height: 32px; padding: 4px 10px; font-size: 13px }
 
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px }
@@ -115,21 +258,24 @@ button.small { min-height: 32px; padding: 4px 10px; font-size: 13px }
 a { color: var(--primary) }
 
 h1, h2, h3 { margin: 0; line-height: 1.25 }
-h1 { font-size: 22px; letter-spacing: -.01em }
+h1 { font: 650 24px/1.2 var(--font-display); letter-spacing: -.015em }
 h2 { font-size: 16px; font-weight: 650 }
 h3 { font-size: 14px; font-weight: 650; margin: 16px 0 8px }
 p { margin: 6px 0 12px }
 
 label { display: block; margin: 10px 0 4px; font-size: 13px; color: var(--muted) }
 
+/* Campos afundados (clay em baixo-relevo). */
 input, select, textarea {
   width: 100%;
-  border: 1px solid var(--line-strong);
+  border: 1px solid var(--field-border);
   border-radius: var(--radius-sm);
   padding: 8px 10px;
-  background: var(--surface-strong);
+  background: var(--field-bg);
+  box-shadow: var(--field-shadow);
   min-height: 40px;
 }
+input[type="checkbox"], input[type="range"] { border: 0; background: transparent; box-shadow: none }
 
 textarea { min-height: 88px; resize: vertical }
 
@@ -139,7 +285,7 @@ textarea { min-height: 88px; resize: vertical }
 .mono { font-family: ui-monospace, "Cascadia Code", Consolas, monospace; font-size: 12.5px }
 
 /* ---------- Estrutura: trilho de navegação + conteúdo ---------- */
-.app { display: grid; grid-template-columns: var(--rail) minmax(0, 1fr); min-height: 100vh }
+.app { position: relative; z-index: 1; display: grid; grid-template-columns: var(--rail) minmax(0, 1fr); min-height: 100vh }
 
 .rail {
   position: sticky;
@@ -150,20 +296,27 @@ textarea { min-height: 88px; resize: vertical }
   align-items: center;
   gap: 8px;
   padding: 16px 0;
-  background: var(--surface);
-  border-right: 1px solid var(--line);
-  backdrop-filter: blur(18px);
+  background: var(--metal-rail);
+  border-right: 1px solid var(--metal-border);
+  box-shadow: var(--rail-shadow);
   z-index: 5;
 }
 
+/* Logo: hexágono (geometria) com anel que gira as cores (color morph) sobre metal escovado. */
 .brand {
-  width: 44px; height: 44px;
-  border-radius: 14px;
+  position: relative; isolation: isolate;
+  width: 46px; height: 52px;
   display: grid; place-items: center;
-  background: linear-gradient(135deg, var(--primary), #1d4f6b);
-  color: #fff; font-weight: 800; letter-spacing: -.02em;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  background: conic-gradient(from var(--spin), #3aa0d0, #8e5cff, #f59e0b, #34d17a, #3aa0d0);
+  animation: spin 14s linear infinite;
+  color: #ffffff; font-weight: 800; letter-spacing: -.02em; text-shadow: 0 1px 2px rgba(0, 0, 0, .6);
   margin-bottom: 12px;
-  box-shadow: 0 0 24px var(--primary-soft);
+}
+.brand::before {
+  content: ""; position: absolute; inset: 3px; z-index: -1;
+  clip-path: inherit;
+  background: var(--brushed), linear-gradient(160deg, #34414c, #10161c);
 }
 
 .rail button {
@@ -174,16 +327,18 @@ textarea { min-height: 88px; resize: vertical }
   border-radius: 14px;
   border-color: transparent;
   background: transparent;
-  color: var(--muted);
+  box-shadow: none;
+  color: var(--rail-ink);
 }
 
 .rail button svg { width: 22px; height: 22px }
-.rail button[aria-current="page"] { background: var(--primary); color: var(--primary-ink); box-shadow: 0 0 22px var(--primary-soft) }
+.rail button:hover:not(:disabled) { background: var(--rail-hover); border-color: transparent; transform: none }
+.rail button[aria-current="page"], .rail button[aria-current="page"]:hover:not(:disabled) { background: var(--primary-bg); color: var(--primary-ink); box-shadow: var(--primary-shadow) }
 .rail button .tip {
   position: absolute; left: 58px; top: 50%; transform: translateY(-50%);
   white-space: nowrap; pointer-events: none; opacity: 0;
   background: var(--surface-strong); color: var(--ink);
-  border: 1px solid var(--line-strong); border-radius: 8px;
+  border: 1px solid var(--line-strong); border-radius: 8px; box-shadow: var(--shadow);
   padding: 4px 10px; font-size: 13px; transition: opacity .15s;
 }
 .rail button:hover .tip, .rail button:focus-visible .tip { opacity: 1 }
@@ -227,15 +382,36 @@ main { padding: 8px 28px 28px; min-width: 0 }
 .view.active { display: block }
 @keyframes enter { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: none } }
 
+/* Liquid Glass + acrílico Fluent: vidro com ruído, desfoque do fundo aurora,
+   borda refletiva (::before) e reflexo que segue o cursor (::after, --mx/--my via JS). */
 .card {
-  background: var(--surface);
-  border: 1px solid var(--line);
+  position: relative;
+  isolation: isolate;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius);
   padding: 16px;
   min-width: 0;
-  box-shadow: var(--shadow);
-  backdrop-filter: blur(18px);
+  box-shadow: var(--glass-shadow);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
 }
+.card::before {
+  content: ""; position: absolute; inset: -1px; padding: 1px; border-radius: inherit; pointer-events: none;
+  background: var(--edge);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+}
+.card::after {
+  content: ""; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none;
+  background: radial-gradient(380px circle at var(--mx, 50%) var(--my, 0%), var(--reveal), transparent 65%);
+  opacity: 0; transition: opacity .35s;
+}
+.card:hover::after { opacity: 1 }
+/* Materiais imersivos: inclinação 3D leve (ângulos definidos pelo JS). */
+.tilt { transition: transform .3s ease-out, box-shadow .3s; will-change: transform }
+.card.tilt:hover { box-shadow: var(--glass-shadow), 0 30px 60px rgba(0, 0, 0, .18) }
 .card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; flex-wrap: wrap }
 
 .grid { display: grid; gap: 16px }
@@ -244,23 +420,24 @@ main { padding: 8px 28px 28px; min-width: 0 }
 .halves { grid-template-columns: repeat(2, minmax(0, 1fr)) }
 
 .kpi .label { font-size: 12.5px; color: var(--muted) }
-.kpi .value { font-size: 28px; font-weight: 700; letter-spacing: -.02em; margin: 2px 0 }
+.kpi .value { font: 700 30px/1.15 var(--font-display); letter-spacing: -.02em; margin: 4px 0 }
 .kpi .hint { font-size: 12.5px; color: var(--muted) }
-.kpi.accent { background: linear-gradient(140deg, var(--primary), #1d4f6b); color: #fff; border-color: transparent }
-.kpi.accent .label, .kpi.accent .hint { color: rgba(255, 255, 255, .8) }
+/* Color Morphism: o gradiente do cartão de destaque migra lentamente. */
+.kpi.accent { background: var(--morph); background-size: 300% 300%; color: var(--morph-ink); border-color: transparent; animation: morph 16s ease-in-out infinite alternate }
+.kpi.accent .label, .kpi.accent .hint { color: rgba(255, 255, 255, .86) }
 
 .bar-row { display: grid; grid-template-columns: minmax(120px, 1.2fr) minmax(0, 2fr) 64px; gap: 10px; align-items: center; margin: 7px 0; font-size: 13.5px }
 .bar-row .name { display: flex; align-items: center; gap: 8px; min-width: 0 }
 .bar-row .name span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
 .swatch { width: 10px; height: 10px; border-radius: 3px; flex: 0 0 auto; background: var(--c) }
-.bar { position: relative; height: 10px; border-radius: 999px; background: var(--surface-hover); overflow: hidden; display: flex }
+.bar { position: relative; height: 10px; border-radius: 999px; background: var(--inset-bg); box-shadow: var(--field-shadow); overflow: hidden; display: flex }
 .bar i { display: block; height: 100% }
 .bar i.human { background: var(--c) }
 .bar i.ai { background: repeating-linear-gradient(45deg, var(--ai), var(--ai) 4px, transparent 4px, transparent 7px); opacity: .9 }
 .bar-row .count { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted) }
 
-.progress { height: 8px; border-radius: 999px; background: var(--surface-hover); overflow: hidden }
-.progress i { display: block; height: 100%; background: linear-gradient(90deg, var(--primary), var(--ok)); border-radius: inherit; transition: width .4s }
+.progress { height: 8px; border-radius: 999px; background: var(--inset-bg); box-shadow: var(--field-shadow); overflow: hidden }
+.progress i { display: block; height: 100%; background: var(--progress); background-size: 300% 100%; border-radius: inherit; transition: width .4s; animation: morph 8s linear infinite alternate }
 
 /* ---------- Revisão ---------- */
 .review-grid { display: grid; grid-template-columns: 270px minmax(0, 1fr) 340px; gap: 16px; align-items: start }
@@ -269,9 +446,10 @@ main { padding: 8px 28px 28px; min-width: 0 }
 .queue button {
   display: grid; grid-template-columns: 54px minmax(0, 1fr) auto; gap: 10px; align-items: center;
   width: 100%; text-align: left; margin: 0 0 6px; padding: 6px; min-height: 52px;
-  background: transparent; border-color: transparent;
+  background: transparent; border-color: transparent; box-shadow: none;
 }
-.queue button[aria-current="true"] { background: var(--primary-soft); border-color: var(--primary) }
+.queue button:hover:not(:disabled), .boxes button:hover:not(:disabled) { background: var(--surface-hover); transform: none }
+.queue button[aria-current="true"], .queue button[aria-current="true"]:hover:not(:disabled) { background: var(--primary-soft); border-color: var(--primary) }
 .queue img { width: 54px; height: 40px; object-fit: cover; border-radius: 7px; background: var(--viewer) }
 .queue .q-title { font-size: 13.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
 .queue small { display: block; color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
@@ -285,21 +463,24 @@ main { padding: 8px 28px 28px; min-width: 0 }
 .stage-title { min-width: 0 }
 .stage-title h2 { font-size: 17px }
 .stage-title p { margin: 0; font-size: 13px; color: var(--muted) }
+/* Woodmorphism: a bancada de ferramentas da revisão é de madeira. */
 .toolbar {
   display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-  margin: 12px 0; padding: 8px; border-radius: 14px;
-  background: var(--surface-hover); border: 1px solid var(--line);
+  margin: 12px 0; padding: 8px 10px; border-radius: 14px;
+  background: var(--wood); color: var(--wood-ink);
+  border: 1px solid var(--wood-border); box-shadow: var(--wood-shadow);
 }
-.toolbar .sep { width: 1px; align-self: stretch; background: var(--line-strong) }
-.toggle { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-size: 13px; color: var(--ink); cursor: pointer }
+.toolbar .sep { width: 1px; align-self: stretch; background: var(--wood-line) }
+.toggle { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-size: 13px; color: inherit; cursor: pointer }
 .toggle input { width: 16px; min-height: 16px; height: 16px; margin: 0; accent-color: var(--primary) }
-.range { display: inline-flex; align-items: center; gap: 8px; margin: 0; font-size: 13px; color: var(--ink) }
+.range { display: inline-flex; align-items: center; gap: 8px; margin: 0; font-size: 13px; color: inherit }
 .range input { width: 110px; min-height: 0; padding: 0; accent-color: var(--ai) }
-#drawToggle[aria-pressed="true"] { background: var(--primary); color: var(--primary-ink); border-color: var(--primary) }
+#drawToggle[aria-pressed="true"] { background: var(--primary-bg); color: var(--primary-ink); border-color: transparent; box-shadow: var(--clay-pressed) }
 
 .viewer {
   position: relative; display: grid; place-items: center;
   background: var(--viewer); border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, .35);
 }
 .viewer canvas { display: block; max-width: 100%; max-height: calc(100vh - 300px); width: auto; height: auto }
 .viewer.drawing canvas { touch-action: none; cursor: crosshair }
@@ -319,7 +500,7 @@ details p { white-space: pre-line }
 .boxes { max-height: 260px; overflow: auto; font-size: 13.5px }
 .boxes button {
   display: block; width: 100%; text-align: left; margin: 6px 0; padding: 8px 10px;
-  border-left: 5px solid var(--box-color); background: transparent;
+  border: 1px solid var(--line); border-left: 5px solid var(--box-color); background: var(--inset-bg); box-shadow: none;
 }
 .boxes button.selected { background: var(--primary-soft); border-color: var(--primary); border-left-color: var(--box-color) }
 .box-caption { font-size: 12px; color: var(--muted) }
@@ -341,22 +522,24 @@ details p { white-space: pre-line }
 .checks input { width: 18px; min-height: 18px; height: 18px; margin-top: 2px; accent-color: var(--ok) }
 .checks label { margin: 0; font-size: 13.5px; color: var(--ink) }
 .shortcuts { margin-top: 10px; font-size: 12px; color: var(--muted) }
-kbd { font: 11px ui-monospace, Consolas, monospace; border: 1px solid var(--line-strong); border-bottom-width: 2px; border-radius: 5px; padding: 0 5px; color: var(--ink) }
+kbd { font: 11px ui-monospace, Consolas, monospace; border: 1px solid var(--clay-border); border-radius: 5px; padding: 0 5px; color: var(--ink); background: var(--clay-bg); box-shadow: 0 2px 0 var(--line-strong) }
 
 /* ---------- Treino, monitoramento, modelos ---------- */
 .steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; counter-reset: step }
-.step { position: relative; padding: 12px; border-radius: 14px; background: var(--surface-hover); border: 1px solid var(--line); min-width: 0 }
-.step::before { counter-increment: step; content: counter(step); display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--primary-soft); color: var(--primary); font-weight: 700; font-size: 12.5px; margin-bottom: 6px }
+.step { position: relative; padding: 12px; border-radius: 14px; background: var(--inset-bg); border: 1px solid var(--line); min-width: 0 }
+.step::before { counter-increment: step; content: counter(step); display: inline-grid; place-items: center; width: 26px; height: 28px; clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%); background: var(--primary-soft); color: var(--primary); font-weight: 700; font-size: 12.5px; margin-bottom: 6px }
 .step.done::before { content: "✓"; background: var(--ok); color: #06210f }
 .step h3 { margin: 0 0 4px }
 .step p { margin: 0 0 8px; font-size: 12.5px; color: var(--muted) }
 
 .command {
   position: relative; margin: 8px 0 0; padding: 10px 76px 10px 12px;
-  border-radius: var(--radius-sm); background: #070b0f; color: #cfe3ef; border: 1px solid var(--line);
+  border-radius: var(--radius-sm); background: var(--terminal); color: #cfe3ef; border: 1px solid var(--line);
+  box-shadow: inset 2px 2px 8px rgba(0, 0, 0, .5);
   font: 12px/1.45 ui-monospace, "Cascadia Code", Consolas, monospace; white-space: pre-wrap; word-break: break-all;
 }
-.command button { position: absolute; top: 6px; right: 6px; min-height: 28px; padding: 2px 8px; font-size: 12px; background: rgba(255, 255, 255, .08); color: #cfe3ef; border-color: rgba(255, 255, 255, .15) }
+.command button { position: absolute; top: 6px; right: 6px; min-height: 28px; padding: 2px 8px; font-size: 12px; background: rgba(255, 255, 255, .08); color: #cfe3ef; border-color: rgba(255, 255, 255, .15); box-shadow: none }
+.command button:hover:not(:disabled) { background: rgba(255, 255, 255, .16); transform: none }
 
 .form-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 10px }
 .form-grid .wide { grid-column: 1 / -1 }
@@ -387,19 +570,22 @@ tbody tr.clickable:hover, tbody tr[aria-selected="true"] { background: var(--sur
 .ring-wrap { display: flex; gap: 20px; align-items: center; flex-wrap: wrap }
 .ring { width: 132px; height: 132px; flex: 0 0 auto }
 .ring circle { fill: none; stroke-width: 10 }
-.ring .track { stroke: var(--surface-hover) }
-.ring .value { stroke: var(--ok); stroke-linecap: round; transform: rotate(-90deg); transform-origin: 50% 50%; transition: stroke-dashoffset .6s; filter: drop-shadow(0 0 6px var(--ok-soft)) }
+.ring .bezel { stroke: url(#ringMetal); stroke-width: 4 }
+.ring .track { stroke: var(--inset-bg) }
+/* Color morph: o anel vai do âmbar (início) ao verde (fim) conforme --p (0 a 1, via JS). */
+.ring .value { stroke: hsl(calc(38 + 107 * var(--p, 0)) 78% var(--ring-lightness)); stroke-linecap: round; transform: rotate(-90deg); transform-origin: 50% 50%; transition: stroke-dashoffset .6s, stroke .6s; filter: drop-shadow(0 0 6px rgba(255, 255, 255, .12)) }
 .ring text { fill: var(--ink); font-weight: 700; font-size: 22px }
 .ring .ring-sub { fill: var(--muted); font-size: 11px; font-weight: 500 }
 .facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 20px; font-size: 13.5px }
 .facts dt { color: var(--muted); font-size: 12px }
 .facts dd { margin: 0; font-weight: 600 }
 .metric-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px }
-.metric-tiles .tile { padding: 12px; border-radius: 14px; background: var(--surface-hover); border: 1px solid var(--line) }
+/* Metalmorphism: blocos de métrica como mostradores em metal escovado. */
+.metric-tiles .tile { padding: 12px; border-radius: 14px; background: var(--metal-tile); border: 1px solid var(--metal-border); box-shadow: var(--metal-shadow) }
 .metric-tiles .tile b { display: block; font-size: 22px; letter-spacing: -.02em }
 .metric-tiles .tile span { font-size: 12px; color: var(--muted) }
 .delta.up { color: var(--ok) } .delta.down { color: var(--bad) }
-pre.log { max-height: 260px; overflow: auto; margin: 8px 0 0; padding: 10px 12px; border-radius: var(--radius-sm); background: #070b0f; color: #b9d0de; font: 12px/1.45 ui-monospace, Consolas, monospace; white-space: pre-wrap }
+pre.log { max-height: 260px; overflow: auto; margin: 8px 0 0; padding: 10px 12px; border-radius: var(--radius-sm); background: var(--terminal); box-shadow: inset 2px 2px 8px rgba(0, 0, 0, .5); color: #b9d0de; font: 12px/1.45 ui-monospace, Consolas, monospace; white-space: pre-wrap }
 
 .verdict { display: flex; gap: 12px; align-items: flex-start; padding: 12px; border-radius: 14px; background: var(--bad-soft); border: 1px solid color-mix(in srgb, var(--bad) 30%, transparent) }
 .verdict.ok { background: var(--ok-soft); border-color: color-mix(in srgb, var(--ok) 30%, transparent) }
@@ -410,7 +596,8 @@ pre.log { max-height: 260px; overflow: auto; margin: 8px 0 0; padding: 10px 12px
   position: fixed; right: 24px; bottom: 24px; z-index: 20;
   display: flex; gap: 12px; align-items: center;
   padding: 14px 18px; border-radius: 16px; max-width: 380px;
-  background: var(--surface-strong); border: 1px solid var(--ok);
+  background: var(--glass-bg), var(--surface); border: 1px solid var(--ok);
+  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
   box-shadow: 0 0 40px var(--ok-soft), var(--shadow);
   opacity: 0; transform: translateY(12px); pointer-events: none; transition: opacity .25s, transform .25s;
 }
@@ -430,7 +617,7 @@ pre.log { max-height: 260px; overflow: auto; margin: 8px 0 0; padding: 10px 12px
 
 @media (max-width: 1000px) {
   .app { grid-template-columns: 1fr }
-  .rail { position: fixed; bottom: 0; top: auto; left: 0; right: 0; height: auto; flex-direction: row; justify-content: space-around; padding: 6px; border-right: 0; border-top: 1px solid var(--line) }
+  .rail { position: fixed; bottom: 0; top: auto; left: 0; right: 0; height: auto; flex-direction: row; justify-content: space-around; padding: 6px; border-right: 0; border-top: 1px solid var(--metal-border); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .07), 0 -6px 24px rgba(0, 0, 0, .2) }
   .rail .brand, .rail .spacer, .rail button .tip { display: none }
   .shell { padding-bottom: 72px }
   .topbar, .notice-strip, main, .footer { padding-left: 16px; padding-right: 16px }
@@ -459,6 +646,8 @@ pre.log { max-height: 260px; overflow: auto; margin: 8px 0 0; padding: 10px 12px
 </style>
 </head>
 <body>
+<div class="aurora" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+<div class="geo" aria-hidden="true"></div>
 <div class="app">
 <nav class="rail" aria-label="Seções da plataforma">
   <div class="brand" aria-hidden="true">DC</div>
@@ -493,11 +682,11 @@ pre.log { max-height: 260px; overflow: auto; margin: 8px 0 0; padding: 10px 12px
 <!-- ======================= VISÃO GERAL ======================= -->
 <section class="view" id="view-overview" aria-labelledby="viewTitle">
   <div class="grid kpis">
-    <div class="card kpi accent"><div class="label">Fotos na revisão</div><div class="value" id="kpiPhotos">0</div><div class="hint" id="kpiPhotosHint"></div></div>
-    <div class="card kpi"><div class="label">Decisões registradas</div><div class="value" id="kpiDecisions">0</div><div class="progress" aria-hidden="true"><i id="kpiDecisionsBar" style="width:0"></i></div></div>
-    <div class="card kpi"><div class="label">Caixas atuais</div><div class="value" id="kpiBoxes">0</div><div class="hint">incluindo suas correções locais</div></div>
-    <div class="card kpi"><div class="label">Sugestões da IA pendentes</div><div class="value" id="kpiSuggestions">0</div><div class="hint" id="kpiSuggestionsHint"></div></div>
-    <div class="card kpi"><div class="label">Classes com poucos exemplos</div><div class="value" id="kpiSparse">0</div><div class="hint">menos de 5 caixas nesta revisão</div></div>
+    <div class="card kpi tilt accent"><div class="label">Fotos na revisão</div><div class="value" id="kpiPhotos">0</div><div class="hint" id="kpiPhotosHint"></div></div>
+    <div class="card kpi tilt"><div class="label">Decisões registradas</div><div class="value" id="kpiDecisions">0</div><div class="progress" aria-hidden="true"><i id="kpiDecisionsBar" style="width:0"></i></div></div>
+    <div class="card kpi tilt"><div class="label">Caixas atuais</div><div class="value" id="kpiBoxes">0</div><div class="hint">incluindo suas correções locais</div></div>
+    <div class="card kpi tilt"><div class="label">Sugestões da IA pendentes</div><div class="value" id="kpiSuggestions">0</div><div class="hint" id="kpiSuggestionsHint"></div></div>
+    <div class="card kpi tilt"><div class="label">Classes com poucos exemplos</div><div class="value" id="kpiSparse">0</div><div class="hint">menos de 5 caixas nesta revisão</div></div>
   </div>
   <div class="grid two" style="margin-top:16px">
     <div class="card">
@@ -625,7 +814,7 @@ pre.log { max-height: 260px; overflow: auto; margin: 8px 0 0; padding: 10px 12px
     <div class="card">
       <div class="card-head"><h2 id="monitorTitle">Treino</h2><span id="monitorState"></span></div>
       <div class="ring-wrap">
-        <svg class="ring" viewBox="0 0 132 132" role="img" aria-labelledby="ringLabel"><title id="ringLabel">Progresso do treino</title><circle class="track" cx="66" cy="66" r="54"/><circle class="value" id="ringValue" cx="66" cy="66" r="54" stroke-dasharray="339.3" stroke-dashoffset="339.3"/><text x="66" y="66" text-anchor="middle" id="ringText">0%</text><text x="66" y="86" text-anchor="middle" class="ring-sub" id="ringSub"></text></svg>
+        <svg class="ring" viewBox="0 0 132 132" role="img" aria-labelledby="ringLabel"><title id="ringLabel">Progresso do treino</title><defs><linearGradient id="ringMetal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#eef2f5"/><stop offset=".45" stop-color="#7b8791"/><stop offset=".55" stop-color="#c9d1d8"/><stop offset="1" stop-color="#4b555e"/></linearGradient></defs><circle class="bezel" cx="66" cy="66" r="63"/><circle class="track" cx="66" cy="66" r="54"/><circle class="value" id="ringValue" cx="66" cy="66" r="54" stroke-dasharray="339.3" stroke-dashoffset="339.3"/><text x="66" y="66" text-anchor="middle" id="ringText">0%</text><text x="66" y="86" text-anchor="middle" class="ring-sub" id="ringSub"></text></svg>
         <dl class="facts" id="monitorFacts"></dl>
       </div>
       <h3>Última época</h3>
@@ -1576,6 +1765,7 @@ function renderMonitor() {
     const planned = run.epochs_planned || run.epochs_done || 1;
     const fraction = Math.min(1, run.epochs_done / planned);
     $('ringValue').setAttribute('stroke-dashoffset', (339.3 * (1 - fraction)).toFixed(1));
+    $('ringValue').style.setProperty('--p', fraction.toFixed(3));
     $('ringText').textContent = `${Math.round(fraction * 100)}%`;
     $('ringSub').textContent = `época ${run.epochs_done}/${planned}`;
     const elapsed = run.last && run.last.time;
@@ -1592,7 +1782,7 @@ function renderMonitor() {
     const last = run.curves[run.curves.length - 1] || {}, before = run.curves[run.curves.length - 2] || {};
     $('monitorTiles').replaceChildren(...METRIC_SERIES.map(serie => {
       const value = last[serie.key], delta = value != null && before[serie.key] != null ? value - before[serie.key] : null;
-      return el('div', { class: 'tile' }, el('span', {}, serie.label), el('b', {}, pct(value)),
+      return el('div', { class: 'tile tilt' }, el('span', {}, serie.label), el('b', {}, pct(value)),
         el('span', { class: 'delta ' + (delta > 0 ? 'up' : delta < 0 ? 'down' : '') }, delta == null ? '—' : `${delta >= 0 ? '+' : ''}${(delta * 100).toFixed(1)} p.p.`))
     }))
   }
@@ -1726,6 +1916,36 @@ $('stopJob').onclick = async () => {
   try { job = await api('/api/jobs/stop', {}); renderJob() } catch (error) { alert(error.message) }
 };
 $('suggestWeights').onchange = renderJob;
+
+/* ======================= Material: reflexo e inclinação ======================= */
+// Reflexo do vidro (Fluent reveal): a luz do cartão sob o cursor segue o ponteiro.
+// Inclinação 3D (materiais imersivos): só em .tilt, só com mouse e sem "reduzir movimento".
+const calmMotion = matchMedia('(prefers-reduced-motion: reduce)');
+let pointerFrame = 0, lastPointer = null, tilted = null;
+function followPointer() {
+  pointerFrame = 0;
+  const event = lastPointer;
+  const target = event.target instanceof Element ? event.target : null;
+  const card = target && target.closest('.card');
+  if (card) {
+    const box = card.getBoundingClientRect();
+    card.style.setProperty('--mx', `${Math.round(event.clientX - box.left)}px`);
+    card.style.setProperty('--my', `${Math.round(event.clientY - box.top)}px`)
+  }
+  const tilt = target && event.pointerType === 'mouse' && !calmMotion.matches ? target.closest('.tilt') : null;
+  if (tilted && tilted !== tilt) tilted.style.transform = '';
+  tilted = tilt;
+  if (tilt) {
+    const box = tilt.getBoundingClientRect();
+    const x = (event.clientX - box.left) / box.width - .5, y = (event.clientY - box.top) / box.height - .5;
+    tilt.style.transform = `perspective(700px) rotateX(${(-y * 7).toFixed(2)}deg) rotateY(${(x * 9).toFixed(2)}deg) translateY(-2px)`
+  }
+}
+document.addEventListener('pointermove', event => {
+  lastPointer = event;
+  if (!pointerFrame) pointerFrame = requestAnimationFrame(followPointer)
+}, { passive: true });
+document.documentElement.addEventListener('pointerleave', () => { if (tilted) tilted.style.transform = ''; tilted = null });
 
 /* ======================= Inicialização ======================= */
 function applyTheme(theme) {

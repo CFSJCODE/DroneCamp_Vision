@@ -12,6 +12,24 @@ A página de revisão (`data/reviews/<registro>/index.html`) virou uma plataform
 
 O tema escuro é o padrão; o botão da lua alterna para o tema claro, que mantém a paleta original da revisão. Atalhos na revisão: `←`/`→` fotos, `B` desenhar, `A` aceitar a primeira sugestão, `X` descartar a primeira sugestão, `Del` excluir a caixa selecionada.
 
+## Design
+
+O design é fixo, sem seletor de material: um só material reúne várias linguagens visuais, cada uma com um papel definido. Os dois temas têm a mesma forma e mudam só as cores.
+
+| Linguagem | Onde aparece |
+| --- | --- |
+| Aurora UI | Manchas de cor em movimento lento no fundo |
+| Geometric Morphism | Malha triangular no fundo, logo e números das etapas em hexágono |
+| Liquid Glass / Glassmorphism | Cartões translúcidos com desfoque, borda refletiva e reflexo que segue o cursor |
+| Fluent UI | Textura acrílica no vidro, tipografia Segoe UI Variable e o brilho sob o cursor |
+| Claymorphism | Botões em volume macio que afundam ao clicar; campos em baixo-relevo |
+| Metalmorphism | Trilho de navegação, logo e blocos de métrica do monitoramento em metal escovado |
+| Woodmorphism | Bancada de ferramentas da revisão (camadas, confiança, desenhar caixa) |
+| Color Morphism | Cartão de destaque e barras de progresso com gradiente que migra; anel do treino que vai do âmbar ao verde |
+| Immersive Materials | Profundidade em camadas e leve inclinação 3D nos cartões de indicadores |
+
+Texturas são SVG embutidos no próprio HTML (sem downloads). Com "reduzir movimento" ativado no Windows, animações e inclinação ficam desligadas. Tudo fica em `review_templates/index.html`: os tokens no início do `<style>` e o reflexo e a inclinação no bloco "Material" do script.
+
 ## Dois modos de abrir
 
 1. **Direto do disco** (`Abrir revisao DroneCamp.cmd`): funciona offline e sem Python. A revisão funciona inteira; treino, monitoramento e modelos mostram um instantâneo de quando a página foi gerada.
