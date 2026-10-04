@@ -107,19 +107,28 @@ Os IDs ativos originais 0–7 mantiveram seus significados; as adições são 8 
 Enquanto só houver fotos do CEASA, o treino de produção continua bloqueado (exige três edificações e exemplos das 13 classes). O **piloto** treina de verdade com as fotos que têm aprovação humana, para o modelo passar a **sugerir caixas** na página de revisão. Detalhes, resultados e limites: [treino piloto](docs/treino_piloto.md).
 
 ```powershell
-# 1. Dataset piloto a partir das revisões humanas (repita --registry para somar revisões)
-.\.venv\Scripts\python.exe -m dronecamp_ia build-pilot-data --registry "data\reviews\ceasa_v7_revisao002_ba8cc323c8a1\registry.json" --output "data\pilot\ceasa_v8_piloto"
-# 2. Treino real (YOLO26l na CPU; parâmetros na seção pilot de configs/project.yaml)
-.\.venv\Scripts\python.exe -m dronecamp_ia train-pilot --data "data\pilot\ceasa_v8_piloto\dataset.yaml"
-# 3. Sugestões na revisão existente ou em fotos novas de outra edificação
+# 1. Importar o arquivo exportado pela página (gera uma nova versão da revisão)
+.\.venv\Scripts\python.exe -m dronecamp_ia import-review --registry "data\reviews\ceasa_v8_revisao002_ff34e226416c\registry.json" --feedback "SEU_ARQUIVO.json" --output "data\reviews\ceasa_v9_ID\registry.json"
+# 2. Dataset piloto a partir das revisões humanas (repita --registry para somar revisões)
+.\.venv\Scripts\python.exe -m dronecamp_ia build-pilot-data --registry "data\reviews\ceasa_v9_ID\registry.json" --output "data\pilot\ceasa_v9_piloto_s42"
+# 3. Treino real (YOLO26l na CPU; parâmetros na seção pilot de configs/project.yaml)
+.\.venv\Scripts\python.exe -m dronecamp_ia train-pilot --data "data\pilot\ceasa_v9_piloto_s42\dataset.yaml"
+# 4. Comparar o modelo novo com o anterior nas mesmas fotos
+.\.venv\Scripts\python.exe scripts\compare_pilot_models.py --data "data\pilot\ceasa_v9_piloto_s42\dataset.yaml" --weights "runs\PILOTO_ANTERIOR\fit\weights\best.pt" --weights "runs\PILOTO_NOVO\fit\weights\best.pt" --output "runs\comparacao_v9.json"
+# 5. Sugestões na revisão existente ou em fotos novas de outra edificação
 .\.venv\Scripts\python.exe -m dronecamp_ia suggest --weights "runs\SEU_PILOTO\fit\weights\best.pt" --registry "data\reviews\SUA_REVISAO\registry.json"
 .\.venv\Scripts\python.exe -m dronecamp_ia suggest --weights "runs\SEU_PILOTO\fit\weights\best.pt" --source "PASTA_FOTOS_NOVAS" --output "data\reviews\galpao_b_v1" --group "galpao_b"
+# 6. Opcional: caixas propostas por uma leitura visual de IA, como candidatas (nunca aprovação)
+.\.venv\Scripts\python.exe -m dronecamp_ia add-ai-proposals --registry "data\reviews\galpao_b_v1\registry.json" --proposals "data\proposals_ai\SUAS_PROPOSTAS.json" --output "data\reviews\galpao_b_v2_propostas\registry.json"
 ```
 
 - O piloto separa treino, validação e teste por **cena** (`scene_group`): recortes da mesma área ficam no mesmo split. Classes com uma única foto ficam só no treino e não são medidas.
+- **Duplicatas:** caixas da mesma classe com IoU ≥ `pilot.duplicate_iou` (0,7) viram um único alvo no dataset piloto; vale a caixa desenhada/editada pelo revisor, depois a sugestão aceita de maior confiança. O registro humano não muda; `pilot.json` registra a política e as contagens.
 - `summary.json` do piloto registra `pilot: true` e `production_ready: false`; `predict` marca os achados como `candidatos_modelo_piloto_nao_validado`.
-- Na página, as sugestões aparecem tracejadas com a confiança. **Aceitar** copia a caixa para a sua revisão e exige nova confirmação da foto; **Descartar** a esconde. Só o arquivo de revisão exportado e importado com `import-review` entra no próximo dataset.
-- Ciclo: revisar → `import-review` → `build-pilot-data` com todas as revisões → `train-pilot` → `suggest`. Fotos novas de outras edificações (`--group`) também abrem caminho para o dataset de produção.
+- Na página, as sugestões aparecem tracejadas com a confiança. **Aceitar** copia a caixa para a sua revisão e exige nova confirmação da foto; **Descartar** a esconde. Se a sugestão cobre uma caixa que já existe (mesma classe, IoU ≥ 0,7), o botão vira **Substituir caixa N** e troca a geometria em vez de duplicar. Só o arquivo de revisão exportado e importado com `import-review` entra no próximo dataset.
+- Propostas visuais de IA (`add-ai-proposals`) usam a classe ativa mais próxima e podem sugerir uma classe nova em `proposed_new_class`; a página mostra “nova classe sugerida”. Ver [novas classes propostas](docs/novas_classes_propostas.md).
+- Caminhos absolutos gravados em outra máquina (ex.: `E:\...\sistema_ia\...`) são reancorados neste clone pela pasta `sistema_ia`, sempre com conferência do SHA-256. O `dataset.yaml` do piloto usa `path: .`, então o dataset funciona em qualquer pasta.
+- Ciclo: revisar → `import-review` → `build-pilot-data` com todas as revisões → `train-pilot` → comparar → `suggest`. Fotos novas de outras edificações (`--group`) também abrem caminho para o dataset de produção.
 
 ## Treinar e comparar
 

@@ -49,6 +49,10 @@ def build_parser() -> argparse.ArgumentParser:
     feedback.add_argument("--registry", type=Path, required=True)
     feedback.add_argument("--feedback", type=Path, required=True)
     feedback.add_argument("--output", type=Path, required=True)
+    proposals = commands.add_parser("add-ai-proposals", help="Preencher revisão com propostas visuais de IA, sem aprovar.")
+    proposals.add_argument("--registry", type=Path, required=True)
+    proposals.add_argument("--proposals", type=Path, required=True)
+    proposals.add_argument("--output", type=Path, required=True)
     approved = commands.add_parser("build-reviewed-data", help="Construir versão de dados com aprovação humana e proveniência.")
     approved.add_argument("--registry", type=Path, required=True)
     approved.add_argument("--assignments", type=Path, required=True)
@@ -123,6 +127,10 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "import-review":
             from .review_data import import_human_feedback
             import_human_feedback(config, args.registry, args.feedback, args.output)
+            output = args.output
+        elif args.command == "add-ai-proposals":
+            from .review_data import apply_ai_proposals
+            apply_ai_proposals(config, args.registry, args.proposals, args.output)
             output = args.output
         elif args.command == "build-reviewed-data":
             from .review_dataset import build_approved_dataset

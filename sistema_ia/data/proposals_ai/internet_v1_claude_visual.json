@@ -1,0 +1,365 @@
+{
+  "schema_version": 1,
+  "annotator": "claude_visual",
+  "method": "Leitura visual por IA (Claude) da foto inteira e de recortes ampliados com grade de coordenadas.",
+  "warning": "Propostas visuais de IA para revisão humana: não são aprovação, laudo nem diagnóstico. Classe ativa mais próxima em class_id; classe nova sugerida em proposed_new_class.",
+  "images": [
+    {
+      "filename": "detritos-calha.webp",
+      "image_sha256": "64d407d9c87c448663b58dc3a834370e648eea913e5d8ff4dd1142ca52560d7d",
+      "status": "positive",
+      "notes": "Calha entre laje/parede e telha com folhas secas e sedimento. Parafuso com arruela na telha à direita parece fixação regular.",
+      "boxes": [
+        {
+          "class_id": 7,
+          "bbox_xyxy": [
+            152,
+            205,
+            398,
+            655
+          ],
+          "note": "Folhas e capim secos (resquícios de vegetação) dentro da calha."
+        },
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            110,
+            560,
+            398,
+            800
+          ],
+          "note": "Sedimento escuro e detritos no fundo da calha; não inferir obstrução ou água."
+        }
+      ]
+    },
+    {
+      "filename": "detritos-sobre-telhado.webp",
+      "image_sha256": "7a2b1cb1a06db525203fc17a6c90191eda420060b4375f97d013e92bc4f67939",
+      "status": "positive",
+      "notes": "Perfis metálicos, cabos e detritos sobre a telha. Ganchos/fixadores escuros regulares nas cristas parecem instalados e não foram marcados.",
+      "boxes": [
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            385,
+            140,
+            662,
+            258
+          ],
+          "note": "Estrutura de perfis metálicos (cantoneiras) solta sobre a telha.",
+          "proposed_new_class": "objeto_estranho_cobertura"
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            308,
+            415,
+            548,
+            722
+          ],
+          "note": "Emaranhado de cabos elétricos (pretos e azuis) sobre a telha.",
+          "proposed_new_class": "objeto_estranho_cobertura"
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            548,
+            250,
+            762,
+            412
+          ],
+          "note": "Acúmulo de detritos junto à parede: fragmentos de chapa, sucata e folhas."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            603,
+            450,
+            778,
+            622
+          ],
+          "note": "Fragmentos escuros planos sobre a telha (pedaços de chapa ou manta?); identidade não confirmada."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            398,
+            300,
+            432,
+            348
+          ],
+          "note": "Folhas/galhos secos sobre a telha."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            428,
+            352,
+            470,
+            445
+          ],
+          "note": "Folhas/galhos secos sobre a telha."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            478,
+            335,
+            508,
+            388
+          ],
+          "note": "Folhas/galhos secos sobre a telha."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            518,
+            298,
+            548,
+            338
+          ],
+          "note": "Folhas/galhos secos sobre a telha."
+        }
+      ]
+    },
+    {
+      "filename": "galhos-liquen-calha.webp",
+      "image_sha256": "99746af6de1be10b63394ae4098e24150e76a496e000b69528898d11d06e871e",
+      "status": "positive",
+      "notes": "Calha larga com musgo, capim seco e sedimento escuro. Água acumulada não foi inferida (exclusão explícita da taxonomia).",
+      "boxes": [
+        {
+          "class_id": 7,
+          "bbox_xyxy": [
+            283,
+            95,
+            452,
+            450
+          ],
+          "note": "Faixa contínua de musgo verde na lateral/fundo da calha.",
+          "proposed_new_class": "crescimento_biologico"
+        },
+        {
+          "class_id": 7,
+          "bbox_xyxy": [
+            170,
+            330,
+            485,
+            708
+          ],
+          "note": "Capim e galhos secos acumulados na calha."
+        },
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            95,
+            470,
+            335,
+            705
+          ],
+          "note": "Sedimento escuro/lodo no fundo da calha; não inferir água acumulada."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            478,
+            333,
+            553,
+            378
+          ],
+          "note": "Galho seco sobre a borda da telha."
+        }
+      ]
+    },
+    {
+      "filename": "resto-manutencao-telhado.webp",
+      "image_sha256": "ac5a3da68c0046fe10430d7de5787d2ce8e072fb207364681b12be7c4e44600d",
+      "status": "positive",
+      "notes": "Sobras de manutenção sobre cobertura ondulada: tábuas, sacaria e fragmentos. Antena parabólica e sobreposição regular entre chapas não foram marcadas (não são evidência).",
+      "boxes": [
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            285,
+            168,
+            628,
+            500
+          ],
+          "note": "Pilha de tábuas e lascas de madeira deixadas sobre a telha, com parte apoiada junto ao canal central.",
+          "proposed_new_class": "objeto_estranho_cobertura"
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            398,
+            450,
+            480,
+            750
+          ],
+          "note": "Tábua longa e envelhecida apoiada ao longo da telha, com sujeira aderida; confirmar se não é peça do sistema.",
+          "proposed_new_class": "objeto_estranho_cobertura"
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            528,
+            140,
+            890,
+            240
+          ],
+          "note": "Conjunto de sacos/sacaria brancos sobre a telha.",
+          "proposed_new_class": "objeto_estranho_cobertura"
+        },
+        {
+          "class_id": 10,
+          "bbox_xyxy": [
+            195,
+            295,
+            395,
+            447
+          ],
+          "note": "Peça ondulada com borda livre e sombra por baixo, apoiada sobre o rufo/telha. Dúvida: pode ser o próprio arremate levantado (rufo_deslocado)."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            728,
+            374,
+            748,
+            390
+          ],
+          "note": "Pequeno fragmento escuro solto sobre a onda da telha."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            745,
+            455,
+            772,
+            478
+          ],
+          "note": "Fragmento alongado solto sobre a telha."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            878,
+            475,
+            900,
+            490
+          ],
+          "note": "Pequeno fragmento solto sobre a telha."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            22,
+            440,
+            268,
+            750
+          ],
+          "note": "Faixa branca irregular no vale da telha: possível tinta/argamassa/selante aderido. Dúvida: reflexo de luz.",
+          "proposed_new_class": "residuo_tinta_argamassa"
+        }
+      ]
+    },
+    {
+      "filename": "resto-tinta-sobre-telhado.webp",
+      "image_sha256": "254dcec36fe67dccb67d7820faf3ef0b732ac58503b9b2fdcf535a71dfdde2d0",
+      "status": "positive",
+      "notes": "Material de obra solidificado e recipiente sobre a telha. A peça ondulada clara à esquerda não foi marcada: pode ser a própria telha sob luz forte ou chapas empilhadas.",
+      "boxes": [
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            690,
+            0,
+            1000,
+            285
+          ],
+          "note": "Recipiente circular (balde/tambor) com crosta de material, sobre a telha.",
+          "proposed_new_class": "objeto_estranho_cobertura"
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            195,
+            290,
+            1000,
+            750
+          ],
+          "note": "Placas e grumos de material de obra solidificado (tinta/argamassa) cobrindo a telha.",
+          "proposed_new_class": "residuo_tinta_argamassa"
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            228,
+            95,
+            705,
+            590
+          ],
+          "note": "Pó/areia/sedimento acumulado sobre a telha ao redor do recipiente."
+        }
+      ]
+    },
+    {
+      "filename": "telhado-fibrocimento.webp",
+      "image_sha256": "c367551ee526a7b13136434745402c8ca20b7a87452352ce0b1e2ccebe5b9fae",
+      "status": "positive",
+      "notes": "Fibrocimento com trinca longitudinal. Faixas escuras verticais são sombras das sobreposições laterais; manchas escuras difusas sugerem crescimento biológico, sem caixa delimitável.",
+      "boxes": [
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            328,
+            172,
+            386,
+            600
+          ],
+          "note": "Trinca longitudinal contínua no corpo da telha de fibrocimento, sem separação aparente das partes; não é sombra (bordas irregulares e ramificação perto de y=490).",
+          "proposed_new_class": "telha_trincada"
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            0,
+            148,
+            800,
+            180
+          ],
+          "note": "Barra metálica (vergalhão/tubo) apoiada sobre as cristas, projetando sombra ondulada; confirmar se não é linha de vida.",
+          "proposed_new_class": "objeto_estranho_cobertura"
+        }
+      ]
+    },
+    {
+      "filename": "vegetacao-dentro-calha.webp",
+      "image_sha256": "aefe259916a067aefbf2e3729f1f4321594d3354c0785827b975cb7ef0d2edb3",
+      "status": "positive",
+      "notes": "Planta crescendo na calha. Fixadores elevados e a borda da chapa em y≈390–495 à esquerda podem indicar soltura/levantamento, mas a foto não permite confirmar; sem caixa.",
+      "boxes": [
+        {
+          "class_id": 7,
+          "bbox_xyxy": [
+            276,
+            118,
+            446,
+            452
+          ],
+          "note": "Planta viva (muda/capim) crescendo na calha entre o telhado e a parede."
+        },
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            300,
+            440,
+            452,
+            800
+          ],
+          "note": "Terra e detritos acumulados no fundo da calha."
+        }
+      ]
+    }
+  ]
+}

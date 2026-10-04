@@ -9,7 +9,7 @@ import shutil
 from PIL import Image, ImageDraw, ImageFont
 
 from .config import ProjectConfig, detection_names, load_taxonomy
-from .io import file_hash, write_json
+from .io import file_hash, resolve_local_path, write_json
 from .review_data import boxes_to_yolo, review_image_size, validate_boxes, write_review_summary
 
 COLORS = ["#c73838", "#a23490", "#b36c00", "#265bc4", "#7646bb", "#c34c18", "#087d78", "#397821", "#5b4b99", "#166d91", "#8b5018", "#405ac0", "#895394"]
@@ -61,7 +61,7 @@ def render_review_package(config: ProjectConfig, registry_path: Path) -> Path:
     browser_images, rows = [], []
     for item in registry["images"]:
         digest = item["image_sha256"]
-        source = Path(item["source_path"])
+        source = resolve_local_path(item["source_path"], config.root)
         if file_hash(source) != digest:
             raise ValueError(f"A foto original mudou: {item['filename']}.")
         if review_image_size(source) != (item["width"], item["height"]):
@@ -104,6 +104,7 @@ def render_review_package(config: ProjectConfig, registry_path: Path) -> Path:
                "taxonomy_recheck_pending": any(item.get("taxonomy_recheck_pending") for item in registry["images"]),
                "classes_requiring_review": [labels[key] for key in sorted(pending_class_ids)],
                "classes": [{"id": key, "label": value, "color": COLORS[key]} for key,value in labels.items()],
+               "duplicate_iou": config.pilot.get("duplicate_iou"),
                "suggestions": {key: suggestions[key] for key in ("model_label", "conf", "warning", "weights_sha256", "pilot")} if suggestions else None}
     template = (Path(__file__).parent / "review_templates/index.html").read_text(encoding="utf-8")
     # JSON embutido evita fetch de arquivos locais e fecha a possibilidade de </script> nos textos.
