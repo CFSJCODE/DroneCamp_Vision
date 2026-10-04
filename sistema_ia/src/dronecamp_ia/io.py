@@ -2,9 +2,28 @@
 
 from datetime import datetime, timezone
 from hashlib import sha256
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import json
 from uuid import uuid4
+
+
+def resolve_local_path(value: str | Path, root: Path) -> Path:
+    """Reancore no projeto local um caminho gravado em outra máquina ou clone.
+
+    Registros guardam caminhos absolutos (ex.: E:\\...\\sistema_ia\\data\\...).
+    Se o original não existir aqui, procura o mesmo trecho após a pasta do
+    projeto. Quem chama continua obrigado a conferir o SHA-256 do arquivo.
+    """
+    path = Path(value)
+    if path.is_absolute() and path.exists():
+        return path
+    parts = PurePosixPath(str(value).replace("\\", "/")).parts
+    if root.name in parts:
+        anchor = len(parts) - 1 - parts[::-1].index(root.name)
+        candidate = root.joinpath(*parts[anchor + 1:])
+        if candidate.exists():
+            return candidate
+    return path
 
 
 def file_hash(path: Path) -> str:

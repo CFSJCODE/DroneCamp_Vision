@@ -36,6 +36,8 @@ training:
 pilot:
   model: yolo26l.pt
   suggestion_conf: 0.15
+  # Caixas da mesma classe com IoU >= limite viram um único alvo no dataset piloto.
+  duplicate_iou: 0.7
   training:
     epochs: 80
     imgsz: 640

@@ -6,11 +6,12 @@ from collections import Counter, defaultdict
 from pathlib import Path
 import json
 import math
+import re
 
 from PIL import Image
 
 from .config import ProjectConfig, detection_names, load_taxonomy
-from .io import file_hash, write_json
+from .io import file_hash, resolve_local_path, write_json
 
 REVIEW_SCHEMA = 1
 IMAGE_STATUSES = {"positive", "negative", "ambiguous", "excluded"}
@@ -224,9 +225,10 @@ def import_human_feedback(config: ProjectConfig, registry_path: Path, feedback_p
             raise ValueError("Imagem desconhecida/duplicada no feedback.")
         seen.add(digest)
         item = by_id[digest]
-        if file_hash(Path(item["source_path"])) != digest:
+        source = resolve_local_path(item["source_path"], config.root)
+        if file_hash(source) != digest:
             raise ValueError("Imagem original diverge do arquivo revisado.")
-        if review_image_size(Path(item["source_path"])) != (item["width"], item["height"]):
+        if review_image_size(source) != (item["width"], item["height"]):
             raise ValueError("Dimensões do registro divergem da foto revisada.")
         status = decision.get("status")
         if status not in IMAGE_STATUSES:
@@ -248,6 +250,70 @@ def import_human_feedback(config: ProjectConfig, registry_path: Path, feedback_p
     registry["parent_registry_version"] = registry.get("version")
     registry["version"] = output.parent.name if output.parent.resolve() != registry_path.parent.resolve() else output.stem
     write_json(output, registry)
+    return registry
+
+
+PROPOSED_CLASS_SLUG = re.compile(r"[a-z][a-z0-9_]{2,60}")
+
+
+def apply_ai_proposals(config: ProjectConfig, registry_path: Path, proposals_path: Path, output: Path) -> dict:
+    """Propostas visuais de IA preenchem a revisão como candidatas, nunca como aprovação.
+
+    Classes ainda inexistentes ficam em proposed_new_class, ao lado da classe
+    ativa mais próxima; ativá-las exige nova taxonomia e migração explícita.
+    """
+    if output.exists():
+        raise ValueError("Saída já existe; use uma nova versão da revisão.")
+    registry = json.loads(registry_path.read_text(encoding="utf-8"))
+    proposals = json.loads(proposals_path.read_text(encoding="utf-8"))
+    if not isinstance(registry, dict) or registry.get("schema_version") != REVIEW_SCHEMA:
+        raise ValueError("Schema inválido no registro de revisão.")
+    if not isinstance(proposals, dict) or proposals.get("schema_version") != REVIEW_SCHEMA:
+        raise ValueError("Schema inválido no arquivo de propostas.")
+    if registry.get("taxonomy_sha256") != file_hash(config.taxonomy_path):
+        raise ValueError("Taxonomia mudou: migre a revisão antes de propor caixas.")
+    annotator_value = proposals.get("annotator", "")
+    annotator = annotator_value.strip() if isinstance(annotator_value, str) else ""
+    if not annotator or len(annotator) > 100:
+        raise ValueError("Informe o anotador (IA) das propostas.")
+    class_count = len(detection_names(load_taxonomy(config.taxonomy_path)))
+    by_id = {item["image_sha256"]: item for item in registry["images"]}
+    if len(by_id) != len(registry["images"]):
+        raise ValueError("Imagem duplicada no registro de revisão.")
+    if not isinstance(proposals.get("images"), list) or not proposals["images"]:
+        raise ValueError("Propostas devem conter uma lista não vazia de imagens.")
+    seen = set()
+    for proposal in proposals["images"]:
+        digest = proposal.get("image_sha256") if isinstance(proposal, dict) else None
+        if digest not in by_id or digest in seen:
+            raise ValueError("Imagem desconhecida/duplicada nas propostas.")
+        seen.add(digest)
+        item = by_id[digest]
+        if item.get("human_approved") is True:
+            raise ValueError(f"{item.get('filename')} já tem decisão humana; proposta de IA não a substitui.")
+        source = resolve_local_path(item["source_path"], config.root)
+        if file_hash(source) != digest:
+            raise ValueError(f"A foto original mudou: {item.get('filename')}.")
+        status, boxes = proposal.get("status"), proposal.get("boxes", [])
+        if status not in {"positive", "negative", "ambiguous"}:
+            raise ValueError("Status de proposta inválido.")
+        validate_boxes(boxes, item["width"], item["height"], class_count)
+        if (status == "negative" and boxes) or (status == "positive" and not boxes):
+            raise ValueError("Status positivo/negativo incompatível com as caixas propostas.")
+        for box in boxes:
+            slug = box.get("proposed_new_class")
+            if slug is not None and (not isinstance(slug, str) or not PROPOSED_CLASS_SLUG.fullmatch(slug)):
+                raise ValueError("proposed_new_class deve ser um slug minúsculo (ex.: telha_trincada).")
+        item.update(status=status, boxes=boxes, annotator=annotator, notes=proposal.get("notes") or item.get("notes", ""),
+                    visual_review_status="first_pass_ai", technical_status="pending_human_review", human_approved=False)
+    registry["ai_proposals"] = {"sha256": file_hash(proposals_path), "annotator": annotator, "images": len(seen),
+                                "source_registry_sha256": file_hash(registry_path),
+                                "proposed_new_classes": sorted({box["proposed_new_class"] for item in registry["images"]
+                                                                for box in item["boxes"] if box.get("proposed_new_class")})}
+    registry["parent_registry_version"] = registry.get("version")
+    registry["version"] = output.parent.name
+    write_json(output, registry)
+    write_review_summary(output.parent, registry)
     return registry
 
 
@@ -273,10 +339,11 @@ def migrate_review_taxonomy(config: ProjectConfig, registry_path: Path, previous
     seen = set()
     for item in registry["images"]:
         digest = item["image_sha256"]
-        if digest in seen or file_hash(Path(item["source_path"])) != digest:
+        source = resolve_local_path(item["source_path"], config.root)
+        if digest in seen or file_hash(source) != digest:
             raise ValueError("Imagem duplicada ou original alterado durante a migração.")
         seen.add(digest)
-        if review_image_size(Path(item["source_path"])) != (item["width"], item["height"]):
+        if review_image_size(source) != (item["width"], item["height"]):
             raise ValueError("Dimensões da foto divergem do registro anterior.")
         validate_boxes(item["boxes"], item["width"], item["height"], len(old_names))
         reviewer_value = item.get("human_reviewer")

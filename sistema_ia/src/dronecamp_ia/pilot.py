@@ -14,21 +14,53 @@ from hashlib import sha256
 import csv
 import json
 from pathlib import Path
+import re
 import shutil
 
 import yaml
 
 from .config import ProjectConfig, detection_names, load_taxonomy
 from .dataset import IMAGE_EXTENSIONS, SPLITS, validate_dataset
-from .io import file_hash, write_json
+from .io import file_hash, resolve_local_path, write_json
 from .review_data import boxes_to_yolo, review_image_size, validate_boxes
 
 PILOT_KIND = "piloto_edificacao_unica"
 PILOT_WARNING = ("Piloto com fotos de uma única edificação: validação e teste não são independentes. "
                  "Use os pesos apenas para sugerir caixas à revisão humana.")
+ACCEPTED_SUGGESTION_NOTE = "Sugestão do modelo aceita"
 
 
-def _approved(registry_path: Path, taxonomy_digest: str, class_count: int) -> list[dict]:
+def box_iou(a: list[float], b: list[float]) -> float:
+    inter = max(0.0, min(a[2], b[2]) - max(a[0], b[0])) * max(0.0, min(a[3], b[3]) - max(a[1], b[1]))
+    union = (a[2] - a[0]) * (a[3] - a[1]) + (b[2] - b[0]) * (b[3] - b[1]) - inter
+    return inter / union if union > 0 else 0.0
+
+
+def consolidate_duplicates(boxes: list[dict], iou_threshold: float | None) -> list[dict]:
+    """Uma ocorrência, um alvo: caixas da mesma classe com IoU alto viram uma só.
+
+    Aceitar uma sugestão sobre uma caixa já desenhada duplica o alvo e ensina
+    previsões conflitantes. Mantém a caixa desenhada/editada pelo revisor; entre
+    sugestões aceitas, a de maior confiança. O registro humano não é alterado.
+    """
+    if iou_threshold is None:
+        return list(boxes)
+
+    def priority(entry: tuple[int, dict]) -> tuple:
+        position, box = entry
+        note = box.get("note") or ""
+        confidence = re.search(r"confiança (\d+)%", note)
+        return (note.startswith(ACCEPTED_SUGGESTION_NOTE), -int(confidence.group(1)) if confidence else 0, position)
+
+    kept: list[tuple[int, dict]] = []
+    for position, box in sorted(enumerate(boxes), key=priority):
+        if all(other["class_id"] != box["class_id"] or box_iou(other["bbox_xyxy"], box["bbox_xyxy"]) < iou_threshold
+               for _, other in kept):
+            kept.append((position, box))
+    return [box for _, box in sorted(kept, key=lambda entry: entry[0])]
+
+
+def _approved(registry_path: Path, taxonomy_digest: str, class_count: int, root: Path) -> list[dict]:
     """Somente decisões humanas completas entram; o resto fica na fila de revisão."""
     registry = json.loads(registry_path.read_text(encoding="utf-8"))
     if not isinstance(registry, dict) or registry.get("schema_version") != 1:
@@ -42,7 +74,7 @@ def _approved(registry_path: Path, taxonomy_digest: str, class_count: int) -> li
         reviewer = item.get("human_reviewer")
         if item.get("technical_status") != "human_visual_reviewed" or not isinstance(reviewer, str) or not reviewer.strip():
             raise ValueError("Aprovação sem autor ou estado de revisão humana explícito.")
-        source = Path(item["source_path"])
+        source = resolve_local_path(item["source_path"], root)
         if not source.is_absolute() or not source.is_file() or source.suffix.lower() not in IMAGE_EXTENSIONS:
             raise ValueError(f"Original ausente: {item.get('filename')}.")
         if file_hash(source) != item["image_sha256"]:
@@ -54,7 +86,8 @@ def _approved(registry_path: Path, taxonomy_digest: str, class_count: int) -> li
             raise ValueError("Decisão positiva/negativa incompatível com as caixas.")
         # Sem cena declarada, cada foto vira o próprio grupo (não junta recortes).
         scene = item.get("scene_group") or f"foto_{item['image_sha256'][:12]}"
-        selected.append({**item, "scene_group": scene, "registry_path": str(registry_path.resolve()),
+        selected.append({**item, "scene_group": scene, "source_path": str(source),
+                         "registry_path": str(registry_path.resolve()),
                          "registry_sha256": file_hash(registry_path)})
     return selected
 
@@ -105,7 +138,7 @@ def build_pilot_dataset(config: ProjectConfig, registry_paths: list[Path], outpu
     digest = file_hash(config.taxonomy_path)
     images, seen = [], set()
     for registry_path in registry_paths:
-        for item in _approved(Path(registry_path), digest, len(names)):
+        for item in _approved(Path(registry_path), digest, len(names), config.root):
             # A mesma foto pode aparecer em revisões sucessivas: vale a mais recente.
             if item["image_sha256"] in seen:
                 images = [value for value in images if value["image_sha256"] != item["image_sha256"]]
@@ -113,6 +146,12 @@ def build_pilot_dataset(config: ProjectConfig, registry_paths: list[Path], outpu
             images.append(item)
     if not images:
         raise ValueError("Nenhuma foto com aprovação humana; nada para treinar.")
+    duplicate_iou = config.pilot.get("duplicate_iou")
+    if duplicate_iou is not None and not 0 < float(duplicate_iou) <= 1:
+        raise ValueError("pilot.duplicate_iou deve estar no intervalo (0, 1].")
+    duplicate_iou = None if duplicate_iou is None else float(duplicate_iou)
+    for item in images:
+        item["training_boxes"] = consolidate_duplicates(item["boxes"], duplicate_iou)
     assignment = split_by_scene(images, seed, fractions)
     output = output.resolve()
     output.mkdir(parents=True)
@@ -131,31 +170,39 @@ def build_pilot_dataset(config: ProjectConfig, registry_paths: list[Path], outpu
                 shutil.copyfile(source, image)
                 if file_hash(image) != item["image_sha256"]:
                     raise ValueError("Original mudou durante a cópia.")
-                label.write_text(boxes_to_yolo(item["boxes"], item["width"], item["height"]), encoding="utf-8")
+                label.write_text(boxes_to_yolo(item["training_boxes"], item["width"], item["height"]), encoding="utf-8")
                 relative = image.relative_to(output).as_posix()
                 writer.writerow({"image": relative, "group_id": item["scene_group"], "split": split})
                 samples.append({
                     "image": relative, "image_sha256": item["image_sha256"],
                     "label": label.relative_to(output).as_posix(), "label_sha256": file_hash(label),
                     "split": split, "scene_group": item["scene_group"], "building_group": item.get("building_group"),
-                    "status": item["status"], "boxes": len(item["boxes"]),
+                    "status": item["status"], "boxes": len(item["training_boxes"]),
+                    "boxes_reviewed": len(item["boxes"]),
+                    "duplicates_consolidated": len(item["boxes"]) - len(item["training_boxes"]),
                     "classes": sorted({box["class_id"] for box in item["boxes"]}),
                     "approval_author": item["human_reviewer"], "approved_at": item.get("human_review_at"),
                     "registry_path": item["registry_path"], "registry_sha256": item["registry_sha256"],
                     "source_path": str(source.resolve()),
                 })
+        # path relativo ao YAML: o dataset continua válido em outro clone ou máquina.
         (output / "dataset.yaml").write_text(yaml.safe_dump(
-            {"path": str(output), "train": "images/train", "val": "images/val", "test": "images/test",
+            {"path": ".", "train": "images/train", "val": "images/val", "test": "images/test",
              "nc": len(names), "names": names}, allow_unicode=True, sort_keys=False), encoding="utf-8")
         boxes_by_split = {split: Counter() for split in SPLITS}
         for item in images:
-            boxes_by_split[assignment[item["scene_group"]]].update(box["class_id"] for box in item["boxes"])
+            boxes_by_split[assignment[item["scene_group"]]].update(box["class_id"] for box in item["training_boxes"])
         coverage = {name: {split: boxes_by_split[split][index] for split in SPLITS} for index, name in enumerate(names)}
         buildings = sorted({str(item.get("building_group")) for item in images})
         manifest = {
             "schema_version": 1, "kind": PILOT_KIND, "created_at": datetime.now(timezone.utc).isoformat(),
             "version": output.name, "taxonomy_sha256": digest, "seed": seed,
             "split_policy": "cena_inteira_por_split; classes raras mantidas no treino",
+            "duplicate_policy": None if duplicate_iou is None else {
+                "iou": duplicate_iou, "rule": "mesma classe e IoU >= limite viram uma caixa; prioridade: "
+                "caixa desenhada/editada pelo revisor, depois sugestão aceita de maior confiança",
+                "boxes_reviewed": sum(len(item["boxes"]) for item in images),
+                "boxes_for_training": sum(len(item["training_boxes"]) for item in images)},
             "registries": sorted({(item["registry_path"], item["registry_sha256"]) for item in images}),
             "buildings": buildings, "independent_evaluation": len(buildings) >= 3,
             "production_ready": False, "warning": PILOT_WARNING,
@@ -185,12 +232,14 @@ def validate_pilot_dataset(config: ProjectConfig, data_path: Path) -> dict:
     report = validate_dataset(data_path, names)
     if not report["valid"]:
         raise ValueError("Dataset piloto inválido: " + "; ".join(report["errors"]))
-    root = Path(yaml.safe_load(data_path.read_text(encoding="utf-8-sig"))["path"]).resolve()
+    declared = Path(yaml.safe_load(data_path.read_text(encoding="utf-8-sig"))["path"])
+    root = (declared if declared.is_absolute() else data_path.parent / declared).resolve()
     if (root / "INCOMPLETO.txt").exists():
         raise ValueError("Dataset piloto marcado como incompleto.")
     manifest = json.loads((root / "pilot.json").read_text(encoding="utf-8"))
     if manifest.get("kind") != PILOT_KIND or manifest.get("taxonomy_sha256") != file_hash(config.taxonomy_path):
         raise ValueError("pilot.json ausente, de outro tipo ou de outra taxonomia.")
+    duplicate_iou = (manifest.get("duplicate_policy") or {}).get("iou")
     registries = {}
     declared = set()
     for sample in manifest["images"]:
@@ -199,7 +248,7 @@ def validate_pilot_dataset(config: ProjectConfig, data_path: Path) -> dict:
             raise ValueError("Amostra fora do dataset piloto.")
         if file_hash(image) != sample["image_sha256"] or file_hash(label) != sample["label_sha256"]:
             raise ValueError(f"Arquivo alterado após a criação do piloto: {sample['image']}.")
-        registry_path = Path(sample["registry_path"])
+        registry_path = resolve_local_path(sample["registry_path"], config.root)
         if registry_path not in registries:
             if file_hash(registry_path) != sample["registry_sha256"]:
                 raise ValueError(f"Registro humano mudou: {registry_path.name}.")
@@ -208,7 +257,8 @@ def validate_pilot_dataset(config: ProjectConfig, data_path: Path) -> dict:
         reviewed = registries[registry_path].get(sample["image_sha256"])
         if not reviewed or reviewed.get("human_approved") is not True:
             raise ValueError("Amostra sem aprovação humana no registro de origem.")
-        if label.read_text(encoding="utf-8") != boxes_to_yolo(reviewed["boxes"], reviewed["width"], reviewed["height"]):
+        expected = consolidate_duplicates(reviewed["boxes"], duplicate_iou)
+        if label.read_text(encoding="utf-8") != boxes_to_yolo(expected, reviewed["width"], reviewed["height"]):
             raise ValueError(f"Label diverge das caixas aprovadas: {sample['label']}.")
         declared.add(sample["image"])
     present = {path.relative_to(root).as_posix() for split in SPLITS

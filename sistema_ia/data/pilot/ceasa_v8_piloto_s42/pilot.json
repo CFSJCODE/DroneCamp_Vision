@@ -1,0 +1,920 @@
+{
+  "schema_version": 1,
+  "kind": "piloto_edificacao_unica",
+  "created_at": "2026-10-04T19:59:10.085090+00:00",
+  "version": "ceasa_v8_piloto_s42",
+  "taxonomy_sha256": "8e26946337edd42cd86973a5b4ac43cd8f988aeee24aa889fe8dc2c3a9ed4f9a",
+  "seed": 42,
+  "split_policy": "cena_inteira_por_split; classes raras mantidas no treino",
+  "duplicate_policy": {
+    "iou": 0.7,
+    "rule": "mesma classe e IoU >= limite viram uma caixa; prioridade: caixa desenhada/editada pelo revisor, depois sugestão aceita de maior confiança",
+    "boxes_reviewed": 246,
+    "boxes_for_training": 155
+  },
+  "registries": [
+    [
+      "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/registry.json",
+      "612ff8f63b38108a985fa76281da8e903574fe8fdfccb0464f31c244460c6d02"
+    ]
+  ],
+  "buildings": [
+    "ceasa_pavilhao_a"
+  ],
+  "independent_evaluation": false,
+  "production_ready": false,
+  "warning": "Piloto com fotos de uma única edificação: validação e teste não são independentes. Use os pesos apenas para sugerir caixas à revisão humana.",
+  "images": [
+    {
+      "image": "images/val/009ed874804749c2747dcabde4c38bc2aa3a1a3575cb501b5ede6789d9af1dbb.jpg",
+      "image_sha256": "009ed874804749c2747dcabde4c38bc2aa3a1a3575cb501b5ede6789d9af1dbb",
+      "label": "labels/val/009ed874804749c2747dcabde4c38bc2aa3a1a3575cb501b5ede6789d9af1dbb.txt",
+      "label_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "split": "val",
+      "scene_group": "ceasa_roof_overview",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "negative",
+      "boxes": 0,
+      "boxes_reviewed": 0,
+      "duplicates_consolidated": 0,
+      "classes": [],
+      "approval_author": "002",
+      "approved_at": "2026-10-04T19:46:45.427Z",
+      "registry_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/registry.json",
+      "registry_sha256": "612ff8f63b38108a985fa76281da8e903574fe8fdfccb0464f31c244460c6d02",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reference/ceasa/p002_img01_009ed874.jpg"
+    },
+    {
+      "image": "images/train/0315a58d3dd318107b1cf55b387a7fdfe7c6a7df9e36faebd862f7dcd2e15c69.jpg",
+      "image_sha256": "0315a58d3dd318107b1cf55b387a7fdfe7c6a7df9e36faebd862f7dcd2e15c69",
+      "label": "labels/train/0315a58d3dd318107b1cf55b387a7fdfe7c6a7df9e36faebd862f7dcd2e15c69.txt",
+      "label_sha256": "712e38317dab315bd5ef8885fc25e6d78fcb8e9b838f4fa7d90ed7c647a3b555",
+      "split": "train",
+      "scene_group": "ceasa_roof_wall_termination",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 1,
+      "boxes_reviewed": 1,
+      "duplicates_consolidated": 0,
+      "classes": [
+        4
+      ],
+      "approval_author": "002",
+      "approved_at": "2026-10-04T19:46:45.427Z",
+      "registry_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/registry.json",
+      "registry_sha256": "612ff8f63b38108a985fa76281da8e903574fe8fdfccb0464f31c244460c6d02",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reference/ceasa/p016_img01_0315a58d.jpg"
+    },
+    {
+      "image": "images/train/08772654ea11f2c6d0c3184748a7fffc3525cac35d7042656818500db18458be.jpg",
+      "image_sha256": "08772654ea11f2c6d0c3184748a7fffc3525cac35d7042656818500db18458be",
+      "label": "labels/train/08772654ea11f2c6d0c3184748a7fffc3525cac35d7042656818500db18458be.txt",
+      "label_sha256": "cc096547043cd9ce83a713e8543e3a8252aa08223e817a73ca8a99de010d7264",
+      "split": "train",
+      "scene_group": "ceasa_closeup_08772654",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 2,
+      "boxes_reviewed": 2,
+      "duplicates_consolidated": 0,
+      "classes": [
+        5
+      ],
+      "approval_author": "002",
+      "approved_at": "2026-10-04T19:46:45.427Z",
+      "registry_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/registry.json",
+      "registry_sha256": "612ff8f63b38108a985fa76281da8e903574fe8fdfccb0464f31c244460c6d02",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reference/ceasa/p004_img01_08772654.jpg"
+    },
+    {
+      "image": "images/train/0f729b3e9a0bab66f6c0f309e403a5eef269f7743702e285122d3ef2d76bf89a.jpg",
+      "image_sha256": "0f729b3e9a0bab66f6c0f309e403a5eef269f7743702e285122d3ef2d76bf89a",
+      "label": "labels/train/0f729b3e9a0bab66f6c0f309e403a5eef269f7743702e285122d3ef2d76bf89a.txt",
+      "label_sha256": "69555286cdc0bcc1d9b9f35064ae142ddd5b9a9f8f4ec69b0e90c297323ba9b0",
+      "split": "train",
+      "scene_group": "ceasa_roof_foreign_object_0f729b3e",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 3,
+      "boxes_reviewed": 4,
+      "duplicates_consolidated": 1,
+      "classes": [
+        2,
+        11
+      ],
+      "approval_author": "002",
+      "approved_at": "2026-10-04T19:46:45.427Z",
+      "registry_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/registry.json",
+      "registry_sha256": "612ff8f63b38108a985fa76281da8e903574fe8fdfccb0464f31c244460c6d02",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reference/ceasa/p033_img02_0f729b3e.jpg"
+    },
+    {
+      "image": "images/test/1b9f5c82a8ae7d21572b1ede62c904d0d0050c5683c5f7cb916992774950bc49.jpg",
+      "image_sha256": "1b9f5c82a8ae7d21572b1ede62c904d0d0050c5683c5f7cb916992774950bc49",
+      "label": "labels/test/1b9f5c82a8ae7d21572b1ede62c904d0d0050c5683c5f7cb916992774950bc49.txt",
+      "label_sha256": "72127e3418d9f73720b310ab3a7aeae4e1ea85bd665795349a99d1375fa23f18",
+      "split": "test",
+      "scene_group": "ceasa_roof_junction_details",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 2,
+      "boxes_reviewed": 4,
+      "duplicates_consolidated": 2,
+      "classes": [
+        5
+      ],
+      "approval_author": "002",
+      "approved_at": "2026-10-04T19:46:45.427Z",
+      "registry_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/registry.json",
+      "registry_sha256": "612ff8f63b38108a985fa76281da8e903574fe8fdfccb0464f31c244460c6d02",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reference/ceasa/p019_img01_1b9f5c82.jpg"
+    },
+    {
+      "image": "images/test/1dc91db4ec36a6dad462d3a4b6b6f202c57e0d79d8cd83ec12a45fbfc423b6ee.jpg",
+      "image_sha256": "1dc91db4ec36a6dad462d3a4b6b6f202c57e0d79d8cd83ec12a45fbfc423b6ee",
+      "label": "labels/test/1dc91db4ec36a6dad462d3a4b6b6f202c57e0d79d8cd83ec12a45fbfc423b6ee.txt",
+      "label_sha256": "32179057a7792ab16f824400ddc988b741958f1d893d1ad31e4b9c5e7a6b26cd",
+      "split": "test",
+      "scene_group": "ceasa_roof_junction_details",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 2,
+      "boxes_reviewed": 3,
+      "duplicates_consolidated": 1,
+      "classes": [
+        5
+      ],
+      "approval_author": "002",
+      "approved_at": "2026-10-04T19:46:45.427Z",
+      "registry_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/registry.json",
+      "registry_sha256": "612ff8f63b38108a985fa76281da8e903574fe8fdfccb0464f31c244460c6d02",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reference/ceasa/p022_img01_1dc91db4.jpg"
+    },
+    {
+      "image": "images/test/23074d75889dd3540178b4f4967277d6dca6fc7066aa3062868c6a4386c3dd38.jpg",
+      "image_sha256": "23074d75889dd3540178b4f4967277d6dca6fc7066aa3062868c6a4386c3dd38",
+      "label": "labels/test/23074d75889dd3540178b4f4967277d6dca6fc7066aa3062868c6a4386c3dd38.txt",
+      "label_sha256": "d898ead435b3fe28e6d5d0b2e22e11f7cfca4c68f9309141182b38728f405b70",
+      "split": "test",
+      "scene_group": "ceasa_roof_junction_details",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 3,
+      "boxes_reviewed": 7,
+      "duplicates_consolidated": 4,
+      "classes": [
+        5
+      ],
+      "approval_author": "002",
+      "approved_at": "2026-10-04T19:46:45.427Z",
+      "registry_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/registry.json",
+      "registry_sha256": "612ff8f63b38108a985fa76281da8e903574fe8fdfccb0464f31c244460c6d02",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reference/ceasa/p024_img01_23074d75.jpg"
+    },
+    {
+      "image": "images/val/2ff55c50b1e0a6786404a911e2634bff041762ddd98d0d6f86f83be8061c517b.jpg",
+      "image_sha256": "2ff55c50b1e0a6786404a911e2634bff041762ddd98d0d6f86f83be8061c517b",
+      "label": "labels/val/2ff55c50b1e0a6786404a911e2634bff041762ddd98d0d6f86f83be8061c517b.txt",
+      "label_sha256": "8de5efc42986b1fc83f2e29b25a2f52147f04c1d6af219c50bf5c3af03dc43e5",
+      "split": "val",
+      "scene_group": "ceasa_roof_overview",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 3,
+      "boxes_reviewed": 4,
+      "duplicates_consolidated": 1,
+      "classes": [
+        3,
+        5
+      ],
+      "approval_author": "002",
+      "approved_at": "2026-10-04T19:46:45.427Z",
+      "registry_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/registry.json",
+      "registry_sha256": "612ff8f63b38108a985fa76281da8e903574fe8fdfccb0464f31c244460c6d02",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reference/ceasa/p012_img02_2ff55c50.jpg"
+    },
+    {
+      "image": "images/train/32a3cd23e01454b5e1ffaf38b4df5cd0de526914b65fa973f8398c84d57ec5e2.jpg",
+      "image_sha256": "32a3cd23e01454b5e1ffaf38b4df5cd0de526914b65fa973f8398c84d57ec5e2",
+      "label": "labels/train/32a3cd23e01454b5e1ffaf38b4df5cd0de526914b65fa973f8398c84d57ec5e2.txt",
+      "label_sha256": "6eafa5e1d1a3338ea527c91a55b2cd5c4c262503b34631552b05fdbb0156d402",
+      "split": "train",
+      "scene_group": "ceasa_roof_foreign_object_32a3cd23",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 1,
+      "boxes_reviewed": 1,
+      "duplicates_consolidated": 0,
+      "classes": [
+        2
+      ],
+      "approval_author": "002",
+      "approved_at": "2026-10-04T19:46:45.427Z",
+      "registry_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/registry.json",
+      "registry_sha256": "612ff8f63b38108a985fa76281da8e903574fe8fdfccb0464f31c244460c6d02",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reference/ceasa/p033_img01_32a3cd23.jpg"
+    },
+    {
+      "image": "images/train/36ef7a9ce5bd317bbd359ae04e5fb48b671a00b681a82e822a91c284a3c2434a.jpg",
+      "image_sha256": "36ef7a9ce5bd317bbd359ae04e5fb48b671a00b681a82e822a91c284a3c2434a",
+      "label": "labels/train/36ef7a9ce5bd317bbd359ae04e5fb48b671a00b681a82e822a91c284a3c2434a.txt",
+      "label_sha256": "d86951aa8969be62017badf6cf275d6767b35817c5483c5e84ba14ceac73fb19",
+      "split": "train",
+      "scene_group": "ceasa_closeup_36ef7a9c",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 1,
+      "boxes_reviewed": 1,
+      "duplicates_consolidated": 0,
+      "classes": [
+        3
+      ],
+      "approval_author": "002",
+      "approved_at": "2026-10-04T19:46:45.427Z",
+      "registry_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/registry.json",
+      "registry_sha256": "612ff8f63b38108a985fa76281da8e903574fe8fdfccb0464f31c244460c6d02",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reference/ceasa/p012_img01_36ef7a9c.jpg"
+    },
+    {
+      "image": "images/test/399d7cea73e4de2b057c2ec9863fc2dcf51e68f4aff2d32070c735c208cf36f5.jpg",
+      "image_sha256": "399d7cea73e4de2b057c2ec9863fc2dcf51e68f4aff2d32070c735c208cf36f5",
+      "label": "labels/test/399d7cea73e4de2b057c2ec9863fc2dcf51e68f4aff2d32070c735c208cf36f5.txt",
+      "label_sha256": "f6d80b15ddb61678d115f5d9af20f7542917531168113441381fae782dd900ec",
+      "split": "test",
+      "scene_group": "ceasa_roof_junction_details",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 1,
+      "boxes_reviewed": 3,
+      "duplicates_consolidated": 2,
+      "classes": [
+        5
+      ],
+      "approval_author": "002",
+      "approved_at": "2026-10-04T19:46:45.427Z",
+      "registry_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/registry.json",
+      "registry_sha256": "612ff8f63b38108a985fa76281da8e903574fe8fdfccb0464f31c244460c6d02",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reference/ceasa/p027_img01_399d7cea.jpg"
+    },
+    {
+      "image": "images/test/3aa2001d038ca9fef5d597345cc776ec5bf3a6967a2601cda511fe0d58150351.jpg",
+      "image_sha256": "3aa2001d038ca9fef5d597345cc776ec5bf3a6967a2601cda511fe0d58150351",
+      "label": "labels/test/3aa2001d038ca9fef5d597345cc776ec5bf3a6967a2601cda511fe0d58150351.txt",
+      "label_sha256": "171854a4619e8a35070e5ca85e9e085acb0dc5fc23808af3630de82391c1ec18",
+      "split": "test",
+      "scene_group": "ceasa_roof_junction_details",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 3,
+      "boxes_reviewed": 5,
+      "duplicates_consolidated": 2,
+      "classes": [
+        2,
+        5
+      ],
+      "approval_author": "002",
+      "approved_at": "2026-10-04T19:46:45.427Z",
+      "registry_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/registry.json",
+      "registry_sha256": "612ff8f63b38108a985fa76281da8e903574fe8fdfccb0464f31c244460c6d02",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reference/ceasa/p021_img02_3aa2001d.jpg"
+    },
+    {
+      "image": "images/train/4704f37da1bfe6741cf1cd51e1c0856fa0525abeddb9d7a77649393718c8ac26.jpg",
+      "image_sha256": "4704f37da1bfe6741cf1cd51e1c0856fa0525abeddb9d7a77649393718c8ac26",
+      "label": "labels/train/4704f37da1bfe6741cf1cd51e1c0856fa0525abeddb9d7a77649393718c8ac26.txt",
+      "label_sha256": "036e25e364393384c6a948ea63fbf8b530bca2c136479c9f7b202121b505f5f0",
+      "split": "train",
+      "scene_group": "ceasa_closeup_rufo_reparo_4704f37d",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 3,
+      "boxes_reviewed": 7,
+      "duplicates_consolidated": 4,
+      "classes": [
+        3,
+        5
+      ],
+      "approval_author": "002",
+      "approved_at": "2026-10-04T19:46:45.427Z",
+      "registry_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/registry.json",
+      "registry_sha256": "612ff8f63b38108a985fa76281da8e903574fe8fdfccb0464f31c244460c6d02",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reference/ceasa/p011_img01_4704f37d.jpg"
+    },
+    {
+      "image": "images/train/4c5cb2622f40cf26657de0a09a453ae41aee6b41f611fd4a67f7b6cd4c037dd1.jpg",
+      "image_sha256": "4c5cb2622f40cf26657de0a09a453ae41aee6b41f611fd4a67f7b6cd4c037dd1",
+      "label": "labels/train/4c5cb2622f40cf26657de0a09a453ae41aee6b41f611fd4a67f7b6cd4c037dd1.txt",
+      "label_sha256": "4d7081b9ee68a484bfd72c0c4a92e104f4cc7af831f1602a06f0bc5138b4666d",
+      "split": "train",
+      "scene_group": "ceasa_closeup_roof_chimney_88b54f26",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 5,
+      "boxes_reviewed": 13,
+      "duplicates_consolidated": 8,
+      "classes": [
+        3
+      ],
+      "approval_author": "002",
+      "approved_at": "2026-10-04T19:46:45.427Z",
+      "registry_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/registry.json",
+      "registry_sha256": "612ff8f63b38108a985fa76281da8e903574fe8fdfccb0464f31c244460c6d02",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reference/ceasa/p013_img01_4c5cb262.jpg"
+    },
+    {
+      "image": "images/train/50f69e0ccb9519d6aa2f58754218c1bf0fbda162a7612c885bd95d875c323ecb.jpg",
+      "image_sha256": "50f69e0ccb9519d6aa2f58754218c1bf0fbda162a7612c885bd95d875c323ecb",
+      "label": "labels/train/50f69e0ccb9519d6aa2f58754218c1bf0fbda162a7612c885bd95d875c323ecb.txt",
+      "label_sha256": "611c4a499de2b54ced406f8ab759801674f9353bdf7fe28636be866a7be7a80f",
+      "split": "train",
+      "scene_group": "ceasa_gutter_closeup_50f69e0c",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 8,
+      "boxes_reviewed": 8,
+      "duplicates_consolidated": 0,
+      "classes": [
+        0,
+        6
+      ],
+      "approval_author": "002",
+      "approved_at": "2026-10-04T19:46:45.427Z",
+      "registry_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/registry.json",
+      "registry_sha256": "612ff8f63b38108a985fa76281da8e903574fe8fdfccb0464f31c244460c6d02",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reference/ceasa/p030_img01_50f69e0c.jpg"
+    },
+    {
+      "image": "images/val/68a5aa9ef07b199298b238f1f81a0b54de86bd771b10d99f151459cea880426d.jpg",
+      "image_sha256": "68a5aa9ef07b199298b238f1f81a0b54de86bd771b10d99f151459cea880426d",
+      "label": "labels/val/68a5aa9ef07b199298b238f1f81a0b54de86bd771b10d99f151459cea880426d.txt",
+      "label_sha256": "3416d2f73c9178eb930d6e2885cf571f7cb60f7c7ce495e1bd6d33a49f3a5fad",
+      "split": "val",
+      "scene_group": "ceasa_roof_overview",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 2,
+      "boxes_reviewed": 2,
+      "duplicates_consolidated": 0,
+      "classes": [
+        3
+      ],
+      "approval_author": "002",
+      "approved_at": "2026-10-04T19:46:45.427Z",
+      "registry_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/registry.json",
+      "registry_sha256": "612ff8f63b38108a985fa76281da8e903574fe8fdfccb0464f31c244460c6d02",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reference/ceasa/p004_img02_68a5aa9e.jpg"
+    },
+    {
+      "image": "images/train/68b395f07b3c64efec2bd9c20c917dfb715130797e5f9187738dca2d6a0a21eb.jpg",
+      "image_sha256": "68b395f07b3c64efec2bd9c20c917dfb715130797e5f9187738dca2d6a0a21eb",
+      "label": "labels/train/68b395f07b3c64efec2bd9c20c917dfb715130797e5f9187738dca2d6a0a21eb.txt",
+      "label_sha256": "d0a4452d85f9716d1c5f5f5bb675e5032fe776c2b65c51fd02714c83ba7620dc",
+      "split": "train",
+      "scene_group": "ceasa_closeup_68b395f0",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 11,
+      "boxes_reviewed": 16,
+      "duplicates_consolidated": 5,
+      "classes": [
+        0,
+        2,
+        10
+      ],
+      "approval_author": "002",
+      "approved_at": "2026-10-04T19:46:45.427Z",
+      "registry_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/registry.json",
+      "registry_sha256": "612ff8f63b38108a985fa76281da8e903574fe8fdfccb0464f31c244460c6d02",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reference/ceasa/p008_img02_68b395f0.jpg"
+    },
+    {
+      "image": "images/train/73218070524752bc3173ea9ea6926dcf7bbd6dadb8a0800e4d7ed95d2e5bb971.jpg",
+      "image_sha256": "73218070524752bc3173ea9ea6926dcf7bbd6dadb8a0800e4d7ed95d2e5bb971",
+      "label": "labels/train/73218070524752bc3173ea9ea6926dcf7bbd6dadb8a0800e4d7ed95d2e5bb971.txt",
+      "label_sha256": "b88f18f9c23e1d05294e39720d5faf18ab1ee6c529a9905e126e93f9f93dfabc",
+      "split": "train",
+      "scene_group": "ceasa_gutter_closeup_73218070",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 8,
+      "boxes_reviewed": 11,
+      "duplicates_consolidated": 3,
+      "classes": [
+        0,
+        2,
+        6,
+        7,
+        10
+      ],
+      "approval_author": "002",
+      "approved_at": "2026-10-04T19:46:45.427Z",
+      "registry_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/registry.json",
+      "registry_sha256": "612ff8f63b38108a985fa76281da8e903574fe8fdfccb0464f31c244460c6d02",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reference/ceasa/p030_img02_73218070.jpg"
+    },
+    {
+      "image": "images/train/73eefa51e56b97c53d83b5ba4e6d0c05e4f3b97bb0a936b3cb32ca6e889db1cc.jpg",
+      "image_sha256": "73eefa51e56b97c53d83b5ba4e6d0c05e4f3b97bb0a936b3cb32ca6e889db1cc",
+      "label": "labels/train/73eefa51e56b97c53d83b5ba4e6d0c05e4f3b97bb0a936b3cb32ca6e889db1cc.txt",
+      "label_sha256": "53ce389e5be12e41dc81a8b975c2a859d33a3bccd52b09e7a3b710c6d899adcc",
+      "split": "train",
+      "scene_group": "ceasa_gutter_closeup_73eefa51",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 13,
+      "boxes_reviewed": 25,
+      "duplicates_consolidated": 12,
+      "classes": [
+        0,
+        2,
+        6,
+        7,
+        8
+      ],
+      "approval_author": "002",
+      "approved_at": "2026-10-04T19:46:45.427Z",
+      "registry_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/registry.json",
+      "registry_sha256": "612ff8f63b38108a985fa76281da8e903574fe8fdfccb0464f31c244460c6d02",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reference/ceasa/p035_img01_73eefa51.jpg"
+    },
+    {
+      "image": "images/train/7b8b0c035e2292d990fa0c493c5f25163cdf5572bfd68098ecd9d8f7f2f7ea3b.jpg",
+      "image_sha256": "7b8b0c035e2292d990fa0c493c5f25163cdf5572bfd68098ecd9d8f7f2f7ea3b",
+      "label": "labels/train/7b8b0c035e2292d990fa0c493c5f25163cdf5572bfd68098ecd9d8f7f2f7ea3b.txt",
+      "label_sha256": "9cda15788664023f3d26bf42e5fdc900d08d7e4be6badcfbc9c0a1a7c2639214",
+      "split": "train",
+      "scene_group": "ceasa_service_junction",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 2,
+      "boxes_reviewed": 4,
+      "duplicates_consolidated": 2,
+      "classes": [
+        5
+      ],
+      "approval_author": "002",
+      "approved_at": "2026-10-04T19:46:45.427Z",
+      "registry_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/registry.json",
+      "registry_sha256": "612ff8f63b38108a985fa76281da8e903574fe8fdfccb0464f31c244460c6d02",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reference/ceasa/p023_img01_7b8b0c03.jpg"
+    },
+    {
+      "image": "images/train/8052814489da66c77231ff5ffccbee3236719d83408ce298d31fe13f7132aee4.jpg",
+      "image_sha256": "8052814489da66c77231ff5ffccbee3236719d83408ce298d31fe13f7132aee4",
+      "label": "labels/train/8052814489da66c77231ff5ffccbee3236719d83408ce298d31fe13f7132aee4.txt",
+      "label_sha256": "30c47997547b4d0dffa9a6fbcbb6c3f51edddf9fdb05aea6e464b68631cdf68b",
+      "split": "train",
+      "scene_group": "ceasa_closeup_corner_80528144",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 8,
+      "boxes_reviewed": 19,
+      "duplicates_consolidated": 11,
+      "classes": [
+        0,
+        2,
+        6,
+        10
+      ],
+      "approval_author": "002",
+      "approved_at": "2026-10-04T19:46:45.427Z",
+      "registry_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/registry.json",
+      "registry_sha256": "612ff8f63b38108a985fa76281da8e903574fe8fdfccb0464f31c244460c6d02",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reference/ceasa/p005_img01_80528144.jpg"
+    },
+    {
+      "image": "images/train/814749e34f1e79fbaf554ffa613901e29147e5e6a088222fd54b6545dc714a3b.jpg",
+      "image_sha256": "814749e34f1e79fbaf554ffa613901e29147e5e6a088222fd54b6545dc714a3b",
+      "label": "labels/train/814749e34f1e79fbaf554ffa613901e29147e5e6a088222fd54b6545dc714a3b.txt",
+      "label_sha256": "b61ab809b96252287114241b5965f17e7e22bb1024ee5ef28d4b553ada80cf2c",
+      "split": "train",
+      "scene_group": "ceasa_perimeter_gutter",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 2,
+      "boxes_reviewed": 2,
+      "duplicates_consolidated": 0,
+      "classes": [
+        5
+      ],
+      "approval_author": "002",
+      "approved_at": "2026-10-04T19:46:45.427Z",
+      "registry_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/registry.json",
+      "registry_sha256": "612ff8f63b38108a985fa76281da8e903574fe8fdfccb0464f31c244460c6d02",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reference/ceasa/p021_img01_814749e3.jpg"
+    },
+    {
+      "image": "images/train/88b54f26e06a9b1505ee0804e82ffe0d78f490183db9f2707203c3760c2d0dc5.jpg",
+      "image_sha256": "88b54f26e06a9b1505ee0804e82ffe0d78f490183db9f2707203c3760c2d0dc5",
+      "label": "labels/train/88b54f26e06a9b1505ee0804e82ffe0d78f490183db9f2707203c3760c2d0dc5.txt",
+      "label_sha256": "875dd73e147dbb2878d2354434877c397df6c78b859bbf66c5616675c460b53f",
+      "split": "train",
+      "scene_group": "ceasa_closeup_roof_chimney_88b54f26",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 9,
+      "boxes_reviewed": 11,
+      "duplicates_consolidated": 2,
+      "classes": [
+        2,
+        3,
+        10
+      ],
+      "approval_author": "002",
+      "approved_at": "2026-10-04T19:46:45.427Z",
+      "registry_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/registry.json",
+      "registry_sha256": "612ff8f63b38108a985fa76281da8e903574fe8fdfccb0464f31c244460c6d02",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reference/ceasa/p007_img01_88b54f26.jpg"
+    },
+    {
+      "image": "images/train/9227be4e4aff0671548aff993d70008b62a2c51bccd68f1a30f267cceba3bea7.jpg",
+      "image_sha256": "9227be4e4aff0671548aff993d70008b62a2c51bccd68f1a30f267cceba3bea7",
+      "label": "labels/train/9227be4e4aff0671548aff993d70008b62a2c51bccd68f1a30f267cceba3bea7.txt",
+      "label_sha256": "2a99a66aa4f66cc4f5a170ca013956732193744b5412db0960646dd166838421",
+      "split": "train",
+      "scene_group": "ceasa_closeup_corner_80528144",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 8,
+      "boxes_reviewed": 18,
+      "duplicates_consolidated": 10,
+      "classes": [
+        1,
+        2,
+        3,
+        6,
+        7
+      ],
+      "approval_author": "002",
+      "approved_at": "2026-10-04T19:46:45.427Z",
+      "registry_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/registry.json",
+      "registry_sha256": "612ff8f63b38108a985fa76281da8e903574fe8fdfccb0464f31c244460c6d02",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reference/ceasa/p006_img02_9227be4e.jpg"
+    },
+    {
+      "image": "images/test/985fdab586b64fa0344bdb3d840e2552524d5405e354617938f22443def526e9.jpg",
+      "image_sha256": "985fdab586b64fa0344bdb3d840e2552524d5405e354617938f22443def526e9",
+      "label": "labels/test/985fdab586b64fa0344bdb3d840e2552524d5405e354617938f22443def526e9.txt",
+      "label_sha256": "95ba7630155e9585ec25218eeb569167b3f797e0130d4f7dfa8abb0aa84f6811",
+      "split": "test",
+      "scene_group": "ceasa_roof_junction_details",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 10,
+      "boxes_reviewed": 11,
+      "duplicates_consolidated": 1,
+      "classes": [
+        2,
+        3,
+        4
+      ],
+      "approval_author": "002",
+      "approved_at": "2026-10-04T19:46:45.427Z",
+      "registry_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/registry.json",
+      "registry_sha256": "612ff8f63b38108a985fa76281da8e903574fe8fdfccb0464f31c244460c6d02",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reference/ceasa/p014_img02_985fdab5.jpg"
+    },
+    {
+      "image": "images/train/9ab86531dec3f81564cc1d51bc5d534cd10d156f60af7ca55c592f5ff5b3b802.jpg",
+      "image_sha256": "9ab86531dec3f81564cc1d51bc5d534cd10d156f60af7ca55c592f5ff5b3b802",
+      "label": "labels/train/9ab86531dec3f81564cc1d51bc5d534cd10d156f60af7ca55c592f5ff5b3b802.txt",
+      "label_sha256": "f689065cee22f18feedcff663a90a929a95ad678e0f4b625b9200505b6e47418",
+      "split": "train",
+      "scene_group": "ceasa_closeup_9ab86531",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 11,
+      "boxes_reviewed": 16,
+      "duplicates_consolidated": 5,
+      "classes": [
+        2,
+        3,
+        4,
+        8
+      ],
+      "approval_author": "002",
+      "approved_at": "2026-10-04T19:46:45.427Z",
+      "registry_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/registry.json",
+      "registry_sha256": "612ff8f63b38108a985fa76281da8e903574fe8fdfccb0464f31c244460c6d02",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reference/ceasa/p011_img02_9ab86531.jpg"
+    },
+    {
+      "image": "images/train/a498d247ae429d0d23701b29a148958e86a3dad6f7e7e01b5186e05c06949a3a.jpg",
+      "image_sha256": "a498d247ae429d0d23701b29a148958e86a3dad6f7e7e01b5186e05c06949a3a",
+      "label": "labels/train/a498d247ae429d0d23701b29a148958e86a3dad6f7e7e01b5186e05c06949a3a.txt",
+      "label_sha256": "b3e6def749fa83688748be6c370202b54b4ef3b6abac8aa5ff3a06ff79a7cee0",
+      "split": "train",
+      "scene_group": "ceasa_service_junction",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 4,
+      "boxes_reviewed": 4,
+      "duplicates_consolidated": 0,
+      "classes": [
+        5
+      ],
+      "approval_author": "002",
+      "approved_at": "2026-10-04T19:46:45.427Z",
+      "registry_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/registry.json",
+      "registry_sha256": "612ff8f63b38108a985fa76281da8e903574fe8fdfccb0464f31c244460c6d02",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reference/ceasa/p015_img01_a498d247.jpg"
+    },
+    {
+      "image": "images/train/a64803dabcfcaad82852da022b2a6bc85f6773ffba2e29095c4e67a51c66ff0e.jpg",
+      "image_sha256": "a64803dabcfcaad82852da022b2a6bc85f6773ffba2e29095c4e67a51c66ff0e",
+      "label": "labels/train/a64803dabcfcaad82852da022b2a6bc85f6773ffba2e29095c4e67a51c66ff0e.txt",
+      "label_sha256": "fbdeeb18dca79ccc30acaf26f605437b597cd513ad8363500d7ee3ade0264000",
+      "split": "train",
+      "scene_group": "ceasa_gutter_closeup_a64803da",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 1,
+      "boxes_reviewed": 1,
+      "duplicates_consolidated": 0,
+      "classes": [
+        7
+      ],
+      "approval_author": "002",
+      "approved_at": "2026-10-04T19:46:45.427Z",
+      "registry_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/registry.json",
+      "registry_sha256": "612ff8f63b38108a985fa76281da8e903574fe8fdfccb0464f31c244460c6d02",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reference/ceasa/p031_img01_a64803da.jpg"
+    },
+    {
+      "image": "images/val/abec366e27c1f5809636c55e9b037bd77134936456ff748e7b1c6852b5a48bb5.jpg",
+      "image_sha256": "abec366e27c1f5809636c55e9b037bd77134936456ff748e7b1c6852b5a48bb5",
+      "label": "labels/val/abec366e27c1f5809636c55e9b037bd77134936456ff748e7b1c6852b5a48bb5.txt",
+      "label_sha256": "93a8f9e7d716da2a92348d09b21843400501143fcaeda09c2963ec0dd9ac70da",
+      "split": "val",
+      "scene_group": "ceasa_closeup_abec366e",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 1,
+      "boxes_reviewed": 1,
+      "duplicates_consolidated": 0,
+      "classes": [
+        2
+      ],
+      "approval_author": "002",
+      "approved_at": "2026-10-04T19:46:45.427Z",
+      "registry_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/registry.json",
+      "registry_sha256": "612ff8f63b38108a985fa76281da8e903574fe8fdfccb0464f31c244460c6d02",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reference/ceasa/p003_img01_abec366e.jpg"
+    },
+    {
+      "image": "images/test/bca8f6e02e3f00fe307634bb55cde6ce2fb37cd10f6724a7d814be664ded6a1c.jpg",
+      "image_sha256": "bca8f6e02e3f00fe307634bb55cde6ce2fb37cd10f6724a7d814be664ded6a1c",
+      "label": "labels/test/bca8f6e02e3f00fe307634bb55cde6ce2fb37cd10f6724a7d814be664ded6a1c.txt",
+      "label_sha256": "c60bced036b23df8db2e7215eae254b94bb88d01b960bd57bbd2523d899af589",
+      "split": "test",
+      "scene_group": "ceasa_roof_junction_details",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 3,
+      "boxes_reviewed": 4,
+      "duplicates_consolidated": 1,
+      "classes": [
+        4,
+        5
+      ],
+      "approval_author": "002",
+      "approved_at": "2026-10-04T19:46:45.427Z",
+      "registry_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/registry.json",
+      "registry_sha256": "612ff8f63b38108a985fa76281da8e903574fe8fdfccb0464f31c244460c6d02",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reference/ceasa/p024_img02_bca8f6e0.jpg"
+    },
+    {
+      "image": "images/train/beebf15ccef412efa39902b3fb0753c5aabf2c0423d26937efedf14027a8d11d.jpg",
+      "image_sha256": "beebf15ccef412efa39902b3fb0753c5aabf2c0423d26937efedf14027a8d11d",
+      "label": "labels/train/beebf15ccef412efa39902b3fb0753c5aabf2c0423d26937efedf14027a8d11d.txt",
+      "label_sha256": "7db764d366bce3f4d4e5efe20001c20ef2dff1f166cf9483f22350dc6c5c2425",
+      "split": "train",
+      "scene_group": "ceasa_closeup_beebf15c",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 1,
+      "boxes_reviewed": 1,
+      "duplicates_consolidated": 0,
+      "classes": [
+        3
+      ],
+      "approval_author": "002",
+      "approved_at": "2026-10-04T19:46:45.427Z",
+      "registry_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/registry.json",
+      "registry_sha256": "612ff8f63b38108a985fa76281da8e903574fe8fdfccb0464f31c244460c6d02",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reference/ceasa/p010_img01_beebf15c.jpg"
+    },
+    {
+      "image": "images/train/d12131ddee51d3d84ab6bbf5b8f54abdad769800215b5d068e5e8d22b73265cc.jpg",
+      "image_sha256": "d12131ddee51d3d84ab6bbf5b8f54abdad769800215b5d068e5e8d22b73265cc",
+      "label": "labels/train/d12131ddee51d3d84ab6bbf5b8f54abdad769800215b5d068e5e8d22b73265cc.txt",
+      "label_sha256": "7b23130061a643cb72a67d47fc985aa30e78cd51ed7a55f0efe44f527ea3e3f6",
+      "split": "train",
+      "scene_group": "ceasa_closeup_d12131dd",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 10,
+      "boxes_reviewed": 17,
+      "duplicates_consolidated": 7,
+      "classes": [
+        0,
+        2,
+        5,
+        9,
+        10
+      ],
+      "approval_author": "002",
+      "approved_at": "2026-10-04T19:46:45.427Z",
+      "registry_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/registry.json",
+      "registry_sha256": "612ff8f63b38108a985fa76281da8e903574fe8fdfccb0464f31c244460c6d02",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reference/ceasa/p008_img01_d12131dd.jpg"
+    },
+    {
+      "image": "images/train/d7dcb606c5b1ff4b0f3ccb31f913ab53f98cc7635c38b2ad9107faed0b6addc6.jpg",
+      "image_sha256": "d7dcb606c5b1ff4b0f3ccb31f913ab53f98cc7635c38b2ad9107faed0b6addc6",
+      "label": "labels/train/d7dcb606c5b1ff4b0f3ccb31f913ab53f98cc7635c38b2ad9107faed0b6addc6.txt",
+      "label_sha256": "67f603b4307b5a387a0b03034661c9bb294d7b2c965bbd20a276b18d9d65bfb5",
+      "split": "train",
+      "scene_group": "ceasa_perimeter_gutter",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 2,
+      "boxes_reviewed": 2,
+      "duplicates_consolidated": 0,
+      "classes": [
+        6
+      ],
+      "approval_author": "002",
+      "approved_at": "2026-10-04T19:46:45.427Z",
+      "registry_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/registry.json",
+      "registry_sha256": "612ff8f63b38108a985fa76281da8e903574fe8fdfccb0464f31c244460c6d02",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reference/ceasa/p026_img01_d7dcb606.jpg"
+    },
+    {
+      "image": "images/test/d86cc412a1856b2c5fbc85aeb9e3e83fe6a39ca0e14e9dcca2aee6a61fa6b6a5.jpg",
+      "image_sha256": "d86cc412a1856b2c5fbc85aeb9e3e83fe6a39ca0e14e9dcca2aee6a61fa6b6a5",
+      "label": "labels/test/d86cc412a1856b2c5fbc85aeb9e3e83fe6a39ca0e14e9dcca2aee6a61fa6b6a5.txt",
+      "label_sha256": "5dc94cd54079fcc640f34e6bd4d8b087e87991cef0cf1f7ab498e420f039d272",
+      "split": "test",
+      "scene_group": "ceasa_roof_junction_details",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 7,
+      "boxes_reviewed": 12,
+      "duplicates_consolidated": 5,
+      "classes": [
+        2,
+        5
+      ],
+      "approval_author": "002",
+      "approved_at": "2026-10-04T19:46:45.427Z",
+      "registry_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/registry.json",
+      "registry_sha256": "612ff8f63b38108a985fa76281da8e903574fe8fdfccb0464f31c244460c6d02",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reference/ceasa/p022_img02_d86cc412.jpg"
+    },
+    {
+      "image": "images/val/e59d70812f26fd7a93d9d7020983643e74855ab66410883fedba2ae0646a8b52.jpg",
+      "image_sha256": "e59d70812f26fd7a93d9d7020983643e74855ab66410883fedba2ae0646a8b52",
+      "label": "labels/val/e59d70812f26fd7a93d9d7020983643e74855ab66410883fedba2ae0646a8b52.txt",
+      "label_sha256": "eb14e640b46ca0db5521edd5401cb2303dade3f917c9891f3b4941250b7f71c4",
+      "split": "val",
+      "scene_group": "ceasa_closeup_e59d7081",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 1,
+      "boxes_reviewed": 1,
+      "duplicates_consolidated": 0,
+      "classes": [
+        3
+      ],
+      "approval_author": "002",
+      "approved_at": "2026-10-04T19:46:45.427Z",
+      "registry_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/registry.json",
+      "registry_sha256": "612ff8f63b38108a985fa76281da8e903574fe8fdfccb0464f31c244460c6d02",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reference/ceasa/p010_img02_e59d7081.jpg"
+    },
+    {
+      "image": "images/val/f55d62a3174c6ebb620fca7ebb863ac08893e9c1c2b8c7e20b8d5bd7fd139e99.jpg",
+      "image_sha256": "f55d62a3174c6ebb620fca7ebb863ac08893e9c1c2b8c7e20b8d5bd7fd139e99",
+      "label": "labels/val/f55d62a3174c6ebb620fca7ebb863ac08893e9c1c2b8c7e20b8d5bd7fd139e99.txt",
+      "label_sha256": "f5388695cc5dac690ce067cc812bb74efd3f2649b47a761aa42aed0ed644a6e3",
+      "split": "val",
+      "scene_group": "ceasa_roof_overview",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 1,
+      "boxes_reviewed": 1,
+      "duplicates_consolidated": 0,
+      "classes": [
+        1
+      ],
+      "approval_author": "002",
+      "approved_at": "2026-10-04T19:46:45.427Z",
+      "registry_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/registry.json",
+      "registry_sha256": "612ff8f63b38108a985fa76281da8e903574fe8fdfccb0464f31c244460c6d02",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reference/ceasa/p006_img01_f55d62a3.jpg"
+    },
+    {
+      "image": "images/test/f5b9ef7de70622b39b748bc2ee654166b5facc42a7c5e1ee8c37054f9217588c.jpg",
+      "image_sha256": "f5b9ef7de70622b39b748bc2ee654166b5facc42a7c5e1ee8c37054f9217588c",
+      "label": "labels/test/f5b9ef7de70622b39b748bc2ee654166b5facc42a7c5e1ee8c37054f9217588c.txt",
+      "label_sha256": "ec18c3a12dd6eb306eab06d21ff82190966a0161add3ee73e7db2dec7f606d16",
+      "split": "test",
+      "scene_group": "ceasa_roof_junction_details",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 2,
+      "boxes_reviewed": 4,
+      "duplicates_consolidated": 2,
+      "classes": [
+        4
+      ],
+      "approval_author": "002",
+      "approved_at": "2026-10-04T19:46:45.427Z",
+      "registry_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/registry.json",
+      "registry_sha256": "612ff8f63b38108a985fa76281da8e903574fe8fdfccb0464f31c244460c6d02",
+      "source_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reference/ceasa/p028_img01_f5b9ef7d.jpg"
+    }
+  ],
+  "boxes_by_class_and_split": {
+    "telha_quebrada": {
+      "train": 12,
+      "val": 0,
+      "test": 0
+    },
+    "telha_ausente": {
+      "train": 1,
+      "val": 1,
+      "test": 0
+    },
+    "residuos_telha": {
+      "train": 39,
+      "val": 1,
+      "test": 14
+    },
+    "reparo_telha": {
+      "train": 18,
+      "val": 5,
+      "test": 2
+    },
+    "rufo_ausente": {
+      "train": 2,
+      "val": 0,
+      "test": 5
+    },
+    "rufo_quebrado": {
+      "train": 14,
+      "val": 1,
+      "test": 12
+    },
+    "residuos_calha": {
+      "train": 12,
+      "val": 0,
+      "test": 0
+    },
+    "vegetacao_calha": {
+      "train": 4,
+      "val": 0,
+      "test": 0
+    },
+    "pedaco_telha": {
+      "train": 2,
+      "val": 0,
+      "test": 0
+    },
+    "rufo_deslocado": {
+      "train": 1,
+      "val": 0,
+      "test": 0
+    },
+    "pedaco_telha_sobreposto": {
+      "train": 8,
+      "val": 0,
+      "test": 0
+    },
+    "fixador_telha_frouxo": {
+      "train": 1,
+      "val": 0,
+      "test": 0
+    },
+    "reparo_rufo": {
+      "train": 0,
+      "val": 0,
+      "test": 0
+    }
+  },
+  "classes_without_training_boxes": [
+    "reparo_rufo"
+  ],
+  "classes_not_measured_in_val": [
+    "telha_quebrada",
+    "rufo_ausente",
+    "residuos_calha",
+    "vegetacao_calha",
+    "pedaco_telha",
+    "rufo_deslocado",
+    "pedaco_telha_sobreposto",
+    "fixador_telha_frouxo",
+    "reparo_rufo"
+  ]
+}

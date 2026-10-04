@@ -14,7 +14,7 @@ import shutil
 from .backend import check_domain_names, load_detector
 from .config import ProjectConfig, detection_names, load_taxonomy
 from .dataset import IMAGE_EXTENSIONS
-from .io import file_hash, write_json
+from .io import file_hash, resolve_local_path, write_json
 from .review_data import REVIEW_SCHEMA, review_image_size, validate_boxes
 from .training import is_pilot_checkpoint, pilot_inference_config
 
@@ -65,7 +65,7 @@ def suggest_for_registry(config: ProjectConfig, registry_path: Path, weights: st
     config = pilot_inference_config(config, model)
     images = {}
     for item in registry["images"]:
-        source = Path(item["source_path"])
+        source = resolve_local_path(item["source_path"], config.root)
         if file_hash(source) != item["image_sha256"]:
             raise ValueError(f"A foto original mudou: {item.get('filename')}.")
         images[item["image_sha256"]] = detect_boxes(model, source, config, conf)
