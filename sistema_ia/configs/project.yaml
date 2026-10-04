@@ -1,46 +1,64 @@
+# =============================================================================
+# configs/project.yaml — parâmetros do projeto (lido por src/dronecamp_ia/config.py)
+#
+# É AQUI que se ajusta o treino: épocas, tamanho de imagem, batch, paciência,
+# taxa de aprendizado e aumentos de dados. Não é preciso mexer em Python.
+#   - seção "training": treino de PRODUÇÃO (comando train; exige 3 edificações).
+#   - seção "pilot.training": treino PILOTO (comando train-pilot; o usado hoje).
+#     Valores do piloto sobrescrevem os de "training"; o que não estiver no piloto
+#     vem de "training" (ex.: optimizer, lr0, mosaic).
+#   - opções --epochs/--imgsz/--batch do train-pilot sobrescrevem as duas.
 # Caminhos abaixo são relativos à pasta sistema_ia, independentemente do terminal.
+# =============================================================================
 schema_version: 1
-requested_model: yolo27l.pt
-model: yolo26l.pt
-task: detect
-taxonomy: configs/taxonomy.json
-dataset: configs/dataset.yaml
-device: cpu
+requested_model: yolo27l.pt        # modelo desejado no futuro; só registrado (ainda não existe)
+model: yolo26l.pt                  # peso base: n (menor/rápido) < s < m < l < x (maior/lento)
+task: detect                       # detecção com caixas (único modo implementado)
+taxonomy: configs/taxonomy.json    # classes (IDs, nomes, critérios)
+dataset: configs/dataset.yaml      # dataset de produção
+device: cpu                        # Ultralytics treina em CUDA/MPS ou CPU; Radeon/APU não treina no Windows
+
+# Inferência (predict, suggest, paridade do export).
 prediction:
-  imgsz: 1024
-  conf: 0.25
-  iou: 0.7
-  nms: false
-  max_det: 300
+  imgsz: 1024        # lado da imagem na inferência; pesos piloto usam o imgsz do treino (640)
+  conf: 0.25         # confiança mínima para mostrar uma caixa no predict
+  iou: 0.7           # sobreposição usada para juntar caixas repetidas
+  nms: false         # YOLO26 é end-to-end (sem NMS externo)
+  max_det: 300       # máximo de caixas por imagem
+
+# Treino de PRODUÇÃO (bloqueado até haver três edificações aprovadas).
 training:
-  epochs: 100
-  imgsz: 1024
-  batch: 2
-  workers: 0
+  epochs: 100        # passagens completas pelo dataset de treino
+  imgsz: 1024        # lado da imagem no treino; maior vê detalhes pequenos, mas é mais lento
+  batch: 2           # imagens por passo; maior usa mais RAM
+  workers: 0         # processos de leitura de dados (0 = no processo principal; estável no Windows)
   optimizer: AdamW
-  lr0: 0.001
-  lrf: 0.01
-  patience: 20
-  seed: 42
+  lr0: 0.001         # taxa de aprendizado inicial
+  lrf: 0.01          # taxa final = lr0 × lrf (decai ao longo das épocas)
+  patience: 20       # para se a validação não melhorar por N épocas (0 = nunca para antes)
+  seed: 42           # semente: mesmo seed + mesmos dados = mesmo treino
   deterministic: true
-  cache: false
-  amp: false
-  close_mosaic: 10
-  mosaic: 0.5
-  mixup: 0.0
-  degrees: 10.0
-  fliplr: 0.5
-  flipud: 0.0
+  cache: false       # true/"ram" acelera a leitura, mas pode tirar o determinismo
+  amp: false         # precisão mista; só faz diferença em GPU
+  close_mosaic: 10   # desliga o mosaic nas últimas N épocas (refino com fotos inteiras)
+  mosaic: 0.5        # chance de juntar 4 fotos em uma (aumento de dados)
+  mixup: 0.0         # mistura de duas fotos (desligado)
+  degrees: 10.0      # rotação aleatória até ±10°
+  fliplr: 0.5        # chance de espelhar na horizontal
+  flipud: 0.0        # espelho vertical desligado (telhado de cabeça para baixo não ocorre)
+
 # Piloto: treino real com as revisões humanas de uma única edificação.
 # Os pesos só sugerem caixas na revisão; métricas não medem generalização.
 pilot:
-  model: yolo26l.pt
-  suggestion_conf: 0.15
+  model: yolo26l.pt          # peso inicial do treino piloto
+  suggestion_conf: 0.15      # confiança mínima das sugestões na página de revisão
   # Caixas da mesma classe com IoU >= limite viram um único alvo no dataset piloto.
   duplicate_iou: 0.7
   training:
     epochs: 80
     imgsz: 640
     batch: 4
-    patience: 25
-    plots: true
+    # Sem parada antecipada: a validação do piloto tem ~6 fotos e oscila demais
+    # para escolher a época; o treino v8 parou na 66 com a 41 ainda subtreinada.
+    patience: 0
+    plots: true              # grava gráficos (curvas, matriz de confusão) em runs/.../fit

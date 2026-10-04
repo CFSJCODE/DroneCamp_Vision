@@ -1,4 +1,21 @@
-"""Inferência e evidências. Nunca transforma ausência de detecção em conformidade."""
+"""Inferência em fotos e vídeos, com evidências e achados para revisão.
+
+Função no projeto: roda um modelo sobre uma pasta de mídia e grava, em
+``runs/predict_*``, as imagens com caixas desenhadas e um ``findings.jsonl``
+com cada detecção. É o comando ``predict``.
+
+O que faz:
+- ``find_media``: lista fotos e vídeos locais de uma pasta.
+- ``serialize_detections``: transforma o resultado da Ultralytics em JSON
+  (classe, confiança, caixa), sempre com gravidade pendente.
+- ``predict``: executa, grava evidências, ``execution.json`` e ``summary.json``.
+
+Nunca transforma ausência de detecção em conformidade: sem caixa não quer dizer
+telhado sem problema.
+
+Quando mexer: confiança/tamanho da inferência ficam em ``prediction`` no
+``configs/project.yaml``; mexa aqui para mudar o formato dos achados.
+"""
 
 from pathlib import Path
 from hashlib import sha256
@@ -8,6 +25,7 @@ from .backend import check_domain_names, load_detector, runtime_info
 from .config import ProjectConfig, detection_names, load_taxonomy
 from .io import file_hash, make_run_directory, write_json
 
+# Fotos e vídeos aceitos (vídeos são lidos quadro a quadro).
 MEDIA_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".webp", ".tif", ".tiff", ".mp4", ".avi", ".mov", ".mkv", ".mpeg", ".mpg", ".wmv"}
 
 
@@ -49,6 +67,7 @@ def serialize_detections(result, taxonomy: dict, demo: bool) -> list[dict]:
 
 def predict(config: ProjectConfig, source: Path, weights: str | None = None, demo: bool = False) -> Path:
     """Gere imagens anotadas e JSONL incremental, inclusive quando não há caixas."""
+    # 1. Mídia, taxonomia e modelo (--demo aceita pesos COCO genéricos, só para teste).
     media = find_media(source)
     taxonomy = load_taxonomy(config.taxonomy_path)
     model = load_detector(config, weights)
@@ -61,6 +80,7 @@ def predict(config: ProjectConfig, source: Path, weights: str | None = None, dem
         from .training import pilot_inference_config
 
         config = pilot_inference_config(config, model)
+    # 2. Pasta da execução e execution.json com modo, versões e hashes das mídias.
     run = make_run_directory(config.root, "predict_demo" if demo else "predict_pilot" if pilot else "predict")
     evidence = run / "evidence"
     evidence.mkdir()
@@ -74,6 +94,7 @@ def predict(config: ProjectConfig, source: Path, weights: str | None = None, dem
         else "Achados candidatos exigem revisão; nenhum laudo é emitido automaticamente.",
         "files": [{"path": str(path), "sha256": file_hash(path)} for path in media],
     })
+    # 3. Cada foto/quadro: imagem com caixas em evidence/ e uma linha em findings.jsonl.
     processed = 0
     with (run / "findings.jsonl").open("w", encoding="utf-8") as stream:
         for path in media:
@@ -97,6 +118,7 @@ def predict(config: ProjectConfig, source: Path, weights: str | None = None, dem
                 stream.write(json.dumps(row, ensure_ascii=False, allow_nan=False) + "\n")
                 stream.flush()
                 processed += 1
+    # 4. summary.json: só "complete" se ao menos uma imagem foi processada.
     if processed == 0:
         raise ValueError(f"Nenhum frame/imagem foi decodificado; execução incompleta em {run}.")
     write_json(run / "summary.json", {

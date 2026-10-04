@@ -1,4 +1,19 @@
-"""Único ponto dependente de Ultralytics: simplifica revisão e troca de modelo."""
+"""Ponte com a Ultralytics: carrega o modelo YOLO e confere suas classes.
+
+Função no projeto: é o único arquivo que importa a biblioteca Ultralytics. Treino,
+predição, sugestões e exportação pedem o modelo por aqui.
+
+O que faz:
+- ``load_detector``: abre um checkpoint ``.pt`` local (ou baixa um YOLO26 oficial).
+- ``_ultralytics``: aponta configurações e caches da biblioteca para dentro do projeto.
+- ``load_exported_detector``: abre um ``.onnx`` exportado, só para conferir paridade.
+- ``check_domain_names``: recusa pesos cujas classes não são as 13 do projeto.
+- ``runtime_info``: versões de Python/torch/Ultralytics e hash do checkpoint.
+
+Quando mexer: para trocar de família de modelo (outro YOLO) ou de biblioteca.
+Para trocar só o tamanho do modelo (n/s/m/l/x), basta mudar ``model`` e
+``pilot.model`` em ``configs/project.yaml``.
+"""
 
 from pathlib import Path
 import os
@@ -11,12 +26,15 @@ from .io import file_hash
 
 def load_detector(config: ProjectConfig, weights: str | None = None):
     """Carregue checkpoint local ou peso oficial YOLO26; sem fallback silencioso."""
+    # Só checkpoints PyTorch: o ONNX é conferido à parte (exporting.py).
     selected = weights or config.model
     if Path(selected).suffix.lower() != ".pt":
         raise ValueError("Este pipeline usa checkpoints PyTorch .pt. Para ONNX, valide o runtime de destino separadamente.")
+    # Caminho relativo é resolvido a partir da pasta sistema_ia.
     local = Path(selected).expanduser()
     if not local.is_absolute():
         local = config.root / local
+    # Sem arquivo local, só aceita baixar os pesos oficiais YOLO26 para models/.
     if not local.is_file():
         if re.fullmatch(r"yolo27[nslm]\.pt", selected, re.IGNORECASE):
             raise ValueError("YOLO27 ainda não foi publicado. Use YOLO26 ou um checkpoint local validado; consulte docs/pesquisa_ultralytics.md.")
@@ -24,6 +42,7 @@ def load_detector(config: ProjectConfig, weights: str | None = None):
             raise ValueError(f"Checkpoint local não encontrado: {local}. Downloads automáticos limitados aos pesos oficiais YOLO26 de detecção.")
         local = config.root / "models" / selected
         local.parent.mkdir(parents=True, exist_ok=True)
+    # Abre o modelo pela Ultralytics e garante que é de detecção (caixas).
     YOLO = _ultralytics(config)
     model = YOLO(str(local), task="detect")
     if model.task != "detect":
@@ -33,6 +52,7 @@ def load_detector(config: ProjectConfig, weights: str | None = None):
 
 def _ultralytics(config: ProjectConfig):
     """Restrinja ajustes/cache à pasta do projeto antes de importar a biblioteca."""
+    # Configurações da Ultralytics em sistema_ia/.runtime; sem instalar pacotes sozinha.
     config_directory = config.root / ".runtime"
     config_directory.mkdir(parents=True, exist_ok=True)
     os.environ["YOLO_CONFIG_DIR"] = str(config_directory)
@@ -40,6 +60,7 @@ def _ultralytics(config: ProjectConfig):
     from ultralytics import YOLO
     from ultralytics import settings
 
+    # Datasets, pesos e execuções sempre dentro de sistema_ia; sem telemetria (sync).
     settings.update({"sync": False, "datasets_dir": str(config.root / "data"),
                      "weights_dir": str(config.root / "models"), "runs_dir": str(config.root / "runs")})
     return YOLO
@@ -62,6 +83,7 @@ def check_domain_names(model, expected: list[str]) -> None:
 
 
 def runtime_info(model, config: ProjectConfig) -> dict:
+    """Versões e hash do checkpoint gravados em execution.json (reprodutibilidade)."""
     import torch
     import ultralytics
 

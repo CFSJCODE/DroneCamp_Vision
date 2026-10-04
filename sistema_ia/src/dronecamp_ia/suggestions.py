@@ -1,7 +1,20 @@
 """Sugestões do detector na página de revisão: candidatas, nunca aprovação.
 
-O revisor aceita, corrige ou descarta cada caixa. Só o feedback humano
-importado entra no próximo dataset, fechando o ciclo de melhoria do modelo.
+Função no projeto: usa um modelo treinado (em geral o piloto) para propor caixas
+que o revisor aceita, corrige ou descarta na página. É o comando ``suggest``.
+
+O que faz:
+- ``detect_boxes``: roda o modelo numa foto e devolve caixas com classe e confiança.
+- ``suggest_for_registry``: grava ``suggestions.json`` ao lado de uma revisão
+  existente e regenera a página.
+- ``create_review_for_new_images``: cria uma revisão nova para fotos novas
+  (cópia congelada por hash em ``originals/``) já com as sugestões.
+
+Só o feedback humano exportado e importado entra no próximo dataset; é isso que
+fecha o ciclo de melhoria do modelo.
+
+Quando mexer: confiança mínima padrão (``pilot.suggestion_conf`` em
+``configs/project.yaml``) ou o que é gravado em ``suggestions.json``.
 """
 
 from __future__ import annotations
@@ -22,12 +35,18 @@ SUGGESTION_WARNING = ("Sugestões automáticas: aceite somente o que você confe
                       "O modelo pode errar a classe, a caixa ou deixar de ver ocorrências.")
 
 
+# ---------------------------------------------------------------------------
+# Inferência numa foto.
+# ---------------------------------------------------------------------------
+
 def detect_boxes(model, path: Path, config: ProjectConfig, conf: float) -> list[dict]:
     """Inferência real; caixas são arredondadas e recortadas aos pixels da foto."""
+    # rect=False: entrada quadrada, igual à usada na exportação ONNX.
     width, height = review_image_size(path)
     parameters = {**config.prediction, "conf": conf}
     result = next(iter(model.predict(source=str(path), device=config.device, save=False, verbose=False,
                                      stream=True, rect=False, **parameters)))
+    # Converte cada detecção em {classe, caixa em pixels inteiros, confiança}.
     boxes = []
     if result.boxes is None:
         return boxes
@@ -42,16 +61,22 @@ def detect_boxes(model, path: Path, config: ProjectConfig, conf: float) -> list[
         except ValueError:
             continue  # caixa degenerada após arredondamento
         boxes.append(candidate)
+    # Mais confiantes primeiro; ids s001, s002... usados pela página ao descartar.
     boxes.sort(key=lambda value: -value["confidence"])
     for index, box in enumerate(boxes, start=1):
         box["id"] = f"s{index:03d}"
     return boxes
 
 
+# ---------------------------------------------------------------------------
+# Sugestões numa revisão existente ou numa revisão nova de fotos novas.
+# ---------------------------------------------------------------------------
+
 def suggest_for_registry(config: ProjectConfig, registry_path: Path, weights: str, conf: float | None = None) -> Path:
     """Grave suggestions.json ao lado do registro e regenere a página de revisão."""
     from .review_render import render_review_package
 
+    # 1. Registro na taxonomia atual e confiança mínima (padrão: pilot.suggestion_conf).
     registry_path = Path(registry_path).resolve()
     registry = json.loads(registry_path.read_text(encoding="utf-8"))
     if registry.get("taxonomy_sha256") != file_hash(config.taxonomy_path):
@@ -59,16 +84,19 @@ def suggest_for_registry(config: ProjectConfig, registry_path: Path, weights: st
     conf = float(conf if conf is not None else config.pilot.get("suggestion_conf", config.prediction["conf"]))
     if not 0 < conf <= 1:
         raise ValueError("conf deve estar no intervalo (0, 1].")
+    # 2. Modelo com as 13 classes; pesos piloto inferem no tamanho do treino (640).
     model = load_detector(config, weights)
     check_domain_names(model, detection_names(load_taxonomy(config.taxonomy_path)))
     pilot = is_pilot_checkpoint(model.ckpt_path)
     config = pilot_inference_config(config, model)
+    # 3. Roda o modelo em cada foto do registro (conferindo o hash do original).
     images = {}
     for item in registry["images"]:
         source = resolve_local_path(item["source_path"], config.root)
         if file_hash(source) != item["image_sha256"]:
             raise ValueError(f"A foto original mudou: {item.get('filename')}.")
         images[item["image_sha256"]] = detect_boxes(model, source, config, conf)
+    # 4. suggestions.json fica preso a esta versão do registro (hash) e aos pesos usados.
     checkpoint = Path(model.ckpt_path).resolve()
     write_json(registry_path.parent / "suggestions.json", {
         "schema_version": 1, "registry_sha256": file_hash(registry_path),
@@ -78,12 +106,14 @@ def suggest_for_registry(config: ProjectConfig, registry_path: Path, weights: st
         "conf": conf, "imgsz": config.prediction["imgsz"], "warning": SUGGESTION_WARNING, "images": images,
         "total_suggestions": sum(len(values) for values in images.values()),
     })
+    # 5. Regenera index.html com as sugestões tracejadas.
     return render_review_package(config, registry_path)
 
 
 def create_review_for_new_images(config: ProjectConfig, source: Path, output: Path, building_group: str,
                                  weights: str, conf: float | None = None) -> Path:
     """Fotos novas viram uma revisão própria, com originais congelados por hash."""
+    # 1. Pasta de saída nova, grupo da edificação e lista de fotos suportadas.
     source, output = Path(source).expanduser().resolve(), Path(output)
     if output.exists():
         raise ValueError("Saída já existe; escolha uma nova versão da revisão.")
@@ -97,6 +127,7 @@ def create_review_for_new_images(config: ProjectConfig, source: Path, output: Pa
     for path in files:
         # Rotação EXIF precisa de cópia canonicalizada antes da anotação.
         review_image_size(path)
+    # 2. Copia cada foto para originals/<sha256> (fotos repetidas entram uma vez).
     output = output.resolve()
     originals = output / "originals"
     originals.mkdir(parents=True)
@@ -118,6 +149,7 @@ def create_review_for_new_images(config: ProjectConfig, source: Path, output: Pa
             "scene_group": f"{building_group.strip()}_{digest[:12]}", "source_path": str(frozen),
             "original_path": str(path), "severity": None,
         })
+    # 3. Registro novo (todas ambíguas, sem caixas) e, em seguida, as sugestões.
     registry = {
         "schema_version": REVIEW_SCHEMA, "version": output.name,
         "taxonomy_sha256": file_hash(config.taxonomy_path),

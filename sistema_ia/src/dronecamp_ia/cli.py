@@ -1,4 +1,19 @@
-"""Comandos pequenos, para revisar cada etapa antes de consumir treinamento."""
+"""Linha de comando: ``python -m dronecamp_ia <comando>``.
+
+Função no projeto: é a porta de entrada. Cada comando chama uma função de outro
+arquivo; este arquivo só lê os argumentos e mostra o resultado.
+
+Comandos e onde está o código de cada um:
+- ``train-pilot`` → ``training.train_pilot``  |  ``build-pilot-data`` → ``pilot.build_pilot_dataset``
+- ``train`` / ``evaluate`` / ``tune`` → ``training.py``  |  ``validate-data`` → ``dataset.py``
+- ``suggest`` → ``suggestions.py``  |  ``predict`` → ``prediction.py``  |  ``export`` → ``exporting.py``
+- ``import-review`` / ``add-ai-proposals`` / ``migrate-review`` / ``prepare-review`` → ``review_data.py``
+- ``render-review`` → ``review_render.py``  |  ``build-reviewed-data`` → ``review_dataset.py``
+- ``extract-report`` → ``report_images.py``  |  ``categories`` → mostra a taxonomia
+
+Quando mexer: para criar um comando novo ou uma opção nova (``--algo``) em um
+comando existente. A lógica do comando fica no arquivo indicado acima.
+"""
 
 import argparse
 import json
@@ -10,14 +25,20 @@ from .dataset import validate_dataset
 from .io import write_json
 
 
+# ---------------------------------------------------------------------------
+# Definição dos comandos e de suas opções.
+# ---------------------------------------------------------------------------
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="DroneCamp: detecção assistida de evidências em telhados.")
     parser.add_argument("--config", type=Path, help="Arquivo configs/project.yaml alternativo.")
     commands = parser.add_subparsers(dest="command", required=True)
+    # Consulta e validação (não alteram nada).
     commands.add_parser("categories", help="Exibir catálogo e limites das categorias.")
     validate = commands.add_parser("validate-data", help="Revisar dataset sem treino ou downloads.")
     validate.add_argument("--data", type=Path)
     validate.add_argument("--output", type=Path, help="Salvar relatório JSON opcional.")
+    # Inferência, treino de produção, avaliação, tuning e exportação.
     inference = commands.add_parser("predict", help="Gerar evidências e candidatos à revisão.")
     inference.add_argument("--source", type=Path, required=True)
     inference.add_argument("--weights", help="Checkpoint local especializado; YOLO26 oficial para demo.")
@@ -37,6 +58,7 @@ def build_parser() -> argparse.ArgumentParser:
     exporting = commands.add_parser("export", help="Exportar checkpoint para ONNX FP32.")
     exporting.add_argument("--weights", required=True)
     exporting.add_argument("--demo", action="store_true")
+    # Revisão humana: extração do laudo, página de revisão, importação e propostas.
     extraction = commands.add_parser("extract-report", help="Extrair imagens do PDF como referência, sem labels.")
     extraction.add_argument("--pdf", type=Path, required=True)
     extraction.add_argument("--output", type=Path, required=True)
@@ -61,6 +83,7 @@ def build_parser() -> argparse.ArgumentParser:
     migration.add_argument("--registry", type=Path, required=True)
     migration.add_argument("--previous-taxonomy", type=Path, required=True)
     migration.add_argument("--output", type=Path, required=True)
+    # Ciclo piloto: dataset, treino (as opções abaixo sobrescrevem pilot.training) e sugestões.
     pilot_data = commands.add_parser("build-pilot-data", help="Dataset piloto com fotos aprovadas de uma edificação (não é produção).")
     pilot_data.add_argument("--registry", type=Path, action="append", required=True, help="Registro revisado; repita para várias revisões.")
     pilot_data.add_argument("--output", type=Path, required=True)
@@ -82,11 +105,16 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+# ---------------------------------------------------------------------------
+# Execução: lê a configuração e despacha cada comando para seu módulo.
+# ---------------------------------------------------------------------------
+
 def main(argv: list[str] | None = None) -> int:
     """Ponto de entrada protegido por __main__ para compatibilidade com Windows."""
     args = build_parser().parse_args(argv)
     try:
         config = load_config(args.config)
+        # Os imports ficam dentro de cada ramo: a Ultralytics só carrega quando é usada.
         if args.command == "categories":
             print(json.dumps(load_taxonomy(config.taxonomy_path), ensure_ascii=False, indent=2))
             return 0
@@ -167,6 +195,7 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         print(f"Execução salva em: {output}")
         return 0
+    # Erros previstos (dados inválidos, arquivo ausente) viram mensagem curta e código 2.
     except (ValueError, OSError, ImportError, RuntimeError) as error:
         print(f"Etapa não concluída: {error}", file=sys.stderr)
         return 2

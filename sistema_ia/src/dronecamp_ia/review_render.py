@@ -1,4 +1,19 @@
-"""Página local de conferência, evidências e rascunho de relatório rastreável."""
+"""Página local de revisão (index.html), evidências e rascunho de relatório.
+
+Função no projeto: gera a página que o revisor abre no navegador para conferir,
+corrigir e aprovar caixas. É o comando ``render-review``; ``suggest`` também
+chama este arquivo para mostrar as sugestões do modelo.
+
+O que faz (``render_review_package``):
+- copia as fotos para ``images/`` e desenha as caixas em ``evidence/``;
+- grava labels propostas em ``labels_proposed/<hash do registro>/``;
+- embute os dados (fotos, caixas, sugestões, classes) no modelo
+  ``review_templates/index.html`` e grava ``index.html``;
+- grava ``review_results.csv``, ``review_summary.json`` e ``review_report.md``.
+
+Quando mexer: aparência das evidências (cores, fonte) ou dados enviados à
+página. Botões e comportamento da página ficam em ``review_templates/index.html``.
+"""
 
 from collections import Counter
 from pathlib import Path
@@ -12,10 +27,12 @@ from .config import ProjectConfig, detection_names, load_taxonomy
 from .io import file_hash, resolve_local_path, write_json
 from .review_data import boxes_to_yolo, review_image_size, validate_boxes, write_review_summary
 
+# Uma cor por classe (índice = ID da classe), usada nas evidências e na página.
 COLORS = ["#c73838", "#a23490", "#b36c00", "#265bc4", "#7646bb", "#c34c18", "#087d78", "#397821", "#5b4b99", "#166d91", "#8b5018", "#405ac0", "#895394"]
 
 
 def _font(size: int):
+    """Fonte do Windows quando existir; senão a fonte padrão do Pillow."""
     for path in (Path("C:/Windows/Fonts/arial.ttf"), Path("C:/Windows/Fonts/segoeui.ttf")):
         if path.is_file():
             return ImageFont.truetype(str(path), size)
@@ -41,6 +58,7 @@ def _load_suggestions(directory: Path, registry_path: Path, class_count: int) ->
 
 def render_review_package(config: ProjectConfig, registry_path: Path) -> Path:
     """Copie evidências para visualização; fotos e registros anteriores permanecem."""
+    # 1. Registro na taxonomia atual e pastas de saída ao lado dele.
     registry = json.loads(registry_path.read_text(encoding="utf-8"))
     if registry.get("taxonomy_sha256") != file_hash(config.taxonomy_path):
         raise ValueError("Taxonomia mudou: migre a revisão antes de gerar as evidências.")
@@ -58,6 +76,7 @@ def render_review_package(config: ProjectConfig, registry_path: Path) -> Path:
         raise ValueError("Imagem duplicada no registro de revisão.")
     labels = {item["id"]: item["label"] for item in taxonomy["classes"] if item["phase"] == 1}
     suggestions = _load_suggestions(directory, registry_path, len(names))
+    # 2. Cada foto: confere o original, copia, desenha as caixas e prepara os dados da página.
     browser_images, rows = [], []
     for item in registry["images"]:
         digest = item["image_sha256"]
@@ -91,6 +110,7 @@ def render_review_package(config: ProjectConfig, registry_path: Path) -> Path:
                                "model_suggestions": suggestions["images"].get(digest, []) if suggestions else []})
         rows.append([digest, item["filename"], ";".join(map(str,item["pages"])), item["status"], len(item["boxes"]),
                      item["visual_review_status"], item["technical_status"], item["notes"], item.get("second_review_notes", "")])
+    # 3. Planilha com a triagem de cada foto.
     with (directory / "review_results.csv").open("w", encoding="utf-8-sig", newline="") as stream:
         writer = csv.writer(stream)
         writer.writerow(["image_sha256", "filename", "pages", "triage_status", "proposed_boxes", "visual_review_status", "technical_status", "notes", "second_review_notes"])
@@ -100,6 +120,7 @@ def render_review_package(config: ProjectConfig, registry_path: Path) -> Path:
     for item in registry["images"]:
         if item.get("taxonomy_recheck_pending"):
             pending_class_ids.update(set(labels) - set(item.get("classes_reviewed_before_migration", [])))
+    # 4. Dados embutidos na página (a página funciona aberta direto do disco, sem servidor).
     payload = {"registry_sha256": file_hash(registry_path), "version": registry["version"], "images": browser_images,
                "taxonomy_recheck_pending": any(item.get("taxonomy_recheck_pending") for item in registry["images"]),
                "classes_requiring_review": [labels[key] for key in sorted(pending_class_ids)],
@@ -111,6 +132,7 @@ def render_review_package(config: ProjectConfig, registry_path: Path) -> Path:
     serialized = json.dumps(payload, ensure_ascii=False, allow_nan=False).replace("<", "\\u003c")
     (directory / "index.html").write_text(template.replace("__REVIEW_DATA__", serialized), encoding="utf-8")
     write_json(directory / "browser_data.json", payload)
+    # 5. Resumo e rascunho de relatório em Markdown com links para fotos e evidências.
     summary = write_review_summary(directory, registry)
     report = ["# Revisão visual do CEASA — rascunho para conferência", "",
               f"Versão: {registry['version']}. {summary['unique_images']} imagens únicas, {summary['total_proposed_boxes']} caixas propostas.",

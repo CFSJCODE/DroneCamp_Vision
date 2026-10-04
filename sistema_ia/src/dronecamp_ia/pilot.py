@@ -1,9 +1,22 @@
-"""Dataset piloto: aprende com as revisões humanas antes de existir diversidade.
+"""Dataset piloto: monta, a partir das revisões humanas, o dataset do treino piloto.
 
-O dataset de produção exige três edificações independentes. Enquanto só houver
-o CEASA, o piloto usa as mesmas aprovações humanas, separa os splits por cena
-(recortes da mesma área ficam juntos) e declara que nenhuma métrica dele mede
-generalização. Pesos treinados aqui servem para sugerir caixas na revisão.
+Função no projeto: transforma registros de revisão (``data/reviews/*/registry.json``)
+em um dataset YOLO (``data/pilot/<versão>/``) pronto para ``train-pilot``.
+
+O que faz:
+- ``_approved``: separa só as fotos com decisão humana completa e confere hashes.
+- ``consolidate_duplicates``: junta caixas repetidas do mesmo objeto (um alvo só).
+- ``split_by_scene``: divide treino/validação/teste por cena, sem misturar recortes.
+- ``build_pilot_dataset``: copia fotos, escreve labels, ``dataset.yaml`` e ``pilot.json``.
+- ``validate_pilot_dataset``: reconfere tudo antes de cada treino.
+
+Por que piloto: o dataset de produção exige três edificações independentes.
+Com só o CEASA, nenhuma métrica daqui mede generalização; os pesos treinados com
+este dataset servem para sugerir caixas na revisão.
+
+Quando mexer: proporção de validação/teste (``fractions``), regra de divisão por
+cena ou critério de duplicatas. O limite de duplicatas fica em
+``configs/project.yaml`` (``pilot.duplicate_iou``).
 """
 
 from __future__ import annotations
@@ -27,10 +40,16 @@ from .review_data import boxes_to_yolo, review_image_size, validate_boxes
 PILOT_KIND = "piloto_edificacao_unica"
 PILOT_WARNING = ("Piloto com fotos de uma única edificação: validação e teste não são independentes. "
                  "Use os pesos apenas para sugerir caixas à revisão humana.")
+# Nota que a página de revisão grava ao aceitar uma sugestão do modelo.
 ACCEPTED_SUGGESTION_NOTE = "Sugestão do modelo aceita"
 
 
+# ---------------------------------------------------------------------------
+# Caixas duplicadas: IoU e consolidação (um objeto vira um único alvo de treino).
+# ---------------------------------------------------------------------------
+
 def box_iou(a: list[float], b: list[float]) -> float:
+    """Interseção sobre união de duas caixas [x1, y1, x2, y2] (0 = disjuntas, 1 = iguais)."""
     inter = max(0.0, min(a[2], b[2]) - max(a[0], b[0])) * max(0.0, min(a[3], b[3]) - max(a[1], b[1]))
     union = (a[2] - a[0]) * (a[3] - a[1]) + (b[2] - b[0]) * (b[3] - b[1]) - inter
     return inter / union if union > 0 else 0.0
@@ -46,12 +65,14 @@ def consolidate_duplicates(boxes: list[dict], iou_threshold: float | None) -> li
     if iou_threshold is None:
         return list(boxes)
 
+    # Ordem de preferência: caixa do revisor > sugestão de maior confiança > ordem original.
     def priority(entry: tuple[int, dict]) -> tuple:
         position, box = entry
         note = box.get("note") or ""
         confidence = re.search(r"confiança (\d+)%", note)
         return (note.startswith(ACCEPTED_SUGGESTION_NOTE), -int(confidence.group(1)) if confidence else 0, position)
 
+    # Mantém cada caixa que não repete (mesma classe e IoU alto) uma já mantida.
     kept: list[tuple[int, dict]] = []
     for position, box in sorted(enumerate(boxes), key=priority):
         if all(other["class_id"] != box["class_id"] or box_iou(other["bbox_xyxy"], box["bbox_xyxy"]) < iou_threshold
@@ -60,8 +81,13 @@ def consolidate_duplicates(boxes: list[dict], iou_threshold: float | None) -> li
     return [box for _, box in sorted(kept, key=lambda entry: entry[0])]
 
 
+# ---------------------------------------------------------------------------
+# Seleção das fotos aprovadas e divisão em treino/validação/teste.
+# ---------------------------------------------------------------------------
+
 def _approved(registry_path: Path, taxonomy_digest: str, class_count: int, root: Path) -> list[dict]:
     """Somente decisões humanas completas entram; o resto fica na fila de revisão."""
+    # O registro precisa ser da taxonomia atual (mesmas 13 classes, mesmo hash).
     registry = json.loads(registry_path.read_text(encoding="utf-8"))
     if not isinstance(registry, dict) or registry.get("schema_version") != 1:
         raise ValueError(f"Schema inválido no registro {registry_path}.")
@@ -69,8 +95,10 @@ def _approved(registry_path: Path, taxonomy_digest: str, class_count: int, root:
         raise ValueError(f"Taxonomia mudou desde {registry_path.name}; migre e revise antes do piloto.")
     selected = []
     for item in registry.get("images", []):
+        # Fotos ambíguas ou sem decisão humana ficam fora do treino.
         if item.get("human_approved") is not True or item.get("status") not in {"positive", "negative"}:
             continue
+        # Confere autor, foto original (SHA-256), dimensões e caixas.
         reviewer = item.get("human_reviewer")
         if item.get("technical_status") != "human_visual_reviewed" or not isinstance(reviewer, str) or not reviewer.strip():
             raise ValueError("Aprovação sem autor ou estado de revisão humana explícito.")
@@ -98,14 +126,17 @@ def split_by_scene(images: list[dict], seed: int, fractions: tuple[float, float]
     Uma cena só sai do treino se todas as suas classes continuarem com exemplos
     no treino. Por isso classes com uma única foto nunca são medidas.
     """
+    # Agrupa as fotos por cena e embaralha as cenas de forma reprodutível (seed).
     scenes: dict[str, list[dict]] = defaultdict(list)
     for item in images:
         scenes[item["scene_group"]].append(item)
     order = sorted(scenes, key=lambda name: sha256(f"{seed}:{name}".encode("utf-8")).hexdigest())
+    # Quantas fotos de treino cada classe tem; meta de fotos para validação e teste.
     train_images = Counter(box_class for item in images for box_class in {box["class_id"] for box in item["boxes"]})
     targets = {"val": max(1, round(len(images) * fractions[0])), "test": max(1, round(len(images) * fractions[1]))}
     counts = Counter()
     assignment = {}
+    # Preenche validação e depois teste com cenas inteiras; o resto vai para treino.
     for split in ("val", "test"):
         for scene in order:
             if scene in assignment or counts[split] >= targets[split]:
@@ -114,6 +145,7 @@ def split_by_scene(images: list[dict], seed: int, fractions: tuple[float, float]
             # Não ultrapasse muito a meta: cenas grandes ficam no treino.
             if counts[split] + len(members) > targets[split] + max(2, targets[split] // 2):
                 continue
+            # Não tira do treino a última foto de nenhuma classe.
             classes = Counter(box_class for item in members for box_class in {box["class_id"] for box in item["boxes"]})
             if any(train_images[class_id] - count < 1 for class_id, count in classes.items()):
                 continue
@@ -127,15 +159,23 @@ def split_by_scene(images: list[dict], seed: int, fractions: tuple[float, float]
     return assignment
 
 
+# ---------------------------------------------------------------------------
+# Construção e validação do dataset piloto (data/pilot/<versão>/).
+# ---------------------------------------------------------------------------
+
 def build_pilot_dataset(config: ProjectConfig, registry_paths: list[Path], output: Path,
                         seed: int = 42, fractions: tuple[float, float] = (0.15, 0.15)) -> dict:
-    """Crie uma versão nova e imutável do dataset piloto a partir dos registros."""
+    """Crie uma versão nova e imutável do dataset piloto a partir dos registros.
+
+    ``fractions`` = (validação, teste): 15% das fotos para cada um.
+    """
     output = Path(output)
     if output.exists():
         raise ValueError("Saída já existe; datasets piloto também são imutáveis.")
     taxonomy = load_taxonomy(config.taxonomy_path)
     names = detection_names(taxonomy)
     digest = file_hash(config.taxonomy_path)
+    # 1. Junta as fotos aprovadas de todos os registros informados (--registry).
     images, seen = [], set()
     for registry_path in registry_paths:
         for item in _approved(Path(registry_path), digest, len(names), config.root):
@@ -146,17 +186,20 @@ def build_pilot_dataset(config: ProjectConfig, registry_paths: list[Path], outpu
             images.append(item)
     if not images:
         raise ValueError("Nenhuma foto com aprovação humana; nada para treinar.")
+    # 2. Caixas de treino: duplicatas consolidadas conforme pilot.duplicate_iou.
     duplicate_iou = config.pilot.get("duplicate_iou")
     if duplicate_iou is not None and not 0 < float(duplicate_iou) <= 1:
         raise ValueError("pilot.duplicate_iou deve estar no intervalo (0, 1].")
     duplicate_iou = None if duplicate_iou is None else float(duplicate_iou)
     for item in images:
         item["training_boxes"] = consolidate_duplicates(item["boxes"], duplicate_iou)
+    # 3. Divide as cenas em treino/validação/teste.
     assignment = split_by_scene(images, seed, fractions)
     output = output.resolve()
     output.mkdir(parents=True)
     samples = []
     try:
+        # 4. Copia cada foto (nome = SHA-256), escreve a label YOLO e a linha do groups.csv.
         with (output / "groups.csv").open("w", encoding="utf-8", newline="") as stream:
             writer = csv.DictWriter(stream, fieldnames=["image", "group_id", "split"])
             writer.writeheader()
@@ -185,10 +228,12 @@ def build_pilot_dataset(config: ProjectConfig, registry_paths: list[Path], outpu
                     "registry_path": item["registry_path"], "registry_sha256": item["registry_sha256"],
                     "source_path": str(source.resolve()),
                 })
-        # path relativo ao YAML: o dataset continua válido em outro clone ou máquina.
+        # 5. dataset.yaml lido pela Ultralytics. path relativo ao YAML: o dataset
+        # continua válido em outro clone ou máquina.
         (output / "dataset.yaml").write_text(yaml.safe_dump(
             {"path": ".", "train": "images/train", "val": "images/val", "test": "images/test",
              "nc": len(names), "names": names}, allow_unicode=True, sort_keys=False), encoding="utf-8")
+        # 6. pilot.json: manifesto com hashes, origem, políticas e cobertura por classe.
         boxes_by_split = {split: Counter() for split in SPLITS}
         for item in images:
             boxes_by_split[assignment[item["scene_group"]]].update(box["class_id"] for box in item["training_boxes"])
@@ -215,6 +260,7 @@ def build_pilot_dataset(config: ProjectConfig, registry_paths: list[Path], outpu
         # Uma versão incompleta não pode ser confundida com uma versão válida.
         (output / "INCOMPLETO.txt").write_text("Criação interrompida; não utilize esta pasta.\n", encoding="utf-8")
         raise
+    # 7. Validação estrutural do que acabou de ser escrito.
     report = validate_dataset(output / "dataset.yaml", names)
     write_json(output / "dataset_validation.json", report)
     if not report["valid"]:
@@ -227,18 +273,20 @@ def build_pilot_dataset(config: ProjectConfig, registry_paths: list[Path], outpu
 
 def validate_pilot_dataset(config: ProjectConfig, data_path: Path) -> dict:
     """Reconfira hashes e labels contra os registros humanos antes do treino piloto."""
+    # 1. Estrutura do dataset e manifesto do tipo piloto, na taxonomia atual.
     data_path = Path(data_path).resolve()
     names = detection_names(load_taxonomy(config.taxonomy_path))
     report = validate_dataset(data_path, names)
     if not report["valid"]:
         raise ValueError("Dataset piloto inválido: " + "; ".join(report["errors"]))
-    declared = Path(yaml.safe_load(data_path.read_text(encoding="utf-8-sig"))["path"])
-    root = (declared if declared.is_absolute() else data_path.parent / declared).resolve()
+    declared_root = Path(yaml.safe_load(data_path.read_text(encoding="utf-8-sig"))["path"])
+    root = (declared_root if declared_root.is_absolute() else data_path.parent / declared_root).resolve()
     if (root / "INCOMPLETO.txt").exists():
         raise ValueError("Dataset piloto marcado como incompleto.")
     manifest = json.loads((root / "pilot.json").read_text(encoding="utf-8"))
     if manifest.get("kind") != PILOT_KIND or manifest.get("taxonomy_sha256") != file_hash(config.taxonomy_path):
         raise ValueError("pilot.json ausente, de outro tipo ou de outra taxonomia.")
+    # 2. Cada foto/label: hash intacto, registro humano intacto e label recalculada igual.
     duplicate_iou = (manifest.get("duplicate_policy") or {}).get("iou")
     registries = {}
     declared = set()
@@ -261,6 +309,7 @@ def validate_pilot_dataset(config: ProjectConfig, data_path: Path) -> dict:
         if label.read_text(encoding="utf-8") != boxes_to_yolo(expected, reviewed["width"], reviewed["height"]):
             raise ValueError(f"Label diverge das caixas aprovadas: {sample['label']}.")
         declared.add(sample["image"])
+    # 3. Nenhuma foto a mais ou a menos nas pastas além das listadas no manifesto.
     present = {path.relative_to(root).as_posix() for split in SPLITS
                for path in (root / "images" / split).rglob("*") if path.is_file()}
     if present != declared:

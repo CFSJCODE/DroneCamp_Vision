@@ -1,9 +1,18 @@
 """Validação local e somente leitura de um dataset de detecção YOLO.
 
-O conjunto só pode ser treinado depois de passar por esta revisão. Os caminhos
-seguem a estrutura ``images/<split>`` / ``labels/<split>`` e ``groups.csv``
-registra a unidade real de captura, para que frames do mesmo telhado, local ou
-campanha não sejam distribuídos entre treino, validação e teste.
+Função no projeto: é o "porteiro" do treino. Todo dataset (piloto ou produção)
+passa por ``validate_dataset`` antes de chegar à Ultralytics.
+
+O que faz:
+- Lê o ``dataset.yaml`` e confere as pastas ``images/<split>`` e ``labels/<split>``.
+- Confere cada label YOLO: classe válida, 5 números, caixa dentro da foto.
+- Detecta fotos duplicadas entre splits (vazamento) e labels órfãs.
+- Exige ``groups.csv``: cada foto tem um grupo de captura, e um grupo nunca
+  fica em dois splits (frames do mesmo telhado/local não se misturam).
+- Devolve um relatório JSON com erros, avisos e contagens.
+
+Quando mexer: para aceitar outro formato de imagem (``IMAGE_EXTENSIONS``) ou
+adicionar uma checagem nova no dataset. Não muda nada no disco.
 """
 
 from __future__ import annotations
@@ -19,11 +28,16 @@ from typing import Any
 import yaml
 from PIL import Image
 
+# Formatos de foto aceitos, nomes dos splits e tolerância numérica das caixas.
 IMAGE_EXTENSIONS = frozenset({".jpg", ".jpeg", ".png", ".tif", ".tiff", ".bmp", ".webp"})
 SPLITS = ("train", "val", "test")
 BOX_TOLERANCE = 1e-6
 CLASS_ID_PATTERN = re.compile(r"^[+-]?\d+$")
 
+
+# ---------------------------------------------------------------------------
+# Relatório e utilidades de caminho.
+# ---------------------------------------------------------------------------
 
 def _new_report() -> dict[str, Any]:
     """Cria uma resposta estável e compatível com JSON, inclusive em falhas."""
@@ -69,6 +83,10 @@ def _ultralytics_label_path(image_path: Path) -> Path:
     label_text = label_component.join(os.fspath(image_path).rsplit(image_component, 1))
     return Path(label_text.rsplit(".", 1)[0] + ".txt")
 
+
+# ---------------------------------------------------------------------------
+# Leitura do dataset.yaml: classes, raiz e pastas de cada split.
+# ---------------------------------------------------------------------------
 
 def _read_names(value: Any, errors: list[str]) -> list[str] | None:
     """Aceita a lista e o mapa de IDs documentados pelo formato YOLO."""
@@ -157,6 +175,10 @@ def _split_directories(config: dict[str, Any], root: Path, errors: list[str]) ->
                 errors.append(f"Splits {left_split} e {right_split} usam diretórios iguais ou sobrepostos.")
     return directories
 
+
+# ---------------------------------------------------------------------------
+# Conferência de cada label, foto e split.
+# ---------------------------------------------------------------------------
 
 def _validate_label(label_path: Path, display: str, class_count: int, errors: list[str]) -> tuple[int, bool]:
     """Retorna objetos válidos e se o arquivo registra um negativo explícito."""
@@ -295,6 +317,10 @@ def _inspect_split(split: str, directory: Path, root: Path, class_count: int, re
     return used_images
 
 
+# ---------------------------------------------------------------------------
+# groups.csv (unidade de captura) e função principal.
+# ---------------------------------------------------------------------------
+
 def _validate_groups(root: Path, used_images: dict[str, str], errors: list[str]) -> None:
     """Impede vazamento por unidade de captura, mesmo com frames diferentes."""
     manifest = root / "groups.csv"
@@ -360,19 +386,23 @@ def validate_dataset(data_path: Path, expected_names: list[str]) -> dict[str, An
     if not expected_names or any(not isinstance(name, str) or not name.strip() for name in expected_names) or len(set(expected_names)) != len(expected_names):
         report["errors"].append("expected_names deve conter nomes de classe únicos e não vazios.")
         return _finish_report(report)
+    # 1. YAML legível e raiz existente.
     config_result = _read_config(Path(data_path).resolve(), report)
     if config_result is None:
         return _finish_report(report)
     config, root = config_result
+    # 2. Classes do YAML iguais às da taxonomia, na mesma ordem.
     names = _read_names(config.get("names"), report["errors"])
     if names is not None and names != expected_names:
         report["errors"].append("Os nomes e a ordem de IDs em names divergem da taxonomia esperada; revise a anotação antes do treino.")
     if "nc" in config and (type(config["nc"]) is not int or config["nc"] != len(expected_names)):
         report["errors"].append("nc diverge da quantidade de classes esperadas.")
+    # 3. Cada split: fotos, labels e duplicatas entre splits (pelo hash da foto).
     directories = _split_directories(config, root, report["errors"])
     hashes: dict[str, tuple[str, str]] = {}
     used_images: dict[str, str] = {}
     for split, directory in directories.items():
         used_images.update(_inspect_split(split, directory, root, len(expected_names), report, hashes))
+    # 4. groups.csv cobre todas as fotos e nenhum grupo cruza splits.
     _validate_groups(root, used_images, report["errors"])
     return _finish_report(report)

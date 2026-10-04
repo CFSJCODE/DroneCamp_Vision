@@ -1,4 +1,23 @@
-"""Fine-tuning, avaliação e tuning: dataset validado é condição de entrada."""
+"""Treinamento, avaliação e busca de hiperparâmetros do detector YOLO.
+
+Função no projeto: é o arquivo que de fato treina o modelo. Ele chama
+``model.train`` da Ultralytics e audita o resultado antes de dar a execução
+como concluída.
+
+O que faz:
+- ``train_pilot``: treino piloto com as revisões humanas do CEASA (o usado hoje);
+  os pesos só sugerem caixas na revisão.
+- ``train``: fine-tuning de produção; exige dataset aprovado e três edificações.
+- ``evaluate``: métricas por classe em val ou test.
+- ``tune``: vários treinos curtos para procurar hiperparâmetros.
+- ``review_training_result``: confere pesos, ``results.csv`` e classes no fim.
+
+Quando mexer: épocas, imgsz, batch, patience, lr e aumentos ficam em
+``configs/project.yaml`` (seções ``training`` e ``pilot.training``), não aqui.
+Mexa neste arquivo para mudar o fluxo: o que é validado antes, quais parâmetros
+chegam ao ``model.train`` ou como o resultado é auditado. Para mudar como o
+dataset piloto é montado (splits, duplicatas), o arquivo é ``pilot.py``.
+"""
 
 from pathlib import Path
 import csv
@@ -13,13 +32,19 @@ from .dataset import validate_dataset
 from .io import file_hash, make_run_directory, write_json
 
 
+# ---------------------------------------------------------------------------
+# Preparação dos dados: tudo o que é conferido antes de o YOLO ver o dataset.
+# ---------------------------------------------------------------------------
+
 def prepare_dataset(config: ProjectConfig, data_path: Path, run: Path) -> tuple[Path, dict]:
     """Registre a revisão e normalize caminhos antes de entregar dados ao YOLO."""
+    # 1. Estrutura: pastas, labels, classes e groups.csv (dataset.py).
     names = detection_names(load_taxonomy(config.taxonomy_path))
     report = validate_dataset(data_path, names)
     write_json(run / "dataset_validation.json", report)
     if not report["valid"]:
         raise ValueError(f"Dataset reprovado; consulte {run / 'dataset_validation.json'}.")
+    # 2. Procedência: cada foto/label precisa vir de uma aprovação humana registrada.
     from .review_provenance import validate_training_provenance
     try:
         provenance = validate_training_provenance(config, data_path)
@@ -27,6 +52,7 @@ def prepare_dataset(config: ProjectConfig, data_path: Path, run: Path) -> tuple[
         write_json(run / "training_provenance.json", {"valid": False, "reason": str(error)})
         raise
     write_json(run / "training_provenance.json", {"valid": True, **provenance})
+    # 3. Caminhos absolutos e foto (hash) do que será treinado.
     normalized_path, class_counts = _resolve_and_snapshot(config, data_path, run, names)
     # Uma classe ativa sem exemplos não foi aprendida, mesmo que o treino termine.
     missing = [name for name, count in class_counts["train"].items() if count == 0]
@@ -37,6 +63,7 @@ def prepare_dataset(config: ProjectConfig, data_path: Path, run: Path) -> tuple[
 
 def _resolve_and_snapshot(config: ProjectConfig, data_path: Path, run: Path, names: list[str]) -> tuple[Path, dict]:
     """Normalize caminhos e registre hashes e contagens do que será treinado."""
+    # Lê o dataset.yaml recebido e transforma path/train/val/test em caminhos absolutos.
     original = yaml.safe_load(data_path.read_text(encoding="utf-8-sig"))
     root = Path(original.get("path", ".")).expanduser()
     root = (data_path.parent / root).resolve() if not root.is_absolute() else root.resolve()
@@ -47,6 +74,7 @@ def _resolve_and_snapshot(config: ProjectConfig, data_path: Path, run: Path, nam
     # Não copie campos download ou outras instruções do YAML recebido.
     normalized_path = run / "dataset_resolved.yaml"
     normalized_path.write_text(yaml.safe_dump(normalized, allow_unicode=True), encoding="utf-8")
+    # Registra o SHA-256 de cada foto/label e conta as caixas por classe e split.
     snapshot = []
     class_counts = {split: {name: 0 for name in names} for split in ("train", "val", "test")}
     for split in ("train", "val", "test"):
@@ -68,18 +96,25 @@ def _resolve_and_snapshot(config: ProjectConfig, data_path: Path, run: Path, nam
     return normalized_path, class_counts
 
 
+# ---------------------------------------------------------------------------
+# Treinos: produção (train) e piloto (train_pilot). Ambos chamam model.train.
+# ---------------------------------------------------------------------------
+
 def train(config: ProjectConfig, data_path: Path, weights: str | None = None) -> Path:
     """Ajuste os pesos pré-treinados; parâmetros explícitos ficam auditáveis."""
+    # Pasta nova runs/train_<data>_<id>; o summary começa como "running".
     run = make_run_directory(config.root, "train")
     _write_training_summary(run, ["A preparação e o treinamento ainda não concluíram."], state="running")
     try:
         dataset, counts = prepare_dataset(config, data_path.resolve(), run)
         expected_names = detection_names(load_taxonomy(config.taxonomy_path))
         model = load_detector(config, weights)
+        # Hiperparâmetros vêm da seção training do configs/project.yaml.
         parameters = dict(config.training)
         parameters["nms"] = config.prediction["nms"]
         write_json(run / "execution.json", {"runtime": runtime_info(model, config), "parameters": parameters,
                                            "class_counts": counts, "stage": "fine_tuning"})
+        # Treino de verdade (Ultralytics); pesos e results.csv vão para run/fit.
         model.train(data=str(dataset), device=config.device, project=str(run), name="fit",
                     exist_ok=False, **parameters)
     except Exception as error:
@@ -95,30 +130,40 @@ def train_pilot(config: ProjectConfig, data_path: Path, weights: str | None = No
     """Treino real e exploratório com o dataset piloto; nunca aprova o modelo para uso."""
     from .pilot import validate_pilot_dataset
 
+    # 1. Pasta nova runs/pilot_train_<data>_<id>; summary marcado como piloto.
     run = make_run_directory(config.root, "pilot_train")
     pilot_details = {"pilot": True, "production_ready": False}
     _write_training_summary(run, ["A preparação e o treinamento piloto ainda não concluíram."], state="running", **pilot_details)
     try:
+        # 2. Reconfere hashes e labels do dataset piloto contra os registros humanos.
         names = detection_names(load_taxonomy(config.taxonomy_path))
         audit = validate_pilot_dataset(config, data_path.resolve())
         write_json(run / "pilot_provenance.json", audit)
         dataset, counts = _resolve_and_snapshot(config, data_path.resolve(), run, names)
+        # 3. Modelo inicial: --weights, ou pilot.model, ou model do project.yaml.
         model = load_detector(config, weights or config.pilot.get("model") or config.model)
+        # 4. Parâmetros: training < pilot.training < opções da linha de comando.
         parameters = {**config.training, **config.pilot.get("training", {}), **(overrides or {})}
         parameters["nms"] = config.prediction["nms"]
         pilot_details["classes_without_training_boxes"] = [name for name, count in counts["train"].items() if count == 0]
         pilot_details["warning"] = audit["warning"]
         write_json(run / "execution.json", {"runtime": runtime_info(model, config), "parameters": parameters,
                                            "class_counts": counts, "stage": "fine_tuning_piloto", **pilot_details})
+        # 5. Treino de verdade (Ultralytics); best.pt/last.pt vão para run/fit/weights.
         model.train(data=str(dataset), device=config.device, project=str(run), name="fit",
                     exist_ok=False, **parameters)
     except Exception as error:
         reason = f"Execução interrompida por {type(error).__name__}: {error}"
         _write_training_summary(run, [reason], state="failed", **pilot_details)
         raise ValueError(f"Treino piloto incompleto: {reason}. Revise {run}.") from error
+    # 6. Auditoria final: só aqui o summary passa para "completed".
     review_training_result(run, model, names, **pilot_details)
     return run
 
+
+# ---------------------------------------------------------------------------
+# Pesos piloto: identificação e tamanho de imagem usado na inferência.
+# ---------------------------------------------------------------------------
 
 def is_pilot_checkpoint(weights: str | Path | None) -> bool:
     """Pesos de runs/pilot_train_*/fit/weights carregam o aviso do piloto."""
@@ -142,6 +187,10 @@ def pilot_inference_config(config: ProjectConfig, model) -> ProjectConfig:
         return config
     return replace(config, prediction={**config.prediction, "imgsz": trained})
 
+
+# ---------------------------------------------------------------------------
+# Auditoria do resultado: summary.json, results.csv e contrato das classes.
+# ---------------------------------------------------------------------------
 
 DETECTION_METRIC_COLUMNS = (
     "metrics/precision(B)", "metrics/recall(B)",
@@ -177,6 +226,7 @@ def _review_training_csv(path: Path) -> tuple[list[str], dict]:
     except (OSError, UnicodeError, csv.Error) as error:
         return [f"Não foi possível ler results.csv: {type(error).__name__}."], {"epochs_recorded": 0}
 
+    # Colunas que toda execução de detecção precisa registrar.
     required = {"epoch", *DETECTION_METRIC_COLUMNS, "train/box_loss", "train/cls_loss", "val/box_loss", "val/cls_loss"}
     missing = sorted(required.difference(columns))
     if missing:
@@ -188,6 +238,7 @@ def _review_training_csv(path: Path) -> tuple[list[str], dict]:
     if not rows:
         reasons.append("results.csv não contém nenhuma época de treinamento.")
 
+    # Linha a linha: números finitos, métricas entre 0 e 1, épocas crescentes.
     last_epoch = 0
     last_metrics = {}
     for row_number, row in enumerate(rows, start=2):
@@ -225,6 +276,7 @@ def review_training_result(run: Path, model, expected_names: list[str], **detail
     """Recuse retorno sem artefatos, métricas finitas ou contrato das classes ativas."""
     run = Path(run).resolve()
     reasons, artifacts = [], {}
+    # 1. Arquivos obrigatórios da execução: pesos e histórico de épocas.
     paths = {"best_weights": run / "fit/weights/best.pt", "last_weights": run / "fit/weights/last.pt",
              "results_csv": run / "fit/results.csv"}
     for name, path in paths.items():
@@ -243,16 +295,19 @@ def review_training_result(run: Path, model, expected_names: list[str], **detail
         except (OSError, RuntimeError):
             artifacts[name] = {"path": str(path), "present": False, "size_bytes": 0}
             reasons.append(f"{name} não pôde ser verificado.")
+    # 2. Épocas, perdas e métricas finitas no results.csv.
     csv_details = {"epochs_recorded": 0}
     if artifacts["results_csv"]["present"] and artifacts["results_csv"]["size_bytes"] > 0:
         csv_reasons, csv_details = _review_training_csv(paths["results_csv"])
         reasons.extend(csv_reasons)
+    # 3. O modelo treinado precisa ter exatamente as classes ativas da taxonomia.
     class_contract_verified = False
     try:
         check_domain_names(model, expected_names)
         class_contract_verified = True
     except (ValueError, AttributeError, KeyError, TypeError) as error:
         reasons.append(f"Contrato das classes após o treino inválido: {error}")
+    # 4. summary.json final: "completed" só sem nenhum motivo de falha.
     summary = _write_training_summary(
         run, reasons, state="failed" if reasons else "completed", artifacts=artifacts,
         model_class_contract_verified=class_contract_verified, expected_class_names=expected_names, **csv_details,
@@ -262,6 +317,10 @@ def review_training_result(run: Path, model, expected_names: list[str], **detail
         raise ValueError(f"Treino incompleto: {' '.join(reasons)} Revise {run}.")
     return summary
 
+
+# ---------------------------------------------------------------------------
+# Avaliação e busca de hiperparâmetros (produção).
+# ---------------------------------------------------------------------------
 
 def evaluate(config: ProjectConfig, data_path: Path, weights: str, split: str = "val") -> Path:
     """Avalie checkpoint especializado; use test apenas para decisão final."""
@@ -274,6 +333,7 @@ def evaluate(config: ProjectConfig, data_path: Path, weights: str, split: str = 
                         imgsz=config.prediction["imgsz"], conf=0.001, rect=False,
                         nms=config.prediction["nms"], batch=config.training["batch"],
                         workers=0, project=str(run), name="metrics", plots=True)
+    # Precisão, recall e AP de cada classe medida no split.
     per_class = []
     for index, class_id in enumerate(metrics.box.ap_class_index):
         precision, recall, ap50, ap = metrics.box.class_result(index)
@@ -294,6 +354,7 @@ def tune(config: ProjectConfig, data_path: Path, iterations: int, epochs: int, w
     run = make_run_directory(config.root, "tune")
     dataset, _ = prepare_dataset(config, data_path.resolve(), run)
     model = load_detector(config, weights)
+    # Cada tentativa treina poucas épocas e varia lr0 e mosaic dentro do espaço abaixo.
     parameters = dict(config.training)
     parameters.update(epochs=epochs, close_mosaic=min(10, epochs), nms=config.prediction["nms"])
     write_json(run / "execution.json", {"runtime": runtime_info(model, config), "iterations": iterations,

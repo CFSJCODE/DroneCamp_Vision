@@ -1,4 +1,17 @@
-"""Configuração central: altere parâmetros no YAML, sem espalhá-los pelo código."""
+"""Configuração central: lê configs/project.yaml e a taxonomia de classes.
+
+Função no projeto: todo comando começa aqui. Os parâmetros ficam no YAML, não
+espalhados pelo código.
+
+O que faz:
+- ``ProjectConfig``: os valores lidos (modelo, dispositivo, predição, treino, piloto).
+- ``load_config``: lê e valida ``configs/project.yaml``.
+- ``load_taxonomy``: lê ``configs/taxonomy.json`` (IDs e nomes das classes).
+- ``detection_names``: lista das classes ativas (fase 1), na ordem dos IDs.
+
+Quando mexer: quase nunca. Para mudar valores, edite ``configs/project.yaml``.
+Mexa aqui só para criar uma seção nova no YAML ou validar um parâmetro novo.
+"""
 
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -6,25 +19,28 @@ import json
 
 import yaml
 
+# Pasta sistema_ia (dois níveis acima de src/dronecamp_ia/config.py).
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 
 @dataclass(frozen=True)
 class ProjectConfig:
-    root: Path
-    model: str
-    requested_model: str
-    taxonomy_path: Path
-    dataset_path: Path
-    device: str
-    prediction: dict
-    training: dict
+    """Valores do project.yaml já validados; caminhos absolutos a partir de root."""
+    root: Path               # pasta sistema_ia
+    model: str               # peso base (ex.: yolo26l.pt)
+    requested_model: str     # modelo desejado no futuro (só registrado)
+    taxonomy_path: Path      # configs/taxonomy.json
+    dataset_path: Path       # configs/dataset.yaml (produção)
+    device: str              # "cpu" (Ultralytics só treina em CUDA/MPS ou CPU)
+    prediction: dict         # imgsz, conf, iou, nms, max_det da inferência
+    training: dict           # hiperparâmetros do treino de produção
     # Piloto: treino exploratório com uma só edificação, nunca aprovado para uso.
     pilot: dict = field(default_factory=dict)
 
 
 def load_config(path: Path | None = None) -> ProjectConfig:
     """Resolva caminhos no projeto e rejeite configurações de outra tarefa."""
+    # Usa configs/project.yaml do projeto, ou o arquivo passado em --config.
     config_path = (path or PROJECT_ROOT / "configs/project.yaml").resolve()
     raw = yaml.safe_load(config_path.read_text(encoding="utf-8"))
     if not isinstance(raw, dict) or raw.get("schema_version") != 1:
@@ -33,6 +49,7 @@ def load_config(path: Path | None = None) -> ProjectConfig:
         raise ValueError("Este estágio implementa apenas detecção (task: detect).")
     # O arquivo de configuração fica em configs/; o seu pai define o projeto.
     root = config_path.parent.parent
+    # Limites básicos dos parâmetros de inferência.
     prediction = raw["prediction"]
     if not isinstance(prediction.get("nms"), bool):
         raise ValueError("prediction.nms deve ser booleano.")

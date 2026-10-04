@@ -1,0 +1,236 @@
+{
+  "schema_version": 1,
+  "registry_sha256": "5e2801f2ff719afb0156cc8e3f3b76bbd82086fd1e6188a43b94964e1404736c",
+  "created_at": "2026-10-04T21:31:19.625282+00:00",
+  "weights": "/home/user/DroneCamp_Vision/sistema_ia/runs/pilot_train_20261004T204113Z_973650d1/fit/weights/best.pt",
+  "weights_sha256": "a7a4e0bde81ecaa62a0f86cadb38f5e0d80c22dfdbb06616ef796676a661c099",
+  "pilot": true,
+  "model_label": "Modelo piloto (não validado)",
+  "conf": 0.15,
+  "imgsz": 640,
+  "warning": "Sugestões automáticas: aceite somente o que você conferir. O modelo pode errar a classe, a caixa ou deixar de ver ocorrências.",
+  "images": {
+    "64d407d9c87c448663b58dc3a834370e648eea913e5d8ff4dd1142ca52560d7d": [],
+    "7a2b1cb1a06db525203fc17a6c90191eda420060b4375f97d013e92bc4f67939": [
+      {
+        "class_id": 2,
+        "bbox_xyxy": [
+          513,
+          290,
+          549,
+          345
+        ],
+        "confidence": 0.8146,
+        "id": "s001"
+      },
+      {
+        "class_id": 2,
+        "bbox_xyxy": [
+          398,
+          299,
+          434,
+          351
+        ],
+        "confidence": 0.6967,
+        "id": "s002"
+      },
+      {
+        "class_id": 2,
+        "bbox_xyxy": [
+          476,
+          322,
+          515,
+          391
+        ],
+        "confidence": 0.6093,
+        "id": "s003"
+      },
+      {
+        "class_id": 2,
+        "bbox_xyxy": [
+          398,
+          298,
+          434,
+          353
+        ],
+        "confidence": 0.4793,
+        "id": "s004"
+      },
+      {
+        "class_id": 2,
+        "bbox_xyxy": [
+          428,
+          391,
+          462,
+          473
+        ],
+        "confidence": 0.4235,
+        "id": "s005"
+      },
+      {
+        "class_id": 2,
+        "bbox_xyxy": [
+          476,
+          321,
+          514,
+          388
+        ],
+        "confidence": 0.4216,
+        "id": "s006"
+      },
+      {
+        "class_id": 2,
+        "bbox_xyxy": [
+          523,
+          356,
+          559,
+          405
+        ],
+        "confidence": 0.3083,
+        "id": "s007"
+      },
+      {
+        "class_id": 2,
+        "bbox_xyxy": [
+          421,
+          349,
+          469,
+          455
+        ],
+        "confidence": 0.2894,
+        "id": "s008"
+      },
+      {
+        "class_id": 2,
+        "bbox_xyxy": [
+          389,
+          366,
+          420,
+          409
+        ],
+        "confidence": 0.2473,
+        "id": "s009"
+      },
+      {
+        "class_id": 2,
+        "bbox_xyxy": [
+          358,
+          316,
+          384,
+          342
+        ],
+        "confidence": 0.2284,
+        "id": "s010"
+      },
+      {
+        "class_id": 2,
+        "bbox_xyxy": [
+          426,
+          350,
+          470,
+          411
+        ],
+        "confidence": 0.2016,
+        "id": "s011"
+      },
+      {
+        "class_id": 2,
+        "bbox_xyxy": [
+          423,
+          357,
+          466,
+          471
+        ],
+        "confidence": 0.1752,
+        "id": "s012"
+      },
+      {
+        "class_id": 2,
+        "bbox_xyxy": [
+          428,
+          408,
+          460,
+          472
+        ],
+        "confidence": 0.1563,
+        "id": "s013"
+      }
+    ],
+    "99746af6de1be10b63394ae4098e24150e76a496e000b69528898d11d06e871e": [
+      {
+        "class_id": 3,
+        "bbox_xyxy": [
+          235,
+          1,
+          315,
+          326
+        ],
+        "confidence": 0.2513,
+        "id": "s001"
+      },
+      {
+        "class_id": 3,
+        "bbox_xyxy": [
+          254,
+          0,
+          315,
+          291
+        ],
+        "confidence": 0.2146,
+        "id": "s002"
+      },
+      {
+        "class_id": 3,
+        "bbox_xyxy": [
+          227,
+          0,
+          311,
+          365
+        ],
+        "confidence": 0.1724,
+        "id": "s003"
+      }
+    ],
+    "ac5a3da68c0046fe10430d7de5787d2ce8e072fb207364681b12be7c4e44600d": [
+      {
+        "class_id": 2,
+        "bbox_xyxy": [
+          730,
+          432,
+          782,
+          490
+        ],
+        "confidence": 0.1626,
+        "id": "s001"
+      }
+    ],
+    "254dcec36fe67dccb67d7820faf3ef0b732ac58503b9b2fdcf535a71dfdde2d0": [],
+    "c367551ee526a7b13136434745402c8ca20b7a87452352ce0b1e2ccebe5b9fae": [
+      {
+        "class_id": 5,
+        "bbox_xyxy": [
+          752,
+          36,
+          800,
+          158
+        ],
+        "confidence": 0.2504,
+        "id": "s001"
+      }
+    ],
+    "aefe259916a067aefbf2e3729f1f4321594d3354c0785827b975cb7ef0d2edb3": [
+      {
+        "class_id": 3,
+        "bbox_xyxy": [
+          0,
+          692,
+          204,
+          800
+        ],
+        "confidence": 0.2016,
+        "id": "s001"
+      }
+    ]
+  },
+  "total_suggestions": 19
+}

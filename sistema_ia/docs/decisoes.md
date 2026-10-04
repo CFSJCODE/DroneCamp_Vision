@@ -85,3 +85,15 @@ O treino de produção continua exigindo três edificações e as 13 classes. Fo
 A APU entra só na predição ONNX via DirectML; o treino segue na CPU. Resultados, limites e próximos passos em [treino piloto](treino_piloto.md).
 
 **Estado validado:** revisão v7 com 34 fotos aprovadas e 117 caixas; treino piloto de 80 épocas concluído e auditado (val mAP50 0,231 em 6 fotos); nas fotos não vistas o modelo reencontrou 2 de 16 caixas humanas; paridade ONNX 27/27; DirectML 3× mais rápido que a CPU com saídas iguais; 170 testes OK. **Não validado:** generalização para outras edificações, classes 11–12, revisão humana das sugestões.
+
+## 04/10/2026 — revisão v8, duplicatas, parada antecipada e classes sugeridas
+
+**Origem:** arquivo de revisão da página v7 (revisor `002`) e pedidos do usuário para retreinar com as novas anotações, usar as fotos antigas e as fotos da internet, que a IA marcasse sozinha `resto-manutencao-telhado.webp` e sugerisse novas classes como “telha trincada”.
+
+- **Duplicatas viram um alvo.** 91 das 246 caixas repetiam o mesmo objeto (sugestão aceita sobre caixa já desenhada). O registro humano fica intacto; o dataset piloto consolida caixas da mesma classe com IoU ≥ 0,7 e a página passou a oferecer “Substituir caixa N”.
+- **Sem parada antecipada no piloto.** Com 6 fotos de validação, `patience 25` interrompeu o treino na época 66 e escolheu a 41, ainda subtreinada. `pilot.training.patience` passou a 0.
+- **Caminhos portáveis.** Caminhos `E:\...\sistema_ia\...` são reancorados no clone pela pasta `sistema_ia`, sempre com conferência de SHA-256; o `dataset.yaml` do piloto usa `path: .`.
+- **Propostas de IA como candidatas.** `add-ai-proposals` leva caixas de uma leitura visual por IA para a revisão (`first_pass_ai`), recusa fotos com decisão humana e registra classes novas em `proposed_new_class`. As fotos da internet não contam como edificações independentes.
+- **Classes sugeridas, nenhuma ativada:** `telha_trincada`, ativar o ID 17 `objeto_estranho_cobertura`, `residuo_tinta_argamassa`, `crescimento_biologico` ([detalhes](novas_classes_propostas.md)).
+
+**Estado validado:** revisão v8 com 37 fotos aprovadas e 246 caixas (155 no treino); treino piloto de 80 épocas auditado; nas fotos não vistas o v8 reencontrou 9/41 caixas humanas (época 41), contra 7/29 do v7, diferença dentro do ruído; paridade ONNX 11/11; 181 testes OK, incluindo os e2e reais. **Não validado:** melhora de generalização, revisão humana das fotos da internet e das classes sugeridas, aparência da página no Windows. Resultados em [treino piloto](treino_piloto.md#rodada-v8--2ª-revisão-da-revisao002-04102026).

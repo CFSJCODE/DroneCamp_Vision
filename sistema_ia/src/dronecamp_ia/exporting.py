@@ -1,4 +1,20 @@
-"""Exportação separada: criar um ONNX não certifica a qualidade do modelo."""
+"""Exportação para ONNX e conferência de paridade com o .pt.
+
+Função no projeto: gera ``model.onnx`` para rodar fora do Python/Ultralytics
+(ex.: ONNX Runtime com DirectML na APU) e prova que ele dá as mesmas caixas
+que o checkpoint PyTorch. É o comando ``export``.
+
+O que faz:
+- ``export_onnx``: copia o ``.pt`` para ``runs/export_*``, exporta FP32 com
+  entrada fixa e grava ``export.json``.
+- ``verify_onnx_parity`` / ``compare_outputs``: roda ``.pt`` e ``.onnx`` nas
+  mesmas fotos e pareia as caixas (IoU ≥ 0,9 ou ≤ 1 px; Δconfiança ≤ 0,02).
+
+Criar um ONNX não certifica a qualidade do modelo; só a equivalência numérica.
+
+Quando mexer: tolerâncias da paridade (constantes abaixo) ou opções de
+exportação (tamanho, FP16/INT8, NMS embutido).
+"""
 
 from dataclasses import replace
 from pathlib import Path
@@ -10,11 +26,16 @@ from .config import ProjectConfig, detection_names, load_taxonomy
 from .dataset import IMAGE_EXTENSIONS
 from .io import file_hash, make_run_directory, write_json
 
+# Tolerâncias para considerar duas caixas (.pt × .onnx) iguais.
 PARITY_IOU = 0.9
 PARITY_CONFIDENCE = 0.02
 # Caixas finíssimas mudam muito de IoU com décimos de pixel; aceite até 1 px.
 PARITY_PIXELS = 1.0
 
+
+# ---------------------------------------------------------------------------
+# Comparação de saídas: caixas do .pt contra caixas do .onnx.
+# ---------------------------------------------------------------------------
 
 def _iou(a: list[float], b: list[float]) -> float:
     width = max(0.0, min(a[2], b[2]) - max(a[0], b[0]))
@@ -25,6 +46,7 @@ def _iou(a: list[float], b: list[float]) -> float:
 
 
 def _boxes(model, image: Path, config: ProjectConfig, conf: float) -> list[tuple[int, float, list[float]]]:
+    """Caixas (classe, confiança, xyxy) de um modelo .pt ou .onnx numa foto."""
     parameters = {**config.prediction, "conf": conf}
     # rect=False: o .pt recebe a mesma entrada quadrada fixa do ONNX exportado.
     result = next(iter(model.predict(source=str(image), device="cpu", save=False, verbose=False, stream=True,
@@ -41,6 +63,7 @@ def compare_outputs(reference: list, candidate: list, conf: float) -> dict:
         close = max(abs(x - y) for x, y in zip(a, b)) <= PARITY_PIXELS
         return max(_iou(a, b), 1.0 if close else 0.0)
 
+    # Candidatos a par: mesma classe e confiança próxima; os mais parecidos primeiro.
     pairs = sorted(((similarity(a[2], b[2]), i, j) for i, a in enumerate(reference) for j, b in enumerate(candidate)
                     if a[0] == b[0] and abs(a[1] - b[1]) <= PARITY_CONFIDENCE), reverse=True)
     used_reference, used_candidate, worst_iou, worst_confidence = set(), set(), 1.0, 0.0
@@ -64,12 +87,18 @@ def compare_outputs(reference: list, candidate: list, conf: float) -> dict:
             "equivalent": not missing and not extra}
 
 
+# ---------------------------------------------------------------------------
+# Paridade e exportação.
+# ---------------------------------------------------------------------------
+
 def default_parity_images(config: ProjectConfig, limit: int = 5) -> list[Path]:
+    """Sem --parity-source, compara nas 5 primeiras fotos do CEASA."""
     reference = config.root / "data" / "reference" / "ceasa"
     return sorted(path for path in reference.glob("*") if path.suffix.lower() in IMAGE_EXTENSIONS)[:limit]
 
 
 def _onnx_imgsz(path: Path) -> int | None:
+    """Tamanho de entrada gravado nos metadados do ONNX (ex.: 640)."""
     import ast
     import onnxruntime
 
@@ -105,12 +134,14 @@ def export_onnx(config: ProjectConfig, weights: str, demo: bool = False, parity_
     """Exporte ONNX FP32, batch 1 e tamanho fixo; confira a paridade com o .pt."""
     if importlib.util.find_spec("onnx") is None:
         raise ValueError("Dependência ONNX ausente. Instale o extra export documentado no README antes de exportar.")
+    # 1. Modelo com as 13 classes; pesos piloto exportam no tamanho de treino.
     model = load_detector(config, weights)
     if not demo:
         from .training import pilot_inference_config
 
         check_domain_names(model, detection_names(load_taxonomy(config.taxonomy_path)))
         config = pilot_inference_config(config, model)
+    # 2. Cópia do .pt na pasta da exportação e exportação FP32, batch 1, tamanho fixo.
     run = make_run_directory(config.root, "export_demo" if demo else "export")
     checkpoint = run / "model.pt"
     shutil.copy2(model.ckpt_path, checkpoint)
@@ -118,6 +149,7 @@ def export_onnx(config: ProjectConfig, weights: str, demo: bool = False, parity_
     model = load_detector(config, str(checkpoint))
     output = model.export(format="onnx", device="cpu", imgsz=config.prediction["imgsz"],
                           batch=1, dynamic=False, simplify=False, nms=config.prediction["nms"], quantize=32)
+    # 3. Paridade .pt × .onnx (parity.json) e resumo da exportação (export.json).
     images = parity_images if parity_images is not None else default_parity_images(config)
     parity = None
     if importlib.util.find_spec("onnxruntime") is not None and images:

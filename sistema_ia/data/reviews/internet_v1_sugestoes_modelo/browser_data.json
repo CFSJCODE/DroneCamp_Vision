@@ -1,0 +1,451 @@
+{
+  "registry_sha256": "9820fce0025d25adee96c15eb021f6c5408653d093073766112e49f4250faf28",
+  "version": "internet_v1_sugestoes_modelo",
+  "images": [
+    {
+      "image_sha256": "64d407d9c87c448663b58dc3a834370e648eea913e5d8ff4dd1142ca52560d7d",
+      "filename": "detritos-calha.webp",
+      "pages": [],
+      "width": 600,
+      "height": 800,
+      "status": "ambiguous",
+      "boxes": [],
+      "annotator": "sem_anotacao_humana",
+      "notes": "Foto nova: nenhuma caixa revisada. Use as sugestões do modelo como ponto de partida.",
+      "visual_review_status": "model_suggestions_only",
+      "technical_status": "pending_human_review",
+      "human_approved": false,
+      "building_group": "internet_referencia",
+      "scene_group": "internet_referencia_64d407d9c87c",
+      "source_path": null,
+      "original_path": "/home/user/DroneCamp_Vision/Fotos_InsperçãoDeTelhadosIndustriais_Internet/detritos-calha.webp",
+      "severity": null,
+      "image_url": "images/64d407d9c87c448663b58dc3a834370e648eea913e5d8ff4dd1142ca52560d7d.webp",
+      "evidence_url": "evidence/64d407d9c87c448663b58dc3a834370e648eea913e5d8ff4dd1142ca52560d7d.jpg",
+      "model_suggestions": []
+    },
+    {
+      "image_sha256": "7a2b1cb1a06db525203fc17a6c90191eda420060b4375f97d013e92bc4f67939",
+      "filename": "detritos-sobre-telhado.webp",
+      "pages": [],
+      "width": 1000,
+      "height": 750,
+      "status": "ambiguous",
+      "boxes": [],
+      "annotator": "sem_anotacao_humana",
+      "notes": "Foto nova: nenhuma caixa revisada. Use as sugestões do modelo como ponto de partida.",
+      "visual_review_status": "model_suggestions_only",
+      "technical_status": "pending_human_review",
+      "human_approved": false,
+      "building_group": "internet_referencia",
+      "scene_group": "internet_referencia_7a2b1cb1a06d",
+      "source_path": null,
+      "original_path": "/home/user/DroneCamp_Vision/Fotos_InsperçãoDeTelhadosIndustriais_Internet/detritos-sobre-telhado.webp",
+      "severity": null,
+      "image_url": "images/7a2b1cb1a06db525203fc17a6c90191eda420060b4375f97d013e92bc4f67939.webp",
+      "evidence_url": "evidence/7a2b1cb1a06db525203fc17a6c90191eda420060b4375f97d013e92bc4f67939.jpg",
+      "model_suggestions": [
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            513,
+            290,
+            549,
+            345
+          ],
+          "confidence": 0.8146,
+          "id": "s001"
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            398,
+            299,
+            434,
+            351
+          ],
+          "confidence": 0.6967,
+          "id": "s002"
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            476,
+            322,
+            515,
+            391
+          ],
+          "confidence": 0.6093,
+          "id": "s003"
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            398,
+            298,
+            434,
+            353
+          ],
+          "confidence": 0.4793,
+          "id": "s004"
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            428,
+            391,
+            462,
+            473
+          ],
+          "confidence": 0.4235,
+          "id": "s005"
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            476,
+            321,
+            514,
+            388
+          ],
+          "confidence": 0.4216,
+          "id": "s006"
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            523,
+            356,
+            559,
+            405
+          ],
+          "confidence": 0.3083,
+          "id": "s007"
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            421,
+            349,
+            469,
+            455
+          ],
+          "confidence": 0.2894,
+          "id": "s008"
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            389,
+            366,
+            420,
+            409
+          ],
+          "confidence": 0.2473,
+          "id": "s009"
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            358,
+            316,
+            384,
+            342
+          ],
+          "confidence": 0.2284,
+          "id": "s010"
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            426,
+            350,
+            470,
+            411
+          ],
+          "confidence": 0.2016,
+          "id": "s011"
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            423,
+            357,
+            466,
+            471
+          ],
+          "confidence": 0.1752,
+          "id": "s012"
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            428,
+            408,
+            460,
+            472
+          ],
+          "confidence": 0.1563,
+          "id": "s013"
+        }
+      ]
+    },
+    {
+      "image_sha256": "99746af6de1be10b63394ae4098e24150e76a496e000b69528898d11d06e871e",
+      "filename": "galhos-liquen-calha.webp",
+      "pages": [],
+      "width": 602,
+      "height": 800,
+      "status": "ambiguous",
+      "boxes": [],
+      "annotator": "sem_anotacao_humana",
+      "notes": "Foto nova: nenhuma caixa revisada. Use as sugestões do modelo como ponto de partida.",
+      "visual_review_status": "model_suggestions_only",
+      "technical_status": "pending_human_review",
+      "human_approved": false,
+      "building_group": "internet_referencia",
+      "scene_group": "internet_referencia_99746af6de1b",
+      "source_path": null,
+      "original_path": "/home/user/DroneCamp_Vision/Fotos_InsperçãoDeTelhadosIndustriais_Internet/galhos-liquen-calha.webp",
+      "severity": null,
+      "image_url": "images/99746af6de1be10b63394ae4098e24150e76a496e000b69528898d11d06e871e.webp",
+      "evidence_url": "evidence/99746af6de1be10b63394ae4098e24150e76a496e000b69528898d11d06e871e.jpg",
+      "model_suggestions": [
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            235,
+            1,
+            315,
+            326
+          ],
+          "confidence": 0.2513,
+          "id": "s001"
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            254,
+            0,
+            315,
+            291
+          ],
+          "confidence": 0.2146,
+          "id": "s002"
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            227,
+            0,
+            311,
+            365
+          ],
+          "confidence": 0.1724,
+          "id": "s003"
+        }
+      ]
+    },
+    {
+      "image_sha256": "ac5a3da68c0046fe10430d7de5787d2ce8e072fb207364681b12be7c4e44600d",
+      "filename": "resto-manutencao-telhado.webp",
+      "pages": [],
+      "width": 1000,
+      "height": 750,
+      "status": "ambiguous",
+      "boxes": [],
+      "annotator": "sem_anotacao_humana",
+      "notes": "Foto nova: nenhuma caixa revisada. Use as sugestões do modelo como ponto de partida.",
+      "visual_review_status": "model_suggestions_only",
+      "technical_status": "pending_human_review",
+      "human_approved": false,
+      "building_group": "internet_referencia",
+      "scene_group": "internet_referencia_ac5a3da68c00",
+      "source_path": null,
+      "original_path": "/home/user/DroneCamp_Vision/Fotos_InsperçãoDeTelhadosIndustriais_Internet/resto-manutencao-telhado.webp",
+      "severity": null,
+      "image_url": "images/ac5a3da68c0046fe10430d7de5787d2ce8e072fb207364681b12be7c4e44600d.webp",
+      "evidence_url": "evidence/ac5a3da68c0046fe10430d7de5787d2ce8e072fb207364681b12be7c4e44600d.jpg",
+      "model_suggestions": [
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            730,
+            432,
+            782,
+            490
+          ],
+          "confidence": 0.1626,
+          "id": "s001"
+        }
+      ]
+    },
+    {
+      "image_sha256": "254dcec36fe67dccb67d7820faf3ef0b732ac58503b9b2fdcf535a71dfdde2d0",
+      "filename": "resto-tinta-sobre-telhado.webp",
+      "pages": [],
+      "width": 1000,
+      "height": 750,
+      "status": "ambiguous",
+      "boxes": [],
+      "annotator": "sem_anotacao_humana",
+      "notes": "Foto nova: nenhuma caixa revisada. Use as sugestões do modelo como ponto de partida.",
+      "visual_review_status": "model_suggestions_only",
+      "technical_status": "pending_human_review",
+      "human_approved": false,
+      "building_group": "internet_referencia",
+      "scene_group": "internet_referencia_254dcec36fe6",
+      "source_path": null,
+      "original_path": "/home/user/DroneCamp_Vision/Fotos_InsperçãoDeTelhadosIndustriais_Internet/resto-tinta-sobre-telhado.webp",
+      "severity": null,
+      "image_url": "images/254dcec36fe67dccb67d7820faf3ef0b732ac58503b9b2fdcf535a71dfdde2d0.webp",
+      "evidence_url": "evidence/254dcec36fe67dccb67d7820faf3ef0b732ac58503b9b2fdcf535a71dfdde2d0.jpg",
+      "model_suggestions": []
+    },
+    {
+      "image_sha256": "c367551ee526a7b13136434745402c8ca20b7a87452352ce0b1e2ccebe5b9fae",
+      "filename": "telhado-fibrocimento.webp",
+      "pages": [],
+      "width": 800,
+      "height": 600,
+      "status": "ambiguous",
+      "boxes": [],
+      "annotator": "sem_anotacao_humana",
+      "notes": "Foto nova: nenhuma caixa revisada. Use as sugestões do modelo como ponto de partida.",
+      "visual_review_status": "model_suggestions_only",
+      "technical_status": "pending_human_review",
+      "human_approved": false,
+      "building_group": "internet_referencia",
+      "scene_group": "internet_referencia_c367551ee526",
+      "source_path": null,
+      "original_path": "/home/user/DroneCamp_Vision/Fotos_InsperçãoDeTelhadosIndustriais_Internet/telhado-fibrocimento.webp",
+      "severity": null,
+      "image_url": "images/c367551ee526a7b13136434745402c8ca20b7a87452352ce0b1e2ccebe5b9fae.webp",
+      "evidence_url": "evidence/c367551ee526a7b13136434745402c8ca20b7a87452352ce0b1e2ccebe5b9fae.jpg",
+      "model_suggestions": [
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            752,
+            36,
+            800,
+            158
+          ],
+          "confidence": 0.2504,
+          "id": "s001"
+        }
+      ]
+    },
+    {
+      "image_sha256": "aefe259916a067aefbf2e3729f1f4321594d3354c0785827b975cb7ef0d2edb3",
+      "filename": "vegetacao-dentro-calha.webp",
+      "pages": [],
+      "width": 600,
+      "height": 800,
+      "status": "ambiguous",
+      "boxes": [],
+      "annotator": "sem_anotacao_humana",
+      "notes": "Foto nova: nenhuma caixa revisada. Use as sugestões do modelo como ponto de partida.",
+      "visual_review_status": "model_suggestions_only",
+      "technical_status": "pending_human_review",
+      "human_approved": false,
+      "building_group": "internet_referencia",
+      "scene_group": "internet_referencia_aefe259916a0",
+      "source_path": null,
+      "original_path": "/home/user/DroneCamp_Vision/Fotos_InsperçãoDeTelhadosIndustriais_Internet/vegetacao-dentro-calha.webp",
+      "severity": null,
+      "image_url": "images/aefe259916a067aefbf2e3729f1f4321594d3354c0785827b975cb7ef0d2edb3.webp",
+      "evidence_url": "evidence/aefe259916a067aefbf2e3729f1f4321594d3354c0785827b975cb7ef0d2edb3.jpg",
+      "model_suggestions": [
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            0,
+            692,
+            204,
+            800
+          ],
+          "confidence": 0.2016,
+          "id": "s001"
+        }
+      ]
+    }
+  ],
+  "taxonomy_recheck_pending": false,
+  "classes_requiring_review": [],
+  "classes": [
+    {
+      "id": 0,
+      "label": "Telha quebrada",
+      "color": "#c73838"
+    },
+    {
+      "id": 1,
+      "label": "Telha ausente",
+      "color": "#a23490"
+    },
+    {
+      "id": 2,
+      "label": "Resíduos sobre telhas",
+      "color": "#b36c00"
+    },
+    {
+      "id": 3,
+      "label": "Reparo em telha",
+      "color": "#265bc4"
+    },
+    {
+      "id": 4,
+      "label": "Rufo ausente",
+      "color": "#7646bb"
+    },
+    {
+      "id": 5,
+      "label": "Rufo quebrado",
+      "color": "#c34c18"
+    },
+    {
+      "id": 6,
+      "label": "Resíduos em calha",
+      "color": "#087d78"
+    },
+    {
+      "id": 7,
+      "label": "Vegetação em calha",
+      "color": "#397821"
+    },
+    {
+      "id": 8,
+      "label": "Pedaço de telha",
+      "color": "#5b4b99"
+    },
+    {
+      "id": 9,
+      "label": "Rufo deslocado/desalinhado",
+      "color": "#166d91"
+    },
+    {
+      "id": 10,
+      "label": "Pedaço de telha sobreposto à telha",
+      "color": "#8b5018"
+    },
+    {
+      "id": 11,
+      "label": "Elemento de fixação de telha solto/frouxo",
+      "color": "#405ac0"
+    },
+    {
+      "id": 12,
+      "label": "Reparo em rufo",
+      "color": "#895394"
+    }
+  ],
+  "duplicate_iou": 0.7,
+  "suggestions": {
+    "model_label": "Modelo piloto (não validado)",
+    "conf": 0.15,
+    "warning": "Sugestões automáticas: aceite somente o que você conferir. O modelo pode errar a classe, a caixa ou deixar de ver ocorrências.",
+    "weights_sha256": "a7a4e0bde81ecaa62a0f86cadb38f5e0d80c22dfdbb06616ef796676a661c099",
+    "pilot": true
+  }
+}

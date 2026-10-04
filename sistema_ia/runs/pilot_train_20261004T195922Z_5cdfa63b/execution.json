@@ -1,0 +1,87 @@
+{
+  "runtime": {
+    "python": "3.12.3",
+    "ultralytics": "8.4.172",
+    "torch": "2.14.1+cu130",
+    "device_requested": "cpu",
+    "checkpoint": "/home/user/DroneCamp_Vision/sistema_ia/models/yolo26l.pt",
+    "checkpoint_sha256": "9fe3c544f2b19bebad7ea41e76d7ad3d88b7c2f10d11d24430c5311f6b32db26",
+    "requested_future_model": "yolo27l.pt"
+  },
+  "parameters": {
+    "epochs": 80,
+    "imgsz": 640,
+    "batch": 4,
+    "workers": 0,
+    "optimizer": "AdamW",
+    "lr0": 0.001,
+    "lrf": 0.01,
+    "patience": 25,
+    "seed": 42,
+    "deterministic": true,
+    "cache": false,
+    "amp": false,
+    "close_mosaic": 10,
+    "mosaic": 0.5,
+    "mixup": 0.0,
+    "degrees": 10.0,
+    "fliplr": 0.5,
+    "flipud": 0.0,
+    "plots": true,
+    "nms": false
+  },
+  "class_counts": {
+    "train": {
+      "telha_quebrada": 12,
+      "telha_ausente": 1,
+      "residuos_telha": 39,
+      "reparo_telha": 18,
+      "rufo_ausente": 2,
+      "rufo_quebrado": 14,
+      "residuos_calha": 12,
+      "vegetacao_calha": 4,
+      "pedaco_telha": 2,
+      "rufo_deslocado": 1,
+      "pedaco_telha_sobreposto": 8,
+      "fixador_telha_frouxo": 1,
+      "reparo_rufo": 0
+    },
+    "val": {
+      "telha_quebrada": 0,
+      "telha_ausente": 1,
+      "residuos_telha": 1,
+      "reparo_telha": 5,
+      "rufo_ausente": 0,
+      "rufo_quebrado": 1,
+      "residuos_calha": 0,
+      "vegetacao_calha": 0,
+      "pedaco_telha": 0,
+      "rufo_deslocado": 0,
+      "pedaco_telha_sobreposto": 0,
+      "fixador_telha_frouxo": 0,
+      "reparo_rufo": 0
+    },
+    "test": {
+      "telha_quebrada": 0,
+      "telha_ausente": 0,
+      "residuos_telha": 14,
+      "reparo_telha": 2,
+      "rufo_ausente": 5,
+      "rufo_quebrado": 12,
+      "residuos_calha": 0,
+      "vegetacao_calha": 0,
+      "pedaco_telha": 0,
+      "rufo_deslocado": 0,
+      "pedaco_telha_sobreposto": 0,
+      "fixador_telha_frouxo": 0,
+      "reparo_rufo": 0
+    }
+  },
+  "stage": "fine_tuning_piloto",
+  "pilot": true,
+  "production_ready": false,
+  "classes_without_training_boxes": [
+    "reparo_rufo"
+  ],
+  "warning": "Piloto com fotos de uma única edificação: validação e teste não são independentes. Use os pesos apenas para sugerir caixas à revisão humana."
+}
