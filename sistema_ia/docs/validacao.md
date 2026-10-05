@@ -171,3 +171,14 @@ Foi aberto no Edge `data/reviews/ceasa_v6_corrigida_a36ea7f67d08/index.html`, e 
 - `onnxruntime-directml` 1.24.4 no lugar de `onnxruntime` 1.30.0; CPU 372 ms × APU 124 ms por imagem; 609/609 caixas iguais em 10 fotos.
 - Testes: 170 OK, incluindo 5 de ponta a ponta com Ultralytics real (`tests/test_e2e_ultralytics.py`).
 - Backup do código antes das mudanças: `.runtime/backup_20261004T1700_antes_treino_real/` (com `SHA256SUMS.txt`).
+
+## RL, scikit-learn e reamostragem — 05/10/2026
+
+Executado em container Linux (Python 3.12, Ultralytics 8.4.172, Torch 2.14.1 CPU, scikit-learn 1.9.1), sem GPU. Detalhes em [aprendizado_rl_sklearn.md](aprendizado_rl_sklearn.md).
+
+- Testes: **217 OK**, incluindo 22 novos rápidos (`tests/test_learning_methods.py`) e 4 novos de ponta a ponta com Ultralytics real (`test_6` a `test_9` em `tests/test_e2e_ultralytics.py`): treino com RFS, `compare-models` entre dois pesos reais, successive halving com 3 treinos reais e calibrador sobre os pesos piloto v7.
+- `learn-review` com as 37 decisões da v8 contra as sugestões v7: política em `data/learning/review_policy.json` (recompensa média 0,67).
+- `prioritize-review` nas 7 fotos de outras edificações: `data/reviews/internet_v1_sugestoes_modelo/review_priority.csv`.
+- `fit-calibrator` (pesos v7, dataset v8, 14 fotos fora do treino, 375 sugestões, 10 acertos): **sem ganho** sobre a confiança crua (Brier 0,025 × 0,022; AUC 0,743 × 0,799). `suggest --calibrator` recusa esse calibrador por padrão.
+- RFS no treino v8 (`t = 0,3`): 22 fotos viram 33 entradas por época; fator 2,57 para as classes de uma foto.
+- Não verificado: treino completo (80 épocas) com RFS ou com o vencedor do bandit, que fica para o PC do projeto; o texto "aceitação estimada" na página de revisão não foi conferido no navegador, e as páginas `index.html` existentes não foram regeneradas.

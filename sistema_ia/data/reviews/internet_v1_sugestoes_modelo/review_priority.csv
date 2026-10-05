@@ -1,0 +1,8 @@
+prioridade,arquivo,edificacao,sugestoes,pontuacao,aproveitamento,exploracao,classes_sugeridas
+1,detritos-calha.webp,internet_referencia,0,2.1079,1.0248,1.0832,
+2,resto-tinta-sobre-telhado.webp,internet_referencia,0,2.1079,1.0248,1.0832,
+3,telhado-fibrocimento.webp,internet_referencia,1,2.0245,0.9844,1.0401,rufo_quebrado=1
+4,vegetacao-dentro-calha.webp,internet_referencia,1,1.9687,0.9301,1.0386,reparo_telha=1
+5,detritos-sobre-telhado.webp,internet_referencia,13,1.9654,0.888,1.0775,residuos_telha=13
+6,galhos-liquen-calha.webp,internet_referencia,3,1.9504,0.9157,1.0347,reparo_telha=3
+7,resto-manutencao-telhado.webp,internet_referencia,1,1.9133,0.871,1.0423,residuos_telha=1
