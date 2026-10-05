@@ -27,6 +27,7 @@ Base local de **detecção assistida** para inspeção de telhados industriais. 
 - [Novas imagens e anomalias](docs/novas_imagens_e_anomalias.md): como incorporar exemplos e tratar defeitos inéditos.
 - [Decisões do projeto](docs/decisoes.md): diretriz registrada de melhoria progressiva.
 - [Aprendizado por reforço, scikit-learn e PyTorch](docs/aprendizado_rl_sklearn.md): fila de revisão por bandit LinUCB, calibração das sugestões, reamostragem de classes raras, busca de hiperparâmetros por successive halving, adoção por classe e por que não TensorFlow.
+- [Marcação automática](docs/marcacao_automatica.md): a IA procura e classifica não conformidades sozinha (piloto + busca aberta YOLOE por descrição, ex.: detritos na calha) e tudo fica pendente da sua revisão; `suggest --zero-shot`.
 - [Validações desta entrega](docs/validacao.md): verificações executadas e limites reais.
 - `configs/taxonomy.json`: catálogo com IDs, critérios, páginas e gravidade histórica.
 - `configs/project.yaml`: modelo, dispositivo, inferência e hiperparâmetros de treino.

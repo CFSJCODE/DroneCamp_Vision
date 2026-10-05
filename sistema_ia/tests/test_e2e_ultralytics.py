@@ -24,6 +24,8 @@ REGISTRY = REAL.root / "data" / "reviews" / "ceasa_v7_revisao002_ba8cc323c8a1" /
 # Pesos piloto v7 reais (Git LFS) e dataset v8: usados no teste do calibrador.
 PILOT_V7 = REAL.root / "runs" / "pilot_train_20261004T170212Z_dd284411" / "fit" / "weights" / "best.pt"
 DATASET_V8 = REAL.root / "data" / "pilot" / "ceasa_v8_piloto_s42" / "dataset.yaml"
+# YOLOE com as frases de configs/zero_shot_prompts.json já embutidas (Git LFS).
+ZERO_SHOT_DIR = REAL.root / "models" / "zero_shot"
 TINY = {"epochs": 1, "imgsz": 160, "batch": 8, "plots": False, "patience": 0}
 
 
@@ -231,6 +233,33 @@ class EndToEndUltralyticsTests(unittest.TestCase):
             probabilities = [box["acceptance_probability"] for box in values]
             self.assertEqual(probabilities, sorted(probabilities, reverse=True))
             self.assertTrue(all(0 <= value <= 1 for value in probabilities))
+
+
+    @unittest.skipUnless(any(ZERO_SHOT_DIR.glob("*.pt")), "Checkpoint da busca aberta (models/zero_shot) ausente.")
+    def test_10_open_search_adds_pending_suggestions_with_prompt_and_source(self):
+        from dronecamp_ia.suggestions import create_review_for_new_images
+
+        (self.root / "models").mkdir(exist_ok=True)
+        link = self.root / "models" / "zero_shot"
+        if not link.exists():
+            link.symlink_to(ZERO_SHOT_DIR, target_is_directory=True)
+        folder = self.root / "fotos_busca"
+        folder.mkdir()
+        for image in self.sample_images:
+            (folder / image.name).write_bytes(image.read_bytes())
+        review = self.root / "data" / "reviews" / "busca_aberta_e2e"
+        create_review_for_new_images(self.config, folder, review, "edificacao_teste", str(self.best), 0.05,
+                                     zero_shot=True)
+        suggestions = json.loads((review / "suggestions.json").read_text(encoding="utf-8"))
+        registry = json.loads((review / "registry.json").read_text(encoding="utf-8"))
+        self.assertTrue(suggestions["zero_shot"]["checkpoint_sha256"])
+        self.assertTrue(all(item["human_approved"] is False for item in registry["images"]))
+        boxes = [box for values in suggestions["images"].values() for box in values]
+        self.assertTrue(all(box["source"] in {"piloto", "busca_aberta", "piloto+busca_aberta"} for box in boxes))
+        for box in boxes:
+            if box["source"] != "piloto":
+                self.assertIn(box["class_id"], range(len(self.names)))
+                self.assertTrue(box["prompt"])
 
 
 if __name__ == "__main__":

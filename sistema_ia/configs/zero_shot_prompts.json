@@ -1,0 +1,23 @@
+{
+  "_comment": "Descrições em inglês que o YOLOE (vocabulário aberto) procura nas fotos. Cada classe do projeto tem várias frases; vale a de maior confiança. 'uncatalogued' são possíveis não conformidades novas, fora da taxonomia, que só aparecem como pendências para decisão humana. Ao editar, a primeira execução regenera o modelo com as novas frases.",
+  "schema_version": 1,
+  "model": "yoloe-26l-seg.pt",
+  "conf": 0.15,
+  "max_area_fraction": 0.5,
+  "classes": {
+    "telha_quebrada": ["broken roof tile", "cracked roof sheet", "broken fiber cement roof sheet"],
+    "telha_ausente": ["missing roof tile", "hole in the roof where a tile is missing"],
+    "residuos_telha": ["debris on roof", "pile of rubble on roof tiles", "trash on the roof"],
+    "reparo_telha": ["patched roof tile", "repair patch on roof sheet", "tape on roof"],
+    "rufo_ausente": ["missing roof flashing"],
+    "rufo_quebrado": ["broken roof flashing", "damaged metal flashing"],
+    "residuos_calha": ["debris in roof gutter", "dirt and leaves inside gutter", "clogged gutter"],
+    "vegetacao_calha": ["plants growing in gutter", "grass growing inside gutter", "moss in gutter"],
+    "pedaco_telha": ["loose piece of roof tile", "fragment of broken tile"],
+    "rufo_deslocado": ["displaced roof flashing", "lifted metal flashing"],
+    "pedaco_telha_sobreposto": ["piece of broken tile lying on roof sheet"],
+    "fixador_telha_frouxo": ["loose roof screw", "loose roof hook bolt", "missing washer on roof fastener"],
+    "reparo_rufo": ["sealant repair on flashing", "patched metal flashing"]
+  },
+  "uncatalogued": ["rust on roof sheet", "standing water on roof", "hole in roof", "bird nest on roof", "damaged skylight"]
+}
