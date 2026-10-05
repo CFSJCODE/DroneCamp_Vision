@@ -11,6 +11,10 @@ Comandos e onde está o código de cada um:
 - ``render-review`` → ``review_render.py``  |  ``build-reviewed-data`` → ``review_dataset.py``
 - ``extract-report`` → ``report_images.py``  |  ``categories`` → mostra a taxonomia
 - ``refresh-page`` → ``review_render.refresh_review_page``  |  ``platform`` → ``platform_server.py``
+- Aprendizado a partir das revisões: ``prioritize-review`` / ``learn-review`` → ``active_learning.py``
+  (bandit LinUCB); ``fit-calibrator`` → ``calibration.py`` (scikit-learn);
+  ``compare-models`` → ``model_gate.py``; ``tune-pilot-bandit`` → ``hparam_bandit.py``
+- Marcação automática: ``suggest --zero-shot`` e ``evaluate-autolabel`` → ``autolabel.py`` (YOLOE)
 
 Quando mexer: para criar um comando novo ou uma opção nova (``--algo``) em um
 comando existente. A lógica do comando fica no arquivo indicado acima.
@@ -71,7 +75,7 @@ def build_parser() -> argparse.ArgumentParser:
     refresh = commands.add_parser("refresh-page", help="Regravar só o index.html da revisão com o modelo e os treinos atuais.")
     refresh.add_argument("--registry", type=Path, required=True)
     platform = commands.add_parser("platform", help="Servidor local (127.0.0.1): monitorar e iniciar treinos pela página.")
-    platform.add_argument("--registry", type=Path, required=True)
+    platform.add_argument("--registry", type=Path, action="append", required=True, help="Revisão aberta na página; repita para alternar entre várias (a 1ª abre em /).")
     platform.add_argument("--port", type=int, default=8765)
     platform.add_argument("--no-browser", action="store_true", help="Não abrir o navegador automaticamente.")
     feedback = commands.add_parser("import-review", help="Importar decisões exportadas por revisor humano.")
@@ -101,6 +105,8 @@ def build_parser() -> argparse.ArgumentParser:
     pilot_train.add_argument("--epochs", type=int)
     pilot_train.add_argument("--imgsz", type=int)
     pilot_train.add_argument("--batch", type=int)
+    pilot_train.add_argument("--repeat-factor-threshold", type=float,
+                             help="Repete fotos de classes raras na lista de treino (RFS); ex.: 0.3.")
     suggest = commands.add_parser("suggest", help="Sugerir caixas na página de revisão com um detector treinado.")
     suggest.add_argument("--weights", required=True)
     suggest.add_argument("--registry", type=Path, help="Revisão existente que receberá sugestões.")
@@ -108,6 +114,50 @@ def build_parser() -> argparse.ArgumentParser:
     suggest.add_argument("--output", type=Path, help="Pasta nova da revisão das fotos novas.")
     suggest.add_argument("--group", help="Edificação/campanha das fotos novas.")
     suggest.add_argument("--conf", type=float)
+    suggest.add_argument("--calibrator", type=Path, help="Pasta de fit-calibrator: ordena por aceitação estimada.")
+    suggest.add_argument("--allow-unproven-calibrator", action="store_true",
+                         help="Usar calibrador sem ganho medido na validação cruzada (só para testes).")
+    suggest.add_argument("--zero-shot", action="store_true",
+                         help="Somar a busca aberta (YOLOE + configs/zero_shot_prompts.json) às sugestões do piloto.")
+    autolabel = commands.add_parser("evaluate-autolabel", help="Medir por classe piloto × busca aberta × as duas juntas.")
+    autolabel.add_argument("--data", type=Path, required=True)
+    autolabel.add_argument("--weights", required=True)
+    autolabel.add_argument("--conf", type=float)
+    # Aprendizado com as decisões humanas (nada aqui aprova caixas).
+    priority = commands.add_parser("prioritize-review", help="Ordenar a fila de revisão com o bandit LinUCB (RL).")
+    priority.add_argument("--registry", type=Path, required=True)
+    priority.add_argument("--policy", type=Path, help="policy.json aprendido com learn-review (opcional).")
+    priority.add_argument("--pilot-manifest", type=Path, help="pilot.json do dataset de treino (raridade das classes).")
+    priority.add_argument("--suggestions", type=Path, help="suggestions.json (padrão: ao lado do registro).")
+    priority.add_argument("--alpha", type=float, help="Peso da exploração no LinUCB (padrão 1.0).")
+    learn = commands.add_parser("learn-review", help="Atualizar a política LinUCB com as decisões humanas importadas.")
+    learn.add_argument("--registry", type=Path, required=True, help="Registro já com o feedback importado.")
+    learn.add_argument("--policy", type=Path, required=True)
+    learn.add_argument("--pilot-manifest", type=Path)
+    learn.add_argument("--suggestions", type=Path, help="suggestions.json que o revisor viu.")
+    calibrate = commands.add_parser("fit-calibrator", help="Calibrar a confiança das sugestões com scikit-learn.")
+    calibrate.add_argument("--data", type=Path, required=True, help="dataset.yaml de um dataset piloto.")
+    calibrate.add_argument("--weights", required=True)
+    calibrate.add_argument("--conf", type=float, default=0.01)
+    calibrate.add_argument("--include-trained", action="store_true",
+                           help="Usar também fotos do treino destes pesos (enviesado; só para testes).")
+    gate = commands.add_parser("compare-models", help="Comparar candidato e modelo atual por classe e decidir adoção.")
+    gate.add_argument("--data", type=Path, required=True)
+    gate.add_argument("--baseline", required=True)
+    gate.add_argument("--candidate", required=True)
+    gate.add_argument("--split", action="append", choices=["train", "val", "test"],
+                      help="Split avaliado; repita para vários (padrão: test).")
+    gate.add_argument("--conf", type=float)
+    bandit = commands.add_parser("tune-pilot-bandit", help="Hiperparâmetros do piloto por successive halving (bandit).")
+    bandit.add_argument("--data", type=Path, required=True)
+    bandit.add_argument("--weights")
+    bandit.add_argument("--arms", type=int, help="Quantos braços sortear do espaço (padrão: todos).")
+    bandit.add_argument("--min-epochs", type=int, default=5)
+    bandit.add_argument("--eta", type=int, default=3)
+    bandit.add_argument("--rounds", type=int)
+    bandit.add_argument("--space", type=Path, help="JSON {parâmetro: [valores]} (padrão: pilot.search_space).")
+    bandit.add_argument("--imgsz", type=int)
+    bandit.add_argument("--batch", type=int)
     exporting.add_argument("--parity-source", type=Path, help="Pasta de fotos para comparar .pt e .onnx.")
     return parser
 
@@ -186,18 +236,47 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         elif args.command == "train-pilot":
             from .training import train_pilot
-            overrides = {key: value for key in ("epochs", "imgsz", "batch") if (value := getattr(args, key)) is not None}
+            overrides = {key: value for key in ("epochs", "imgsz", "batch", "repeat_factor_threshold")
+                         if (value := getattr(args, key)) is not None}
             output = train_pilot(config, args.data, args.weights, overrides)
         elif args.command == "suggest":
             from .suggestions import create_review_for_new_images, suggest_for_registry
             if bool(args.registry) == bool(args.source):
                 raise ValueError("Use --registry (revisão existente) ou --source com --output e --group (fotos novas).")
             if args.registry:
-                output = suggest_for_registry(config, args.registry, args.weights, args.conf)
+                output = suggest_for_registry(config, args.registry, args.weights, args.conf, args.calibrator,
+                                              args.allow_unproven_calibrator, args.zero_shot)
             else:
                 if not args.output or not args.group:
                     raise ValueError("Fotos novas exigem --output e --group.")
-                output = create_review_for_new_images(config, args.source, args.output, args.group, args.weights, args.conf)
+                output = create_review_for_new_images(config, args.source, args.output, args.group, args.weights,
+                                                      args.conf, args.calibrator, args.allow_unproven_calibrator,
+                                                      args.zero_shot)
+        elif args.command == "evaluate-autolabel":
+            from .autolabel import evaluate_autolabel
+            output = evaluate_autolabel(config, args.data, args.weights, args.conf)
+        elif args.command == "prioritize-review":
+            from .active_learning import prioritize_review
+            output = prioritize_review(config, args.registry, args.policy, args.pilot_manifest, args.suggestions, args.alpha)
+        elif args.command == "learn-review":
+            from .active_learning import update_policy
+            print(json.dumps(update_policy(config, args.registry, args.policy, args.pilot_manifest, args.suggestions),
+                             ensure_ascii=False, indent=2))
+            return 0
+        elif args.command == "fit-calibrator":
+            from .calibration import fit_calibrator
+            output = fit_calibrator(config, args.data, args.weights, args.conf, args.include_trained)
+            print((output / "calibrator.json").read_text(encoding="utf-8")[:2000])
+        elif args.command == "compare-models":
+            from .model_gate import compare_models
+            output = compare_models(config, args.data, args.baseline, args.candidate, tuple(args.split or ["test"]), args.conf)
+            gate = json.loads((output / "gate.json").read_text(encoding="utf-8"))
+            print(json.dumps({key: gate[key] for key in ("adopt", "reasons", "images_evaluated")}, ensure_ascii=False, indent=2))
+        elif args.command == "tune-pilot-bandit":
+            from .hparam_bandit import load_space, successive_halving
+            fixed = {key: value for key in ("imgsz", "batch") if (value := getattr(args, key)) is not None}
+            output = successive_halving(config, args.data, args.weights, args.arms, args.min_epochs, args.eta,
+                                        args.rounds, space=load_space(args.space), fixed=fixed)
         elif args.command == "migrate-review":
             from .review_data import migrate_review_taxonomy
             migrate_review_taxonomy(config, args.registry, args.previous_taxonomy, args.output)

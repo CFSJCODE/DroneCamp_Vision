@@ -217,3 +217,52 @@ class ServerTests(PlatformFixture):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class MultiReviewServerTests(PlatformFixture):
+    """Duas revisões no mesmo servidor: cada uma na sua página, fotos e arquivos separados."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        from http.server import ThreadingHTTPServer
+        render_review_package(self.config, self.registry_path)
+        self.other_directory = self.root / "data" / "reviews" / "internet_v2"
+        self.other_directory.mkdir(parents=True)
+        registry = json.loads(self.registry_path.read_text(encoding="utf-8"))
+        registry["version"] = "internet_v2"
+        self.other_registry = self.other_directory / "registry.json"
+        write_json(self.other_registry, registry)
+        render_review_package(self.config, self.other_registry)
+        self.token = "token-de-teste"
+        handler = make_handler(self.config, [self.registry_path, self.other_registry], self.token, JobRunner(self.root))
+        self.server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
+        threading.Thread(target=self.server.serve_forever, daemon=True).start()
+        self.addCleanup(self.server.server_close)
+        self.addCleanup(self.server.shutdown)
+        self.base = f"http://127.0.0.1:{self.server.server_address[1]}"
+
+    request = ServerTests.request
+
+    def test_each_review_has_its_page_picker_and_files(self) -> None:
+        status, page = self.request("/r/internet_v2/")
+        self.assertEqual(status, 200)
+        self.assertIn(file_hash(self.other_registry).encode(), page)
+        self.assertIn(b"/r/fixture_v1/", page, "A página lista as outras revisões no seletor.")
+        status, page = self.request("/")
+        self.assertIn(file_hash(self.registry_path).encode(), page, "A primeira revisão abre em /.")
+        evidence = next((self.other_directory / "evidence").iterdir()).name
+        self.assertEqual(self.request(f"/r/internet_v2/evidence/{evidence}")[0], 200)
+        self.assertEqual(self.request("/r/inexistente/")[0], 404)
+        self.assertEqual(self.request("/r/internet_v2/../../configs/taxonomy.json")[0], 404)
+
+    def test_feedback_goes_to_the_registry_it_came_from(self) -> None:
+        feedback = {"schema_version": 1, "registry_sha256": file_hash(self.other_registry), "reviewer_id": "r1",
+                    "images": [{"image_sha256": "x", "status": "ambiguous"}]}
+        status, body = self.request("/api/feedback", feedback, self.token)
+        self.assertEqual(status, 200, body)
+        self.assertEqual((self.root / json.loads(body)["saved"]).parent, self.other_directory / "feedback_inbox")
+
+    def test_unknown_review_is_rejected_for_jobs(self) -> None:
+        status, body = self.request("/api/jobs", {"kind": "suggest", "options": {"review": "outra", "weights": "x.pt"}}, self.token)
+        self.assertEqual(status, 400)
+        self.assertIn("não aberta", json.loads(body)["error"])

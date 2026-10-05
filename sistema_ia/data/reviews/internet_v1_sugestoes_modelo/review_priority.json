@@ -1,0 +1,195 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-05T14:31:40.840624+00:00",
+  "registry_sha256": "9820fce0025d25adee96c15eb021f6c5408653d093073766112e49f4250faf28",
+  "suggestions_weights_sha256": "a7a4e0bde81ecaa62a0f86cadb38f5e0d80c22dfdbb06616ef796676a661c099",
+  "policy": "data/learning/review_policy.json",
+  "policy_updates": 37,
+  "alpha": 1.0,
+  "theta": {
+    "bias": 0.3912,
+    "log_suggestions": -0.0307,
+    "mean_confidence": 0.0244,
+    "max_confidence": -0.0881,
+    "uncertainty": 0.4929,
+    "rare_class_score": 0.3238,
+    "class_conflict": 0.2924,
+    "new_building": 0.3,
+    "no_suggestions": 0.3336,
+    "calibrated_uncertainty": 0.3
+  },
+  "note": "Ordem sugerida de revisão. Não altera status, caixas nem aprovações.",
+  "images": [
+    {
+      "image_sha256": "64d407d9c87c448663b58dc3a834370e648eea913e5d8ff4dd1142ca52560d7d",
+      "filename": "detritos-calha.webp",
+      "building_group": "internet_referencia",
+      "suggestions": 0,
+      "suggested_classes": {},
+      "score": 2.1079,
+      "exploit": 1.0248,
+      "explore": 1.0832,
+      "context": {
+        "bias": 1.0,
+        "log_suggestions": 0.0,
+        "mean_confidence": 0.0,
+        "max_confidence": 0.0,
+        "uncertainty": 0.0,
+        "rare_class_score": 0.0,
+        "class_conflict": 0.0,
+        "new_building": 1.0,
+        "no_suggestions": 1.0,
+        "calibrated_uncertainty": 0.0
+      },
+      "priority": 1
+    },
+    {
+      "image_sha256": "254dcec36fe67dccb67d7820faf3ef0b732ac58503b9b2fdcf535a71dfdde2d0",
+      "filename": "resto-tinta-sobre-telhado.webp",
+      "building_group": "internet_referencia",
+      "suggestions": 0,
+      "suggested_classes": {},
+      "score": 2.1079,
+      "exploit": 1.0248,
+      "explore": 1.0832,
+      "context": {
+        "bias": 1.0,
+        "log_suggestions": 0.0,
+        "mean_confidence": 0.0,
+        "max_confidence": 0.0,
+        "uncertainty": 0.0,
+        "rare_class_score": 0.0,
+        "class_conflict": 0.0,
+        "new_building": 1.0,
+        "no_suggestions": 1.0,
+        "calibrated_uncertainty": 0.0
+      },
+      "priority": 2
+    },
+    {
+      "image_sha256": "c367551ee526a7b13136434745402c8ca20b7a87452352ce0b1e2ccebe5b9fae",
+      "filename": "telhado-fibrocimento.webp",
+      "building_group": "internet_referencia",
+      "suggestions": 1,
+      "suggested_classes": {
+        "rufo_quebrado": 1
+      },
+      "score": 2.0245,
+      "exploit": 0.9844,
+      "explore": 1.0401,
+      "context": {
+        "bias": 1.0,
+        "log_suggestions": 0.6931,
+        "mean_confidence": 0.2504,
+        "max_confidence": 0.2504,
+        "uncertainty": 0.5008,
+        "rare_class_score": 0.2582,
+        "class_conflict": 0.0,
+        "new_building": 1.0,
+        "no_suggestions": 0.0,
+        "calibrated_uncertainty": 0.0
+      },
+      "priority": 3
+    },
+    {
+      "image_sha256": "aefe259916a067aefbf2e3729f1f4321594d3354c0785827b975cb7ef0d2edb3",
+      "filename": "vegetacao-dentro-calha.webp",
+      "building_group": "internet_referencia",
+      "suggestions": 1,
+      "suggested_classes": {
+        "reparo_telha": 1
+      },
+      "score": 1.9687,
+      "exploit": 0.9301,
+      "explore": 1.0386,
+      "context": {
+        "bias": 1.0,
+        "log_suggestions": 0.6931,
+        "mean_confidence": 0.2016,
+        "max_confidence": 0.2016,
+        "uncertainty": 0.4032,
+        "rare_class_score": 0.2294,
+        "class_conflict": 0.0,
+        "new_building": 1.0,
+        "no_suggestions": 0.0,
+        "calibrated_uncertainty": 0.0
+      },
+      "priority": 4
+    },
+    {
+      "image_sha256": "7a2b1cb1a06db525203fc17a6c90191eda420060b4375f97d013e92bc4f67939",
+      "filename": "detritos-sobre-telhado.webp",
+      "building_group": "internet_referencia",
+      "suggestions": 13,
+      "suggested_classes": {
+        "residuos_telha": 13
+      },
+      "score": 1.9654,
+      "exploit": 0.888,
+      "explore": 1.0775,
+      "context": {
+        "bias": 1.0,
+        "log_suggestions": 2.6391,
+        "mean_confidence": 0.3886,
+        "max_confidence": 0.8146,
+        "uncertainty": 0.5862,
+        "rare_class_score": 0.1581,
+        "class_conflict": 0.0,
+        "new_building": 1.0,
+        "no_suggestions": 0.0,
+        "calibrated_uncertainty": 0.0
+      },
+      "priority": 5
+    },
+    {
+      "image_sha256": "99746af6de1be10b63394ae4098e24150e76a496e000b69528898d11d06e871e",
+      "filename": "galhos-liquen-calha.webp",
+      "building_group": "internet_referencia",
+      "suggestions": 3,
+      "suggested_classes": {
+        "reparo_telha": 3
+      },
+      "score": 1.9504,
+      "exploit": 0.9157,
+      "explore": 1.0347,
+      "context": {
+        "bias": 1.0,
+        "log_suggestions": 1.3863,
+        "mean_confidence": 0.2128,
+        "max_confidence": 0.2513,
+        "uncertainty": 0.4255,
+        "rare_class_score": 0.2294,
+        "class_conflict": 0.0,
+        "new_building": 1.0,
+        "no_suggestions": 0.0,
+        "calibrated_uncertainty": 0.0
+      },
+      "priority": 6
+    },
+    {
+      "image_sha256": "ac5a3da68c0046fe10430d7de5787d2ce8e072fb207364681b12be7c4e44600d",
+      "filename": "resto-manutencao-telhado.webp",
+      "building_group": "internet_referencia",
+      "suggestions": 1,
+      "suggested_classes": {
+        "residuos_telha": 1
+      },
+      "score": 1.9133,
+      "exploit": 0.871,
+      "explore": 1.0423,
+      "context": {
+        "bias": 1.0,
+        "log_suggestions": 0.6931,
+        "mean_confidence": 0.1626,
+        "max_confidence": 0.1626,
+        "uncertainty": 0.3252,
+        "rare_class_score": 0.1581,
+        "class_conflict": 0.0,
+        "new_building": 1.0,
+        "no_suggestions": 0.0,
+        "calibrated_uncertainty": 0.0
+      },
+      "priority": 7
+    }
+  ]
+}

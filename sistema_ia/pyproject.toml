@@ -11,6 +11,10 @@ dependencies = ["ultralytics==8.4.172", "PyYAML>=6.0.2,<7", "Pillow>=11,<13"]
 
 [project.optional-dependencies]
 documents = ["pypdf>=6,<7"]
+# Calibração das sugestões (fit-calibrator, suggest --calibrator); inclui joblib.
+learning = ["scikit-learn>=1.5,<2"]
+# Só para recodificar as frases de configs/zero_shot_prompts.json (busca aberta, YOLOE).
+zero-shot = ["clip @ git+https://github.com/ultralytics/CLIP.git"]
 export = ["onnx>=1.19,<2", "onnxruntime>=1.23,<2", "onnxscript>=0.5,<1"]
 # Windows com GPU/APU AMD ou Intel: troca o onnxruntime da CPU (instale um ou outro).
 directml = ["onnx>=1.19,<2", "onnxruntime-directml>=1.24,<2", "onnxscript>=0.5,<1"]

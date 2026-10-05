@@ -169,7 +169,7 @@ def render_review_package(config: ProjectConfig, registry_path: Path) -> Path:
                "classes_requiring_review": [labels[key] for key in sorted(pending_class_ids)],
                "classes": [{"id": key, "label": value, "color": COLORS[key]} for key,value in labels.items()],
                "duplicate_iou": config.pilot.get("duplicate_iou"),
-               "suggestions": {key: suggestions[key] for key in ("model_label", "conf", "warning", "weights_sha256", "pilot")} if suggestions else None}
+               "suggestions": {key: suggestions.get(key) for key in ("model_label", "conf", "warning", "weights_sha256", "pilot", "calibrator")} if suggestions else None}
     write_json(directory / "browser_data.json", payload)
     (directory / "index.html").write_text(build_page(payload, collect_operations(config, directory)), encoding="utf-8")
     # 5. Resumo e rascunho de relatório em Markdown com links para fotos e evidências.
