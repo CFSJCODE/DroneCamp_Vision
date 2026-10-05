@@ -75,7 +75,7 @@ def build_parser() -> argparse.ArgumentParser:
     refresh = commands.add_parser("refresh-page", help="Regravar só o index.html da revisão com o modelo e os treinos atuais.")
     refresh.add_argument("--registry", type=Path, required=True)
     platform = commands.add_parser("platform", help="Servidor local (127.0.0.1): monitorar e iniciar treinos pela página.")
-    platform.add_argument("--registry", type=Path, required=True)
+    platform.add_argument("--registry", type=Path, action="append", required=True, help="Revisão aberta na página; repita para alternar entre várias (a 1ª abre em /).")
     platform.add_argument("--port", type=int, default=8765)
     platform.add_argument("--no-browser", action="store_true", help="Não abrir o navegador automaticamente.")
     feedback = commands.add_parser("import-review", help="Importar decisões exportadas por revisor humano.")

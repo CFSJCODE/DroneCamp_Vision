@@ -34,6 +34,7 @@ import subprocess
 import sys
 import threading
 from urllib.parse import unquote
+import html
 import webbrowser
 
 from .config import ProjectConfig
@@ -141,10 +142,45 @@ def _job_arguments(root: Path, registry_path: Path, kind: str, options: dict) ->
     raise ValueError(f"Tarefa não permitida pela página: {kind}")
 
 
-def make_handler(config: ProjectConfig, registry_path: Path, token: str, jobs: JobRunner):
-    """Handler HTTP ligado a uma revisão; arquivos servidos só da revisão e de runs/."""
+def _reviews_meta(reviews: dict[str, Path], current: str) -> str:
+    """Lista das revisões abertas pelo servidor (seletor da fila); vazia com uma só revisão."""
+    if len(reviews) < 2:
+        return ""
+    items = []
+    for name, path in reviews.items():
+        try:
+            images = len(load_page_payload(path).get("images") or [])
+        except (OSError, ValueError):
+            images = None
+        items.append({"name": name, "href": f"/r/{name}/", "images": images})
+    return html.escape(json.dumps({"current": current, "items": items}, ensure_ascii=False), quote=True)
+
+
+def make_handler(config: ProjectConfig, registry_path: Path | list[Path], token: str, jobs: JobRunner):
+    """Handler HTTP ligado a uma ou mais revisões; arquivos servidos só da revisão e de runs/.
+
+    A primeira revisão abre em ``/``; cada uma também abre em ``/r/<pasta>/``. Como a
+    página usa caminhos relativos para as fotos, o prefixo faz cada foto vir da
+    pasta da sua própria revisão.
+    """
     root = config.root.resolve()
-    directory = registry_path.parent.resolve()
+    paths = registry_path if isinstance(registry_path, list) else [registry_path]
+    reviews = {path.parent.name: path for path in paths}
+    default = paths[0].parent.name
+
+    def split_review(path: str) -> tuple[str | None, str]:
+        """``/r/<pasta>/resto`` → (pasta, ``/resto``); demais caminhos → revisão padrão."""
+        match = re.match(r"^/r/([^/]+)(/.*)?$", path)
+        if not match:
+            return default, path
+        name = unquote(match[1])
+        return (name if name in reviews else None), (match[2] or "")
+
+    def registry_for(options: dict) -> Path:
+        name = options.pop("review", None) or default
+        if name not in reviews:
+            raise ValueError(f"Revisão não aberta neste servidor: {name}")
+        return reviews[name]
 
     class Handler(BaseHTTPRequestHandler):
         server_version = "DroneCampPlatform/1"
@@ -174,25 +210,37 @@ def make_handler(config: ProjectConfig, registry_path: Path, token: str, jobs: J
             return value
 
         def do_GET(self) -> None:  # noqa: N802 - nome exigido pela biblioteca
-            path = self.path.split("?", 1)[0]
+            full = self.path.split("?", 1)[0]
+            if full == "/api/operations":
+                return self._json(collect_operations(config, reviews[default].parent.resolve()))
+            if full == "/api/jobs":
+                return self._json(jobs.status())
+            name, path = split_review(full)
+            if name is None:
+                return self._send(404, b"Revisao nao aberta neste servidor", "text/plain; charset=utf-8")
+            if path == "":  # /r/<pasta> sem barra: relativos precisam da barra final
+                self.send_response(HTTPStatus.MOVED_PERMANENTLY)
+                self.send_header("Location", full + "/")
+                self.end_headers()
+                return None
+            directory = reviews[name].parent.resolve()
             if path in {"/", "/index.html"}:
-                payload = load_page_payload(registry_path)
+                payload = load_page_payload(reviews[name])
                 page = build_page(payload, collect_operations(config, directory))
                 # O token só existe na página servida; a cópia em disco nunca o contém.
                 marker = '<meta name="dronecamp-server" content="">'
                 page = page.replace(marker, f'<meta name="dronecamp-server" content="{token}">', 1)
+                page = page.replace('<meta name="dronecamp-reviews" content="">',
+                                    f'<meta name="dronecamp-reviews" content="{_reviews_meta(reviews, name)}">', 1)
                 return self._send(200, page.encode("utf-8"), "text/html; charset=utf-8")
-            if path == "/api/operations":
-                return self._json(collect_operations(config, directory))
-            if path == "/api/jobs":
-                return self._json(jobs.status())
             # Arquivos: /runs/... vem de sistema_ia/runs; o resto, da pasta da revisão.
             relative = re.sub(r"^/+", "", unquote(path))
             base = root if relative.startswith("runs/") else directory
             target = (base / relative).resolve()
             if not _inside(target, base) or not target.is_file() or target.suffix.lower() not in {".jpg", ".jpeg", ".png", ".webp", ".json", ".csv"}:
                 return self._send(404, b"Nao encontrado", "text/plain; charset=utf-8")
-            kind = mimetypes.guess_type(target.name)[0] or "application/octet-stream"
+            # .webp não está no registro de tipos de todo Windows; com nosniff, octet-stream não abre a foto.
+            kind = {".webp": "image/webp"}.get(target.suffix.lower()) or mimetypes.guess_type(target.name)[0] or "application/octet-stream"
             return self._send(200, target.read_bytes(), kind)
 
         def do_POST(self) -> None:  # noqa: N802
@@ -202,11 +250,16 @@ def make_handler(config: ProjectConfig, registry_path: Path, token: str, jobs: J
                 body = self._body()
                 if self.path == "/api/jobs":
                     kind = body.get("kind")
-                    return self._json(jobs.start(kind, _job_arguments(root, registry_path, kind, body.get("options") or {})))
+                    options = dict(body.get("options") or {})
+                    selected = registry_for(options)  # sugestões vão para a revisão aberta na página
+                    return self._json(jobs.start(kind, _job_arguments(root, selected, kind, options)))
                 if self.path == "/api/jobs/stop":
                     return self._json(jobs.stop())
                 if self.path == "/api/feedback":
-                    return self._json(_save_feedback(root, registry_path, body))
+                    # O arquivo exportado já diz de qual registro veio (SHA-256).
+                    digest = body.get("registry_sha256")
+                    selected = next((path for path in reviews.values() if file_hash(path) == digest), reviews[default])
+                    return self._json(_save_feedback(root, selected, body))
                 return self._json({"error": "Rota desconhecida."}, HTTPStatus.NOT_FOUND)
             except RuntimeError as error:
                 return self._json({"error": str(error)}, HTTPStatus.CONFLICT)
@@ -231,13 +284,18 @@ def _save_feedback(root: Path, registry_path: Path, feedback: dict) -> dict:
     return {"saved": target.resolve().relative_to(root).as_posix(), "decisions": len(feedback["images"])}
 
 
-def serve_platform(config: ProjectConfig, registry: Path, port: int = 8765, open_browser: bool = True) -> None:
-    """Inicia o servidor em 127.0.0.1 até Ctrl+C."""
-    # Caminho relativo vale a partir do terminal ou, se não existir, da pasta sistema_ia.
-    registry_path = (registry if registry.is_absolute() or registry.exists() else config.root / registry).resolve()
-    load_page_payload(registry_path)  # falha cedo se a página não foi gerada para este registro
+def serve_platform(config: ProjectConfig, registry: Path | list[Path], port: int = 8765, open_browser: bool = True) -> None:
+    """Inicia o servidor em 127.0.0.1 até Ctrl+C; várias revisões viram um seletor na fila."""
+    paths = []
+    for value in (registry if isinstance(registry, list) else [registry]):
+        # Caminho relativo vale a partir do terminal ou, se não existir, da pasta sistema_ia.
+        path = (value if value.is_absolute() or value.exists() else config.root / value).resolve()
+        load_page_payload(path)  # falha cedo se a página não foi gerada para este registro
+        paths.append(path)
+    if len({path.parent.name for path in paths}) != len(paths):
+        raise ValueError("Duas revisões com o mesmo nome de pasta; o endereço /r/<pasta>/ ficaria ambíguo.")
     token = secrets.token_urlsafe(24)
-    server = ThreadingHTTPServer(("127.0.0.1", port), make_handler(config, registry_path, token, JobRunner(config.root)))
+    server = ThreadingHTTPServer(("127.0.0.1", port), make_handler(config, paths, token, JobRunner(config.root)))
     url = f"http://127.0.0.1:{server.server_address[1]}/"
     print(f"Plataforma DroneCamp em {url} (Ctrl+C para encerrar).", flush=True)
     if open_browser:

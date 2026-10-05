@@ -4,6 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <!-- Preenchido só quando a página vem do servidor local (comando platform); vazio no arquivo em disco. -->
 <meta name="dronecamp-server" content="">
+<meta name="dronecamp-reviews" content="">
 <link rel="icon" href="data:,">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -883,9 +884,11 @@ details p { white-space: pre-line }
 .box-caption { font-size: 12px; line-height: 16px; color: var(--muted) }
 
 /* Sugestões da IA: Amarelo/Âmbar luminoso com borda tracejada e fundo de estado IA */
+/* Card empilhado: cabeçalho (nº + classe), linha de confiança, barra e ações em largura total.
+   Os botões ficam fora da regra genérica ".boxes button" (bloco 100%), que espremia o texto. */
 .suggestion {
-  display: grid; gap: 8px;
-  margin: 6px 0; padding: 10px 12px;
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px;
+  margin: 8px 0; padding: 12px;
   border: 1px dashed var(--box-color); border-left: 4px solid var(--ai); border-radius: var(--radius-ctl);
   background: linear-gradient(135deg, rgba(247, 179, 43, .12) 0%, rgba(51, 38, 9, .88) 100%);
   -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
@@ -896,26 +899,25 @@ details p { white-space: pre-line }
 .suggestion:hover {
   box-shadow: 0 0 22px rgba(247, 179, 43, .35), inset 0 1px 0 rgba(247, 179, 43, .25);
 }
-/* Cabeçalho (número, classe, confiança), detalhes, barra e botões empilhados: o texto usa a largura toda. */
-.suggestion .head { display: flex; align-items: center; gap: 8px; min-width: 0 }
-.suggestion .tag {
-  flex: none; padding: 1px 7px; border-radius: var(--radius-pill);
-  font-size: 11px; font-weight: 600; color: var(--ai); background: var(--ai-soft);
-  border: 1px solid color-mix(in srgb, var(--ai) 45%, transparent);
+.suggestion .s-head { display: flex; align-items: center; gap: 8px; min-width: 0 }
+.suggestion .s-index {
+  flex: none; padding: 0 8px; border-radius: var(--radius-pill);
+  background: var(--ai-soft); color: var(--ai); font-size: 12px; font-weight: 700; line-height: 20px;
 }
-.suggestion .label { flex: 1; min-width: 0; font-weight: 600; color: var(--ink); overflow-wrap: anywhere }
-.suggestion .pct { flex: none; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ai) }
-.suggestion .details { margin: 0; padding: 0; list-style: none; font-size: 12px; line-height: 16px; color: var(--muted) }
-.suggestion .details li + li { margin-top: 2px }
+.suggestion .s-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--box-color); box-shadow: 0 0 6px var(--box-color) }
+.suggestion .s-class { min-width: 0; font-size: 14px; font-weight: 600; line-height: 20px; color: var(--ink); overflow-wrap: anywhere }
+.suggestion .s-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 12px; line-height: 16px; color: var(--muted) }
+.suggestion .s-meta strong { color: var(--ai); font-variant-numeric: tabular-nums }
+.suggestion .s-overlap { padding: 0 8px; border-radius: var(--radius-pill); background: var(--inset); color: var(--ink); line-height: 20px }
 .suggestion .conf { height: 4px; border-radius: var(--radius-pill); background: var(--inset); overflow: hidden }
 .suggestion .conf i { display: block; height: 100%; background: var(--ai); box-shadow: 0 0 8px var(--ai) }
-.suggestion .actions { display: flex; gap: 6px }
-/* Anula o estilo de linha de caixa (.boxes button): aqui são botões de ação lado a lado. */
+.suggestion .actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px }
 .boxes .suggestion .actions button {
-  flex: 1; width: auto; margin: 0; padding: 4px 10px; text-align: center; font-weight: 600;
-  border-left-width: 1px; border-left-color: inherit;
+  width: auto; margin: 0; padding: 4px 8px; min-height: 32px;
+  text-align: center; font-weight: 600; white-space: normal;
+  border: 1px solid var(--line); border-left-width: 1px; border-radius: var(--radius-ctl);
 }
-.boxes .suggestion .actions button:not(.ai) { border-color: var(--line) }
+.boxes .suggestion .actions button.ai { border-color: var(--ai); background: var(--ai-soft); color: var(--ai) }
 
 
 .coordinates { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px }
@@ -1221,6 +1223,8 @@ pre.log { max-height: 260px; overflow: auto; margin: 8px 0 0; padding: 10px 12px
       <div class="card-head"><h2>Fotos para revisão</h2></div>
       <div class="muted small-text" id="stats"></div>
       <div class="progress" style="margin:8px 0 4px" aria-hidden="true"><i id="queueProgress" style="width:0"></i></div>
+      <!-- Só aparece quando o servidor abre mais de uma revisão (ex.: CEASA e fotos da internet). -->
+      <div class="hidden" id="reviewPickerWrap"><label for="reviewPicker">Revisão</label><select id="reviewPicker"></select></div>
       <label for="filter">Filtrar fila</label>
       <select id="filter"><option value="all">Todas as fotos</option><option value="positive">Com ocorrências propostas</option><option value="negative">Negativas propostas</option><option value="ambiguous">Ambíguas</option><option value="excluded">Excluídas</option><option value="pending">Sem sua decisão</option><option value="suggested">Com sugestões da IA pendentes</option></select>
       <div class="queue" id="queue"></div>
@@ -1379,6 +1383,10 @@ let OPS = DATA.operations || OPS_EMPTY;
 // Token presente = página servida pelo comando platform (monitoramento ao vivo e tarefas).
 const TOKEN = (document.querySelector('meta[name="dronecamp-server"]') || {}).content || '';
 const SERVER = Boolean(TOKEN) && location.protocol.startsWith('http');
+// Revisões abertas pelo servidor (platform --registry A --registry B); null com uma só.
+const REVIEWS = (() => {
+  try { return JSON.parse((document.querySelector('meta[name="dronecamp-reviews"]') || {}).content || 'null') } catch { return null }
+})();
 const names = {
   positive: 'Positiva proposta',
   negative: 'Negativa proposta',
@@ -1664,21 +1672,23 @@ function renderSuggestions() {
     const covered = coveringBox(suggestion);
     const row = el('div', { class: 'suggestion' });
     row.style.setProperty('--box-color', category.color);
-    const head = el('div', { class: 'head' }, el('span', { class: 'tag' }, `IA ${index+1}`),
-      el('span', { class: 'label' }, category.label), el('span', { class: 'pct' }, `${Math.round(suggestion.confidence*100)}%`));
+    const percent = Math.round(suggestion.confidence*100);
+    // Cabeçalho: número da sugestão + cor e nome da classe; abaixo, confiança e sobreposição.
+    const head = el('div', { class: 's-head' },
+      el('span', { class: 's-index' }, `IA ${index+1}`),
+      el('span', { class: 's-dot', 'aria-hidden': 'true' }),
+      el('span', { class: 's-class' }, category.label));
+    const meta = el('div', { class: 's-meta' }, el('span', {}, 'Confiança ', el('strong', {}, `${percent}%`)));
+    if (covered >= 0) meta.append(el('span', { class: 's-overlap' }, `Mesmo objeto da caixa ${covered+1}`));
     // acceptance_probability vem do calibrador; source/prompt vêm de suggest --zero-shot (busca aberta, YOLOE).
-    const notes = [
-      covered >= 0 ? `Mesmo objeto da caixa ${covered+1}` : '',
-      suggestion.acceptance_probability != null ? `Aceitação estimada ${Math.round(suggestion.acceptance_probability*100)}%` : '',
-      suggestion.prompt ? `Busca aberta: “${suggestion.prompt}”` : ''
-    ].filter(Boolean);
-    const text = notes.length ? [head, el('ul', { class: 'details' }, ...notes.map(note => el('li', {}, note)))] : [head];
+    if (suggestion.acceptance_probability != null) meta.append(el('span', {}, `Aceitação estimada ${Math.round(suggestion.acceptance_probability*100)}%`));
+    if (suggestion.prompt) meta.append(el('span', {}, `Busca aberta: “${suggestion.prompt}”`));
     const accept = el('button', { type: 'button', class: 'small ai' }, covered >= 0 ? `Substituir caixa ${covered+1}` : 'Aceitar');
     accept.onclick = () => acceptSuggestion(suggestion);
     const dismiss = el('button', { type: 'button', class: 'small' }, 'Descartar');
     dismiss.onclick = () => dismissSuggestion(suggestion);
-    const bar = el('div', { class: 'conf', 'aria-hidden': 'true' }, el('i', { style: `width:${Math.round(suggestion.confidence*100)}%` }));
-    row.append(...text, bar, el('div', { class: 'actions' }, accept, dismiss));
+    const bar = el('div', { class: 'conf', 'aria-hidden': 'true' }, el('i', { style: `width:${percent}%` }));
+    row.append(head, meta, bar, el('div', { class: 'actions' }, accept, dismiss));
     list.append(row)
   });
   if (!pending.length) list.textContent = (item().model_suggestions || []).length
@@ -2004,6 +2014,20 @@ $('export').onclick = async () => {
 $('previous').onclick = () => openPhoto(Math.max(0, state.index - 1));
 $('next').onclick = () => openPhoto(Math.min(DATA.images.length - 1, state.index + 1));
 $('filter').onchange = queue;
+// Seletor de revisão: cada revisão abre na sua própria página (/r/<pasta>/), com fotos,
+// decisões salvas e arquivo exportado separados; trocar não mistura registros.
+if (REVIEWS && Array.isArray(REVIEWS.items) && REVIEWS.items.length > 1) {
+  const reviewLabel = name => /^internet/i.test(name) ? 'Fotos da internet' : /^ceasa/i.test(name) ? 'CEASA — Pavilhão A' : name;
+  REVIEWS.items.forEach(value => {
+    const count = value.images == null ? '' : ` · ${value.images} fotos`;
+    const option = el('option', { value: value.href }, `${reviewLabel(value.name)}${count}`);
+    option.title = value.name;
+    if (value.name === REVIEWS.current) option.selected = true;
+    $('reviewPicker').append(option)
+  });
+  $('reviewPickerWrap').classList.remove('hidden');
+  $('reviewPicker').onchange = event => { location.href = event.target.value + location.hash };
+}
 $('reviewer').value = state.reviewer;
 $('reviewer').oninput = persist;
 
@@ -2473,7 +2497,7 @@ $('startTrain').onclick = () => {
   if (!confirm(`Iniciar treino piloto com ${options.epochs || '?'} épocas em ${OPS.device || 'cpu'}? O processo usa o PC até terminar.`)) return;
   startJob('train-pilot', options)
 };
-$('startSuggest').onclick = () => startJob('suggest', { weights: $('suggestWeights').value, conf: $('suggestConf').value === '' ? null : Number($('suggestConf').value) });
+$('startSuggest').onclick = () => startJob('suggest', { review: REVIEWS ? REVIEWS.current : undefined, weights: $('suggestWeights').value, conf: $('suggestConf').value === '' ? null : Number($('suggestConf').value) });
 $('stopJob').onclick = async () => {
   if (!confirm('Interromper a tarefa em andamento?')) return;
   try { job = await api('/api/jobs/stop', {}); renderJob() } catch (error) { alert(error.message) }
