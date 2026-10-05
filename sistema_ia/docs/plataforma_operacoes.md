@@ -14,23 +14,21 @@ O tema escuro é o padrão; o botão da lua alterna para o tema claro, que mant�
 
 ## Design
 
-Uma única linguagem visual: **Fluent 2** com **vidro acrílico** (glassmorphism). Os dois temas têm a mesma forma e mudam só os tokens de cor; o escuro é o padrão.
+Uma única linguagem visual: estrutura **Fluent 2** com **Liquid Glass** (vidro acrílico) e paleta escura inspirada no Moonlight (Deep Navy e Aqua Cyan). Os dois temas têm a mesma forma e mudam só os tokens de cor; o escuro é o padrão.
 
 | Elemento | Como é |
 | --- | --- |
-| Tipografia | Segoe UI Variable; rampa Fluent 12 · 14 · 16 · 20 · 28 (título da tela em 28 semibold) |
-| Cantos e espaçamento | 4px em botões, campos, badges e avisos; 8px em cartões; ritmo de 4/8px |
-| Botões | Borda de 1px com traço inferior um pouco mais escuro; botão principal sólido na cor de destaque; botões "small" de 24px |
-| Campos | Fundo levemente rebaixado, traço inferior acessível e sublinhado na cor de destaque ao focar |
-| Navegação | Trilho compacto estilo NavigationView: item ativo com traço vertical de 3×16px na cor de destaque; no celular vira barra inferior com o traço horizontal |
-| Cartões e trilho | Vidro acrílico: translucidez, `backdrop-filter` com desfoque de 30px e saturação, ruído sutil e realce especular de 1px no topo |
-| Fundo | Mica estático em azul petróleo (gradientes suaves, sem animação), só para o vidro ter o que desfocar |
-| Elevação | Sombras Fluent 2/8/16/28 (cartões em 8, dicas e gráficos em 16, toast em 28) |
-| Foco | Anel duplo Fluent (externo contrastante, interno separador) |
-| Movimento | 100–250ms com curvas Fluent; desligado com "reduzir movimento" |
-| Cores | Azul petróleo do DroneCamp como destaque; laranja marca o que veio da IA; verde, âmbar e vermelho só indicam estado |
+| Tipografia | Poppins e Roboto (Google Fonts) com Segoe UI Variable e fontes do sistema como reserva; sem internet, a página usa a reserva |
+| Cores | Base Deep Navy `#08111F` / Midnight Slate `#0D1726`; destaque Aqua Cyan `--primary`; âmbar `--ai` marca o que veio da IA; verde, âmbar e vermelho indicam estado. O trilho e o dock usam `--bg-secondary`, então ficam claros no tema claro |
+| Cantos | 7px em controles, 14px em cartões, cápsula nos botões táteis |
+| Botões | Cápsula com ícone (salvar), botões neon de vidro com raio de luz (ações das caixas) e botão iridescente; desabilitados ficam apagados e sem brilho |
+| Navegação | Trilho compacto no computador; até 1000px vira dock com lupa de vidro na base, e o botão de tema flutua no topo |
+| Vidro | Translucidez com `backdrop-filter` (desfoque 28px e saturação), borda especular de 1px e fundo com gradientes estáticos |
+| Rótulos nas fotos | Caixas: rótulo na cor da classe com texto escuro. Sugestões da IA: placa escura com texto na cor da classe e contorno tracejado |
+| Foco | Anel duplo em todos os controles, inclusive caixas de seleção, controle de confiança e foto |
+| Movimento | 100–600ms; "reduzir movimento" desliga animações, inclusive o brilho da decisão |
 
-Sem suporte a `backdrop-filter`, ou com "reduzir transparência" ativado, o vidro vira superfície opaca. O ruído é um SVG embutido (sem downloads). Tudo fica em `review_templates/index.html`, com os tokens no início do `<style>`; os nomes `--primary`, `--ai`, `--ok`, `--warn`, `--muted`, `--line-strong` e `--chart-grid` também são lidos pelo script dos gráficos.
+Sem suporte a `backdrop-filter`, ou com "reduzir transparência" ativado, o vidro vira superfície opaca. Tudo fica em `review_templates/index.html`, com os tokens no início do `<style>`; os nomes `--primary`, `--ai`, `--ok`, `--warn`, `--bad`, `--muted`, `--line-strong` e `--chart-grid` também são lidos pelo script dos gráficos.
 
 ## Dois modos de abrir
 

@@ -61,6 +61,8 @@
   --ink-2: #A9B8C9;            /* Texto secundário (Cool Gray) */
   --muted: #74869B;            /* Texto discreto (Muted Slate) */
   --disabled-ink: #526174;     /* Texto desabilitado (Disabled) */
+  --subtle-hover: rgba(244, 248, 252, .06);   /* Fundo de hover discreto (filas, linhas, botões ghost) */
+  --subtle-pressed: rgba(244, 248, 252, .03); /* Fundo de pressionado/desabilitado */
 
   /* Primária & Secundária */
   --primary: #19D3C5;          /* Aqua Cyan: CTA, foco, item ativo */
@@ -160,6 +162,8 @@
   --ink-2: #17263A;
   --muted: #526174;
   --disabled-ink: #8A9BAE;
+  --subtle-hover: rgba(8, 17, 31, .05);
+  --subtle-pressed: rgba(8, 17, 31, .08);
 
   --primary: #0E948C;
   --primary-hover: #0B7A73;
@@ -393,6 +397,13 @@ button.small { min-height: 26px; padding: 2px 10px; font-size: 12px; line-height
 .btn-neon-glass.ok { --btn-glow: var(--ok); color: #FFFFFF }
 .btn-neon-glass.action { --btn-glow: var(--primary); color: #FFFFFF }
 .btn-neon-glass.bad { --btn-glow: var(--bad); color: #FFFFFF }
+/* O hover/pressionado genérico de button clareia o fundo e apagava o texto branco no tema claro. */
+.btn-neon-glass:hover:not(:disabled) { background: rgba(17, 29, 46, .82) }
+.btn-neon-glass:active:not(:disabled) { background: rgba(17, 29, 46, .92) }
+/* Desabilitado: sem brilho e com texto apagado, para não parecer clicável. */
+button.btn-neon-glass:disabled { color: var(--disabled-ink); background: var(--subtle-pressed); border-color: var(--line); box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none }
+button.btn-neon-glass:disabled::after { display: none }
+button:disabled .btn-icon-circle { background: var(--disabled-ink); box-shadow: none }
 
 /* 3. Botão Iridescente Refrativo com Espectro Cáustico */
 .btn-iridescent {
@@ -624,6 +635,7 @@ input:hover, select:hover, textarea:hover { border-color: var(--line-strong); bo
 input:focus, select:focus, textarea:focus { outline: none; border-bottom-color: var(--primary); box-shadow: inset 0 -1px 0 var(--primary) }
 input:focus-visible, select:focus-visible, textarea:focus-visible { outline: none }
 input[type="checkbox"], input[type="range"] { border: 0; background: transparent; box-shadow: none }
+input[type="checkbox"]:focus-visible, input[type="range"]:focus-visible { outline: 2px solid var(--focus-outer); outline-offset: 2px }
 select option { background: var(--surface-strong); color: var(--ink) }
 
 textarea { min-height: 88px; resize: vertical }
@@ -641,7 +653,7 @@ textarea { min-height: 88px; resize: vertical }
   height: 100vh;
   display: flex; flex-direction: column; align-items: center; gap: 6px;
   padding: 16px 0;
-  background: rgba(13, 23, 38, .78);
+  background: color-mix(in srgb, var(--bg-secondary) 78%, transparent);
   -webkit-backdrop-filter: blur(32px) saturate(190%); backdrop-filter: blur(32px) saturate(190%);
   border-right: 1px solid var(--line);
   box-shadow: var(--shadow-16);
@@ -725,7 +737,7 @@ textarea { min-height: 88px; resize: vertical }
   border: 1px solid rgba(56, 189, 248, .30);
   border-left: 4px solid var(--info);
   border-radius: var(--radius-ctl);
-  background: linear-gradient(135deg, rgba(56, 189, 248, .10) 0%, rgba(12, 41, 64, .88) 100%);
+  background: linear-gradient(135deg, rgba(56, 189, 248, .10) 0%, color-mix(in srgb, var(--info-bg) 88%, transparent) 100%);
   -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
   box-shadow: inset 0 1px 1px var(--glass-highlight), 0 4px 20px rgba(0, 0, 0, .25);
   font-size: 13px; line-height: 19px;
@@ -757,7 +769,8 @@ main { padding: 4px 32px 32px; min-width: 0 }
   box-shadow: inset 0 1px 1px rgba(244, 248, 252, .22), 0 8px 32px rgba(0, 0, 0, .45), 0 0 16px rgba(25, 211, 197, .08);
 }
 .card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 14px }
-.card-head h2 { font-size: 18px; line-height: 24px; font-weight: 600 }
+.card-head h2 { font-size: 18px; line-height: 24px; font-weight: 600; min-width: 0; overflow-wrap: anywhere }
+.card-head select { max-width: 100%; min-width: 0 }
 
 .grid { display: grid; gap: 16px }
 .kpis { grid-template-columns: repeat(5, minmax(0, 1fr)) }
@@ -839,13 +852,14 @@ main { padding: 4px 32px 32px; min-width: 0 }
 .viewer { position: relative; display: grid; place-items: center; overflow: hidden; background: var(--viewer); border: 1px solid var(--line); border-radius: var(--radius-card) }
 .viewer canvas { display: block; max-width: 100%; max-height: calc(100vh - 300px); width: auto; height: auto }
 .viewer.drawing canvas { touch-action: none; cursor: crosshair }
+.viewer canvas:focus-visible { outline-offset: -3px }
 
 #message {
   min-height: 36px; margin: 12px 0 0; padding: 10px 14px;
   border-radius: var(--radius-ctl);
   border: 1px solid rgba(25, 211, 197, .30);
   border-left: 4px solid var(--primary);
-  background: linear-gradient(135deg, rgba(25, 211, 197, .10) 0%, rgba(12, 53, 56, .85) 100%);
+  background: linear-gradient(135deg, rgba(25, 211, 197, .10) 0%, color-mix(in srgb, var(--select-bg) 85%, transparent) 100%);
   -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
   box-shadow: inset 0 1px 1px var(--glass-highlight), 0 4px 16px rgba(0, 0, 0, .2);
   font-size: 13px; line-height: 18px;
@@ -854,9 +868,10 @@ main { padding: 4px 32px 32px; min-width: 0 }
 #message.error {
   border-color: rgba(240, 82, 99, .35);
   border-left-color: var(--bad);
-  background: linear-gradient(135deg, rgba(240, 82, 99, .12) 0%, rgba(53, 21, 28, .90) 100%);
+  background: linear-gradient(135deg, rgba(240, 82, 99, .12) 0%, color-mix(in srgb, var(--bad-bg) 90%, transparent) 100%);
   color: #FFB3BC;
 }
+:root[data-theme="light"] #message.error { color: var(--bad) }
 
 details { margin-top: 12px; font-size: 13px }
 details summary { cursor: pointer; color: var(--muted) }
@@ -887,7 +902,7 @@ details p { white-space: pre-line }
   display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 8px; align-items: center;
   margin: 6px 0; padding: 10px 12px;
   border: 1px dashed var(--box-color); border-left: 4px solid var(--ai); border-radius: var(--radius-ctl);
-  background: linear-gradient(135deg, rgba(247, 179, 43, .12) 0%, rgba(51, 38, 9, .88) 100%);
+  background: linear-gradient(135deg, rgba(247, 179, 43, .12) 0%, color-mix(in srgb, var(--ai-bg) 88%, transparent) 100%);
   -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
   box-shadow: 0 0 14px rgba(247, 179, 43, .18), inset 0 1px 0 rgba(247, 179, 43, .15);
   font-size: 13px;
@@ -935,7 +950,7 @@ kbd { font: 11px/16px var(--font-mono); padding: 0 5px; border: 1px solid var(--
 table { width: 100%; border-collapse: collapse; font-size: 13px }
 th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top }
 th { font-size: 12px; line-height: 16px; color: var(--muted); font-weight: 600 }
-td.num, th.num { text-align: right; font-variant-numeric: tabular-nums }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap }
 tbody tr { transition: background var(--fast) var(--ease) }
 tbody tr.clickable { cursor: pointer }
 tbody tr.clickable:hover, tbody tr[aria-selected="true"] { background: var(--subtle-hover) }
@@ -949,7 +964,7 @@ tbody tr[aria-selected="true"] td:first-child { box-shadow: inset 3px 0 0 var(--
 .chart .legend { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; font-size: 12px; color: var(--muted) }
 .chart .legend span { display: inline-flex; align-items: center; gap: 6px }
 .chart .legend i { width: 14px; height: 3px; border-radius: 2px; background: var(--c); box-shadow: 0 0 6px var(--c) }
-.chart .tooltip { position: absolute; pointer-events: none; white-space: nowrap; padding: 6px 10px; border: 1px solid var(--line); border-radius: var(--radius-ctl); background: var(--glass-strong); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); box-shadow: var(--shadow-16); font-size: 12px }
+.chart .tooltip { position: absolute; pointer-events: none; white-space: normal; max-width: calc(100% - 4px); padding: 6px 10px; border: 1px solid var(--line); border-radius: var(--radius-ctl); background: var(--glass-strong); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); box-shadow: var(--shadow-16); font-size: 12px }
 .empty { padding: 24px; text-align: center; color: var(--muted); font-size: 13px }
 
 .plots { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-top: 12px }
@@ -1030,7 +1045,6 @@ pre.log { max-height: 260px; overflow: auto; margin: 8px 0 0; padding: 10px 12px
   .rail { position: fixed; top: auto; bottom: 0; left: 0; right: 0; height: auto; flex-direction: row; justify-content: space-around; padding: 4px; border-right: 0; border-top: 1px solid var(--glass-border); box-shadow: var(--shadow-16) }
   .rail button[aria-current="page"]::before { left: 50%; top: auto; bottom: 0; width: 16px; height: 3px; margin: 0 0 0 -8px }
   .rail .brand, .rail .spacer, .rail button .tip { display: none }
-  .shell { padding-bottom: 64px }
   .topbar, .notice-strip, main, .footer { padding-left: 16px; padding-right: 16px }
   h1 { font-size: 24px; line-height: 32px }
   .review-grid, .two, .halves, .inspector { grid-template-columns: 1fr }
@@ -1041,8 +1055,19 @@ pre.log { max-height: 260px; overflow: auto; margin: 8px 0 0; padding: 10px 12px
   .form-grid { grid-template-columns: 1fr 1fr }
   .metric-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)) }
   .viewer canvas { max-height: 60vh }
-  #toast { left: 16px; right: 16px; bottom: 72px; max-width: none }
+  #toast { left: 16px; right: 16px; bottom: 90px; max-width: none }
+  /* Dock com lupa de vidro no lugar da barra inferior; o trilho fica só com o botão de tema, flutuando no topo. */
+  .nav-magnifier { display: block; background: color-mix(in srgb, var(--bg-secondary) 82%, transparent) }
+  .nav-magnifier .nav__fake-icons { background: color-mix(in srgb, var(--bg-secondary) 95%, transparent) }
+  /* Sem desfoque na lente: ele borrava o ícone ampliado que fica embaixo dela. */
+  .nav-magnifier .nav__glass { -webkit-backdrop-filter: none; backdrop-filter: none }
+  .rail button[data-view] { display: none }
+  .rail { top: 12px; right: 12px; bottom: auto; left: auto; padding: 0; border: 0; border-radius: var(--radius-ctl) }
+  .topbar { padding-right: 72px }
+  .shell { padding-bottom: 90px }
 }
+:root[data-theme="light"] .nav-magnifier .nav__item-link--purple,
+:root[data-theme="light"] .nav-magnifier .nav__fake-icon--purple { color: #7C3AED }
 
 @media (max-width: 480px) {
   .kpis, .steps, .form-grid { grid-template-columns: 1fr }
@@ -1056,15 +1081,16 @@ pre.log { max-height: 260px; overflow: auto; margin: 8px 0 0; padding: 10px 12px
 
 /* Sem suporte a backdrop-filter: vidro vira superfície opaca legível. */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .card, .rail, #toast, .notice, .chart .tooltip { background: var(--surface-strong) }
+  .card, .rail, #toast, .notice, .chart .tooltip, .nav-magnifier { background: var(--surface-strong) }
 }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important }
+  .glow-decision { animation: none !important }
 }
 
 @media (prefers-reduced-transparency: reduce) {
-  .card, .rail, #toast, .chart .tooltip { background: var(--surface-strong); -webkit-backdrop-filter: none; backdrop-filter: none }
+  .card, .rail, #toast, .chart .tooltip, .nav-magnifier { background: var(--surface-strong); -webkit-backdrop-filter: none; backdrop-filter: none }
 }
 </style>
 </head>
@@ -1694,7 +1720,8 @@ function paint(preview) {
       const top = Math.max(0, y1 - 24);
       ctx.fillStyle = category.color;
       ctx.fillRect(x1, top, ctx.measureText(text).width + 12, 24);
-      ctx.fillStyle = 'white';
+      // Texto escuro: com a paleta atual passa de 4,5:1 nas 13 cores de classe (branco ficava abaixo de 3:1 em 10).
+      ctx.fillStyle = '#08111F';
       ctx.fillText(text, x1 + 5, top + 18)
     })
   }
@@ -1710,7 +1737,8 @@ function paint(preview) {
       ctx.font = `${Math.max(13,Math.round(canvas.width/80))}px system-ui, sans-serif`;
       const text = `IA ${index+1}: ${category.label} ${Math.round(suggestion.confidence*100)}%`;
       const bottom = Math.min(canvas.height - 22, y2);
-      ctx.fillStyle = 'rgba(255,255,255,.9)';
+      // Placa escura com texto na cor da classe: legível nas 13 cores e diferente do rótulo sólido das caixas.
+      ctx.fillStyle = 'rgba(8,17,31,.88)';
       ctx.fillRect(x1, bottom, ctx.measureText(text).width + 12, 22);
       ctx.fillStyle = category.color;
       ctx.fillText(text, x1 + 5, bottom + 16)
@@ -2076,7 +2104,8 @@ function renderOverview() {
 /* ======================= Gráficos SVG (sem bibliotecas externas) ======================= */
 function lineChart(container, points, series, options = {}) {
   container.replaceChildren();
-  const height = options.height || 220, width = 640, pad = { l: 44, r: 12, t: 10, b: 24 };
+  // Largura real do contêiner (640 se ainda estiver oculto), para o texto não ficar achatado.
+  const height = options.height || 220, width = Math.max(280, Math.round(container.clientWidth) || 640), pad = { l: 44, r: 12, t: 10, b: 24 };
   const usable = series.filter(serie => points.some(point => point[serie.key] != null));
   if (!points.length || !usable.length) {
     container.append(el('div', { class: 'empty' }, options.empty || 'Sem dados de épocas ainda.'));
@@ -2106,7 +2135,8 @@ function lineChart(container, points, series, options = {}) {
     label.textContent = options.percent ? `${Math.round(value * 100)}%` : value.toFixed(value >= 10 ? 0 : 2)
   }
   [xMin, Math.round((xMin + xMax) / 2), xMax].forEach(x => {
-    const label = add('text', { x: sx(x), y: height - 6, 'text-anchor': 'middle', 'font-size': 11, fill: 'var(--muted)' });
+    const anchor = x === xMax ? 'end' : x === xMin ? 'start' : 'middle';
+    const label = add('text', { x: sx(x), y: height - 6, 'text-anchor': anchor, 'font-size': 11, fill: 'var(--muted)' });
     label.textContent = `ép. ${x}`
   });
   usable.forEach(serie => {
@@ -2121,13 +2151,15 @@ function lineChart(container, points, series, options = {}) {
   const tip = el('div', { class: 'tooltip hidden' });
   svg.addEventListener('pointermove', event => {
     const rect = svg.getBoundingClientRect();
-    const epoch = xMin + (event.clientX - rect.left) / rect.width * width;
+    const vx = (event.clientX - rect.left) / rect.width * width;
+    const epoch = xMin + (vx - pad.l) / (width - pad.l - pad.r) * (xMax - xMin);
     const nearest = points.reduce((best, point) => Math.abs(point.epoch - epoch) < Math.abs(best.epoch - epoch) ? point : best, points[0]);
     const x = sx(nearest.epoch);
     cursor.setAttribute('x1', x); cursor.setAttribute('x2', x); cursor.setAttribute('visibility', 'visible');
     tip.textContent = `Época ${nearest.epoch} · ` + usable.map(serie => `${serie.label} ${nearest[serie.key] == null ? '—' : options.percent ? pct(nearest[serie.key]) : nearest[serie.key].toFixed(3)}`).join(' · ');
     tip.classList.remove('hidden');
-    const left = Math.min(rect.width - tip.offsetWidth - 4, Math.max(0, x / width * rect.width + 8));
+    tip.style.left = '0px';
+    const left = Math.max(0, Math.min(rect.width - tip.offsetWidth - 4, x / width * rect.width + 8));
     tip.style.left = left + 'px'; tip.style.top = '4px'
   });
   svg.addEventListener('pointerleave', () => { cursor.setAttribute('visibility', 'hidden'); tip.classList.add('hidden') });

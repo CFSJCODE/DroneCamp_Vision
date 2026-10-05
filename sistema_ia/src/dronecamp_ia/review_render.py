@@ -143,7 +143,7 @@ def render_review_package(config: ProjectConfig, registry_path: Path) -> Path:
             x, y = coordinates[:2]
             bounds = draw.textbbox((x, max(0, y - 22)), text, font=font)
             draw.rectangle(bounds, fill=color)
-            draw.text((x, max(0, y - 22)), text, fill="white", font=font)
+            draw.text((x, max(0, y - 22)), text, fill="#08111F", font=font)
         evidence.save(overlays_dir / f"{digest}.jpg", quality=92)
         # Estes .txt são propostas, deliberadamente separados de data/dataset.
         if item["status"] in {"positive", "negative"}:
