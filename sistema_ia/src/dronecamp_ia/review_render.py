@@ -30,8 +30,8 @@ from .io import file_hash, resolve_local_path, write_json
 from .operations import collect_operations
 from .review_data import boxes_to_yolo, review_image_size, validate_boxes, write_review_summary
 
-# Uma cor por classe (índice = ID da classe), usada nas evidências e na página.
-COLORS = ["#c73838", "#a23490", "#b36c00", "#265bc4", "#7646bb", "#c34c18", "#087d78", "#397821", "#5b4b99", "#166d91", "#8b5018", "#405ac0", "#895394"]
+# Uma cor por classe (índice = ID da classe), usada nas evidências e na página (paleta Moonlight de alto contraste).
+COLORS = ["#f43f5e", "#e11d48", "#fb923c", "#38bdf8", "#a855f7", "#ec4899", "#14b8a6", "#10b981", "#f59e0b", "#06b6d4", "#f97316", "#eab308", "#818cf8"]
 
 
 def _font(size: int):
@@ -82,13 +82,19 @@ def load_page_payload(registry_path: Path) -> dict:
 
 
 def refresh_review_page(config: ProjectConfig, registry_path: Path) -> Path:
-    """Regrava só o ``index.html`` com o modelo atual, sem copiar fotos nem redesenhar evidências.
+    """Regrava o ``index.html`` e atualiza as cores das classes com a paleta atual,
+    sem copiar fotos nem redesenhar evidências.
 
     Útil quando muda o modelo da página ou chegam novos treinos: fotos, caixas,
     sugestões e rótulos propostos continuam exatamente os de ``browser_data.json``.
     """
     directory = registry_path.parent
-    page = build_page(load_page_payload(registry_path), collect_operations(config, directory))
+    payload = load_page_payload(registry_path)
+    for category in payload.get("classes", []):
+        if 0 <= category.get("id", -1) < len(COLORS):
+            category["color"] = COLORS[category["id"]]
+    write_json(directory / "browser_data.json", payload)
+    page = build_page(payload, collect_operations(config, directory))
     (directory / "index.html").write_text(page, encoding="utf-8")
     return directory / "index.html"
 
