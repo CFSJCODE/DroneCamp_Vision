@@ -22,3 +22,9 @@ sistema_ia/.runtime/jobs/
 # Documentos pessoais aguardam a decisao sobre publicacao/visibilidade.
 /Documentos PUCTEC/*
 !/Documentos PUCTEC/Apresentação DRONECAMP PUCTEC.pdf
+
+# Busca aberta: só o checkpoint com as frases embutidas (models/zero_shot) é versionado.
+sistema_ia/models/mobileclip*.ts
+sistema_ia/models/yoloe-*.pt
+# Gerado na primeira execucao de suggest --zero-shot (o envio LFS pela nuvem foi recusado).
+sistema_ia/models/zero_shot/

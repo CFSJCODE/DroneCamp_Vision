@@ -182,3 +182,10 @@ Executado em container Linux (Python 3.12, Ultralytics 8.4.172, Torch 2.14.1 CPU
 - `fit-calibrator` (pesos v7, dataset v8, 14 fotos fora do treino, 375 sugestões, 10 acertos): **sem ganho** sobre a confiança crua (Brier 0,025 × 0,022; AUC 0,743 × 0,799). `suggest --calibrator` recusa esse calibrador por padrão.
 - RFS no treino v8 (`t = 0,3`): 22 fotos viram 33 entradas por época; fator 2,57 para as classes de uma foto.
 - Não verificado: treino completo (80 épocas) com RFS ou com o vencedor do bandit, que fica para o PC do projeto; o texto "aceitação estimada" na página de revisão não foi conferido no navegador, e as páginas `index.html` existentes não foram regeneradas.
+
+## Marcação automática (busca aberta YOLOE) — 05/10/2026
+
+- Testes: **223 OK**, incluindo 5 novos rápidos (`tests/test_autolabel.py`) e `test_10` com o YOLOE real gerando uma revisão nova com sugestões pendentes.
+- `evaluate-autolabel` (piloto v7, dataset v8): piloto 7/29, busca aberta 0/29 e as duas juntas 7/29 nas 14 fotos fora do treino; a busca aberta acerta 6/155 nas 37 fotos, sendo 3/4 em `vegetacao_calha`.
+- Revisão nova `data/reviews/internet_v3_busca_aberta` (7 fotos, 37 sugestões): página aberta no Chromium sem erros de JavaScript, com o texto "busca aberta: …" visível nas sugestões.
+- Não verificado: desempenho em fotos de drone de outra edificação real, pois ainda não há nenhuma revisada.

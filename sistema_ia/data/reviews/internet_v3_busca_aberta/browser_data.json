@@ -1,0 +1,711 @@
+{
+  "registry_sha256": "0c41c534c5576ccaef61453e0a8b40341f95a7fe60928e70e14049e0796d8ec6",
+  "version": "internet_v3_busca_aberta",
+  "images": [
+    {
+      "image_sha256": "254dcec36fe67dccb67d7820faf3ef0b732ac58503b9b2fdcf535a71dfdde2d0",
+      "filename": "254dcec36fe67dccb67d7820faf3ef0b732ac58503b9b2fdcf535a71dfdde2d0.webp",
+      "pages": [],
+      "width": 1000,
+      "height": 750,
+      "status": "ambiguous",
+      "boxes": [],
+      "annotator": "sem_anotacao_humana",
+      "notes": "Foto nova: nenhuma caixa revisada. Use as sugestões do modelo como ponto de partida.",
+      "visual_review_status": "model_suggestions_only",
+      "technical_status": "pending_human_review",
+      "human_approved": false,
+      "building_group": "internet_referencia",
+      "scene_group": "internet_referencia_254dcec36fe6",
+      "source_path": null,
+      "original_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/internet_v1_sugestoes_modelo/originals/254dcec36fe67dccb67d7820faf3ef0b732ac58503b9b2fdcf535a71dfdde2d0.webp",
+      "severity": null,
+      "image_url": "images/254dcec36fe67dccb67d7820faf3ef0b732ac58503b9b2fdcf535a71dfdde2d0.webp",
+      "evidence_url": "evidence/254dcec36fe67dccb67d7820faf3ef0b732ac58503b9b2fdcf535a71dfdde2d0.jpg",
+      "model_suggestions": [
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            705,
+            584,
+            921,
+            742
+          ],
+          "confidence": 0.6572,
+          "id": "s001",
+          "source": "piloto"
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            41,
+            588,
+            160,
+            692
+          ],
+          "confidence": 0.3884,
+          "id": "s002",
+          "source": "piloto"
+        },
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            799,
+            394,
+            999,
+            541
+          ],
+          "confidence": 0.1993,
+          "id": "s003",
+          "source": "piloto"
+        }
+      ]
+    },
+    {
+      "image_sha256": "64d407d9c87c448663b58dc3a834370e648eea913e5d8ff4dd1142ca52560d7d",
+      "filename": "64d407d9c87c448663b58dc3a834370e648eea913e5d8ff4dd1142ca52560d7d.webp",
+      "pages": [],
+      "width": 600,
+      "height": 800,
+      "status": "ambiguous",
+      "boxes": [],
+      "annotator": "sem_anotacao_humana",
+      "notes": "Foto nova: nenhuma caixa revisada. Use as sugestões do modelo como ponto de partida.",
+      "visual_review_status": "model_suggestions_only",
+      "technical_status": "pending_human_review",
+      "human_approved": false,
+      "building_group": "internet_referencia",
+      "scene_group": "internet_referencia_64d407d9c87c",
+      "source_path": null,
+      "original_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/internet_v1_sugestoes_modelo/originals/64d407d9c87c448663b58dc3a834370e648eea913e5d8ff4dd1142ca52560d7d.webp",
+      "severity": null,
+      "image_url": "images/64d407d9c87c448663b58dc3a834370e648eea913e5d8ff4dd1142ca52560d7d.webp",
+      "evidence_url": "evidence/64d407d9c87c448663b58dc3a834370e648eea913e5d8ff4dd1142ca52560d7d.jpg",
+      "model_suggestions": [
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            321,
+            0,
+            600,
+            800
+          ],
+          "confidence": 0.2896,
+          "source": "busca_aberta",
+          "prompt": "clogged gutter",
+          "id": "s001"
+        },
+        {
+          "class_id": 11,
+          "bbox_xyxy": [
+            464,
+            637,
+            508,
+            682
+          ],
+          "confidence": 0.2323,
+          "source": "busca_aberta",
+          "prompt": "missing washer on roof fastener",
+          "id": "s002"
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            457,
+            629,
+            516,
+            689
+          ],
+          "confidence": 0.2166,
+          "id": "s003",
+          "source": "piloto"
+        },
+        {
+          "class_id": 7,
+          "bbox_xyxy": [
+            104,
+            11,
+            397,
+            800
+          ],
+          "confidence": 0.1971,
+          "source": "busca_aberta",
+          "prompt": "plants growing in gutter",
+          "id": "s004"
+        }
+      ]
+    },
+    {
+      "image_sha256": "7a2b1cb1a06db525203fc17a6c90191eda420060b4375f97d013e92bc4f67939",
+      "filename": "7a2b1cb1a06db525203fc17a6c90191eda420060b4375f97d013e92bc4f67939.webp",
+      "pages": [],
+      "width": 1000,
+      "height": 750,
+      "status": "ambiguous",
+      "boxes": [],
+      "annotator": "sem_anotacao_humana",
+      "notes": "Foto nova: nenhuma caixa revisada. Use as sugestões do modelo como ponto de partida.",
+      "visual_review_status": "model_suggestions_only",
+      "technical_status": "pending_human_review",
+      "human_approved": false,
+      "building_group": "internet_referencia",
+      "scene_group": "internet_referencia_7a2b1cb1a06d",
+      "source_path": null,
+      "original_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/internet_v1_sugestoes_modelo/originals/7a2b1cb1a06db525203fc17a6c90191eda420060b4375f97d013e92bc4f67939.webp",
+      "severity": null,
+      "image_url": "images/7a2b1cb1a06db525203fc17a6c90191eda420060b4375f97d013e92bc4f67939.webp",
+      "evidence_url": "evidence/7a2b1cb1a06db525203fc17a6c90191eda420060b4375f97d013e92bc4f67939.jpg",
+      "model_suggestions": [
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            192,
+            525,
+            224,
+            551
+          ],
+          "confidence": 0.4171,
+          "source": "busca_aberta",
+          "prompt": "damaged metal flashing",
+          "id": "s001"
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            477,
+            334,
+            517,
+            395
+          ],
+          "confidence": 0.326,
+          "id": "s002",
+          "source": "piloto"
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            607,
+            449,
+            772,
+            622
+          ],
+          "confidence": 0.2605,
+          "source": "busca_aberta",
+          "prompt": "damaged metal flashing",
+          "id": "s003"
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            517,
+            302,
+            549,
+            348
+          ],
+          "confidence": 0.2289,
+          "id": "s004",
+          "source": "piloto"
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            389,
+            298,
+            431,
+            407
+          ],
+          "confidence": 0.2049,
+          "id": "s005",
+          "source": "piloto"
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            427,
+            358,
+            467,
+            451
+          ],
+          "confidence": 0.2009,
+          "id": "s006",
+          "source": "piloto"
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            517,
+            308,
+            549,
+            351
+          ],
+          "confidence": 0.1821,
+          "id": "s007",
+          "source": "piloto"
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            400,
+            304,
+            430,
+            357
+          ],
+          "confidence": 0.1767,
+          "id": "s008",
+          "source": "piloto"
+        }
+      ]
+    },
+    {
+      "image_sha256": "99746af6de1be10b63394ae4098e24150e76a496e000b69528898d11d06e871e",
+      "filename": "99746af6de1be10b63394ae4098e24150e76a496e000b69528898d11d06e871e.webp",
+      "pages": [],
+      "width": 602,
+      "height": 800,
+      "status": "ambiguous",
+      "boxes": [],
+      "annotator": "sem_anotacao_humana",
+      "notes": "Foto nova: nenhuma caixa revisada. Use as sugestões do modelo como ponto de partida.",
+      "visual_review_status": "model_suggestions_only",
+      "technical_status": "pending_human_review",
+      "human_approved": false,
+      "building_group": "internet_referencia",
+      "scene_group": "internet_referencia_99746af6de1b",
+      "source_path": null,
+      "original_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/internet_v1_sugestoes_modelo/originals/99746af6de1be10b63394ae4098e24150e76a496e000b69528898d11d06e871e.webp",
+      "severity": null,
+      "image_url": "images/99746af6de1be10b63394ae4098e24150e76a496e000b69528898d11d06e871e.webp",
+      "evidence_url": "evidence/99746af6de1be10b63394ae4098e24150e76a496e000b69528898d11d06e871e.jpg",
+      "model_suggestions": [
+        {
+          "class_id": 7,
+          "bbox_xyxy": [
+            284,
+            68,
+            466,
+            451
+          ],
+          "confidence": 0.7571,
+          "source": "busca_aberta",
+          "prompt": "grass growing inside gutter",
+          "id": "s001"
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            170,
+            594,
+            332,
+            693
+          ],
+          "confidence": 0.4998,
+          "source": "busca_aberta",
+          "prompt": "damaged metal flashing",
+          "id": "s002"
+        },
+        {
+          "class_id": 7,
+          "bbox_xyxy": [
+            184,
+            63,
+            488,
+            711
+          ],
+          "confidence": 0.4984,
+          "source": "busca_aberta",
+          "prompt": "grass growing inside gutter",
+          "id": "s003"
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            261,
+            0,
+            308,
+            300
+          ],
+          "confidence": 0.4825,
+          "id": "s004",
+          "source": "piloto"
+        },
+        {
+          "class_id": 7,
+          "bbox_xyxy": [
+            456,
+            21,
+            602,
+            799
+          ],
+          "confidence": 0.3266,
+          "source": "busca_aberta",
+          "prompt": "grass growing inside gutter",
+          "id": "s005"
+        },
+        {
+          "class_id": 7,
+          "bbox_xyxy": [
+            0,
+            153,
+            366,
+            800
+          ],
+          "confidence": 0.286,
+          "source": "busca_aberta",
+          "prompt": "grass growing inside gutter",
+          "id": "s006"
+        },
+        {
+          "class_id": 7,
+          "bbox_xyxy": [
+            435,
+            60,
+            495,
+            515
+          ],
+          "confidence": 0.2341,
+          "source": "busca_aberta",
+          "prompt": "moss in gutter",
+          "id": "s007"
+        },
+        {
+          "class_id": 7,
+          "bbox_xyxy": [
+            371,
+            60,
+            496,
+            538
+          ],
+          "confidence": 0.2308,
+          "source": "busca_aberta",
+          "prompt": "moss in gutter",
+          "id": "s008"
+        },
+        {
+          "class_id": 7,
+          "bbox_xyxy": [
+            171,
+            590,
+            438,
+            712
+          ],
+          "confidence": 0.2129,
+          "source": "busca_aberta",
+          "prompt": "grass growing inside gutter",
+          "id": "s009"
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            434,
+            0,
+            564,
+            62
+          ],
+          "confidence": 0.1929,
+          "source": "busca_aberta",
+          "prompt": "broken roof flashing",
+          "id": "s010"
+        },
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            32,
+            632,
+            221,
+            800
+          ],
+          "confidence": 0.1855,
+          "source": "busca_aberta",
+          "prompt": "dirt and leaves inside gutter",
+          "id": "s011"
+        },
+        {
+          "class_id": 7,
+          "bbox_xyxy": [
+            166,
+            458,
+            513,
+            720
+          ],
+          "confidence": 0.1848,
+          "id": "s012",
+          "source": "piloto+busca_aberta",
+          "prompt": "grass growing inside gutter"
+        }
+      ]
+    },
+    {
+      "image_sha256": "ac5a3da68c0046fe10430d7de5787d2ce8e072fb207364681b12be7c4e44600d",
+      "filename": "ac5a3da68c0046fe10430d7de5787d2ce8e072fb207364681b12be7c4e44600d.webp",
+      "pages": [],
+      "width": 1000,
+      "height": 750,
+      "status": "ambiguous",
+      "boxes": [],
+      "annotator": "sem_anotacao_humana",
+      "notes": "Foto nova: nenhuma caixa revisada. Use as sugestões do modelo como ponto de partida.",
+      "visual_review_status": "model_suggestions_only",
+      "technical_status": "pending_human_review",
+      "human_approved": false,
+      "building_group": "internet_referencia",
+      "scene_group": "internet_referencia_ac5a3da68c00",
+      "source_path": null,
+      "original_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/internet_v1_sugestoes_modelo/originals/ac5a3da68c0046fe10430d7de5787d2ce8e072fb207364681b12be7c4e44600d.webp",
+      "severity": null,
+      "image_url": "images/ac5a3da68c0046fe10430d7de5787d2ce8e072fb207364681b12be7c4e44600d.webp",
+      "evidence_url": "evidence/ac5a3da68c0046fe10430d7de5787d2ce8e072fb207364681b12be7c4e44600d.jpg",
+      "model_suggestions": [
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            412,
+            171,
+            626,
+            425
+          ],
+          "confidence": 0.2512,
+          "source": "busca_aberta",
+          "prompt": "damaged metal flashing",
+          "id": "s001"
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            537,
+            137,
+            890,
+            241
+          ],
+          "confidence": 0.2165,
+          "source": "busca_aberta",
+          "prompt": "pile of rubble on roof tiles",
+          "id": "s002"
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            392,
+            447,
+            479,
+            750
+          ],
+          "confidence": 0.1755,
+          "source": "busca_aberta",
+          "prompt": "damaged metal flashing",
+          "id": "s003"
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            571,
+            113,
+            1000,
+            171
+          ],
+          "confidence": 0.1533,
+          "source": "busca_aberta",
+          "prompt": "tape on roof",
+          "id": "s004"
+        }
+      ]
+    },
+    {
+      "image_sha256": "aefe259916a067aefbf2e3729f1f4321594d3354c0785827b975cb7ef0d2edb3",
+      "filename": "aefe259916a067aefbf2e3729f1f4321594d3354c0785827b975cb7ef0d2edb3.webp",
+      "pages": [],
+      "width": 600,
+      "height": 800,
+      "status": "ambiguous",
+      "boxes": [],
+      "annotator": "sem_anotacao_humana",
+      "notes": "Foto nova: nenhuma caixa revisada. Use as sugestões do modelo como ponto de partida.",
+      "visual_review_status": "model_suggestions_only",
+      "technical_status": "pending_human_review",
+      "human_approved": false,
+      "building_group": "internet_referencia",
+      "scene_group": "internet_referencia_aefe259916a0",
+      "source_path": null,
+      "original_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/internet_v1_sugestoes_modelo/originals/aefe259916a067aefbf2e3729f1f4321594d3354c0785827b975cb7ef0d2edb3.webp",
+      "severity": null,
+      "image_url": "images/aefe259916a067aefbf2e3729f1f4321594d3354c0785827b975cb7ef0d2edb3.webp",
+      "evidence_url": "evidence/aefe259916a067aefbf2e3729f1f4321594d3354c0785827b975cb7ef0d2edb3.jpg",
+      "model_suggestions": [
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            141,
+            727,
+            209,
+            800
+          ],
+          "confidence": 0.7834,
+          "id": "s001",
+          "source": "piloto"
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            0,
+            0,
+            324,
+            510
+          ],
+          "confidence": 0.2723,
+          "source": "busca_aberta",
+          "prompt": "tape on roof",
+          "id": "s002"
+        },
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            298,
+            553,
+            457,
+            800
+          ],
+          "confidence": 0.2412,
+          "source": "busca_aberta",
+          "prompt": "dirt and leaves inside gutter",
+          "id": "s003"
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            239,
+            338,
+            278,
+            433
+          ],
+          "confidence": 0.1982,
+          "id": "s004",
+          "source": "piloto"
+        },
+        {
+          "class_id": 7,
+          "bbox_xyxy": [
+            280,
+            125,
+            442,
+            470
+          ],
+          "confidence": 0.1733,
+          "source": "busca_aberta",
+          "prompt": "plants growing in gutter",
+          "id": "s005"
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            189,
+            588,
+            232,
+            640
+          ],
+          "confidence": 0.1725,
+          "id": "s006",
+          "source": "piloto"
+        }
+      ]
+    },
+    {
+      "image_sha256": "c367551ee526a7b13136434745402c8ca20b7a87452352ce0b1e2ccebe5b9fae",
+      "filename": "c367551ee526a7b13136434745402c8ca20b7a87452352ce0b1e2ccebe5b9fae.webp",
+      "pages": [],
+      "width": 800,
+      "height": 600,
+      "status": "ambiguous",
+      "boxes": [],
+      "annotator": "sem_anotacao_humana",
+      "notes": "Foto nova: nenhuma caixa revisada. Use as sugestões do modelo como ponto de partida.",
+      "visual_review_status": "model_suggestions_only",
+      "technical_status": "pending_human_review",
+      "human_approved": false,
+      "building_group": "internet_referencia",
+      "scene_group": "internet_referencia_c367551ee526",
+      "source_path": null,
+      "original_path": "/home/user/DroneCamp_Vision/sistema_ia/data/reviews/internet_v1_sugestoes_modelo/originals/c367551ee526a7b13136434745402c8ca20b7a87452352ce0b1e2ccebe5b9fae.webp",
+      "severity": null,
+      "image_url": "images/c367551ee526a7b13136434745402c8ca20b7a87452352ce0b1e2ccebe5b9fae.webp",
+      "evidence_url": "evidence/c367551ee526a7b13136434745402c8ca20b7a87452352ce0b1e2ccebe5b9fae.jpg",
+      "model_suggestions": []
+    }
+  ],
+  "taxonomy_recheck_pending": false,
+  "classes_requiring_review": [],
+  "classes": [
+    {
+      "id": 0,
+      "label": "Telha quebrada",
+      "color": "#FF5C70"
+    },
+    {
+      "id": 1,
+      "label": "Telha ausente",
+      "color": "#E63950"
+    },
+    {
+      "id": 2,
+      "label": "Resíduos sobre telhas",
+      "color": "#FF9F43"
+    },
+    {
+      "id": 3,
+      "label": "Reparo em telha",
+      "color": "#42B8E8"
+    },
+    {
+      "id": 4,
+      "label": "Rufo ausente",
+      "color": "#9B6DF2"
+    },
+    {
+      "id": 5,
+      "label": "Rufo quebrado",
+      "color": "#EC5DAA"
+    },
+    {
+      "id": 6,
+      "label": "Resíduos em calha",
+      "color": "#52C79A"
+    },
+    {
+      "id": 7,
+      "label": "Vegetação em calha",
+      "color": "#2BBE72"
+    },
+    {
+      "id": 8,
+      "label": "Pedaço de telha",
+      "color": "#F4C542"
+    },
+    {
+      "id": 9,
+      "label": "Rufo deslocado/desalinhado",
+      "color": "#56D1E8"
+    },
+    {
+      "id": 10,
+      "label": "Pedaço de telha sobreposto à telha",
+      "color": "#FF7A1A"
+    },
+    {
+      "id": 11,
+      "label": "Elemento de fixação de telha solto/frouxo",
+      "color": "#F5D547"
+    },
+    {
+      "id": 12,
+      "label": "Reparo em rufo",
+      "color": "#B89AF8"
+    }
+  ],
+  "duplicate_iou": 0.7,
+  "suggestions": {
+    "model_label": "Modelo piloto (não validado)",
+    "conf": 0.15,
+    "warning": "Sugestões automáticas: aceite somente o que você conferir. O modelo pode errar a classe, a caixa ou deixar de ver ocorrências.",
+    "weights_sha256": "bca87539647c20aca752ce6bd481dc4b74525005fe1a776f8e1f6505cd3d15a9",
+    "pilot": true,
+    "calibrator": null
+  }
+}

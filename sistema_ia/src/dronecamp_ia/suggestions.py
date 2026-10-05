@@ -73,12 +73,15 @@ def detect_boxes(model, path: Path, config: ProjectConfig, conf: float) -> list[
 # ---------------------------------------------------------------------------
 
 def suggest_for_registry(config: ProjectConfig, registry_path: Path, weights: str, conf: float | None = None,
-                         calibrator: Path | str | None = None, allow_unproven_calibrator: bool = False) -> Path:
+                         calibrator: Path | str | None = None, allow_unproven_calibrator: bool = False,
+                         zero_shot: bool = False) -> Path:
     """Grave suggestions.json ao lado do registro e regenere a página de revisão.
 
     Com ``calibrator`` (pasta de ``fit-calibrator``), cada caixa ganha
     ``acceptance_probability`` e a lista da foto é ordenada por ela. Calibrador
     sem ganho medido é recusado, salvo ``allow_unproven_calibrator`` (testes).
+    Com ``zero_shot``, a busca aberta (YOLOE, ``autolabel.py``) acrescenta caixas
+    procuradas por descrição em texto e registra achados fora da taxonomia.
     """
     from .calibration import load_calibrator
 
@@ -98,6 +101,14 @@ def suggest_for_registry(config: ProjectConfig, registry_path: Path, weights: st
     pilot = is_pilot_checkpoint(model.ckpt_path)
     config = pilot_inference_config(config, model)
     calibration = load_calibrator(config, calibrator, allow_unproven_calibrator)
+    open_search = None
+    if zero_shot:
+        from .autolabel import describe, load_prompts, zero_shot_detector
+
+        spec = load_prompts(config)
+        open_model, open_checkpoint = zero_shot_detector(config, spec)
+        open_search = (spec, open_model, open_checkpoint, describe(spec, open_checkpoint))
+    uncatalogued = {}
     # 3. Roda o modelo em cada foto do registro (conferindo o hash do original).
     images = {}
     for item in registry["images"]:
@@ -105,6 +116,13 @@ def suggest_for_registry(config: ProjectConfig, registry_path: Path, weights: st
         if file_hash(source) != item["image_sha256"]:
             raise ValueError(f"A foto original mudou: {item.get('filename')}.")
         boxes = detect_boxes(model, source, config, conf)
+        if open_search:
+            from .autolabel import merge_suggestions, zero_shot_boxes
+
+            open_boxes, extra = zero_shot_boxes(open_search[1], source, open_search[0], config.device)
+            boxes = merge_suggestions(boxes, open_boxes)
+            if extra:
+                uncatalogued[item["image_sha256"]] = extra
         if calibration:
             width, height = review_image_size(source)
             boxes = calibration.annotate(boxes, width, height)
@@ -118,6 +136,9 @@ def suggest_for_registry(config: ProjectConfig, registry_path: Path, weights: st
         "model_label": "Modelo piloto (não validado)" if pilot else "Modelo especializado",
         "conf": conf, "imgsz": config.prediction["imgsz"], "warning": SUGGESTION_WARNING, "images": images,
         "calibrator": calibration.describe() if calibration else None,
+        "zero_shot": open_search[3] if open_search else None,
+        # Possíveis não conformidades fora da taxonomia: só registro para decisão humana.
+        "uncatalogued": uncatalogued,
         "total_suggestions": sum(len(values) for values in images.values()),
     })
     # 5. Regenera index.html com as sugestões tracejadas.
@@ -126,7 +147,7 @@ def suggest_for_registry(config: ProjectConfig, registry_path: Path, weights: st
 
 def create_review_for_new_images(config: ProjectConfig, source: Path, output: Path, building_group: str,
                                  weights: str, conf: float | None = None, calibrator: Path | str | None = None,
-                                 allow_unproven_calibrator: bool = False) -> Path:
+                                 allow_unproven_calibrator: bool = False, zero_shot: bool = False) -> Path:
     """Fotos novas viram uma revisão própria, com originais congelados por hash."""
     # 1. Pasta de saída nova, grupo da edificação e lista de fotos suportadas.
     source, output = Path(source).expanduser().resolve(), Path(output)
@@ -174,4 +195,4 @@ def create_review_for_new_images(config: ProjectConfig, source: Path, output: Pa
     }
     registry_path = output / "registry.json"
     write_json(registry_path, registry)
-    return suggest_for_registry(config, registry_path, weights, conf, calibrator, allow_unproven_calibrator)
+    return suggest_for_registry(config, registry_path, weights, conf, calibrator, allow_unproven_calibrator, zero_shot)

@@ -14,6 +14,7 @@ Comandos e onde está o código de cada um:
 - Aprendizado a partir das revisões: ``prioritize-review`` / ``learn-review`` → ``active_learning.py``
   (bandit LinUCB); ``fit-calibrator`` → ``calibration.py`` (scikit-learn);
   ``compare-models`` → ``model_gate.py``; ``tune-pilot-bandit`` → ``hparam_bandit.py``
+- Marcação automática: ``suggest --zero-shot`` e ``evaluate-autolabel`` → ``autolabel.py`` (YOLOE)
 
 Quando mexer: para criar um comando novo ou uma opção nova (``--algo``) em um
 comando existente. A lógica do comando fica no arquivo indicado acima.
@@ -116,6 +117,12 @@ def build_parser() -> argparse.ArgumentParser:
     suggest.add_argument("--calibrator", type=Path, help="Pasta de fit-calibrator: ordena por aceitação estimada.")
     suggest.add_argument("--allow-unproven-calibrator", action="store_true",
                          help="Usar calibrador sem ganho medido na validação cruzada (só para testes).")
+    suggest.add_argument("--zero-shot", action="store_true",
+                         help="Somar a busca aberta (YOLOE + configs/zero_shot_prompts.json) às sugestões do piloto.")
+    autolabel = commands.add_parser("evaluate-autolabel", help="Medir por classe piloto × busca aberta × as duas juntas.")
+    autolabel.add_argument("--data", type=Path, required=True)
+    autolabel.add_argument("--weights", required=True)
+    autolabel.add_argument("--conf", type=float)
     # Aprendizado com as decisões humanas (nada aqui aprova caixas).
     priority = commands.add_parser("prioritize-review", help="Ordenar a fila de revisão com o bandit LinUCB (RL).")
     priority.add_argument("--registry", type=Path, required=True)
@@ -238,12 +245,16 @@ def main(argv: list[str] | None = None) -> int:
                 raise ValueError("Use --registry (revisão existente) ou --source com --output e --group (fotos novas).")
             if args.registry:
                 output = suggest_for_registry(config, args.registry, args.weights, args.conf, args.calibrator,
-                                              args.allow_unproven_calibrator)
+                                              args.allow_unproven_calibrator, args.zero_shot)
             else:
                 if not args.output or not args.group:
                     raise ValueError("Fotos novas exigem --output e --group.")
                 output = create_review_for_new_images(config, args.source, args.output, args.group, args.weights,
-                                                      args.conf, args.calibrator, args.allow_unproven_calibrator)
+                                                      args.conf, args.calibrator, args.allow_unproven_calibrator,
+                                                      args.zero_shot)
+        elif args.command == "evaluate-autolabel":
+            from .autolabel import evaluate_autolabel
+            output = evaluate_autolabel(config, args.data, args.weights, args.conf)
         elif args.command == "prioritize-review":
             from .active_learning import prioritize_review
             output = prioritize_review(config, args.registry, args.policy, args.pilot_manifest, args.suggestions, args.alpha)
