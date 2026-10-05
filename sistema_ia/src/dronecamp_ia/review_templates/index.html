@@ -5,6 +5,9 @@
 <!-- Preenchido só quando a página vem do servidor local (comando platform); vazio no arquivo em disco. -->
 <meta name="dronecamp-server" content="">
 <link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
 <title>DroneCamp Vision · Operações YOLO</title>
 <style>
 /* -------------------------------------------------------------------------
@@ -27,8 +30,8 @@
 :root {
   color-scheme: dark;
   --rail: 68px;
-  --font-body: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "Inter", sans-serif;
-  --font-display: "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, "Inter", sans-serif;
+  --font-body: "Poppins", "Roboto", "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-display: "Poppins", "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, sans-serif;
   --font-mono: "Cascadia Code", "Cascadia Mono", Consolas, ui-monospace, monospace;
 
   /* Fluent & Apple: cantos e movimento */
@@ -296,6 +299,300 @@ button.ai:hover:not(:disabled) {
 button.ghost { background: transparent; border-color: transparent }
 button.ghost:hover:not(:disabled) { background: var(--subtle-hover) }
 button.small { min-height: 26px; padding: 2px 10px; font-size: 12px; line-height: 16px }
+
+/* ---------- Botões Especiais Liquid Glass da Apple & Iridescente ---------- */
+
+/* 1. Botão Apple Tactile Capsule CTA */
+.btn-apple-capsule {
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  min-height: 38px;
+  padding: 6px 16px;
+  border-radius: var(--radius-pill);
+  background: rgba(25, 211, 197, 0.12);
+  border: 1px double rgba(25, 211, 197, 0.35);
+  backdrop-filter: blur(16px) saturate(190%);
+  -webkit-backdrop-filter: blur(16px) saturate(190%);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 13px; font-weight: 600;
+  text-decoration: none; cursor: pointer; user-select: none;
+  box-shadow:
+    inset 2px -2px 1px -1px rgba(255, 255, 255, 0.6),
+    inset -2px 2px 1px -1px rgba(255, 255, 255, 0.4),
+    inset 0 0 2px rgba(0, 0, 0, 0.4),
+    0 4px 14px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s var(--ease), box-shadow 0.25s var(--ease), background 0.25s ease;
+}
+.btn-apple-capsule:hover:not(:disabled) {
+  transform: translateY(-2px);
+  background: rgba(25, 211, 197, 0.22);
+  box-shadow:
+    inset 2px -2px 1px -1px rgba(255, 255, 255, 0.8),
+    inset -2px 2px 1px -1px rgba(255, 255, 255, 0.6),
+    0 8px 24px rgba(25, 211, 197, 0.35);
+}
+.btn-apple-capsule:active:not(:disabled) {
+  transform: scale(0.95);
+}
+.btn-apple-capsule .btn-icon-circle {
+  width: 22px; height: 22px; border-radius: 50%;
+  display: grid; place-items: center;
+  background: var(--primary); color: #08111F;
+  box-shadow: 0 0 10px rgba(25, 211, 197, 0.5);
+  transition: transform 0.2s ease;
+}
+.btn-apple-capsule:hover:not(:disabled) .btn-icon-circle {
+  transform: scale(1.12);
+}
+
+/* 2. Botões Neon/LED Liquid Glass com Raio de Luz Inclinado */
+.btn-neon-glass {
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 34px; padding: 6px 16px;
+  border-radius: var(--radius-pill);
+  background: rgba(17, 29, 46, 0.65);
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 1px solid rgba(255, 255, 255, 0.12);
+  border-right: 1px solid rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+  color: #FFFFFF; font-family: var(--font-body);
+  font-size: 12px; font-weight: 600; letter-spacing: 0.3px;
+  cursor: pointer; overflow: hidden;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
+  transition: letter-spacing 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+}
+.btn-neon-glass:hover:not(:disabled) {
+  letter-spacing: 0.8px;
+  transform: translateY(-2px);
+}
+.btn-neon-glass:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.btn-neon-glass::before {
+  content: ""; position: absolute; top: 0; left: 0; width: 50%; height: 100%;
+  background: linear-gradient(to left, rgba(255, 255, 255, 0.2), transparent);
+  transform: skewX(45deg) translate(-150%);
+  transition: transform 0.6s ease; pointer-events: none;
+}
+.btn-neon-glass:hover:not(:disabled)::before {
+  transform: skewX(45deg) translate(280%);
+}
+.btn-neon-glass::after {
+  content: ""; position: absolute; left: 50%; transform: translateX(-50%);
+  bottom: -4px; width: 22px; height: 5px; border-radius: 8px;
+  background: var(--btn-glow, var(--primary));
+  box-shadow: 0 0 10px var(--btn-glow, var(--primary)), 0 0 20px var(--btn-glow, var(--primary));
+  transition: width 0.35s ease, height 0.35s ease, bottom 0.35s ease;
+}
+.btn-neon-glass:hover:not(:disabled)::after {
+  bottom: 0; width: 75%; height: 3px; border-radius: var(--radius-pill);
+}
+.btn-neon-glass.ok { --btn-glow: var(--ok); color: #FFFFFF }
+.btn-neon-glass.action { --btn-glow: var(--primary); color: #FFFFFF }
+.btn-neon-glass.bad { --btn-glow: var(--bad); color: #FFFFFF }
+
+/* 3. Botão Iridescente Refrativo com Espectro Cáustico */
+.btn-iridescent {
+  position: relative;
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 38px; padding: 6px 20px;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-display); font-size: 13px; font-weight: 600;
+  color: var(--ink); cursor: pointer;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background:
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04) 50%, rgba(255, 255, 255, 0.08)) padding-box,
+    linear-gradient(135deg, rgba(25, 211, 197, 0.5) 0%, rgba(78, 168, 255, 0.3) 50%, rgba(167, 139, 250, 0.5) 100%) border-box;
+  backdrop-filter: blur(20px) saturate(190%);
+  -webkit-backdrop-filter: blur(20px) saturate(190%);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.4),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.3),
+    0 8px 24px rgba(0, 0, 0, 0.35);
+  transition: transform 0.2s var(--ease), box-shadow 0.3s ease, border-color 0.3s ease;
+  overflow: hidden;
+}
+.btn-iridescent:hover:not(:disabled), .btn-iridescent.shine {
+  transform: translateY(-2px);
+  box-shadow:
+    inset 0 1px 2px rgba(255, 255, 255, 0.6),
+    0 12px 32px rgba(25, 211, 197, 0.35);
+}
+.btn-iridescent::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit;
+  background: linear-gradient(
+    105deg,
+    transparent 0%,
+    rgba(25, 211, 197, 0.25) 30%,
+    rgba(255, 255, 255, 0.45) 50%,
+    rgba(167, 139, 250, 0.25) 70%,
+    transparent 100%
+  );
+  opacity: 0; transform: translateX(-100%);
+  transition: opacity 0.3s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+}
+.btn-iridescent:hover:not(:disabled)::before, .btn-iridescent.shine::before {
+  opacity: 1; transform: translateX(100%);
+}
+.btn-iridescent:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+/* 4. Dock de Navegação com Lupa de Vidro Deslizante (Liquid Glass Magnifier) */
+.nav-magnifier {
+  --pos1: 0px; --pos2: 0px; --pos3: 0px; --pos4: 0px; --pos5: 0px;
+  display: none;
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 32px);
+  max-width: 440px;
+  height: 58px;
+  border-radius: 999px;
+  background: rgba(13, 23, 38, 0.82);
+  backdrop-filter: blur(32px) saturate(190%);
+  -webkit-backdrop-filter: blur(32px) saturate(190%);
+  border: 1px solid var(--glass-border);
+  box-shadow:
+    inset 0 1px 1px var(--glass-highlight),
+    0 16px 36px rgba(0, 0, 0, 0.45);
+  z-index: 100;
+  padding: 0 8px;
+}
+
+.nav-magnifier .nav__items {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  list-style: none;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-magnifier .nav__item {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.nav-magnifier .nav__item-link {
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  text-decoration: none;
+  transition: color 0.3s ease, transform 0.2s ease;
+}
+
+.nav-magnifier .nav__item-icon {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+.nav-magnifier .nav__fake-icons,
+.nav-magnifier .nav__glass {
+  pointer-events: none;
+}
+
+.nav-magnifier .nav__fake-icons {
+  background: rgba(13, 23, 38, 0.95);
+  clip-path: circle(22px at 22px 50%);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 8px;
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  border-radius: 999px;
+  transition: clip-path 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nav-magnifier .nav__fake-icon-box {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transform: scale(1.3);
+}
+
+.nav-magnifier .nav__fake-icon {
+  width: 20px;
+  height: 20px;
+  display: block;
+  transition: color 0.3s ease;
+}
+
+.nav-magnifier .nav__glass {
+  position: absolute;
+  top: 5px; left: 0;
+  width: 48px; height: 48px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(8px) saturate(200%);
+  -webkit-backdrop-filter: blur(8px) saturate(200%);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.28),
+    inset 0 0 0 2px rgba(25, 211, 197, 0.2),
+    0 8px 20px rgba(0, 0, 0, 0.45);
+  transition: left 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+.nav-magnifier .nav__glass::before,
+.nav-magnifier .nav__glass::after {
+  content: ""; display: block; position: absolute; border-radius: 50%;
+}
+.nav-magnifier .nav__glass::before {
+  top: 3px; left: 3px; width: 40px; height: 40px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+}
+.nav-magnifier .nav__glass::after {
+  top: 6px; left: 6px; width: 34px; height: 34px;
+  border: 2px solid transparent;
+  border-right: 2px solid rgba(255, 255, 255, 0.6);
+  border-left: 2px solid rgba(25, 211, 197, 0.5);
+  transform: rotate(-45deg);
+}
+
+.nav-magnifier .nav__item-link--cyan, .nav-magnifier .nav__fake-icon--cyan { color: var(--primary); }
+.nav-magnifier .nav__item-link--blue, .nav-magnifier .nav__fake-icon--blue { color: var(--info); }
+.nav-magnifier .nav__item-link--amber, .nav-magnifier .nav__fake-icon--amber { color: var(--warn); }
+.nav-magnifier .nav__item-link--green, .nav-magnifier .nav__fake-icon--green { color: var(--ok); }
+.nav-magnifier .nav__item-link--purple, .nav-magnifier .nav__fake-icon--purple { color: #A78BFA; }
+
+.nav-magnifier.nav--on-page1 .nav__fake-icons { clip-path: circle(24px at calc(24px + var(--pos1)) 50%); }
+.nav-magnifier.nav--on-page1 .nav__glass { left: var(--pos1); }
+
+.nav-magnifier.nav--on-page2 .nav__fake-icons { clip-path: circle(24px at calc(24px + var(--pos2)) 50%); }
+.nav-magnifier.nav--on-page2 .nav__glass { left: var(--pos2); }
+
+.nav-magnifier.nav--on-page3 .nav__fake-icons { clip-path: circle(24px at calc(24px + var(--pos3)) 50%); }
+.nav-magnifier.nav--on-page3 .nav__glass { left: var(--pos3); }
+
+.nav-magnifier.nav--on-page4 .nav__fake-icons { clip-path: circle(24px at calc(24px + var(--pos4)) 50%); }
+.nav-magnifier.nav--on-page4 .nav__glass { left: var(--pos4); }
+
+.nav-magnifier.nav--on-page5 .nav__fake-icons { clip-path: circle(24px at calc(24px + var(--pos5)) 50%); }
+.nav-magnifier.nav--on-page5 .nav__glass { left: var(--pos5); }
+
+.nav-magnifier .nav__item-sr {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0, 0, 0, 0); border: 0;
+}
 
 /* Foco Fluent: anel duplo (externo contrastante, interno separador). */
 :focus-visible { outline: 2px solid var(--focus-outer); outline-offset: 1px; box-shadow: 0 0 0 1px var(--focus-inner) }
@@ -772,6 +1069,29 @@ pre.log { max-height: 260px; overflow: auto; margin: 8px 0 0; padding: 10px 12px
 </style>
 </head>
 <body>
+<svg display="none" aria-hidden="true">
+  <symbol id="dc-nav-overview" viewBox="0 0 24 24">
+    <rect x="3" y="3" width="7" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/>
+    <rect x="14" y="3" width="7" height="5" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/>
+    <rect x="14" y="12" width="7" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/>
+    <rect x="3" y="16" width="7" height="5" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/>
+  </symbol>
+  <symbol id="dc-nav-review" viewBox="0 0 24 24">
+    <path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+    <rect x="8" y="8" width="8" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/>
+  </symbol>
+  <symbol id="dc-nav-training" viewBox="0 0 24 24">
+    <path d="M12 3v3M12 18v3M4.2 7.5l2.6 1.5M17.2 15l2.6 1.5M4.2 16.5 6.8 15M17.2 9l2.6-1.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+    <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/>
+  </symbol>
+  <symbol id="dc-nav-monitor" viewBox="0 0 24 24">
+    <path d="M3 12h4l3-7 4 14 3-7h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </symbol>
+  <symbol id="dc-nav-models" viewBox="0 0 24 24">
+    <path d="M12 3 3 8l9 5 9-5-9-5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+    <path d="m3 13 9 5 9-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+  </symbol>
+</svg>
 <div class="app">
 <nav class="rail" aria-label="Seções da plataforma">
   <div class="brand" aria-hidden="true">DC</div>
@@ -784,6 +1104,49 @@ pre.log { max-height: 260px; overflow: auto; margin: 8px 0 0; padding: 10px 12px
   <button type="button" id="themeToggle" aria-label="Alternar tema claro/escuro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg><span class="tip">Tema claro/escuro</span></button>
 </nav>
 
+<nav class="nav-magnifier nav--on-page1" id="navMagnifier" aria-label="Navegação móvel com lente de vidro">
+  <ul class="nav__items">
+    <li class="nav__item">
+      <a class="nav__item-link nav__item-link--cyan" href="#overview" data-nav-item="1" data-view="overview" aria-label="Visão geral">
+        <svg class="nav__item-icon" aria-hidden="true"><use xlink:href="#dc-nav-overview"/></svg>
+        <span class="nav__item-sr">Visão geral</span>
+      </a>
+    </li>
+    <li class="nav__item">
+      <a class="nav__item-link nav__item-link--blue" href="#review" data-nav-item="2" data-view="review" aria-label="Revisão e classificação">
+        <svg class="nav__item-icon" aria-hidden="true"><use xlink:href="#dc-nav-review"/></svg>
+        <span class="nav__item-sr">Revisão</span>
+      </a>
+    </li>
+    <li class="nav__item">
+      <a class="nav__item-link nav__item-link--amber" href="#training" data-nav-item="3" data-view="training" aria-label="Treinamento e fine-tuning">
+        <svg class="nav__item-icon" aria-hidden="true"><use xlink:href="#dc-nav-training"/></svg>
+        <span class="nav__item-sr">Treinamento</span>
+      </a>
+    </li>
+    <li class="nav__item">
+      <a class="nav__item-link nav__item-link--green" href="#monitor" data-nav-item="4" data-view="monitor" aria-label="Monitoramento">
+        <svg class="nav__item-icon" aria-hidden="true"><use xlink:href="#dc-nav-monitor"/></svg>
+        <span class="nav__item-sr">Monitoramento</span>
+      </a>
+    </li>
+    <li class="nav__item">
+      <a class="nav__item-link nav__item-link--purple" href="#models" data-nav-item="5" data-view="models" aria-label="Modelos e comparação">
+        <svg class="nav__item-icon" aria-hidden="true"><use xlink:href="#dc-nav-models"/></svg>
+        <span class="nav__item-sr">Modelos</span>
+      </a>
+    </li>
+  </ul>
+  <div class="nav__fake-icons" aria-hidden="true">
+    <div class="nav__fake-icon-box" data-glass-item="1"><svg class="nav__fake-icon nav__fake-icon--cyan"><use xlink:href="#dc-nav-overview"/></svg></div>
+    <div class="nav__fake-icon-box" data-glass-item="2"><svg class="nav__fake-icon nav__fake-icon--blue"><use xlink:href="#dc-nav-review"/></svg></div>
+    <div class="nav__fake-icon-box" data-glass-item="3"><svg class="nav__fake-icon nav__fake-icon--amber"><use xlink:href="#dc-nav-training"/></svg></div>
+    <div class="nav__fake-icon-box" data-glass-item="4"><svg class="nav__fake-icon nav__fake-icon--green"><use xlink:href="#dc-nav-monitor"/></svg></div>
+    <div class="nav__fake-icon-box" data-glass-item="5"><svg class="nav__fake-icon nav__fake-icon--purple"><use xlink:href="#dc-nav-models"/></svg></div>
+  </div>
+  <div class="nav__glass" data-glass aria-hidden="true"></div>
+</nav>
+
 <div class="shell">
 <header class="topbar">
   <div>
@@ -794,7 +1157,7 @@ pre.log { max-height: 260px; overflow: auto; margin: 8px 0 0; padding: 10px 12px
     <span class="chip neutral" id="modeChip"><span class="dot"></span>Instantâneo offline</span>
     <label for="reviewer" class="hidden">Seu identificador de revisão</label>
     <input id="reviewer" maxlength="100" placeholder="Identificador de revisão" autocomplete="off" aria-label="Seu identificador de revisão">
-    <button class="primary" id="export" type="button">Salvar arquivo de revisão</button>
+    <button class="primary btn-apple-capsule" id="export" type="button"><span class="btn-icon-circle">↓</span><span>Salvar arquivo de revisão</span></button>
   </div>
 </header>
 <div class="notice-strip">
@@ -858,7 +1221,7 @@ pre.log { max-height: 260px; overflow: auto; margin: 8px 0 0; padding: 10px 12px
         <label class="toggle hidden" id="showSuggestionsLabel"><input type="checkbox" id="showSuggestions" checked>Sugestões IA</label>
         <label class="range hidden" id="confFilterLabel" for="confFilter">Confiança ≥ <b id="confValue"></b><input type="range" id="confFilter" min="0" max="100" step="5"></label>
         <span class="sep" aria-hidden="true"></span>
-        <button id="drawToggle" type="button" aria-pressed="false" class="small">Desenhar caixa (B)</button>
+        <button id="drawToggle" type="button" aria-pressed="false" class="small btn-neon-glass action">Desenhar caixa (B)</button>
         <a id="originalLink" target="_blank" rel="noopener" class="small-text">Abrir foto original</a>
       </div>
       <p id="historyNotice" class="notice hidden"></p>
@@ -881,14 +1244,14 @@ pre.log { max-height: 260px; overflow: auto; margin: 8px 0 0; padding: 10px 12px
         <div class="boxes" id="boxes"></div>
         <label for="classId">Categoria da caixa</label><select id="classId"></select>
         <div class="coordinates"><div><label for="x1">X inicial</label><input id="x1" type="number" min="0" step="1"></div><div><label for="y1">Y inicial</label><input id="y1" type="number" min="0" step="1"></div><div><label for="x2">X final</label><input id="x2" type="number" min="0" step="1"></div><div><label for="y2">Y final</label><input id="y2" type="number" min="0" step="1"></div></div>
-        <div class="row-actions"><button id="applyBox" type="button">Adicionar caixa</button><button id="newBox" type="button">Nova caixa</button><button id="deleteBox" type="button" disabled>Excluir selecionada</button></div>
+        <div class="row-actions"><button id="applyBox" class="btn-neon-glass action" type="button">Adicionar caixa</button><button id="newBox" class="btn-neon-glass" type="button">Nova caixa</button><button id="deleteBox" class="btn-neon-glass bad" type="button" disabled>Excluir selecionada</button></div>
       </section>
       <section class="card">
         <h2>Sua decisão sobre a foto</h2>
         <label for="decision">Situação da revisão</label><select id="decision"><option value="pending">Pendente</option><option value="positive">Revisei: há ocorrências</option><option value="negative">Revisei: nenhuma das classes ativas</option><option value="ambiguous">Há dúvida: precisa de análise técnica</option><option value="excluded">Excluir do treinamento</option></select>
         <label for="notes">Correções, dúvidas ou motivo da decisão</label><textarea id="notes" placeholder="Descreva o que você conferiu ou o que ainda precisa esclarecer."></textarea>
         <div class="checks"><input id="confirmed" type="checkbox"><label for="confirmed">Conferi a foto inteira e confirmei as classes e caixas registradas.</label></div>
-        <button class="primary" id="saveDecision" type="button" style="margin-top:12px;width:100%">Registrar minha decisão</button>
+        <button class="primary btn-apple-capsule" id="saveDecision" type="button" style="margin-top:12px;width:100%"><span class="btn-icon-circle">✓</span><span>Registrar minha decisão</span></button>
         <p class="muted small-text">Imagem negativa exige nenhuma caixa e revisão completa. Severidade permanece pendente de avaliação técnica.</p>
       </section>
     </aside>
@@ -917,7 +1280,7 @@ pre.log { max-height: 260px; overflow: auto; margin: 8px 0 0; padding: 10px 12px
       </div>
       <p class="muted small-text" id="trainEstimate"></p>
       <div class="command" id="trainCommand"></div>
-      <div class="row-actions"><button class="primary" type="button" id="startTrain" disabled>Iniciar treino no servidor local</button></div>
+      <div class="row-actions"><button class="primary btn-apple-capsule" type="button" id="startTrain" disabled><span class="btn-icon-circle">⚡</span><span>Iniciar treino no servidor local</span></button></div>
       <p class="muted small-text" id="trainServerHint"></p>
     </div>
   </div>
@@ -951,7 +1314,7 @@ pre.log { max-height: 260px; overflow: auto; margin: 8px 0 0; padding: 10px 12px
         <div class="wide"><label for="suggestWeights">Gerar sugestões nesta revisão com os pesos</label><select id="suggestWeights"></select></div>
         <div><label for="suggestConf">Confiança mínima</label><input id="suggestConf" type="number" min="0.01" max="1" step="0.01"></div>
       </div>
-      <div class="row-actions"><button type="button" class="ai" id="startSuggest" disabled>Gerar sugestões</button><button type="button" id="stopJob" disabled>Interromper tarefa</button></div>
+      <div class="row-actions"><button type="button" class="btn-iridescent" id="startSuggest" disabled><span>✨</span> Gerar sugestões</button><button type="button" id="stopJob" disabled>Interromper tarefa</button></div>
       <pre class="log" id="jobLog" aria-live="polite">—</pre>
     </div>
   </div>
@@ -1085,11 +1448,56 @@ const viewTitles = {
   monitor: 'Monitoramento',
   models: 'Modelos e comparação'
 };
+class Magnifier {
+  constructor(qs) {
+    this.el = document.querySelector(qs);
+    if (!this.el) return;
+    this.page = 1;
+    this.pages = 5;
+    this.init();
+  }
+  init() {
+    this.updateGlassPos();
+    window.addEventListener("resize", () => this.updateGlassPos());
+    this.el.addEventListener("click", (e) => {
+      const target = e.target.closest("[data-view]");
+      if (target && target.dataset.view) {
+        e.preventDefault();
+        showView(target.dataset.view);
+      }
+    });
+  }
+  setPage(number) {
+    if (!this.el) return;
+    this.el.classList.remove(`nav--on-page${this.page}`);
+    this.page = number;
+    this.el.classList.add(`nav--on-page${this.page}`);
+    this.updateGlassPos();
+  }
+  updateGlassPos() {
+    if (!this.el) return;
+    const glass = this.el.querySelector("[data-glass]");
+    const glassRadius = (glass?.offsetWidth || 48) / 2;
+    for (let p = 1; p <= this.pages; ++p) {
+      const glassItem = this.el.querySelector(`[data-glass-item="${p}"]`);
+      if (glassItem) {
+        const left = glassItem.offsetLeft + glassItem.offsetWidth / 2;
+        this.el.style.setProperty(`--pos${p}`, `${left - glassRadius}px`);
+      }
+    }
+  }
+}
+let magnifier = null;
+
 function showView(view) {
   if (!viewTitles[view]) view = 'overview';
   state.view = view;
   document.querySelectorAll('.view').forEach(section => section.classList.toggle('active', section.id === 'view-' + view));
   document.querySelectorAll('.rail button[data-view]').forEach(button => button.setAttribute('aria-current', button.dataset.view === view ? 'page' : 'false'));
+  const pageMap = { overview: 1, review: 2, training: 3, monitor: 4, models: 5 };
+  if (magnifier && pageMap[view]) {
+    magnifier.setPage(pageMap[view]);
+  }
   $('viewTitle').textContent = viewTitles[view];
   try { sessionStorage.setItem('dronecamp-view', view) } catch {}
   if (location.hash !== '#' + view) history.replaceState(null, '', '#' + view);
@@ -2075,6 +2483,7 @@ if (DATA.taxonomy_recheck_pending) {
   $('taxonomyNotice').textContent = `Categorias que ainda precisam de conferência integral: ${categories}. Confira essas ocorrências em todas as fotos antes de registrar uma aprovação.`;
   $('taxonomyNotice').classList.remove('hidden');
 }
+magnifier = new Magnifier('#navMagnifier');
 openPhoto(0);
 let initialView = location.hash.slice(1);
 if (!viewTitles[initialView]) { try { initialView = sessionStorage.getItem('dronecamp-view') || 'overview' } catch { initialView = 'overview' } }
