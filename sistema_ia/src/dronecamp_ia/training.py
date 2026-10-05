@@ -145,6 +145,14 @@ def train_pilot(config: ProjectConfig, data_path: Path, weights: str | None = No
         # 4. Parâmetros: training < pilot.training < opções da linha de comando.
         parameters = {**config.training, **config.pilot.get("training", {}), **(overrides or {})}
         parameters["nms"] = config.prediction["nms"]
+        # 4b. Classes raras: lista de treino com repetições (sampling.py). Não é
+        # parâmetro da Ultralytics, por isso sai de ``parameters`` antes do train.
+        threshold = parameters.pop("repeat_factor_threshold", None)
+        if threshold is None:
+            threshold = (config.pilot.get("sampling") or {}).get("repeat_factor_threshold")
+        if threshold is not None:
+            pilot_details["sampling"] = _apply_repeat_factor_sampling(run, dataset, float(threshold),
+                                                                     int(parameters.get("seed", 0)))
         pilot_details["classes_without_training_boxes"] = [name for name, count in counts["train"].items() if count == 0]
         pilot_details["warning"] = audit["warning"]
         write_json(run / "execution.json", {"runtime": runtime_info(model, config), "parameters": parameters,
@@ -159,6 +167,23 @@ def train_pilot(config: ProjectConfig, data_path: Path, weights: str | None = No
     # 6. Auditoria final: só aqui o summary passa para "completed".
     review_training_result(run, model, names, **pilot_details)
     return run
+
+
+def _apply_repeat_factor_sampling(run: Path, dataset: Path, threshold: float, seed: int) -> dict:
+    """Troca ``train:`` do dataset_resolved.yaml por uma lista com fotos raras repetidas.
+
+    Validação e teste não mudam: as métricas continuam medindo cada foto uma vez.
+    """
+    from .sampling import write_repeat_factor_list
+
+    resolved = yaml.safe_load(dataset.read_text(encoding="utf-8"))
+    image_dir = Path(resolved["train"])
+    label_dir = Path(resolved["path"]) / "labels" / image_dir.relative_to(Path(resolved["path"]) / "images")
+    summary = write_repeat_factor_list(image_dir, label_dir, run / "train_repeat_factor.txt", threshold, seed)
+    resolved["train"] = summary["list"]
+    dataset.write_text(yaml.safe_dump(resolved, allow_unicode=True), encoding="utf-8")
+    write_json(run / "sampling.json", summary)
+    return summary
 
 
 # ---------------------------------------------------------------------------

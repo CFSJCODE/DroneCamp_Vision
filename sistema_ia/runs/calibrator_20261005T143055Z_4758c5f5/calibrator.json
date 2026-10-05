@@ -1,0 +1,160 @@
+{
+  "schema_version": 1,
+  "created_at": "2026-10-05T14:30:55.539114+00:00",
+  "kind": "acceptance_probability_logistic_regression",
+  "sklearn_version": "1.9.1",
+  "model_file": "calibrator.joblib",
+  "model_sha256": "4a4c3b8e75eb8d9357252bab8431f121a849318b84cb8e172f83757cb01a8fe5",
+  "features": [
+    "confidence",
+    "logit_confidence",
+    "log_area_fraction",
+    "log_aspect_ratio",
+    "center_x",
+    "center_y",
+    "rank_fraction",
+    "log_suggestions_in_image",
+    "max_iou_same_class",
+    "max_iou_other_class",
+    "class_0",
+    "class_1",
+    "class_2",
+    "class_3",
+    "class_4",
+    "class_5",
+    "class_6",
+    "class_7",
+    "class_8",
+    "class_9",
+    "class_10",
+    "class_11",
+    "class_12"
+  ],
+  "class_names": [
+    "telha_quebrada",
+    "telha_ausente",
+    "residuos_telha",
+    "reparo_telha",
+    "rufo_ausente",
+    "rufo_quebrado",
+    "residuos_calha",
+    "vegetacao_calha",
+    "pedaco_telha",
+    "rufo_deslocado",
+    "pedaco_telha_sobreposto",
+    "fixador_telha_frouxo",
+    "reparo_rufo"
+  ],
+  "taxonomy_sha256": "8e26946337edd42cd86973a5b4ac43cd8f988aeee24aa889fe8dc2c3a9ed4f9a",
+  "detector_weights": "/home/user/DroneCamp_Vision/sistema_ia/runs/pilot_train_20261004T170212Z_dd284411/fit/weights/best.pt",
+  "detector_weights_sha256": "bca87539647c20aca752ce6bd481dc4b74525005fe1a776f8e1f6505cd3d15a9",
+  "dataset": "/home/user/DroneCamp_Vision/sistema_ia/data/pilot/ceasa_v8_piloto_s42/dataset.yaml",
+  "collection_conf": 0.01,
+  "excluded_training_images": true,
+  "skipped_trained_images": 23,
+  "examples": 375,
+  "positives": 10,
+  "negatives": 365,
+  "images": [
+    {
+      "image_sha256": "009ed874804749c2747dcabde4c38bc2aa3a1a3575cb501b5ede6789d9af1dbb",
+      "suggestions": 29,
+      "human_boxes": 0,
+      "matched": 0
+    },
+    {
+      "image_sha256": "2ff55c50b1e0a6786404a911e2634bff041762ddd98d0d6f86f83be8061c517b",
+      "suggestions": 39,
+      "human_boxes": 3,
+      "matched": 3
+    },
+    {
+      "image_sha256": "32a3cd23e01454b5e1ffaf38b4df5cd0de526914b65fa973f8398c84d57ec5e2",
+      "suggestions": 18,
+      "human_boxes": 1,
+      "matched": 0
+    },
+    {
+      "image_sha256": "36ef7a9ce5bd317bbd359ae04e5fb48b671a00b681a82e822a91c284a3c2434a",
+      "suggestions": 21,
+      "human_boxes": 1,
+      "matched": 0
+    },
+    {
+      "image_sha256": "50f69e0ccb9519d6aa2f58754218c1bf0fbda162a7612c885bd95d875c323ecb",
+      "suggestions": 46,
+      "human_boxes": 8,
+      "matched": 1
+    },
+    {
+      "image_sha256": "68a5aa9ef07b199298b238f1f81a0b54de86bd771b10d99f151459cea880426d",
+      "suggestions": 24,
+      "human_boxes": 2,
+      "matched": 2
+    },
+    {
+      "image_sha256": "7b8b0c035e2292d990fa0c493c5f25163cdf5572bfd68098ecd9d8f7f2f7ea3b",
+      "suggestions": 34,
+      "human_boxes": 2,
+      "matched": 1
+    },
+    {
+      "image_sha256": "814749e34f1e79fbaf554ffa613901e29147e5e6a088222fd54b6545dc714a3b",
+      "suggestions": 8,
+      "human_boxes": 2,
+      "matched": 0
+    },
+    {
+      "image_sha256": "a498d247ae429d0d23701b29a148958e86a3dad6f7e7e01b5186e05c06949a3a",
+      "suggestions": 32,
+      "human_boxes": 4,
+      "matched": 2
+    },
+    {
+      "image_sha256": "abec366e27c1f5809636c55e9b037bd77134936456ff748e7b1c6852b5a48bb5",
+      "suggestions": 19,
+      "human_boxes": 1,
+      "matched": 1
+    },
+    {
+      "image_sha256": "beebf15ccef412efa39902b3fb0753c5aabf2c0423d26937efedf14027a8d11d",
+      "suggestions": 33,
+      "human_boxes": 1,
+      "matched": 0
+    },
+    {
+      "image_sha256": "d7dcb606c5b1ff4b0f3ccb31f913ab53f98cc7635c38b2ad9107faed0b6addc6",
+      "suggestions": 17,
+      "human_boxes": 2,
+      "matched": 0
+    },
+    {
+      "image_sha256": "e59d70812f26fd7a93d9d7020983643e74855ab66410883fedba2ae0646a8b52",
+      "suggestions": 4,
+      "human_boxes": 1,
+      "matched": 0
+    },
+    {
+      "image_sha256": "f55d62a3174c6ebb620fca7ebb863ac08893e9c1c2b8c7e20b8d5bd7fd139e99",
+      "suggestions": 51,
+      "human_boxes": 1,
+      "matched": 0
+    }
+  ],
+  "cross_validation": {
+    "folds": 5,
+    "group": "scene_group",
+    "calibrated": {
+      "brier": 0.0245,
+      "roc_auc": 0.743,
+      "average_precision": 0.2953
+    },
+    "raw_confidence": {
+      "brier": 0.0217,
+      "roc_auc": 0.799,
+      "average_precision": 0.3533
+    },
+    "improves_over_raw_confidence": false
+  },
+  "warning": "Probabilidade aprendida com poucas decisões humanas de uma edificação; ordena sugestões, não aprova nem descarta caixas."
+}

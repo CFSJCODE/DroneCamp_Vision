@@ -62,3 +62,12 @@ pilot:
     # para escolher a época; o treino v8 parou na 66 com a 41 ainda subtreinada.
     patience: 0
     plots: true              # grava gráficos (curvas, matriz de confusão) em runs/.../fit
+  # Reamostragem de classes raras (sampling.py, docs/aprendizado_rl_sklearn.md).
+  # Desligada até um treino completo mostrar ganho no compare-models; para ligar:
+  # sampling:
+  #   repeat_factor_threshold: 0.3
+  # Espaço do tune-pilot-bandit (padrão em hparam_bandit.DEFAULT_SPACE):
+  # search_space:
+  #   lr0: [0.0005, 0.001, 0.002]
+  #   mosaic: [0.0, 0.5]
+  #   repeat_factor_threshold: [null, 0.3]

@@ -21,6 +21,10 @@ from dronecamp_ia.review_data import boxes_to_yolo
 REAL = load_config()
 WEIGHTS = REAL.root / "models" / "yolo26l.pt"
 REGISTRY = REAL.root / "data" / "reviews" / "ceasa_v7_revisao002_ba8cc323c8a1" / "registry.json"
+# Pesos piloto v7 reais (Git LFS) e dataset v8: usados no teste do calibrador.
+PILOT_V7 = REAL.root / "runs" / "pilot_train_20261004T170212Z_dd284411" / "fit" / "weights" / "best.pt"
+DATASET_V8 = REAL.root / "data" / "pilot" / "ceasa_v8_piloto_s42" / "dataset.yaml"
+TINY = {"epochs": 1, "imgsz": 160, "batch": 8, "plots": False, "patience": 0}
 
 
 @unittest.skipIf(os.environ.get("DRONECAMP_SKIP_E2E") == "1", "E2E desativado por DRONECAMP_SKIP_E2E=1.")
@@ -39,8 +43,7 @@ class EndToEndUltralyticsTests(unittest.TestCase):
         cls.names = detection_names(load_taxonomy(REAL.taxonomy_path))
         cls.dataset = cls.root / "data" / "pilot" / "e2e"
         cls.build = build_pilot_dataset(cls.config, [REGISTRY], cls.dataset)
-        cls.train_run = train_pilot(cls.config, cls.dataset / "dataset.yaml", str(WEIGHTS),
-                              {"epochs": 1, "imgsz": 160, "batch": 8, "plots": False, "patience": 0})
+        cls.train_run = train_pilot(cls.config, cls.dataset / "dataset.yaml", str(WEIGHTS), dict(TINY))
         cls.best = cls.train_run / "fit" / "weights" / "best.pt"
         registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
         cls.sample_images = [resolve_local_path(item["source_path"], REAL.root) for item in registry["images"][:2]]
@@ -157,6 +160,77 @@ class EndToEndUltralyticsTests(unittest.TestCase):
         self.assertIn("edificacao_teste", merged["buildings"])
         with (self.root / "data" / "pilot" / "e2e_v2" / "groups.csv").open(encoding="utf-8") as stream:
             self.assertEqual(sum(1 for _ in csv.DictReader(stream)), len(manifest["images"]))
+
+
+    def test_6_repeat_factor_sampling_trains_with_rare_photos_repeated(self):
+        from dronecamp_ia.training import train_pilot
+
+        run = train_pilot(self.config, self.dataset / "dataset.yaml", str(WEIGHTS),
+                          {**TINY, "repeat_factor_threshold": 0.3})
+        summary = json.loads((run / "summary.json").read_text(encoding="utf-8"))
+        self.assertTrue(summary["complete"], summary["reasons"])
+        sampling = json.loads((run / "sampling.json").read_text(encoding="utf-8"))
+        self.assertGreater(sampling["entries"], sampling["images"])  # houve repetição
+        lines = Path(sampling["list"]).read_text(encoding="utf-8").split()
+        self.assertEqual(len(set(lines)), sampling["images"])
+        self.assertIn("train_repeat_factor.txt", (run / "dataset_resolved.yaml").read_text(encoding="utf-8"))
+        type(self).rfs_best = run / "fit" / "weights" / "best.pt"
+
+    def test_7_gate_compares_two_real_models_per_class_without_trained_photos(self):
+        from dronecamp_ia.model_gate import compare_models
+
+        run = compare_models(self.config, self.dataset / "dataset.yaml", str(self.best), str(self.rfs_best),
+                             ("val", "test"))
+        gate = json.loads((run / "gate.json").read_text(encoding="utf-8"))
+        self.assertGreater(gate["images_evaluated"], 0)
+        self.assertFalse(gate["production_ready"])
+        self.assertIn("_total", gate["candidate"]["metrics"])
+        self.assertEqual(set(self.names) | {"_total"}, set(gate["baseline"]["metrics"]))
+        self.assertIsInstance(gate["adopt"], bool)
+
+    def test_8_successive_halving_runs_real_trainings_and_never_uses_test(self):
+        from dronecamp_ia.hparam_bandit import successive_halving
+
+        run = successive_halving(self.config, self.dataset / "dataset.yaml", str(WEIGHTS), arms=2, min_epochs=1,
+                                 eta=2, rounds=2, space={"lr0": [0.0005, 0.002]},
+                                 fixed={key: TINY[key] for key in ("imgsz", "batch", "plots", "patience")})
+        state = json.loads((run / "bandit.json").read_text(encoding="utf-8"))
+        self.assertTrue(state["complete"])
+        self.assertEqual([trial["epochs"] for trial in state["trials"]], [1, 1, 2])
+        self.assertFalse(state["test_used"])
+        for trial in state["trials"]:
+            summary = json.loads((Path(trial["run"]) / "summary.json").read_text(encoding="utf-8"))
+            self.assertTrue(summary["complete"], summary["reasons"])
+
+    @unittest.skipUnless(PILOT_V7.is_file() and DATASET_V8.is_file(), "Pesos piloto v7 (Git LFS) ou dataset v8 ausentes.")
+    def test_9_calibrator_learns_from_human_boxes_and_annotates_suggestions(self):
+        from dronecamp_ia.calibration import fit_calibrator
+        from dronecamp_ia.suggestions import suggest_for_registry
+
+        run = fit_calibrator(self.config, DATASET_V8, str(PILOT_V7))
+        metadata = json.loads((run / "calibrator.json").read_text(encoding="utf-8"))
+        self.assertTrue(metadata["excluded_training_images"])
+        self.assertGreater(metadata["skipped_trained_images"], 0)
+        self.assertGreaterEqual(metadata["positives"], 5)
+        self.assertIn("improves_over_raw_confidence", metadata["cross_validation"])
+
+        review = self.root / "data" / "reviews" / "calibrada"
+        review.mkdir(parents=True)
+        registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
+        registry["images"] = registry["images"][:2]
+        for item in registry["images"]:
+            item["source_path"] = str(resolve_local_path(item["source_path"], REAL.root))
+        write_json(review / "registry.json", registry)
+        suggest_for_registry(self.config, review / "registry.json", str(PILOT_V7), 0.05, run,
+                             allow_unproven_calibrator=True)
+        suggestions = json.loads((review / "suggestions.json").read_text(encoding="utf-8"))
+        self.assertEqual(suggestions["calibrator"]["model_sha256"], metadata["model_sha256"])
+        boxes = [box for values in suggestions["images"].values() for box in values]
+        self.assertTrue(boxes)
+        for values in suggestions["images"].values():
+            probabilities = [box["acceptance_probability"] for box in values]
+            self.assertEqual(probabilities, sorted(probabilities, reverse=True))
+            self.assertTrue(all(0 <= value <= 1 for value in probabilities))
 
 
 if __name__ == "__main__":

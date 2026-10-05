@@ -1647,7 +1647,9 @@ function renderSuggestions() {
     const covered = coveringBox(suggestion);
     const row = el('div', { class: 'suggestion' });
     row.style.setProperty('--box-color', category.color);
+    // acceptance_probability vem do calibrador (suggest --calibrator): chance estimada de o revisor aceitar.
     const text = el('span', {}, `IA ${index+1}. ${category.label} · ${Math.round(suggestion.confidence*100)}%`
+      + (suggestion.acceptance_probability != null ? ` · aceitação estimada ${Math.round(suggestion.acceptance_probability*100)}%` : '')
       + (covered >= 0 ? ` · mesmo objeto da caixa ${covered+1}` : ''));
     const accept = el('button', { type: 'button', class: 'small ai' }, covered >= 0 ? `Substituir caixa ${covered+1}` : 'Aceitar');
     accept.onclick = () => acceptSuggestion(suggestion);
