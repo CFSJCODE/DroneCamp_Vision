@@ -22,13 +22,13 @@ Uma única linguagem visual: estrutura **Fluent 2** com **Liquid Glass** (vidro 
 | Cores | Base Deep Navy `#08111F` / Midnight Slate `#0D1726`; destaque Aqua Cyan `--primary`; âmbar `--ai` marca o que veio da IA; verde, âmbar e vermelho indicam estado. O trilho e o dock usam `--bg-secondary`, então ficam claros no tema claro |
 | Cantos | 7px em controles, 14px em cartões, cápsula nos botões táteis |
 | Botões | Cápsula com ícone (salvar), botões neon de vidro com raio de luz (ações das caixas) e botão iridescente; desabilitados ficam apagados e sem brilho |
-| Navegação | Trilho compacto no computador; até 1000px vira dock com lupa de vidro na base, e o botão de tema flutua no topo |
+| Navegação | Trilho compacto no computador; até 1000px vira dock com lupa de vidro na base (com o ponto verde de treino em andamento), e o botão de tema flutua no topo |
 | Vidro | Translucidez com `backdrop-filter` (desfoque 28px e saturação), borda especular de 1px e fundo com gradientes estáticos |
 | Rótulos nas fotos | Caixas: rótulo na cor da classe com texto escuro. Sugestões da IA: placa escura com texto na cor da classe e contorno tracejado |
 | Foco | Anel duplo em todos os controles, inclusive caixas de seleção, controle de confiança e foto |
 | Movimento | 100–600ms; "reduzir movimento" desliga animações, inclusive o brilho da decisão |
 
-Sem suporte a `backdrop-filter`, ou com "reduzir transparência" ativado, o vidro vira superfície opaca. Tudo fica em `review_templates/index.html`, com os tokens no início do `<style>`; os nomes `--primary`, `--ai`, `--ok`, `--warn`, `--bad`, `--muted`, `--line-strong` e `--chart-grid` também são lidos pelo script dos gráficos.
+Sem suporte a `backdrop-filter`, ou com "reduzir transparência" ativado, o vidro vira superfície opaca. Tudo fica em `review_templates/index.html`, com os tokens no início do `<style>`; os nomes `--primary`, `--ai`, `--ok`, `--warn`, `--muted`, `--line-strong` e `--chart-grid` também são lidos pelo script dos gráficos.
 
 ## Dois modos de abrir
 

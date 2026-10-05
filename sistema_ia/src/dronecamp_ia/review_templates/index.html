@@ -635,7 +635,7 @@ input:hover, select:hover, textarea:hover { border-color: var(--line-strong); bo
 input:focus, select:focus, textarea:focus { outline: none; border-bottom-color: var(--primary); box-shadow: inset 0 -1px 0 var(--primary) }
 input:focus-visible, select:focus-visible, textarea:focus-visible { outline: none }
 input[type="checkbox"], input[type="range"] { border: 0; background: transparent; box-shadow: none }
-input[type="checkbox"]:focus-visible, input[type="range"]:focus-visible { outline: 2px solid var(--focus-outer); outline-offset: 2px }
+input[type="checkbox"]:focus-visible, input[type="range"]:focus-visible { outline: 2px solid var(--focus-outer); outline-offset: 2px; box-shadow: 0 0 0 1px var(--focus-inner) }
 select option { background: var(--surface-strong); color: var(--ink) }
 
 textarea { min-height: 88px; resize: vertical }
@@ -914,6 +914,7 @@ details p { white-space: pre-line }
 .suggestion .conf { grid-column: 1 / -1; height: 4px; border-radius: var(--radius-pill); background: var(--inset); overflow: hidden }
 .suggestion .conf i { display: block; height: 100%; background: var(--ai); box-shadow: 0 0 8px var(--ai) }
 .suggestion .actions { display: flex; gap: 4px }
+:root[data-theme="light"] .suggestion button.ai { color: #9A3412 }
 
 
 .coordinates { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px }
@@ -951,6 +952,8 @@ table { width: 100%; border-collapse: collapse; font-size: 13px }
 th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top }
 th { font-size: 12px; line-height: 16px; color: var(--muted); font-weight: 600 }
 td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap }
+td.num small, th.num, #compareTable td.num { white-space: normal }
+#compareTable td:first-child { overflow-wrap: anywhere }
 tbody tr { transition: background var(--fast) var(--ease) }
 tbody tr.clickable { cursor: pointer }
 tbody tr.clickable:hover, tbody tr[aria-selected="true"] { background: var(--subtle-hover) }
@@ -1066,6 +1069,9 @@ pre.log { max-height: 260px; overflow: auto; margin: 8px 0 0; padding: 10px 12px
   .topbar { padding-right: 72px }
   .shell { padding-bottom: 90px }
 }
+.nav-magnifier .nav__item-link { position: relative }
+.nav-magnifier .nav__item-link:focus-visible { z-index: 2 }
+.nav-magnifier .badge-dot { position: absolute; top: 4px; right: 4px; z-index: 3; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); border: 1px solid var(--bg); box-shadow: 0 0 8px var(--ok) }
 :root[data-theme="light"] .nav-magnifier .nav__item-link--purple,
 :root[data-theme="light"] .nav-magnifier .nav__fake-icon--purple { color: #7C3AED }
 
@@ -1154,6 +1160,7 @@ pre.log { max-height: 260px; overflow: auto; margin: 8px 0 0; padding: 10px 12px
       <a class="nav__item-link nav__item-link--green" href="#monitor" data-nav-item="4" data-view="monitor" aria-label="Monitoramento">
         <svg class="nav__item-icon" aria-hidden="true"><use xlink:href="#dc-nav-monitor"/></svg>
         <span class="nav__item-sr">Monitoramento</span>
+        <span class="badge-dot hidden" id="liveDotDock"></span>
       </a>
     </li>
     <li class="nav__item">
@@ -1519,7 +1526,7 @@ function showView(view) {
   if (!viewTitles[view]) view = 'overview';
   state.view = view;
   document.querySelectorAll('.view').forEach(section => section.classList.toggle('active', section.id === 'view-' + view));
-  document.querySelectorAll('.rail button[data-view]').forEach(button => button.setAttribute('aria-current', button.dataset.view === view ? 'page' : 'false'));
+  document.querySelectorAll('.rail button[data-view], #navMagnifier a[data-view]').forEach(button => button.setAttribute('aria-current', button.dataset.view === view ? 'page' : 'false'));
   const pageMap = { overview: 1, review: 2, training: 3, monitor: 4, models: 5 };
   if (magnifier && pageMap[view]) {
     magnifier.setPage(pageMap[view]);
@@ -1737,8 +1744,8 @@ function paint(preview) {
       ctx.font = `${Math.max(13,Math.round(canvas.width/80))}px system-ui, sans-serif`;
       const text = `IA ${index+1}: ${category.label} ${Math.round(suggestion.confidence*100)}%`;
       const bottom = Math.min(canvas.height - 22, y2);
-      // Placa escura com texto na cor da classe: legível nas 13 cores e diferente do rótulo sólido das caixas.
-      ctx.fillStyle = 'rgba(8,17,31,.88)';
+      // Placa escura opaca com texto na cor da classe: as 13 cores passam de 4,5:1 e o rótulo difere do sólido das caixas.
+      ctx.fillStyle = '#08111F';
       ctx.fillRect(x1, bottom, ctx.measureText(text).width + 12, 22);
       ctx.fillStyle = category.color;
       ctx.fillText(text, x1 + 5, bottom + 16)
@@ -2102,7 +2109,20 @@ function renderOverview() {
 }
 
 /* ======================= Gráficos SVG (sem bibliotecas externas) ======================= */
+// Gráficos desenhados, para redesenhar com a nova largura quando a janela muda (rotação do celular, por exemplo).
+const drawnCharts = new Map();
+let chartViewport = innerWidth, chartTimer;
+addEventListener('resize', () => {
+  if (innerWidth === chartViewport) return;
+  chartViewport = innerWidth;
+  clearTimeout(chartTimer);
+  chartTimer = setTimeout(() => drawnCharts.forEach((args, node) => {
+    if (!node.isConnected) drawnCharts.delete(node);
+    else if (node.offsetParent) lineChart(node, ...args)
+  }), 150)
+});
 function lineChart(container, points, series, options = {}) {
+  drawnCharts.set(container, [points, series, options]);
   container.replaceChildren();
   // Largura real do contêiner (640 se ainda estiver oculto), para o texto não ficar achatado.
   const height = options.height || 220, width = Math.max(280, Math.round(container.clientWidth) || 640), pad = { l: 44, r: 12, t: 10, b: 24 };
@@ -2325,7 +2345,7 @@ function renderMonitor() {
   // Treino recém-iniciado pela página ainda sem época gravada: mostra a execução mais nova.
   const starting = jobRunning() && job.kind === 'train-pilot' ? OPS.runs[0] : null;
   const run = OPS.runs.find(value => value.state === 'running') || starting || OPS.runs.find(value => value.curves.length) || OPS.runs[0];
-  $('liveDot').classList.toggle('hidden', !OPS.runs.some(value => value.state === 'running') && !jobRunning());
+  document.querySelectorAll('#liveDot, #liveDotDock').forEach(dot => dot.classList.toggle('hidden', !OPS.runs.some(value => value.state === 'running') && !jobRunning()));
   if (!run) {
     $('monitorTitle').textContent = 'Nenhum treino encontrado';
     $('monitorState').replaceChildren();
@@ -2413,7 +2433,7 @@ function renderCompare() {
       const value = model.splits[split];
       if (!value) return el('td', { class: 'num muted' }, '—');
       const recall = value.truth ? value.found / value.truth : null, precision = value.suggestions ? value.correct / value.suggestions : null;
-      return el('td', { class: 'num' }, el('div', {}, `${value.found}/${value.truth} encontradas`), el('small', { class: 'muted' }, `${value.correct}/${value.suggestions} corretas · R ${pct(recall)} · P ${pct(precision)}`))
+      return el('td', { class: 'num' }, el('div', {}, `${value.found}/${value.truth} encontradas`), el('small', { class: 'muted' }, `${value.correct}/${value.suggestions} corretas · R\u00a0${pct(recall)} · P\u00a0${pct(precision)}`))
     })));
   $('compareTable').replaceChildren(el('table', {}, el('thead', {}, head), el('tbody', {}, ...rows)),
     el('p', { class: 'muted small-text' }, `Dataset ${comparison.dataset || '—'} · confiança ${comparison.conf} · IoU de acerto ${comparison.iou_match}.`))
@@ -2455,7 +2475,7 @@ async function refreshOperations() {
     else if (state.view === 'models') renderModels();
     else if (state.view === 'overview') renderOverview();
     renderJob();
-    $('liveDot').classList.toggle('hidden', !OPS.runs.some(value => value.state === 'running') && !jobRunning());
+    document.querySelectorAll('#liveDot, #liveDotDock').forEach(dot => dot.classList.toggle('hidden', !OPS.runs.some(value => value.state === 'running') && !jobRunning()));
     $('modeChip').className = 'chip ok live';
     $('modeChip').replaceChildren(el('span', { class: 'dot' }), 'Servidor local conectado')
   } catch {
