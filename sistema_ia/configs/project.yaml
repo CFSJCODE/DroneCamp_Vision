@@ -65,6 +65,16 @@ pilot:
     merge_iou: 0.5
   # Caixas da mesma classe com IoU >= limite viram um único alvo no dataset piloto.
   duplicate_iou: 0.7
+  # CPU + GPU em conjunto (gpu_eval.py): durante o train-pilot, um processo à parte
+  # exporta last.pt para ONNX e avalia o split nas fotos inteiras na GPU (DirectML),
+  # com o fatiamento das sugestões, gravando runs/<treino>/gpu_eval/eval_curve.jsonl
+  # (mAP50 por época). Não escolhe pesos. Ligue com enabled: true ou train-pilot --gpu-eval.
+  gpu_eval:
+    enabled: false
+    every: 5               # épocas entre avaliações
+    provider: directml     # directml = GPU; cpu = ONNX Runtime na CPU (só para testes)
+    split: val             # val para acompanhar o treino; test fica para o compare-models
+    timeout: 1800          # segundos de espera pelo worker no fim do treino
   training:
     epochs: 80
     imgsz: 640

@@ -129,6 +129,10 @@ def _job_arguments(root: Path, registry_path: Path, kind: str, options: dict) ->
             arguments += _integer(options, key, low, high)
         if "--imgsz" in arguments and int(arguments[arguments.index("--imgsz") + 1]) % 32:
             raise ValueError("imgsz deve ser múltiplo de 32.")
+        if options.get("tile") is True:
+            arguments.append("--tile")
+        if options.get("gpu_eval") is True:
+            arguments.append("--gpu-eval")
         return arguments
     if kind == "suggest":
         arguments = ["--weights", _project_file(root, options.get("weights"), ("models", "runs"), ".pt"),

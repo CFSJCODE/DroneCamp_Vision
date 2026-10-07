@@ -27,6 +27,7 @@ O DroneCamp Vision reúne análise de imagens, sugestões de possíveis não con
 | Conferir e corrigir as imagens | [Revisão v7](sistema_ia/data/reviews/ceasa_v7_revisao002_ba8cc323c8a1/index.html), aberta localmente pelo [atalho Windows](Abrir%20revisao%20DroneCamp.cmd) |
 | Conhecer as categorias de inspeção | [Taxonomia](sistema_ia/configs/taxonomy.json) e [análise documental](sistema_ia/docs/analise_documental.md) |
 | Consultar o treinamento e as métricas | [Treino piloto](sistema_ia/docs/treino_piloto.md) e [resultados das execuções](sistema_ia/runs) |
+| Recortes para fotos de 20 MP, CPU + GPU no treino e comparação entre modelos | [Recortes, GPU e relatório](sistema_ia/docs/treino_em_recortes.md) |
 | Localizar o código | [Módulos Python](sistema_ia/src/dronecamp_ia) |
 | Entender a coleta e a evolução dos dados | [Plano de coleta](sistema_ia/docs/plano_coleta_imagens.md) e [melhoria contínua](sistema_ia/docs/plano_revisao_e_melhoria_continua.md) |
 | Contribuir com o projeto | [Guia de contribuição e Conventional Commits](CONTRIBUTING.md) |

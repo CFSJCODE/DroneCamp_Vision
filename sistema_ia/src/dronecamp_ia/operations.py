@@ -81,6 +81,36 @@ def read_curves(results_csv: Path) -> list[dict]:
     return curves
 
 
+def read_gpu_curve(run_directory: Path) -> list[dict]:
+    """Pontos da avaliação paralela na GPU: ``gpu_eval/eval_curve.jsonl`` (gpu_eval.py)
+    ou ``gpu_eval/curve.jsonl`` (scripts/gpu_eval_watcher.py)."""
+    points = []
+    for name in ("eval_curve.jsonl", "curve.jsonl"):
+        path = run_directory / "gpu_eval" / name
+        try:
+            lines = path.read_text(encoding="utf-8").splitlines()
+        except OSError:
+            continue
+        for line in lines:
+            try:
+                entry = json.loads(line)
+            except ValueError:
+                continue
+            if not isinstance(entry, dict) or not isinstance(entry.get("epoch"), int):
+                continue
+            if entry.get("map50") is not None:
+                points.append({"epoch": entry["epoch"], "map50": entry["map50"], "map50_95": entry.get("map50_95"),
+                               "split": entry.get("split"), "provider": entry.get("provider_active") or entry.get("provider"),
+                               "seconds": entry.get("seconds")})
+            elif isinstance(entry.get("sets"), dict):  # formato do vigia: um bloco por conjunto
+                for split, values in entry["sets"].items():
+                    map50 = (values.get("totals") or {}).get("map50")
+                    if map50 is not None:
+                        points.append({"epoch": entry["epoch"], "map50": map50, "map50_95": None, "split": split,
+                                       "provider": entry.get("provider"), "seconds": entry.get("seconds")})
+    return sorted(points, key=lambda point: (point["epoch"], str(point["split"])))
+
+
 def _relative(path: Path, start: Path) -> str:
     """Caminho relativo com "/" para links da página (funciona aberto do disco)."""
     return Path(os.path.relpath(path, start)).as_posix()
@@ -93,8 +123,11 @@ def _run_state(summary: dict | None, results_csv: Path, now: float) -> str:
             return "completed"
         if summary.get("state") == "failed" or summary.get("complete") is False:
             return "failed"
-    if results_csv.is_file() and now - results_csv.stat().st_mtime < RUNNING_WINDOW_SECONDS:
-        return "running"
+    # fit/heartbeat é tocado a cada minuto pelo treino (training.py): uma época longa
+    # deixa results.csv parado por mais que a janela sem que o treino tenha morrido.
+    for marker in (results_csv, results_csv.parent / "heartbeat"):
+        if marker.is_file() and now - marker.stat().st_mtime < RUNNING_WINDOW_SECONDS:
+            return "running"
     return "interrupted" if results_csv.is_file() else "prepared"
 
 
@@ -150,6 +183,8 @@ def collect_runs(root: Path, page_directory: Path | None = None, now: float | No
             "best_epoch": best,
             "last": curves[-1] if curves else None,
             "curves": curves,
+            "gpu_eval": read_gpu_curve(directory),
+            "label_unit": execution.get("label_unit") or "fotos",
             "weights": weights,
             "plots": plots,
             "notes": (summary or {}).get("reasons") or [],

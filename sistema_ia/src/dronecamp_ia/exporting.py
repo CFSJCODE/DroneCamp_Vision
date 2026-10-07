@@ -130,8 +130,13 @@ def verify_onnx_parity(config: ProjectConfig, checkpoint: Path, onnx_path: Path,
             "scope": "Paridade numérica PyTorch × ONNX Runtime na CPU deste computador; não avalia qualidade nem outro hardware."}
 
 
-def export_onnx(config: ProjectConfig, weights: str, demo: bool = False, parity_images: list[Path] | None = None) -> Path:
-    """Exporte ONNX FP32, batch 1 e tamanho fixo; confira a paridade com o .pt."""
+def export_onnx(config: ProjectConfig, weights: str, demo: bool = False, parity_images: list[Path] | None = None,
+                output: Path | None = None) -> Path:
+    """Exporte ONNX FP32, batch 1 e tamanho fixo; confira a paridade com o .pt.
+
+    ``parity_images=[]`` pula a paridade; ``output`` troca ``runs/export_*`` por
+    uma pasta já existente e vazia (avaliação por época na GPU, ``gpu_eval.py``).
+    """
     if importlib.util.find_spec("onnx") is None:
         raise ValueError("Dependência ONNX ausente. Instale o extra export documentado no README antes de exportar.")
     # 1. Modelo com as 13 classes; pesos piloto exportam no tamanho de treino.
@@ -142,7 +147,9 @@ def export_onnx(config: ProjectConfig, weights: str, demo: bool = False, parity_
         check_domain_names(model, detection_names(load_taxonomy(config.taxonomy_path)))
         config = pilot_inference_config(config, model)
     # 2. Cópia do .pt na pasta da exportação e exportação FP32, batch 1, tamanho fixo.
-    run = make_run_directory(config.root, "export_demo" if demo else "export")
+    run = Path(output) if output is not None else make_run_directory(config.root, "export_demo" if demo else "export")
+    if output is not None and any(run.iterdir()):
+        raise ValueError(f"A pasta de exportação precisa estar vazia: {run}")
     checkpoint = run / "model.pt"
     shutil.copy2(model.ckpt_path, checkpoint)
     # O exportador grava ao lado do checkpoint: uma cópia evita tocar o original.

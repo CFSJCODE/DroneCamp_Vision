@@ -13,7 +13,9 @@ Comandos e onde está o código de cada um:
 - ``refresh-page`` → ``review_render.refresh_review_page``  |  ``platform`` → ``platform_server.py``
 - Aprendizado a partir das revisões: ``prioritize-review`` / ``learn-review`` → ``active_learning.py``
   (bandit LinUCB); ``fit-calibrator`` → ``calibration.py`` (scikit-learn);
-  ``compare-models`` → ``model_gate.py``; ``tune-pilot-bandit`` → ``hparam_bandit.py``
+  ``compare-models`` / ``measure-models`` → ``model_gate.py``; ``tune-pilot-bandit`` → ``hparam_bandit.py``;
+  ``report-models`` → ``model_report.py``; ``train-pilot --gpu-eval`` / ``gpu-eval-worker`` → ``gpu_eval.py``;
+  ``retrain-cycle`` → ``cycle.py``
 - Marcação automática: ``suggest --zero-shot`` e ``evaluate-autolabel`` → ``autolabel.py`` (YOLOE)
 
 Quando mexer: para criar um comando novo ou uma opção nova (``--algo``) em um
@@ -123,6 +125,47 @@ def build_parser() -> argparse.ArgumentParser:
                              help="Treinar em janelas das fotos grandes (pilot.tiling; ex.: 1280 px → imgsz 640).")
     pilot_train.add_argument("--resume", type=Path,
                              help="Retoma uma execução piloto anterior a partir de sua pasta (ex.: runs/pilot_train_...).")
+    pilot_train.add_argument("--gpu-eval", action="store_true",
+                             help="CPU + GPU: um worker avalia last.pt na GPU (DirectML) a cada N épocas (pilot.gpu_eval).")
+    pilot_train.add_argument("--gpu-eval-every", type=int, help="Épocas entre avaliações na GPU (padrão: pilot.gpu_eval.every).")
+    pilot_train.add_argument("--gpu-eval-provider", choices=["directml", "cpu"], help="directml (GPU) ou cpu (só testes).")
+    pilot_train.add_argument("--gpu-eval-split", choices=["val", "test"], help="Split avaliado na GPU (padrão: val).")
+    worker = commands.add_parser("gpu-eval-worker", help="Processo interno do train-pilot --gpu-eval (não use à mão).")
+    worker.add_argument("--run", type=Path, required=True)
+    worker.add_argument("--work", type=Path, help="Pasta da fila (padrão: <run>/gpu_eval ou a área de gravação).")
+    worker.add_argument("--data", type=Path, required=True)
+    worker.add_argument("--provider", choices=["directml", "cpu"], default="directml")
+    worker.add_argument("--split", choices=["val", "test"], default="val")
+    worker.add_argument("--imgsz", type=int, required=True, help="Tamanho de entrada do ONNX (imgsz do treino).")
+    worker.add_argument("--poll", type=float, default=5.0, help="Segundos entre consultas à fila.")
+    worker.add_argument("--max-idle", type=float, help="Encerrar após N s sem checkpoint novo (worker órfão).")
+    worker.add_argument("--watch-stdin", action="store_true", help="Sair quando o processo do treino fechar o stdin.")
+    report = commands.add_parser("report-models", help="Relatório com gráficos comparativos entre modelos (PNG + HTML).")
+    report.add_argument("--measurement", type=Path, action="append",
+                        help="measurement.json do measure-models (comparação principal); repita para vários.")
+    report.add_argument("--gate", type=Path, action="append", help="gate.json do compare-models; repita para vários.")
+    report.add_argument("--compare", type=Path, action="append", help="runs/compare_*.json; repita para vários.")
+    report.add_argument("--eval", type=Path, action="append", help="runs/eval_por_classe_*.json; repita para vários.")
+    report.add_argument("--run", type=Path, action="append", help="runs/pilot_train_* (padrão: todos com results.csv).")
+    report.add_argument("--output", type=Path, help="Pasta nova do relatório (padrão: runs/report_<data>_<id>).")
+    report.add_argument("--title")
+    cycle = commands.add_parser("retrain-cycle", help="Ciclo completo: dataset → treino (CPU+GPU) → export → gate → medição → relatório.")
+    cycle.add_argument("--registry", type=Path, action="append", required=True, help="registry.json das revisões; repita.")
+    cycle.add_argument("--output", type=Path, required=True, help="Pasta nova do dataset piloto (data/pilot/<versão>).")
+    cycle.add_argument("--baseline", action="append", default=[], help="Pesos anteriores a comparar; repita para vários.")
+    cycle.add_argument("--weights", help="Peso inicial do treino (padrão: pilot.model).")
+    cycle.add_argument("--epochs", type=int)
+    cycle.add_argument("--imgsz", type=int)
+    cycle.add_argument("--batch", type=int)
+    cycle.add_argument("--seed", type=int, default=42)
+    cycle.add_argument("--sequence-block", type=int, default=0, help="Fotos consecutivas de voo por cena (ex.: 10).")
+    cycle.add_argument("--no-tile", action="store_true", help="Treinar nas fotos inteiras (padrão: --tile).")
+    cycle.add_argument("--no-gpu-eval", action="store_true", help="Não avaliar na GPU durante o treino.")
+    cycle.add_argument("--gpu-eval-every", type=int)
+    cycle.add_argument("--gpu-eval-provider", choices=["directml", "cpu"])
+    cycle.add_argument("--onnx-provider", choices=["directml", "cpu"], help="Runtime do gate e da medição (padrão: directml).")
+    cycle.add_argument("--split", action="append", help="Splits do gate/medição (padrão: test).")
+    cycle.add_argument("--title", help="Título do relatório.")
     resume_pilot_cmd = commands.add_parser("resume-pilot", help="Retoma um treino piloto interrompido.")
     resume_pilot_cmd.add_argument("run", type=Path, help="Pasta da execução em runs/ (ex.: runs/pilot_train_...).")
     suggest = commands.add_parser("suggest", help="Sugerir caixas na página de revisão com um detector treinado.")
@@ -168,6 +211,17 @@ def build_parser() -> argparse.ArgumentParser:
     gate.add_argument("--split", action="append", choices=["train", "val", "test"],
                       help="Split avaliado; repita para vários (padrão: test).")
     gate.add_argument("--conf", type=float)
+    gate.add_argument("--onnx-provider", choices=["directml", "cpu"], default="directml",
+                      help="Com pesos .onnx: GPU (directml) ou CPU.")
+    measure = commands.add_parser("measure-models", help="Medir N modelos nas mesmas fotos (entrada do report-models).")
+    measure.add_argument("--data", type=Path, required=True)
+    measure.add_argument("--weights", action="append", required=True, help=".pt ou .onnx; repita para vários modelos.")
+    measure.add_argument("--split", action="append", choices=["train", "val", "test"])
+    measure.add_argument("--conf", type=float)
+    measure.add_argument("--onnx-provider", choices=["directml", "cpu"], default="directml")
+    measure.add_argument("--regime", action="append", choices=["janelas", "inteira"],
+                         help="Regime de inferência por série (padrão: os dois quando pilot.tiling está ligado).")
+    measure.add_argument("--output", type=Path, help="Pasta nova (padrão: runs/measure_<data>_<id>).")
     bandit = commands.add_parser("tune-pilot-bandit", help="Hiperparâmetros do piloto por successive halving (bandit).")
     bandit.add_argument("--data", type=Path, required=True)
     bandit.add_argument("--weights")
@@ -189,6 +243,10 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     """Ponto de entrada protegido por __main__ para compatibilidade com Windows."""
     args = build_parser().parse_args(argv)
+    if args.config:
+        import os
+
+        os.environ["DRONECAMP_CONFIG"] = str(Path(args.config).resolve())  # lido pelo worker do gpu-eval
     try:
         config = load_config(args.config)
         # Os imports ficam dentro de cada ramo: a Ultralytics só carrega quando é usada.
@@ -270,7 +328,34 @@ def main(argv: list[str] | None = None) -> int:
                 from .training import train_pilot
                 overrides = {key: value for key in ("epochs", "imgsz", "batch", "repeat_factor_threshold", "tile")
                              if (value := getattr(args, key)) is not None}
-                output = train_pilot(config, args.data, args.weights, overrides)
+                gpu_eval = {"enabled": True if args.gpu_eval else None, "every": args.gpu_eval_every,
+                            "provider": args.gpu_eval_provider, "split": args.gpu_eval_split}
+                output = train_pilot(config, args.data, args.weights, overrides, gpu_eval)
+        elif args.command == "gpu-eval-worker":
+            from .gpu_eval import run_worker
+            result = run_worker(config, args.run, args.data, args.provider, args.split, args.imgsz, args.work,
+                                args.poll, max_idle_seconds=args.max_idle, watch_stdin=args.watch_stdin)
+            print(json.dumps(result, ensure_ascii=False), flush=True)
+            # Saída imediata: a finalização normal do interpretador com ONNX Runtime + Torch
+            # carregados pode abortar (SIGABRT) depois do trabalho feito; a curva já está gravada.
+            import os
+
+            os._exit(0 if result.get("status") in ("done", "idle_timeout") else 1)
+        elif args.command == "report-models":
+            from .model_report import build_model_report
+            output = build_model_report(config, args.output, args.gate or (), args.compare or (), args.eval or (),
+                                        args.run, args.title, measurements=args.measurement or ())
+        elif args.command == "retrain-cycle":
+            from .cycle import run_cycle
+            overrides = {key: value for key in ("epochs", "imgsz", "batch") if (value := getattr(args, key)) is not None}
+            if not args.no_tile:
+                overrides["tile"] = True
+            gpu_eval = None if args.no_gpu_eval else {"enabled": True, "every": args.gpu_eval_every,
+                                                       "provider": args.gpu_eval_provider, "split": None}
+            output = run_cycle(config, args.registry, args.output, baselines=args.baseline, weights=args.weights,
+                               overrides=overrides, seed=args.seed, sequence_block=args.sequence_block,
+                               gpu_eval=gpu_eval, onnx_provider=args.onnx_provider or "directml",
+                               splits=tuple(args.split or ["test"]), title=args.title)
         elif args.command == "resume-pilot":
             from .training import resume_pilot
             output = resume_pilot(config, args.run)
@@ -304,9 +389,14 @@ def main(argv: list[str] | None = None) -> int:
             print((output / "calibrator.json").read_text(encoding="utf-8")[:2000])
         elif args.command == "compare-models":
             from .model_gate import compare_models
-            output = compare_models(config, args.data, args.baseline, args.candidate, tuple(args.split or ["test"]), args.conf)
+            output = compare_models(config, args.data, args.baseline, args.candidate, tuple(args.split or ["test"]), args.conf,
+                                    onnx_provider=args.onnx_provider)
             gate = json.loads((output / "gate.json").read_text(encoding="utf-8"))
             print(json.dumps({key: gate[key] for key in ("adopt", "reasons", "images_evaluated")}, ensure_ascii=False, indent=2))
+        elif args.command == "measure-models":
+            from .model_gate import measure_models
+            output = measure_models(config, args.data, args.weights, tuple(args.split or ["test"]), args.conf,
+                                    args.onnx_provider, tuple(args.regime) if args.regime else None, args.output)
         elif args.command == "tune-pilot-bandit":
             from .hparam_bandit import load_space, successive_halving
             fixed = {key: value for key in ("imgsz", "batch") if (value := getattr(args, key)) is not None}
