@@ -23,6 +23,8 @@ from pathlib import Path
 import csv
 import json
 import math
+import os
+import shutil
 
 import yaml
 
@@ -155,16 +157,75 @@ def train_pilot(config: ProjectConfig, data_path: Path, weights: str | None = No
                                                                      int(parameters.get("seed", 0)))
         pilot_details["classes_without_training_boxes"] = [name for name, count in counts["train"].items() if count == 0]
         pilot_details["warning"] = audit["warning"]
+        staging = _fit_staging(run)
+        if staging:
+            pilot_details["fit_staging"] = str(staging)
         write_json(run / "execution.json", {"runtime": runtime_info(model, config), "parameters": parameters,
                                            "class_counts": counts, "stage": "fine_tuning_piloto", **pilot_details})
-        # 5. Treino de verdade (Ultralytics); best.pt/last.pt vão para run/fit/weights.
-        model.train(data=str(dataset), device=config.device, project=str(run), name="fit",
-                    exist_ok=False, **parameters)
+        # 5. Treino de verdade (Ultralytics); best.pt/last.pt vão para run/fit/weights
+        #    (ou para a área de gravação no disco interno, copiada de volta no fim).
+        if staging:
+            model.add_callback("on_fit_epoch_end", lambda trainer: _mirror_results(staging, run))
+        try:
+            model.train(data=str(dataset), device=config.device, project=str(staging.parent if staging else run),
+                        name=staging.name if staging else "fit", exist_ok=False, **parameters)
+        finally:
+            if staging:
+                _copy_back_fit(staging, run)
     except Exception as error:
         reason = f"Execução interrompida por {type(error).__name__}: {error}"
         _write_training_summary(run, [reason], state="failed", **pilot_details)
         raise ValueError(f"Treino piloto incompleto: {reason}. Revise {run}.") from error
     # 6. Auditoria final: só aqui o summary passa para "completed".
+    review_training_result(run, model, names, **pilot_details)
+    return run
+
+
+# ---------------------------------------------------------------------------
+# Área de gravação opcional (DRONECAMP_FIT_STAGING): o Ultralytics grava last.pt
+# (~200 MB) a cada época. Num HD externo USB essa escrita já falhou com
+# OSError 22 no meio do treino; num disco interno o risco cai. Ao final (ou na
+# falha) tudo volta para run/fit, que continua sendo o único lugar de referência.
+# ---------------------------------------------------------------------------
+
+def _fit_staging(run: Path) -> Path | None:
+    base = os.environ.get("DRONECAMP_FIT_STAGING")
+    if not base:
+        return None
+    staging = Path(base).expanduser().resolve() / run.name / "fit"
+    staging.parent.mkdir(parents=True, exist_ok=True)
+    return staging
+
+
+def _mirror_results(staging: Path, run: Path) -> None:
+    """Copia results.csv a cada época para o monitor da plataforma acompanhar o treino."""
+    source = staging / "results.csv"
+    if source.is_file():
+        (run / "fit").mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, run / "fit" / "results.csv")
+
+
+def _copy_back_fit(staging: Path, run: Path) -> None:
+    if staging.is_dir():
+        shutil.copytree(staging, run / "fit", dirs_exist_ok=True)
+
+
+def resume_pilot(config: ProjectConfig, run_path: Path) -> Path:
+    """Retoma um treino piloto interrompido a partir de fit/weights/last.pt."""
+    run = run_path.resolve()
+    last_pt = run / "fit" / "weights" / "last.pt"
+    if not last_pt.is_file():
+        raise ValueError(f"Checkpoint last.pt não encontrado em {last_pt}.")
+    names = detection_names(load_taxonomy(config.taxonomy_path))
+    pilot_details = {"pilot": True, "production_ready": False}
+    _write_training_summary(run, ["A preparação e o treinamento piloto ainda não concluíram."], state="running", **pilot_details)
+    try:
+        model = load_detector(config, str(last_pt))
+        model.train(resume=True)
+    except Exception as error:
+        reason = f"Execução interrompida por {type(error).__name__}: {error}"
+        _write_training_summary(run, [reason], state="failed", **pilot_details)
+        raise ValueError(f"Treino piloto incompleto: {reason}. Revise {run}.") from error
     review_training_result(run, model, names, **pilot_details)
     return run
 
