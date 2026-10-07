@@ -11,6 +11,7 @@ from tempfile import TemporaryDirectory
 import csv
 import json
 import os
+import shutil
 import unittest
 
 from dronecamp_ia.config import detection_names, load_config, load_taxonomy
@@ -42,10 +43,14 @@ class EndToEndUltralyticsTests(unittest.TestCase):
         cls.temporary = TemporaryDirectory()
         cls.root = Path(cls.temporary.name)
         cls.config = replace(REAL, root=cls.root)
+        # O worker de avaliação (processo à parte) lê configs/project.yaml da raiz do teste.
+        shutil.copytree(REAL.root / "configs", cls.root / "configs")
         cls.names = detection_names(load_taxonomy(REAL.taxonomy_path))
         cls.dataset = cls.root / "data" / "pilot" / "e2e"
         cls.build = build_pilot_dataset(cls.config, [REGISTRY], cls.dataset)
-        cls.train_run = train_pilot(cls.config, cls.dataset / "dataset.yaml", str(WEIGHTS), dict(TINY))
+        # CPU + GPU em conjunto, com o ONNX Runtime na CPU no lugar do DirectML (ausente aqui).
+        cls.train_run = train_pilot(cls.config, cls.dataset / "dataset.yaml", str(WEIGHTS), dict(TINY),
+                                    {"enabled": True, "every": 1, "provider": "cpu", "split": "val"})
         cls.best = cls.train_run / "fit" / "weights" / "best.pt"
         registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
         cls.sample_images = [resolve_local_path(item["source_path"], REAL.root) for item in registry["images"][:2]]
@@ -86,6 +91,31 @@ class EndToEndUltralyticsTests(unittest.TestCase):
         self.assertGreater(self.best.stat().st_size, 1_000_000)
         provenance = json.loads((self.train_run / "pilot_provenance.json").read_text(encoding="utf-8"))
         self.assertTrue(provenance["valid"])
+
+    def test_2b_gpu_eval_worker_evaluated_the_checkpoint_while_training(self):
+        from dronecamp_ia.gpu_eval import read_curve
+        from dronecamp_ia.operations import collect_runs
+
+        execution = json.loads((self.train_run / "execution.json").read_text(encoding="utf-8"))
+        state = execution["gpu_eval"]
+        self.assertEqual(state["state"], "finished", state)
+        self.assertEqual(state["enqueued"], [1])
+        self.assertNotIn("error", state, state)
+        curve = read_curve(self.train_run)
+        log = self.train_run / "gpu_eval" / "worker.log"
+        self.assertEqual([entry["epoch"] for entry in curve], [1],
+                         log.read_text(encoding="utf-8", errors="replace")[-2000:] if log.is_file() else "sem worker.log")
+        self.assertEqual(curve[0]["split"], "val")
+        self.assertEqual(curve[0]["imgsz"], TINY["imgsz"])
+        self.assertIn("CPUExecutionProvider", curve[0]["provider_active"])
+        self.assertEqual(curve[0]["regime"], "janelas")
+        self.assertIsNotNone(curve[0]["map50"])
+        self.assertEqual(state["parallel"]["evaluations"], 1)
+        self.assertFalse(list((self.train_run / "gpu_eval").glob("export_*")))  # exportação temporária apagada
+        run = next(item for item in collect_runs(self.root) if item["id"] == self.train_run.name)
+        self.assertEqual([point["epoch"] for point in run["gpu_eval"]], [1])
+        self.assertEqual(run["label_unit"], "fotos")
+        self.assertTrue((self.train_run / "fit" / "heartbeat").is_file())
 
     def test_3_real_prediction_writes_findings_marked_as_pilot(self):
         from dronecamp_ia.prediction import predict
@@ -163,6 +193,41 @@ class EndToEndUltralyticsTests(unittest.TestCase):
         with (self.root / "data" / "pilot" / "e2e_v2" / "groups.csv").open(encoding="utf-8") as stream:
             self.assertEqual(sum(1 for _ in csv.DictReader(stream)), len(manifest["images"]))
 
+
+    def test_5b_tiled_training_measures_and_reports_models_window_by_window(self):
+        from dronecamp_ia.model_gate import measure_models
+        from dronecamp_ia.model_report import build_model_report
+        from dronecamp_ia.prediction import predict
+        from dronecamp_ia.training import train_pilot
+
+        # Janelas de 320 px a partir de 600 px: as fotos de laudo (1199 px) passam a ser fatiadas.
+        tiling = {"enabled": True, "min_side": 600, "patch": 320, "overlap": 0.2, "full_image": True, "merge_iou": 0.5}
+        config = replace(self.config, pilot={**self.config.pilot, "tiling": tiling})
+        run = train_pilot(config, self.dataset / "dataset.yaml", str(WEIGHTS), {**TINY, "tile": True})
+        execution = json.loads((run / "execution.json").read_text(encoding="utf-8"))
+        self.assertEqual(execution["label_unit"], "janelas")
+        self.assertIn("tiling", execution)
+        best = run / "fit" / "weights" / "best.pt"
+        # predict com pesos piloto: a foto de laudo entra janela a janela e a evidência é desenhada.
+        folder = self.root / "predict_janelas"
+        folder.mkdir()
+        (folder / self.sample_images[0].name).write_bytes(self.sample_images[0].read_bytes())
+        predict_run = predict(config, folder, str(best))
+        rows = [json.loads(line) for line in (predict_run / "findings.jsonl").read_text(encoding="utf-8").splitlines()]
+        self.assertEqual(rows[0]["inference"]["regime"], "janelas")
+        self.assertGreater(rows[0]["inference"]["windows"], 1)
+        self.assertTrue(Path(rows[0]["evidence"]).is_file())
+        # measure-models: dois modelos × dois regimes nas mesmas fotos de teste; report-models desenha.
+        measurement = measure_models(config, self.dataset / "dataset.yaml", [str(self.best), str(best)], ("test",),
+                                     onnx_provider="cpu")
+        data = json.loads((measurement / "measurement.json").read_text(encoding="utf-8"))
+        self.assertEqual([series["regime"] for series in data["models"]], ["janelas", "inteira"] * 2)
+        self.assertEqual(set(data["strata"]), {"fotos_fatiadas"})
+        self.assertGreater(data["images_evaluated"], 0)
+        report = build_model_report(config, None, measurements=[measurement / "measurement.json"], runs=[run])
+        self.assertTrue((report / "report.html").is_file())
+        self.assertTrue((report / "strata_recall.png").is_file())
+        type(self).tiled_run = run
 
     def test_6_repeat_factor_sampling_trains_with_rare_photos_repeated(self):
         from dronecamp_ia.training import train_pilot
