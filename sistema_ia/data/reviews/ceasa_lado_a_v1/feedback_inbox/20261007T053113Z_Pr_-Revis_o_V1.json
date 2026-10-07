@@ -1,0 +1,1620 @@
+{
+  "schema_version": 1,
+  "registry_sha256": "289c602ca3fc29cb0a8adfdb94f26ca92a4c1b8f1e62b32b19129fa36beb42ae",
+  "reviewer_id": "Pré-Revisão_V1",
+  "exported_at": "2026-10-07T05:31:13.458Z",
+  "images": [
+    {
+      "image_sha256": "f645e8a225983276b90527f82cace0b0d2aed6a2444df119a694c99946fb2d70",
+      "boxes": [
+        {
+          "class_id": 7,
+          "bbox_xyxy": [
+            1568,
+            22,
+            1632,
+            103
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 7,
+          "bbox_xyxy": [
+            1519,
+            75,
+            1562,
+            112
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            1461,
+            111,
+            1501,
+            138
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            358,
+            772,
+            596,
+            829
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            618,
+            2724,
+            672,
+            2771
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            646,
+            2686,
+            679,
+            2716
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 4,
+          "bbox_xyxy": [
+            1048,
+            2085,
+            1162,
+            2117
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            439,
+            1510,
+            508,
+            1535
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            948,
+            811,
+            979,
+            836
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            976,
+            812,
+            1052,
+            836
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            940,
+            146,
+            1050,
+            176
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 4,
+          "bbox_xyxy": [
+            186,
+            184,
+            397,
+            207
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true,
+      "dismissed_suggestions": [
+        "s001",
+        "s002"
+      ]
+    },
+    {
+      "image_sha256": "7d6260e0f8c60f0f753c9d465b7982f3f20ad6165d005a56eaa285fa1b32ab9f",
+      "boxes": [
+        {
+          "class_id": 4,
+          "bbox_xyxy": [
+            1844,
+            1313,
+            1881,
+            1433
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 4,
+          "bbox_xyxy": [
+            1183,
+            1372,
+            1210,
+            1466
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            1222,
+            1438,
+            1250,
+            1475
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            540,
+            824,
+            566,
+            879
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            537,
+            762,
+            557,
+            813
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 12,
+          "bbox_xyxy": [
+            499,
+            693,
+            526,
+            723
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 12,
+          "bbox_xyxy": [
+            503,
+            767,
+            530,
+            804
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            1148,
+            299,
+            1182,
+            383
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 4,
+          "bbox_xyxy": [
+            1852,
+            260,
+            1886,
+            324
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 9,
+          "bbox_xyxy": [
+            1847,
+            71,
+            1890,
+            141
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 10,
+          "bbox_xyxy": [
+            1693,
+            546,
+            1781,
+            599
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            1895,
+            1405,
+            1926,
+            1450
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 7,
+          "bbox_xyxy": [
+            1183,
+            1969,
+            1268,
+            2065
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 4,
+          "bbox_xyxy": [
+            510,
+            1462,
+            568,
+            1658
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 4,
+          "bbox_xyxy": [
+            473,
+            393,
+            523,
+            706
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            530,
+            586,
+            559,
+            618
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 10,
+          "bbox_xyxy": [
+            549,
+            392,
+            628,
+            455
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            511,
+            278,
+            570,
+            347
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            510,
+            40,
+            531,
+            119
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 10,
+          "bbox_xyxy": [
+            1686,
+            151,
+            1777,
+            207
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true,
+      "dismissed_suggestions": [
+        "s001"
+      ]
+    },
+    {
+      "image_sha256": "6848de1579b422e716dec48eedf347c0da30feebd5f27a07c8e09ebd56e3f957",
+      "boxes": [
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            4822,
+            2763,
+            4872,
+            2789
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            4984,
+            3437,
+            5078,
+            3495
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true,
+      "dismissed_suggestions": [
+        "s001",
+        "s002",
+        "s003",
+        "s004",
+        "s005",
+        "s006",
+        "s007",
+        "s008",
+        "s009",
+        "s010",
+        "s011",
+        "s012",
+        "s013",
+        "s014",
+        "s015"
+      ]
+    },
+    {
+      "image_sha256": "64a795df3abb574acb7857c4f87876866d5d799979d5ea97d7aa2ecf98f58bc2",
+      "boxes": [
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            1056,
+            2924,
+            1099,
+            3051
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            445,
+            3086,
+            473,
+            3172
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            449,
+            3596,
+            476,
+            3648
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            1064,
+            3605,
+            1103,
+            3648
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            1654,
+            3460,
+            1758,
+            3575
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            1740,
+            2926,
+            1778,
+            3014
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true,
+      "dismissed_suggestions": [
+        "s001",
+        "s002",
+        "s003",
+        "s004",
+        "s005",
+        "s006",
+        "s007",
+        "s008",
+        "s009",
+        "s010",
+        "s011",
+        "s012",
+        "s013",
+        "s014",
+        "s015",
+        "s016",
+        "s017"
+      ]
+    },
+    {
+      "image_sha256": "6074dcf4aa27df26bc1c3c5c348db0151088a9949b7cae30ade892c8ca4c7eb7",
+      "boxes": [
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            1044,
+            2678,
+            1078,
+            2839
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            1046,
+            3069,
+            1075,
+            3175
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            1107,
+            3011,
+            1144,
+            3086
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 10,
+          "bbox_xyxy": [
+            1506,
+            3217,
+            1710,
+            3280
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 10,
+          "bbox_xyxy": [
+            1505,
+            3133,
+            1711,
+            3197
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 10,
+          "bbox_xyxy": [
+            1521,
+            3045,
+            1716,
+            3124
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            1613,
+            2783,
+            1679,
+            2826
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            1629,
+            2850,
+            1659,
+            2893
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            1636,
+            2177,
+            1745,
+            2268
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            418,
+            3364,
+            447,
+            3435
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            346,
+            3436,
+            369,
+            3474
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            351,
+            3143,
+            382,
+            3209
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            412,
+            2637,
+            460,
+            2847
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            434,
+            2270,
+            472,
+            2360
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            438,
+            1769,
+            471,
+            1851
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            1047,
+            1611,
+            1089,
+            1734
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            1047,
+            2298,
+            1079,
+            2380
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            1103,
+            2822,
+            1133,
+            2874
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true,
+      "dismissed_suggestions": [
+        "s001",
+        "s002",
+        "s003",
+        "s004",
+        "s005",
+        "s006"
+      ]
+    },
+    {
+      "image_sha256": "3e94e7eb9c619a274e415dfffd174065f995bb2ef63ae10246a42aa16e35b1f5",
+      "boxes": [
+        {
+          "class_id": 4,
+          "bbox_xyxy": [
+            1036,
+            2489,
+            1101,
+            2864
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            1120,
+            2802,
+            1146,
+            2859
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            1111,
+            2666,
+            1146,
+            2735
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            1007,
+            1819,
+            1064,
+            1920
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            1104,
+            1764,
+            1131,
+            1873
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            1093,
+            1572,
+            1128,
+            1624
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            1024,
+            1414,
+            1065,
+            1594
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            1001,
+            1021,
+            1061,
+            1120
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            996,
+            346,
+            1055,
+            486
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            433,
+            2862,
+            462,
+            2910
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            432,
+            2622,
+            471,
+            2664
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            432,
+            2485,
+            471,
+            2614
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            423,
+            2149,
+            459,
+            2217
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            350,
+            2207,
+            390,
+            2268
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            349,
+            1924,
+            390,
+            2001
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 4,
+          "bbox_xyxy": [
+            404,
+            1425,
+            444,
+            1635
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            402,
+            1058,
+            434,
+            1114
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            386,
+            547,
+            416,
+            617
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            1755,
+            3012,
+            1785,
+            3052
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 10,
+          "bbox_xyxy": [
+            1541,
+            3030,
+            1737,
+            3066
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            1570,
+            2453,
+            1741,
+            2636
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            1462,
+            2424,
+            1577,
+            2490
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            1491,
+            2531,
+            1565,
+            2583
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            1366,
+            2552,
+            1400,
+            2580
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            1350,
+            2421,
+            1412,
+            2462
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            1500,
+            1867,
+            1709,
+            1924
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            1506,
+            1952,
+            1714,
+            2010
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            1515,
+            1779,
+            1715,
+            1837
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            1621,
+            1579,
+            1652,
+            1616
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            1602,
+            1504,
+            1661,
+            1563
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            1616,
+            897,
+            1723,
+            975
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            1699,
+            154,
+            1730,
+            181
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true,
+      "dismissed_suggestions": [
+        "s001",
+        "s002",
+        "s003",
+        "s004",
+        "s005",
+        "s006",
+        "s007",
+        "s008",
+        "s009"
+      ]
+    },
+    {
+      "image_sha256": "3ddb49d06b74b79d68a77fa92c7356da707d24af84eb7946196835f19123ef07",
+      "boxes": [
+        {
+          "class_id": 4,
+          "bbox_xyxy": [
+            1026,
+            1155,
+            1075,
+            1535
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            1094,
+            1343,
+            1118,
+            1417
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            404,
+            1515,
+            438,
+            1597
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            413,
+            1162,
+            453,
+            1343
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            412,
+            807,
+            454,
+            884
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            324,
+            843,
+            377,
+            915
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            355,
+            577,
+            384,
+            659
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            1041,
+            93,
+            1089,
+            264
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            1038,
+            485,
+            1086,
+            596
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            1118,
+            247,
+            1146,
+            305
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            1112,
+            451,
+            1143,
+            528
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            1094,
+            1478,
+            1121,
+            1541
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            1089,
+            1603,
+            1126,
+            1657
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            1508,
+            1711,
+            1701,
+            1755
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            1529,
+            469,
+            1742,
+            524
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            1517,
+            548,
+            1721,
+            605
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            1502,
+            627,
+            1728,
+            692
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            1631,
+            199,
+            1696,
+            247
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            1643,
+            269,
+            1681,
+            314
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 4,
+          "bbox_xyxy": [
+            413,
+            87,
+            455,
+            293
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            944,
+            24,
+            961,
+            52
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            1483,
+            1198,
+            1723,
+            1332
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            1435,
+            1278,
+            1537,
+            1402
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            1354,
+            1104,
+            1390,
+            1138
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true,
+      "dismissed_suggestions": [
+        "s002",
+        "s001",
+        "s003"
+      ]
+    },
+    {
+      "image_sha256": "6a5587a2d906805d9af74827396cc35e172bf55f075742cd7961d62fbe19b8ce",
+      "boxes": [
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            4767,
+            402,
+            5048,
+            1077
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 4,
+          "bbox_xyxy": [
+            4723,
+            438,
+            4976,
+            516
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 10,
+          "bbox_xyxy": [
+            5192,
+            438,
+            5350,
+            1010
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 7,
+          "bbox_xyxy": [
+            3709,
+            1311,
+            3909,
+            1378
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 4,
+          "bbox_xyxy": [
+            5222,
+            2364,
+            5472,
+            2479
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 4,
+          "bbox_xyxy": [
+            4847,
+            1676,
+            5472,
+            1798
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            5357,
+            1727,
+            5413,
+            1783
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            4976,
+            1027,
+            5207,
+            1095
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            5193,
+            1076,
+            5236,
+            1111
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 10,
+          "bbox_xyxy": [
+            4949,
+            1211,
+            5089,
+            1363
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 10,
+          "bbox_xyxy": [
+            5376,
+            1087,
+            5466,
+            1270
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 10,
+          "bbox_xyxy": [
+            3706,
+            552,
+            3904,
+            615
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            5202,
+            3134,
+            5263,
+            3185
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            5151,
+            3034,
+            5406,
+            3123
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true,
+      "dismissed_suggestions": [
+        "s001"
+      ]
+    },
+    {
+      "image_sha256": "a19a5889910c0c3a5791e384c29d027a7ee1985985e952fb43619bf930cca3aa",
+      "boxes": [
+        {
+          "class_id": 7,
+          "bbox_xyxy": [
+            4210,
+            2670,
+            4263,
+            2785
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            4251,
+            2595,
+            4291,
+            2678
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 7,
+          "bbox_xyxy": [
+            4198,
+            17,
+            4252,
+            85
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            4167,
+            94,
+            4218,
+            149
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            52,
+            3285,
+            92,
+            3423
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            812,
+            3079,
+            842,
+            3145
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            808,
+            2800,
+            836,
+            2866
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            1278,
+            3297,
+            1405,
+            3364
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 4,
+          "bbox_xyxy": [
+            1408,
+            3075,
+            1472,
+            3300
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            1475,
+            2806,
+            1508,
+            2868
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            2865,
+            3247,
+            2905,
+            3370
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 10,
+          "bbox_xyxy": [
+            2941,
+            3260,
+            3012,
+            3303
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            2867,
+            3077,
+            2901,
+            3175
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            2876,
+            3003,
+            2898,
+            3043
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            4243,
+            3271,
+            4296,
+            3395
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            4250,
+            2797,
+            4270,
+            2851
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            4245,
+            2886,
+            4272,
+            2913
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            4926,
+            2729,
+            4962,
+            2914
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            4931,
+            3299,
+            4966,
+            3398
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true
+    }
+  ]
+}

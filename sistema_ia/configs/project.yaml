@@ -52,6 +52,17 @@ training:
 pilot:
   model: yolo26l.pt          # peso inicial do treino piloto
   suggestion_conf: 0.15      # confiança mínima das sugestões na página de revisão
+  # Inferência fatiada (suggest e comparações): fotos de drone de 20 MP têm defeitos
+  # de ~40 px, que somem quando a foto inteira é reduzida a 640. Acima de min_side,
+  # janelas de patch px (overlap) são reduzidas ao imgsz do modelo (1280 → 640) e
+  # juntadas por NMS por classe (merge_iou) com uma passada na foto inteira.
+  tiling:
+    enabled: true
+    min_side: 2000
+    patch: 1280
+    overlap: 0.2
+    full_image: true
+    merge_iou: 0.5
   # Caixas da mesma classe com IoU >= limite viram um único alvo no dataset piloto.
   duplicate_iou: 0.7
   training:

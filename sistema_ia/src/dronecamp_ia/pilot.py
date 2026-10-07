@@ -163,11 +163,37 @@ def split_by_scene(images: list[dict], seed: int, fractions: tuple[float, float]
 # Construção e validação do dataset piloto (data/pilot/<versão>/).
 # ---------------------------------------------------------------------------
 
+SEQUENCE_NAME = re.compile(r"^(?P<prefix>.*?)(?P<number>\d{3,})\.[A-Za-z0-9]+$")
+
+
+def group_flight_sequences(images: list[dict], block: int) -> int:
+    """Fotos sequenciais de um voo (ex.: DJI_0194…) viram blocos de ``block`` fotos.
+
+    Fotos vizinhas de drone se sobrepõem: separadas por foto, uma cena quase igual
+    cairia em treino e teste ao mesmo tempo. Só muda grupos automáticos (uma foto
+    por grupo); cenas declaradas no registro são mantidas. Devolve quantas mudaram.
+    """
+    if block < 2:
+        return 0
+    changed = 0
+    for item in images:
+        scene, digest = item["scene_group"], item["image_sha256"][:12]
+        automatic = scene == f"foto_{digest}" or scene.endswith(f"_{digest}")
+        match = SEQUENCE_NAME.match(item.get("filename") or "")
+        if automatic and match:
+            building = item.get("building_group") or "sem_edificacao"
+            item["scene_group"] = f"{building}_{match['prefix']}seq{int(match['number']) // block:04d}"
+            changed += 1
+    return changed
+
+
 def build_pilot_dataset(config: ProjectConfig, registry_paths: list[Path], output: Path,
-                        seed: int = 42, fractions: tuple[float, float] = (0.15, 0.15)) -> dict:
+                        seed: int = 42, fractions: tuple[float, float] = (0.15, 0.15),
+                        sequence_block: int = 0) -> dict:
     """Crie uma versão nova e imutável do dataset piloto a partir dos registros.
 
     ``fractions`` = (validação, teste): 15% das fotos para cada um.
+    ``sequence_block``: agrupa fotos sequenciais de voo (ver ``group_flight_sequences``).
     """
     output = Path(output)
     if output.exists():
@@ -184,6 +210,7 @@ def build_pilot_dataset(config: ProjectConfig, registry_paths: list[Path], outpu
                 images = [value for value in images if value["image_sha256"] != item["image_sha256"]]
             seen.add(item["image_sha256"])
             images.append(item)
+    sequence_grouped = group_flight_sequences(images, sequence_block)
     if not images:
         raise ValueError("Nenhuma foto com aprovação humana; nada para treinar.")
     # 2. Caixas de treino: duplicatas consolidadas conforme pilot.duplicate_iou.
@@ -243,6 +270,7 @@ def build_pilot_dataset(config: ProjectConfig, registry_paths: list[Path], outpu
             "schema_version": 1, "kind": PILOT_KIND, "created_at": datetime.now(timezone.utc).isoformat(),
             "version": output.name, "taxonomy_sha256": digest, "seed": seed,
             "split_policy": "cena_inteira_por_split; classes raras mantidas no treino",
+            "sequence_grouping": {"block": sequence_block, "images_regrouped": sequence_grouped} if sequence_block else None,
             "duplicate_policy": None if duplicate_iou is None else {
                 "iou": duplicate_iou, "rule": "mesma classe e IoU >= limite viram uma caixa; prioridade: "
                 "caixa desenhada/editada pelo revisor, depois sugestão aceita de maior confiança",

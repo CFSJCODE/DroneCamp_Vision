@@ -1,0 +1,1368 @@
+{
+  "created_at": "2026-10-07T05:45:52+00:00",
+  "conf": 0.15,
+  "ap_conf": 0.01,
+  "iou_match": 0.5,
+  "tiling": {
+    "enabled": true,
+    "min_side": 2000,
+    "patch": 1280,
+    "overlap": 0.2,
+    "full_image": true,
+    "merge_iou": 0.5
+  },
+  "classes": [
+    "telha_quebrada",
+    "telha_ausente",
+    "residuos_telha",
+    "reparo_telha",
+    "rufo_ausente",
+    "rufo_quebrado",
+    "residuos_calha",
+    "vegetacao_calha",
+    "pedaco_telha",
+    "rufo_deslocado",
+    "pedaco_telha_sobreposto",
+    "fixador_telha_frouxo",
+    "reparo_rufo"
+  ],
+  "sets": {
+    "ceasa_v9_piloto_s42:test": 9,
+    "ceasa_v9_piloto_s42:val": 7,
+    "ceasa_lado_a_v1:revisado": 9
+  },
+  "models": [
+    {
+      "label": "56038eb9 (v8, 80 ep)",
+      "weights": "runs\\export_20261007T024620Z_516be2d6\\model.onnx",
+      "weights_sha256": "abdb09c2aa6763751dddbd10ec04e2e5c98fdcd65ae1010b9c09d69103bed906",
+      "source_checkpoint": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\runs\\pilot_train_20261004T214341Z_56038eb9\\fit\\weights\\best.pt",
+      "runtime": "onnx-directml",
+      "sets": {
+        "ceasa_v9_piloto_s42:test": {
+          "totals": {
+            "truth": 33,
+            "tp": 2,
+            "fp": 4,
+            "fn": 31,
+            "precision": 0.3333,
+            "recall": 0.0606,
+            "map50": 0.1603,
+            "photos": 9,
+            "seconds_per_photo": 0.36
+          },
+          "per_class": {
+            "telha_quebrada": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 3,
+              "fn": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "telha_ausente": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "residuos_telha": {
+              "truth": 14,
+              "tp": 2,
+              "fp": 1,
+              "fn": 12,
+              "precision": 0.6667,
+              "recall": 0.1429,
+              "f1": 0.2353,
+              "ap50": 0.3366
+            },
+            "reparo_telha": {
+              "truth": 2,
+              "tp": 0,
+              "fp": 0,
+              "fn": 2,
+              "precision": null,
+              "recall": 0.0,
+              "f1": 0.0,
+              "ap50": 0.0
+            },
+            "rufo_ausente": {
+              "truth": 5,
+              "tp": 0,
+              "fp": 0,
+              "fn": 5,
+              "precision": null,
+              "recall": 0.0,
+              "f1": 0.0,
+              "ap50": 0.0
+            },
+            "rufo_quebrado": {
+              "truth": 12,
+              "tp": 0,
+              "fp": 0,
+              "fn": 12,
+              "precision": null,
+              "recall": 0.0,
+              "f1": 0.0,
+              "ap50": 0.3046
+            },
+            "residuos_calha": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "vegetacao_calha": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "pedaco_telha": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "rufo_deslocado": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "pedaco_telha_sobreposto": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "fixador_telha_frouxo": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "reparo_rufo": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            }
+          }
+        },
+        "ceasa_v9_piloto_s42:val": {
+          "totals": {
+            "truth": 7,
+            "tp": 2,
+            "fp": 1,
+            "fn": 5,
+            "precision": 0.6667,
+            "recall": 0.2857,
+            "map50": 0.1733,
+            "photos": 5,
+            "seconds_per_photo": 0.16
+          },
+          "per_class": {
+            "telha_quebrada": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "telha_ausente": {
+              "truth": 1,
+              "tp": 0,
+              "fp": 0,
+              "fn": 1,
+              "precision": null,
+              "recall": 0.0,
+              "f1": 0.0,
+              "ap50": 0.0
+            },
+            "residuos_telha": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "reparo_telha": {
+              "truth": 5,
+              "tp": 2,
+              "fp": 1,
+              "fn": 3,
+              "precision": 0.6667,
+              "recall": 0.4,
+              "f1": 0.5,
+              "ap50": 0.52
+            },
+            "rufo_ausente": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "rufo_quebrado": {
+              "truth": 1,
+              "tp": 0,
+              "fp": 0,
+              "fn": 1,
+              "precision": null,
+              "recall": 0.0,
+              "f1": 0.0,
+              "ap50": 0.0
+            },
+            "residuos_calha": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "vegetacao_calha": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "pedaco_telha": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "rufo_deslocado": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "pedaco_telha_sobreposto": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "fixador_telha_frouxo": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "reparo_rufo": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            }
+          }
+        },
+        "ceasa_lado_a_v1:revisado": {
+          "totals": {
+            "truth": 147,
+            "tp": 2,
+            "fp": 91,
+            "fn": 145,
+            "precision": 0.0215,
+            "recall": 0.0136,
+            "map50": 0.0041,
+            "photos": 9,
+            "seconds_per_photo": 4.2
+          },
+          "per_class": {
+            "telha_quebrada": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 3,
+              "fn": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "telha_ausente": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "residuos_telha": {
+              "truth": 19,
+              "tp": 1,
+              "fp": 5,
+              "fn": 18,
+              "precision": 0.1667,
+              "recall": 0.0526,
+              "f1": 0.08,
+              "ap50": 0.0098
+            },
+            "reparo_telha": {
+              "truth": 11,
+              "tp": 1,
+              "fp": 46,
+              "fn": 10,
+              "precision": 0.0213,
+              "recall": 0.0909,
+              "f1": 0.0345,
+              "ap50": 0.0232
+            },
+            "rufo_ausente": {
+              "truth": 15,
+              "tp": 0,
+              "fp": 0,
+              "fn": 15,
+              "precision": null,
+              "recall": 0.0,
+              "f1": 0.0,
+              "ap50": 0.0
+            },
+            "rufo_quebrado": {
+              "truth": 81,
+              "tp": 0,
+              "fp": 0,
+              "fn": 81,
+              "precision": null,
+              "recall": 0.0,
+              "f1": 0.0,
+              "ap50": 0.0
+            },
+            "residuos_calha": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 33,
+              "fn": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "vegetacao_calha": {
+              "truth": 6,
+              "tp": 0,
+              "fp": 4,
+              "fn": 6,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "ap50": 0.0
+            },
+            "pedaco_telha": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "rufo_deslocado": {
+              "truth": 1,
+              "tp": 0,
+              "fp": 0,
+              "fn": 1,
+              "precision": null,
+              "recall": 0.0,
+              "f1": 0.0,
+              "ap50": 0.0
+            },
+            "pedaco_telha_sobreposto": {
+              "truth": 12,
+              "tp": 0,
+              "fp": 0,
+              "fn": 12,
+              "precision": null,
+              "recall": 0.0,
+              "f1": 0.0,
+              "ap50": 0.0
+            },
+            "fixador_telha_frouxo": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "reparo_rufo": {
+              "truth": 2,
+              "tp": 0,
+              "fp": 0,
+              "fn": 2,
+              "precision": null,
+              "recall": 0.0,
+              "f1": 0.0,
+              "ap50": 0.0
+            }
+          }
+        }
+      }
+    },
+    {
+      "label": "630dc0e0 (v8, 120 ep)",
+      "weights": "runs\\export_20261007T054453Z_b6665e32\\model.onnx",
+      "weights_sha256": "db9fa42155a062842a2fea94f8d26ea5682b2a530a3423be017711ae7e2a69bb",
+      "source_checkpoint": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\runs\\pilot_train_20261005T154505Z_630dc0e0\\fit\\weights\\best.pt",
+      "runtime": "onnx-directml",
+      "sets": {
+        "ceasa_v9_piloto_s42:test": {
+          "totals": {
+            "truth": 33,
+            "tp": 2,
+            "fp": 198,
+            "fn": 31,
+            "precision": 0.01,
+            "recall": 0.0606,
+            "map50": 0.0442,
+            "photos": 9,
+            "seconds_per_photo": 0.26
+          },
+          "per_class": {
+            "telha_quebrada": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 2,
+              "fn": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "telha_ausente": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "residuos_telha": {
+              "truth": 14,
+              "tp": 1,
+              "fp": 7,
+              "fn": 13,
+              "precision": 0.125,
+              "recall": 0.0714,
+              "f1": 0.0909,
+              "ap50": 0.1726
+            },
+            "reparo_telha": {
+              "truth": 2,
+              "tp": 0,
+              "fp": 10,
+              "fn": 2,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "ap50": 0.0
+            },
+            "rufo_ausente": {
+              "truth": 5,
+              "tp": 0,
+              "fp": 0,
+              "fn": 5,
+              "precision": null,
+              "recall": 0.0,
+              "f1": 0.0,
+              "ap50": 0.0
+            },
+            "rufo_quebrado": {
+              "truth": 12,
+              "tp": 1,
+              "fp": 178,
+              "fn": 11,
+              "precision": 0.0056,
+              "recall": 0.0833,
+              "f1": 0.0105,
+              "ap50": 0.004
+            },
+            "residuos_calha": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "vegetacao_calha": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "pedaco_telha": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "rufo_deslocado": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "pedaco_telha_sobreposto": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 1,
+              "fn": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "fixador_telha_frouxo": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "reparo_rufo": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            }
+          }
+        },
+        "ceasa_v9_piloto_s42:val": {
+          "totals": {
+            "truth": 7,
+            "tp": 0,
+            "fp": 43,
+            "fn": 7,
+            "precision": 0.0,
+            "recall": 0.0,
+            "map50": 0.0068,
+            "photos": 5,
+            "seconds_per_photo": 0.14
+          },
+          "per_class": {
+            "telha_quebrada": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "telha_ausente": {
+              "truth": 1,
+              "tp": 0,
+              "fp": 1,
+              "fn": 1,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "ap50": 0.0
+            },
+            "residuos_telha": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 1,
+              "fn": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "reparo_telha": {
+              "truth": 5,
+              "tp": 0,
+              "fp": 6,
+              "fn": 5,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "ap50": 0.0205
+            },
+            "rufo_ausente": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "rufo_quebrado": {
+              "truth": 1,
+              "tp": 0,
+              "fp": 33,
+              "fn": 1,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "ap50": 0.0
+            },
+            "residuos_calha": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "vegetacao_calha": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "pedaco_telha": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "rufo_deslocado": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "pedaco_telha_sobreposto": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 2,
+              "fn": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "fixador_telha_frouxo": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "reparo_rufo": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            }
+          }
+        },
+        "ceasa_lado_a_v1:revisado": {
+          "totals": {
+            "truth": 147,
+            "tp": 0,
+            "fp": 726,
+            "fn": 147,
+            "precision": 0.0,
+            "recall": 0.0,
+            "map50": 0.0001,
+            "photos": 9,
+            "seconds_per_photo": 4.51
+          },
+          "per_class": {
+            "telha_quebrada": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 1,
+              "fn": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "telha_ausente": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 20,
+              "fn": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "residuos_telha": {
+              "truth": 19,
+              "tp": 0,
+              "fp": 20,
+              "fn": 19,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "ap50": 0.0007
+            },
+            "reparo_telha": {
+              "truth": 11,
+              "tp": 0,
+              "fp": 154,
+              "fn": 11,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "ap50": 0.0004
+            },
+            "rufo_ausente": {
+              "truth": 15,
+              "tp": 0,
+              "fp": 0,
+              "fn": 15,
+              "precision": null,
+              "recall": 0.0,
+              "f1": 0.0,
+              "ap50": 0.0
+            },
+            "rufo_quebrado": {
+              "truth": 81,
+              "tp": 0,
+              "fp": 519,
+              "fn": 81,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "ap50": 0.0
+            },
+            "residuos_calha": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 3,
+              "fn": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "vegetacao_calha": {
+              "truth": 6,
+              "tp": 0,
+              "fp": 5,
+              "fn": 6,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "ap50": 0.0
+            },
+            "pedaco_telha": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "rufo_deslocado": {
+              "truth": 1,
+              "tp": 0,
+              "fp": 0,
+              "fn": 1,
+              "precision": null,
+              "recall": 0.0,
+              "f1": 0.0,
+              "ap50": 0.0
+            },
+            "pedaco_telha_sobreposto": {
+              "truth": 12,
+              "tp": 0,
+              "fp": 4,
+              "fn": 12,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "ap50": 0.0
+            },
+            "fixador_telha_frouxo": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "reparo_rufo": {
+              "truth": 2,
+              "tp": 0,
+              "fp": 0,
+              "fn": 2,
+              "precision": null,
+              "recall": 0.0,
+              "f1": 0.0,
+              "ap50": 0.0
+            }
+          }
+        }
+      }
+    },
+    {
+      "label": "f5e5ba8b (v9)",
+      "weights": "runs\\export_20261007T054524Z_ff3ac9c1\\model.onnx",
+      "weights_sha256": "4016e7d738f6e9e0530f17d6e29bdd78314df000da01f6a6147731ce5769f16a",
+      "source_checkpoint": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\runs\\pilot_train_20261007T010057Z_f5e5ba8b\\fit\\weights\\best.pt",
+      "runtime": "onnx-directml",
+      "sets": {
+        "ceasa_v9_piloto_s42:test": {
+          "totals": {
+            "truth": 33,
+            "tp": 3,
+            "fp": 26,
+            "fn": 30,
+            "precision": 0.1034,
+            "recall": 0.0909,
+            "map50": 0.0428,
+            "photos": 9,
+            "seconds_per_photo": 0.22
+          },
+          "per_class": {
+            "telha_quebrada": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 1,
+              "fn": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "telha_ausente": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "residuos_telha": {
+              "truth": 14,
+              "tp": 3,
+              "fp": 20,
+              "fn": 11,
+              "precision": 0.1304,
+              "recall": 0.2143,
+              "f1": 0.1622,
+              "ap50": 0.0982
+            },
+            "reparo_telha": {
+              "truth": 2,
+              "tp": 0,
+              "fp": 1,
+              "fn": 2,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "ap50": 0.0625
+            },
+            "rufo_ausente": {
+              "truth": 5,
+              "tp": 0,
+              "fp": 0,
+              "fn": 5,
+              "precision": null,
+              "recall": 0.0,
+              "f1": 0.0,
+              "ap50": 0.0
+            },
+            "rufo_quebrado": {
+              "truth": 12,
+              "tp": 0,
+              "fp": 0,
+              "fn": 12,
+              "precision": null,
+              "recall": 0.0,
+              "f1": 0.0,
+              "ap50": 0.0104
+            },
+            "residuos_calha": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "vegetacao_calha": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 3,
+              "fn": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "pedaco_telha": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "rufo_deslocado": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "pedaco_telha_sobreposto": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "fixador_telha_frouxo": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 1,
+              "fn": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "reparo_rufo": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            }
+          }
+        },
+        "ceasa_v9_piloto_s42:val": {
+          "totals": {
+            "truth": 12,
+            "tp": 1,
+            "fp": 27,
+            "fn": 11,
+            "precision": 0.0357,
+            "recall": 0.0833,
+            "map50": 0.0899,
+            "photos": 7,
+            "seconds_per_photo": 0.14
+          },
+          "per_class": {
+            "telha_quebrada": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 1,
+              "fn": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "telha_ausente": {
+              "truth": 1,
+              "tp": 0,
+              "fp": 0,
+              "fn": 1,
+              "precision": null,
+              "recall": 0.0,
+              "f1": 0.0,
+              "ap50": 0.0
+            },
+            "residuos_telha": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 21,
+              "fn": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "reparo_telha": {
+              "truth": 5,
+              "tp": 0,
+              "fp": 1,
+              "fn": 5,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "ap50": 0.103
+            },
+            "rufo_ausente": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "rufo_quebrado": {
+              "truth": 6,
+              "tp": 1,
+              "fp": 0,
+              "fn": 5,
+              "precision": 1.0,
+              "recall": 0.1667,
+              "f1": 0.2857,
+              "ap50": 0.1667
+            },
+            "residuos_calha": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "vegetacao_calha": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 1,
+              "fn": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "pedaco_telha": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "rufo_deslocado": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "pedaco_telha_sobreposto": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "fixador_telha_frouxo": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 3,
+              "fn": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "reparo_rufo": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            }
+          }
+        },
+        "ceasa_lado_a_v1:revisado": {
+          "totals": {
+            "truth": 147,
+            "tp": 0,
+            "fp": 411,
+            "fn": 147,
+            "precision": 0.0,
+            "recall": 0.0,
+            "map50": 0.0001,
+            "photos": 9,
+            "seconds_per_photo": 4.03
+          },
+          "per_class": {
+            "telha_quebrada": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 11,
+              "fn": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "telha_ausente": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 6,
+              "fn": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "residuos_telha": {
+              "truth": 19,
+              "tp": 0,
+              "fp": 165,
+              "fn": 19,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "ap50": 0.0005
+            },
+            "reparo_telha": {
+              "truth": 11,
+              "tp": 0,
+              "fp": 63,
+              "fn": 11,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "ap50": 0.0002
+            },
+            "rufo_ausente": {
+              "truth": 15,
+              "tp": 0,
+              "fp": 0,
+              "fn": 15,
+              "precision": null,
+              "recall": 0.0,
+              "f1": 0.0,
+              "ap50": 0.0
+            },
+            "rufo_quebrado": {
+              "truth": 81,
+              "tp": 0,
+              "fp": 2,
+              "fn": 81,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "ap50": 0.0
+            },
+            "residuos_calha": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 77,
+              "fn": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "vegetacao_calha": {
+              "truth": 6,
+              "tp": 0,
+              "fp": 30,
+              "fn": 6,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "ap50": 0.0
+            },
+            "pedaco_telha": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 0,
+              "fn": 0,
+              "precision": null,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "rufo_deslocado": {
+              "truth": 1,
+              "tp": 0,
+              "fp": 0,
+              "fn": 1,
+              "precision": null,
+              "recall": 0.0,
+              "f1": 0.0,
+              "ap50": 0.0
+            },
+            "pedaco_telha_sobreposto": {
+              "truth": 12,
+              "tp": 0,
+              "fp": 29,
+              "fn": 12,
+              "precision": 0.0,
+              "recall": 0.0,
+              "f1": 0.0,
+              "ap50": 0.0
+            },
+            "fixador_telha_frouxo": {
+              "truth": 0,
+              "tp": 0,
+              "fp": 28,
+              "fn": 0,
+              "precision": 0.0,
+              "recall": null,
+              "f1": null,
+              "ap50": null
+            },
+            "reparo_rufo": {
+              "truth": 2,
+              "tp": 0,
+              "fp": 0,
+              "fn": 2,
+              "precision": null,
+              "recall": 0.0,
+              "f1": 0.0,
+              "ap50": 0.0
+            }
+          }
+        }
+      }
+    }
+  ]
+}

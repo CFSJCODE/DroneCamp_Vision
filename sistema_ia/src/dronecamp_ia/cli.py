@@ -101,6 +101,8 @@ def build_parser() -> argparse.ArgumentParser:
     pilot_data.add_argument("--registry", type=Path, action="append", required=True, help="Registro revisado; repita para várias revisões.")
     pilot_data.add_argument("--output", type=Path, required=True)
     pilot_data.add_argument("--seed", type=int, default=42)
+    pilot_data.add_argument("--sequence-block", type=int, default=0,
+                            help="Agrupar fotos sequenciais de voo (DJI_0194…) em blocos de N no split (ex.: 10).")
     # Fatiamento em alta resolução (Tiling / Patch Slicing) para pequenos defeitos em fotos de drone.
     tiling = commands.add_parser("tile-dataset", help="Fatiar fotos em alta resolução em patches uniformes (ex.: 1280x1280 com overlap).")
     tiling.add_argument("--input", type=Path, required=True, help="Pasta do dataset original com dataset.yaml.")
@@ -117,6 +119,8 @@ def build_parser() -> argparse.ArgumentParser:
     pilot_train.add_argument("--batch", type=int)
     pilot_train.add_argument("--repeat-factor-threshold", type=float,
                              help="Repete fotos de classes raras na lista de treino (RFS); ex.: 0.3.")
+    pilot_train.add_argument("--tile", action="store_true",
+                             help="Treinar em janelas das fotos grandes (pilot.tiling; ex.: 1280 px → imgsz 640).")
     pilot_train.add_argument("--resume", type=Path,
                              help="Retoma uma execução piloto anterior a partir de sua pasta (ex.: runs/pilot_train_...).")
     resume_pilot_cmd = commands.add_parser("resume-pilot", help="Retoma um treino piloto interrompido.")
@@ -247,7 +251,8 @@ def main(argv: list[str] | None = None) -> int:
             return 0 if report["ready_for_training"] else 2
         elif args.command == "build-pilot-data":
             from .pilot import build_pilot_dataset
-            report = build_pilot_dataset(config, args.registry, args.output, args.seed)
+            report = build_pilot_dataset(config, args.registry, args.output, args.seed,
+                                         sequence_block=args.sequence_block)
             print(json.dumps(report, ensure_ascii=False, indent=2))
             return 0
         elif args.command == "tile-dataset":
@@ -263,7 +268,7 @@ def main(argv: list[str] | None = None) -> int:
                 if not args.data:
                     raise ValueError("Informe --data para iniciar um treino novo ou --resume para retomar.")
                 from .training import train_pilot
-                overrides = {key: value for key in ("epochs", "imgsz", "batch", "repeat_factor_threshold")
+                overrides = {key: value for key in ("epochs", "imgsz", "batch", "repeat_factor_threshold", "tile")
                              if (value := getattr(args, key)) is not None}
                 output = train_pilot(config, args.data, args.weights, overrides)
         elif args.command == "resume-pilot":

@@ -147,6 +147,11 @@ def train_pilot(config: ProjectConfig, data_path: Path, weights: str | None = No
         # 4. Parâmetros: training < pilot.training < opções da linha de comando.
         parameters = {**config.training, **config.pilot.get("training", {}), **(overrides or {})}
         parameters["nms"] = config.prediction["nms"]
+        # 4a. Fotos grandes de drone: treino em janelas (pilot.tiling), na mesma escala
+        # da inferência fatiada. O dataset piloto auditado acima continua sendo a fonte.
+        if parameters.pop("tile", False):
+            dataset, pilot_details["tiling"] = _tiled_training_dataset(config, run, data_path.resolve(),
+                                                                       int(parameters.get("seed", 0)))
         # 4b. Classes raras: lista de treino com repetições (sampling.py). Não é
         # parâmetro da Ultralytics, por isso sai de ``parameters`` antes do train.
         threshold = parameters.pop("repeat_factor_threshold", None)
@@ -187,6 +192,32 @@ def train_pilot(config: ProjectConfig, data_path: Path, weights: str | None = No
 # OSError 22 no meio do treino; num disco interno o risco cai. Ao final (ou na
 # falha) tudo volta para run/fit, que continua sendo o único lugar de referência.
 # ---------------------------------------------------------------------------
+
+def _tiled_training_dataset(config: ProjectConfig, run: Path, source: Path, seed: int) -> tuple[Path, dict]:
+    """Gera as janelas do dataset piloto (treino/val/teste separados como no original).
+
+    As janelas ficam na área de gravação (disco interno) quando houver; o YAML com
+    caminhos absolutos e o relatório do fatiamento ficam no run.
+    """
+    from .tiling import build_tiled_dataset
+
+    plan = config.pilot.get("tiling") or {}
+    base = Path(os.environ["DRONECAMP_FIT_STAGING"]).expanduser().resolve() / run.name \
+        if os.environ.get("DRONECAMP_FIT_STAGING") else run
+    output = base / "tiled_dataset"
+    report = build_tiled_dataset(source.parent, output, int(plan.get("patch", 1280)), float(plan.get("overlap", 0.2)),
+                                 float(plan.get("negative_ratio", 0.2)), seed)
+    original = yaml.safe_load(source.read_text(encoding="utf-8-sig"))
+    resolved = {"path": str(output), "names": original["names"],
+                **{split: str(output / "images" / split) for split in ("train", "val", "test")
+                   if (output / "images" / split).is_dir()}}
+    dataset = run / "dataset_tiled_resolved.yaml"
+    dataset.write_text(yaml.safe_dump(resolved, allow_unicode=True), encoding="utf-8")
+    shutil.copy2(output / "tiling_manifest.json", run / "tiling_manifest.json")
+    return dataset, {"patch": int(plan.get("patch", 1280)), "overlap": float(plan.get("overlap", 0.2)),
+                     "negative_ratio": float(plan.get("negative_ratio", 0.2)), "tiles_directory": str(output),
+                     "stats": report.get("stats", report)}
+
 
 def _fit_staging(run: Path) -> Path | None:
     base = os.environ.get("DRONECAMP_FIT_STAGING")

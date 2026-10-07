@@ -39,25 +39,77 @@ SUGGESTION_WARNING = ("Sugestões automáticas: aceite somente o que você confe
 # Inferência numa foto.
 # ---------------------------------------------------------------------------
 
-def detect_boxes(model, path: Path, config: ProjectConfig, conf: float) -> list[dict]:
-    """Inferência real; caixas são arredondadas e recortadas aos pixels da foto."""
+def tiling_plan(config: ProjectConfig, width: int, height: int, tiling: dict | None = None) -> dict | None:
+    """Parâmetros do fatiamento (``pilot.tiling``) para esta foto, ou None (foto inteira).
+
+    Fotos de drone de 20 MP têm defeitos com ~40 px; reduzir a foto inteira a 640
+    os deixa com ~5 px. Acima de ``min_side`` a foto é fatiada em janelas de
+    ``patch`` px (sobreposição ``overlap``), cada uma reduzida ao imgsz do modelo:
+    janela 1280 → 640 é a mesma escala do dataset fatiado (``tile-dataset``).
+    """
+    plan = tiling if tiling is not None else config.pilot.get("tiling")
+    if not plan or not plan.get("enabled", True) or max(width, height) < int(plan.get("min_side", 2000)):
+        return None
+    return {"patch": int(plan.get("patch", 1280)), "overlap": float(plan.get("overlap", 0.2)),
+            "full_image": bool(plan.get("full_image", True)), "merge_iou": float(plan.get("merge_iou", 0.5))}
+
+
+def _raw_detections(model, source, config: ProjectConfig, conf: float) -> list[tuple[int, float, list[float]]]:
+    """(classe, confiança, xyxy) de uma foto (caminho) ou recorte (array BGR)."""
     # rect=False: entrada quadrada, igual à usada na exportação ONNX.
-    width, height = review_image_size(path)
     parameters = {**config.prediction, "conf": conf}
-    result = next(iter(model.predict(source=str(path), device=config.device, save=False, verbose=False,
+    result = next(iter(model.predict(source=source, device=config.device, save=False, verbose=False,
                                      stream=True, rect=False, **parameters)))
-    # Converte cada detecção em {classe, caixa em pixels inteiros, confiança}.
-    boxes = []
     if result.boxes is None:
-        return boxes
-    for (x1, y1, x2, y2), confidence, class_id in zip(result.boxes.xyxy.cpu().tolist(),
+        return []
+    return [(int(c), float(s), b) for b, s, c in zip(result.boxes.xyxy.cpu().tolist(),
                                                      result.boxes.conf.cpu().tolist(),
-                                                     result.boxes.cls.cpu().tolist()):
+                                                     result.boxes.cls.cpu().tolist())]
+
+
+def _tiled_detections(model, path: Path, config: ProjectConfig, conf: float, plan: dict) -> list[tuple[int, float, list[float]]]:
+    """Inferência fatiada (estilo SAHI): janelas sobrepostas + foto inteira, NMS por classe."""
+    import numpy as np
+    from PIL import Image
+
+    from .tiling import calculate_patch_windows, merge_tiled_predictions
+
+    with Image.open(path) as image:
+        pixels = np.asarray(image.convert("RGB"))[:, :, ::-1]  # Ultralytics espera BGR em arrays
+    height, width = pixels.shape[:2]
+    candidates = []
+    for window in calculate_patch_windows(width, height, plan["patch"], plan["overlap"]):
+        x1, y1, x2, y2 = window
+        crop = np.ascontiguousarray(pixels[y1:y2, x1:x2])
+        for class_id, score, box in _raw_detections(model, crop, config, conf):
+            candidates.append({"class_id": class_id, "score": score, "bbox_xyxy": box, "window": list(window)})
+    if plan["full_image"]:
+        # Objetos longos (rufo, calha) podem não caber numa janela: a foto inteira entra junto.
+        for class_id, score, box in _raw_detections(model, str(path), config, conf):
+            candidates.append({"class_id": class_id, "score": score, "bbox_xyxy": box, "window": [0, 0, width, height]})
+    merged = merge_tiled_predictions(candidates, plan["merge_iou"])
+    return [(item["class_id"], item["score"], item["bbox_xyxy"]) for item in merged]
+
+
+def detect_boxes(model, path: Path, config: ProjectConfig, conf: float, tiling: dict | None = None) -> list[dict]:
+    """Inferência real; caixas são arredondadas e recortadas aos pixels da foto.
+
+    Fotos grandes são fatiadas conforme ``pilot.tiling`` (ou ``tiling``;
+    ``{"enabled": False}`` força a foto inteira).
+    """
+    width, height = review_image_size(path)
+    plan = tiling_plan(config, width, height, tiling)
+    detections = (_tiled_detections(model, path, config, conf, plan) if plan
+                  else _raw_detections(model, str(path), config, conf))
+    # Converte cada detecção em {classe, caixa em pixels inteiros, confiança}.
+    class_count = len(model.names)
+    boxes = []
+    for class_id, confidence, (x1, y1, x2, y2) in detections:
         coordinates = [max(0, min(width, round(x1))), max(0, min(height, round(y1))),
                        max(0, min(width, round(x2))), max(0, min(height, round(y2)))]
         candidate = {"class_id": int(class_id), "bbox_xyxy": coordinates, "confidence": round(float(confidence), 4)}
         try:
-            validate_boxes([candidate], width, height, len(result.names))
+            validate_boxes([candidate], width, height, class_count)
         except ValueError:
             continue  # caixa degenerada após arredondamento
         boxes.append(candidate)
@@ -136,6 +188,7 @@ def suggest_for_registry(config: ProjectConfig, registry_path: Path, weights: st
         "weights": str(checkpoint), "weights_sha256": file_hash(checkpoint), "pilot": pilot,
         "model_label": "Modelo piloto (não validado)" if pilot else "Modelo especializado",
         "runtime": model.dronecamp_runtime, "source_checkpoint": str(model.dronecamp_source),
+        "tiling": config.pilot.get("tiling"),
         "conf": conf, "imgsz": config.prediction["imgsz"], "warning": SUGGESTION_WARNING, "images": images,
         "calibrator": calibration.describe() if calibration else None,
         "zero_shot": open_search[3] if open_search else None,

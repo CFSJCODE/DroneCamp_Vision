@@ -68,6 +68,8 @@ def main() -> int:
     parser.add_argument("--data", type=Path, required=True)
     parser.add_argument("--weights", type=Path, action="append", required=True)
     parser.add_argument("--conf", type=float)
+    parser.add_argument("--no-tiling", action="store_true",
+                        help="Foto inteira reduzida ao imgsz (como antes); padrão: pilot.tiling para fotos grandes.")
     parser.add_argument("--onnx-provider", choices=["directml", "cpu"], default="directml",
                         help="Para --weights .onnx (comando export): directml usa a GPU.")
     parser.add_argument("--output", type=Path, required=True)
@@ -78,7 +80,7 @@ def main() -> int:
     manifest = json.loads((root / "pilot.json").read_text(encoding="utf-8"))
     conf = float(args.conf if args.conf is not None else config.pilot.get("suggestion_conf", 0.15))
     report = {"dataset": str(args.data), "pilot_sha256": file_hash(root / "pilot.json"), "conf": conf,
-              "iou_match": IOU_MATCH, "models": []}
+              "iou_match": IOU_MATCH, "tiling": None if args.no_tiling else config.pilot.get("tiling"), "models": []}
     for weights in args.weights:
         # .onnx roda na GPU (DirectML); fotos de treino vêm do .pt de origem (export.json).
         model = load_inference_model(config, str(weights), args.onnx_provider)
@@ -88,7 +90,8 @@ def main() -> int:
         totals = defaultdict(lambda: {"images": 0, "truth": 0, "found": 0, "suggestions": 0, "correct": 0})
         for sample in manifest["images"]:
             truth = ground_truth(root, sample)
-            predictions = detect_boxes(model, root / sample["image"], model_config, conf)
+            predictions = detect_boxes(model, root / sample["image"], model_config, conf,
+                                       {"enabled": False} if args.no_tiling else None)
             hits = match(predictions, truth)
             group = sample["split"] + (" (visto no treino)" if sample["image_sha256"] in seen_in_training else "")
             entry = totals[group]

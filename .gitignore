@@ -34,3 +34,9 @@ Documentação/Documentos PUCTEC/*
 !Documentação/Documentos PUCTEC/Apresentação DRONECAMP PUCTEC.pdf
 # Fotos de campanha (GB): ficam no disco; a revisão guarda cópias com hash em data/reviews.
 Conjunto De Dados De Treinamento/Imagens - DroneCamp/
+
+# Revisões de fotos de drone (GB): cópias congeladas, recortes e evidências ficam só no disco;
+# registro, sugestões e arquivos de revisão (leves) são versionados.
+sistema_ia/data/reviews/ceasa_lado_a_*/originals/
+sistema_ia/data/reviews/ceasa_lado_a_*/images/
+sistema_ia/data/reviews/ceasa_lado_a_*/evidence/
