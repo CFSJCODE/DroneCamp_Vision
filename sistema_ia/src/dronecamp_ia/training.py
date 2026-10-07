@@ -206,7 +206,7 @@ def train_pilot(config: ProjectConfig, data_path: Path, weights: str | None = No
         #     on_model_save dispara depois de last.pt ser gravado (on_fit_epoch_end viria antes).
         if gpu_settings:
             work = gpu.work_directory(run)
-            gpu_state = {"settings": gpu_settings, "state": "running", "enqueued": [], "skipped": []}
+            gpu_state = {"settings": gpu_settings, "state": "running", "enqueued": [], "skipped": [], "last_epoch": 0}
             pilot_details["gpu_eval"] = gpu_state
             worker = gpu.start_worker(config, run, data_path.resolve(), gpu_settings, int(parameters["imgsz"]))
             if worker is None:
@@ -215,6 +215,7 @@ def train_pilot(config: ProjectConfig, data_path: Path, weights: str | None = No
 
             def enqueue(trainer):
                 epoch = trainer.epoch + 1
+                gpu_state["last_epoch"] = epoch
                 final = epoch == trainer.epochs
                 if worker is None or epoch in gpu_state["enqueued"] or not Path(trainer.last).is_file():
                     return
@@ -244,7 +245,7 @@ def train_pilot(config: ProjectConfig, data_path: Path, weights: str | None = No
                 # A última época entra na fila mesmo que o callback não a tenha visto; só num
                 # treino concluído (Ctrl+C ou erro deixam um last.pt parcial que não é a época final).
                 last = run / "fit" / "weights" / "last.pt"
-                final_epoch = int(parameters.get("epochs") or 0)
+                final_epoch = int(gpu_state["last_epoch"])  # época real de last.pt (parada antecipada inclusa)
                 if trained and worker is not None and last.is_file() and final_epoch and final_epoch not in gpu_state["enqueued"]:
                     try:
                         gpu.enqueue_checkpoint(work, last, final_epoch)

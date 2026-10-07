@@ -243,12 +243,12 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None) -> int:
     """Ponto de entrada protegido por __main__ para compatibilidade com Windows."""
     args = build_parser().parse_args(argv)
-    try:
-        config = load_config(args.config)
     if args.config:
         import os
 
         os.environ["DRONECAMP_CONFIG"] = str(Path(args.config).resolve())  # lido pelo worker do gpu-eval
+    try:
+        config = load_config(args.config)
         # Os imports ficam dentro de cada ramo: a Ultralytics só carrega quando é usada.
         if args.command == "categories":
             print(json.dumps(load_taxonomy(config.taxonomy_path), ensure_ascii=False, indent=2))
@@ -333,10 +333,14 @@ def main(argv: list[str] | None = None) -> int:
                 output = train_pilot(config, args.data, args.weights, overrides, gpu_eval)
         elif args.command == "gpu-eval-worker":
             from .gpu_eval import run_worker
-            print(json.dumps(run_worker(config, args.run, args.data, args.provider, args.split, args.imgsz, args.work,
-                                        args.poll, max_idle_seconds=args.max_idle, watch_stdin=args.watch_stdin),
-                             ensure_ascii=False))
-            return 0
+            result = run_worker(config, args.run, args.data, args.provider, args.split, args.imgsz, args.work,
+                                args.poll, max_idle_seconds=args.max_idle, watch_stdin=args.watch_stdin)
+            print(json.dumps(result, ensure_ascii=False), flush=True)
+            # Saída imediata: a finalização normal do interpretador com ONNX Runtime + Torch
+            # carregados pode abortar (SIGABRT) depois do trabalho feito; a curva já está gravada.
+            import os
+
+            os._exit(0 if result.get("status") in ("done", "idle_timeout") else 1)
         elif args.command == "report-models":
             from .model_report import build_model_report
             output = build_model_report(config, args.output, args.gate or (), args.compare or (), args.eval or (),

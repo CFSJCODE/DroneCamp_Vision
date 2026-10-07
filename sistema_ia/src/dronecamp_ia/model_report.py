@@ -211,12 +211,26 @@ def load_measurement(path: Path, catalog: ModelCatalog) -> dict:
         for stratum, metrics in (entry.get("strata") or {}).items():
             strata.setdefault(stratum, {})[series_id] = _metrics_block(metrics or {})[0]
     return {"file": str(path), "dataset": normalize_path(raw.get("dataset") or ""),
+            "images": sorted(str(item.get("image_sha256")) for item in (raw.get("images") or []) if isinstance(item, dict)),
             "pilot_sha256": raw.get("pilot_sha256"), "splits": list(raw.get("splits") or []),
             "conf": raw.get("conf"), "ap_conf": raw.get("ap_conf"), "tiling": raw.get("tiling"),
             "images_evaluated": raw.get("images_evaluated"),
             "images_excluded_seen_in_training": raw.get("images_excluded_seen_in_training"),
             "strata_images": dict(raw.get("strata") or {}), "models": series, "overall": overall,
             "per_class": per_class, "strata": strata}
+
+
+def check_measurements_comparable(measurements: list[dict]) -> None:
+    """Várias medições só entram no mesmo gráfico se avaliaram as MESMAS fotos."""
+    if len(measurements) < 2:
+        return
+    first = measurements[0]
+    for other in measurements[1:]:
+        same = (other["pilot_sha256"] == first["pilot_sha256"] and other["images"] == first["images"]
+                and other["conf"] == first["conf"] and other["ap_conf"] == first["ap_conf"])
+        if not same:
+            raise ValueError(f"Medições incomparáveis: {first['file']} e {other['file']} avaliaram fotos, dataset ou "
+                             "confiança diferentes. Gere um relatório por medição ou refaça o measure-models com todos os modelos.")
 
 
 def load_gate(path: Path, catalog: ModelCatalog) -> dict:
@@ -1011,6 +1025,7 @@ def build_model_report(config: ProjectConfig, output: str | Path | None = None, 
     catalog = ModelCatalog()
     # Ordem de registro define cor e posição: medições, gates, comparações, avaliações, treinos.
     measurement_data = [load_measurement(Path(path), catalog) for path in measurements]
+    check_measurements_comparable(measurement_data)
     gate_data = [load_gate(Path(path), catalog) for path in gates]
     compare_data = [load_compare(Path(path), catalog) for path in compares]
     eval_data = [load_eval(Path(path), catalog) for path in evals]

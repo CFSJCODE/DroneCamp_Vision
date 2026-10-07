@@ -17,8 +17,9 @@ REAL = load_config()
 
 class SettingsTests(unittest.TestCase):
     def test_disabled_by_default_and_overrides_enable(self):
-        self.assertIsNone(gpu.gpu_eval_settings(REAL))
-        settings = gpu.gpu_eval_settings(REAL, {"enabled": True, "every": None, "provider": "cpu", "split": None})
+        self.assertIsNone(gpu.gpu_eval_settings(None))
+        self.assertIsNone(gpu.gpu_eval_settings({"enabled": False}))
+        settings = gpu.gpu_eval_settings({"enabled": False}, {"enabled": True, "every": None, "provider": "cpu", "split": None})
         self.assertEqual((settings["enabled"], settings["every"], settings["provider"], settings["split"]), (True, 5, "cpu", "val"))
 
     def test_invalid_values_are_rejected(self):

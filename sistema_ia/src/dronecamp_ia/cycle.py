@@ -67,8 +67,12 @@ def run_cycle(config: ProjectConfig, registries: list[Path], output: Path, basel
         _write(cycle, record)
         # 3. ONNX do candidato (o gate e a medição rodam o ONNX na GPU).
         export = export_onnx(config, str(candidate), parity_images=[])
-        record["steps"]["export"] = {"run": str(export), "onnx": str(export / "model.onnx")}
+        onnx = export / "model.onnx"
+        record["steps"]["export"] = {"run": str(export), "onnx": str(onnx)}
         _write(cycle, record)
+        # O gate e a medição avaliam o ONNX recém-exportado (o artefato que roda na GPU),
+        # para que a decisão valide o mesmo arquivo usado nas sugestões.
+        candidate = onnx if onnx.is_file() else candidate
         # 4. Gate candidato × cada anterior, nas fotos fora do treino de ambos.
         gates = []
         for baseline in baselines:

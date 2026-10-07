@@ -308,35 +308,37 @@ def evaluate_checkpoint(config: ProjectConfig, run: Path, work: Path, data_path:
         shutil.rmtree(export_dir)
     export_dir.mkdir(parents=True)
     # imgsz explícito: fora da pasta da execução o checkpoint não é reconhecido como piloto.
-    export_config = replace(config, prediction={**config.prediction, "imgsz": int(imgsz)})
-    # Sem paridade (parity_images=[]): a conferência .pt × .onnx custa tanto quanto a avaliação.
-    export_onnx(export_config, str(checkpoint), demo=False, parity_images=[], output=export_dir)
-    export_seconds = round(time.monotonic() - started, 1)
-    onnx_path = export_dir / "model.onnx"
-    onnx_sha256 = file_hash(onnx_path)
-    names = detection_names(load_taxonomy(config.taxonomy_path))
-    model = load_inference_model(config, str(onnx_path), provider)
-    check_domain_names(model, names)
-    model_config = pilot_inference_config(config, model)
-    root = Path(data_path).resolve().parent
-    manifest = json.loads((root / "pilot.json").read_text(encoding="utf-8"))
-    samples = [sample for sample in manifest["images"] if sample["split"] == split]
-    if not samples:
-        raise ValueError(f"Nenhuma foto no split {split} do dataset piloto.")
-    conf = float(config.pilot.get("suggestion_conf", config.prediction["conf"]))
-    inference_started = time.monotonic()
-    report = evaluate_model(model, model_config, root, samples, names, conf)
-    inference_seconds = round(time.monotonic() - inference_started, 1)
-    total = report.pop("_total")
-    strata = {key: value["_total"] for key, value in (report.pop("_strata", None) or {}).items()}
-    regime = report.pop("_regime", None)
-    provider_active = None
-    try:  # provedor que a sessão ONNX de fato ativou (prova de GPU)
-        provider_active = model.predictor.model.session.get_providers()[0]
-    except AttributeError:
-        pass
-    # O .pt e o ONNX intermediários não ficam: a curva guarda os hashes; best.pt/last.pt ficam no fit.
-    shutil.rmtree(export_dir, ignore_errors=True)
+    try:
+        export_config = replace(config, prediction={**config.prediction, "imgsz": int(imgsz)})
+        # Sem paridade (parity_images=[]): a conferência .pt × .onnx custa tanto quanto a avaliação.
+        export_onnx(export_config, str(checkpoint), demo=False, parity_images=[], output=export_dir)
+        export_seconds = round(time.monotonic() - started, 1)
+        onnx_path = export_dir / "model.onnx"
+        onnx_sha256 = file_hash(onnx_path)
+        names = detection_names(load_taxonomy(config.taxonomy_path))
+        model = load_inference_model(config, str(onnx_path), provider)
+        check_domain_names(model, names)
+        model_config = pilot_inference_config(config, model)
+        root = Path(data_path).resolve().parent
+        manifest = json.loads((root / "pilot.json").read_text(encoding="utf-8"))
+        samples = [sample for sample in manifest["images"] if sample["split"] == split]
+        if not samples:
+            raise ValueError(f"Nenhuma foto no split {split} do dataset piloto.")
+        conf = float(config.pilot.get("suggestion_conf", config.prediction["conf"]))
+        inference_started = time.monotonic()
+        report = evaluate_model(model, model_config, root, samples, names, conf)
+        inference_seconds = round(time.monotonic() - inference_started, 1)
+        total = report.pop("_total")
+        strata = {key: value["_total"] for key, value in (report.pop("_strata", None) or {}).items()}
+        regime = report.pop("_regime", None)
+        provider_active = None
+        try:  # provedor que a sessão ONNX de fato ativou (prova de GPU)
+            provider_active = model.predictor.model.session.get_providers()[0]
+        except AttributeError:
+            pass
+    finally:
+        # O .pt e o ONNX intermediários não ficam, nem numa falha: a curva guarda os hashes.
+        shutil.rmtree(export_dir, ignore_errors=True)
     return {"epoch": epoch, "split": split, "provider": provider, "provider_active": provider_active,
             "runtime": model.dronecamp_runtime, "images": len(samples), "conf": conf,
             "map50": total.get("map50"), "precision": total.get("precision"), "recall": total.get("recall"),
