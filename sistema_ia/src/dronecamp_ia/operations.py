@@ -191,7 +191,8 @@ def collect_runs(root: Path, page_directory: Path | None = None, now: float | No
             "updated_at": datetime.fromtimestamp(results_csv.stat().st_mtime, timezone.utc).isoformat() if results_csv.is_file() else None,
         })
     runs.sort(key=lambda run: run["id"].split("_")[-2], reverse=True)
-    _name_runs(runs, _read_json(runs_dir / "nomes.json") or {})
+    _custom = _read_json(runs_dir / "nomes.json")
+    _name_runs(runs, _custom if isinstance(_custom, dict) else {})
     return runs
 
 
