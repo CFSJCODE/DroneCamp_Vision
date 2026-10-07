@@ -850,10 +850,178 @@ main { padding: 4px 32px 32px; min-width: 0 }
 .range input { width: 110px; min-height: 0; padding: 0; accent-color: var(--ai) }
 #drawToggle[aria-pressed="true"] { background: var(--primary-bg); color: var(--primary-ink); border-color: transparent }
 
-.viewer { position: relative; display: grid; place-items: center; overflow: hidden; background: var(--viewer); border: 1px solid var(--line); border-radius: var(--radius-card) }
-.viewer canvas { display: block; max-width: 100%; max-height: calc(100vh - 300px); width: auto; height: auto }
-.viewer.drawing canvas { touch-action: none; cursor: crosshair }
+/* Controles de Zoom na Toolbar */
+.zoom-controls { display: inline-flex; align-items: center; gap: 4px }
+.zoom-badge { font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--primary); min-width: 44px; text-align: center }
+
+/* Visualizador com suporte avançado a Pan e Zoom */
+.viewer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--viewer);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  height: calc(100vh - 300px);
+  min-height: 520px;
+  user-select: none;
+  touch-action: none;
+}
+.viewer.panning { cursor: grab }
+.viewer.panning.is-dragging { cursor: grabbing !important }
+.viewer.drawing { cursor: crosshair }
+.viewer.drawing canvas { touch-action: none; cursor: crosshair !important }
+
+.viewer canvas {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+  will-change: transform;
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.45);
+}
 .viewer canvas:focus-visible { outline-offset: -3px }
+
+/* HUD flutuante sobre o visualizador */
+.viewer-hud {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 8px;
+  background: rgba(13, 23, 38, 0.90);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-pill);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  z-index: 25;
+  pointer-events: auto;
+}
+.viewer-hud button {
+  min-height: 28px;
+  padding: 2px 8px;
+  font-size: 12px;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--ink);
+  transition: all var(--fast);
+}
+.viewer-hud button:hover {
+  background: var(--primary-bg);
+  color: var(--primary-ink);
+  border-color: transparent;
+}
+.viewer-hud .zoom-indicator {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary);
+  min-width: 46px;
+  text-align: center;
+}
+.viewer-hint {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 14px;
+  background: rgba(13, 23, 38, 0.88);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  color: var(--ink-2);
+  pointer-events: none;
+  z-index: 15;
+  white-space: nowrap;
+  opacity: 0.90;
+  transition: opacity 0.3s;
+}
+
+/* Modo Tela Cheia */
+#stageSection.is-fullscreen {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100vw !important;
+  height: 100vh !important;
+  max-width: none !important;
+  max-height: none !important;
+  z-index: 99999 !important;
+  border-radius: 0 !important;
+  border: none !important;
+  margin: 0 !important;
+  padding: 10px 16px !important;
+  background: var(--bg) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-sizing: border-box !important;
+}
+#stageSection.is-fullscreen .stage-bar {
+  flex: 0 0 auto !important;
+  margin-bottom: 4px !important;
+}
+#stageSection.is-fullscreen .toolbar {
+  flex: 0 0 auto !important;
+  margin: 4px 0 8px !important;
+}
+#stageSection.is-fullscreen .viewer {
+  flex: 1 1 auto !important;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  border-radius: var(--radius-card) !important;
+}
+#stageSection.is-fullscreen details,
+#stageSection.is-fullscreen #message,
+#stageSection.is-fullscreen .shortcuts {
+  display: none !important;
+}
+#stageSection.is-fullscreen #fsDrawerBtn {
+  display: inline-flex !important;
+}
+
+/* Gaveta Lateral Flutuante na Tela Cheia */
+.fs-drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 420px;
+  max-width: 90vw;
+  background: var(--surface-1);
+  border-left: 1px solid var(--line-strong);
+  box-shadow: -12px 0 40px rgba(0, 0, 0, 0.65);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  gap: 12px;
+  overflow-y: auto;
+  transform: translateX(0);
+  transition: transform 0.25s var(--ease);
+}
+.fs-drawer.hidden {
+  display: none !important;
+}
+.fs-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+.fs-drawer-header h3 {
+  margin: 0;
+  font-size: 15px;
+}
 
 #message {
   min-height: 36px; margin: 12px 0 0; padding: 10px 14px;
@@ -1263,7 +1431,7 @@ pre.log { max-height: 260px; overflow: auto; margin: 8px 0 0; padding: 10px 12px
       <div class="queue" id="queue"></div>
     </aside>
 
-    <section class="card" aria-labelledby="photoTitle">
+    <section class="card" id="stageSection" aria-labelledby="photoTitle">
       <div class="stage-bar">
         <button id="previous" type="button" aria-label="Foto anterior">←</button>
         <div class="stage-title"><h2 id="photoTitle"></h2><p id="photoMeta"></p></div>
@@ -1276,14 +1444,43 @@ pre.log { max-height: 260px; overflow: auto; margin: 8px 0 0; padding: 10px 12px
         <label class="range hidden" id="confFilterLabel" for="confFilter">Confiança ≥ <b id="confValue"></b><input type="range" id="confFilter" min="0" max="100" step="5"></label>
         <span class="sep" aria-hidden="true"></span>
         <button id="drawToggle" type="button" aria-pressed="false" class="small btn-neon-glass action">Desenhar caixa (B)</button>
+        <span class="sep" aria-hidden="true"></span>
+        <div class="zoom-controls" role="group" aria-label="Controles de zoom">
+          <button id="zoomOut" type="button" class="small btn-neon-glass" title="Diminuir zoom (–)">–</button>
+          <button id="zoom100" type="button" class="small btn-neon-glass" title="Tamanho real (1:1 nativo da foto)">100%</button>
+          <button id="zoomIn" type="button" class="small btn-neon-glass" title="Aumentar zoom (+)">+</button>
+          <button id="zoomFit" type="button" class="small btn-neon-glass" title="Ajustar foto à tela (0)">⟲ Ajustar</button>
+          <span class="zoom-badge" id="zoomValue" aria-live="polite">100%</span>
+        </div>
+        <span class="sep" aria-hidden="true"></span>
+        <button id="fullscreenToggle" type="button" class="small btn-neon-glass action" title="Tela cheia com zoom e anotações (F)">⛶ Tela cheia (F)</button>
+        <button id="fsDrawerBtn" type="button" class="small btn-neon-glass hidden" title="Abrir/fechar painel de ocorrências e decisão">📋 Ocorrências & Decisão</button>
         <a id="originalLink" target="_blank" rel="noopener" class="small-text">Abrir foto original</a>
       </div>
       <p id="historyNotice" class="notice hidden"></p>
-      <div class="viewer" id="viewer"><canvas id="canvas" tabindex="0" aria-label="Fotografia com caixas propostas. Use os campos de coordenadas ao lado para anotar com teclado."></canvas></div>
+      <div class="viewer" id="viewer">
+        <canvas id="canvas" tabindex="0" aria-label="Fotografia com caixas propostas. Use os campos de coordenadas ao lado para anotar com teclado."></canvas>
+        <div class="viewer-hud" id="viewerHud" role="toolbar" aria-label="Acesso rápido ao zoom e tela cheia">
+          <button id="hudZoomOut" type="button" title="Diminuir zoom (–)">–</button>
+          <span class="zoom-indicator" id="hudZoomValue">100%</span>
+          <button id="hudZoomIn" type="button" title="Aumentar zoom (+)">+</button>
+          <button id="hudZoom100" type="button" title="Tamanho real (1:1)">1:1</button>
+          <button id="hudZoomFit" type="button" title="Ajustar à tela">⟲</button>
+          <button id="hudFullscreen" type="button" title="Alternar tela cheia (F)">⛶</button>
+        </div>
+        <div class="viewer-hint" id="viewerHint">Scroll: Zoom no cursor · Espaço + Arrastar ou Botão do Meio: Mover foto · B: Desenhar caixa · F: Tela cheia</div>
+      </div>
+      <div id="fsDrawer" class="fs-drawer hidden" aria-label="Painel de ocorrências e decisão em tela cheia">
+        <div class="fs-drawer-header">
+          <h3>Ocorrências & Decisão</h3>
+          <button id="fsDrawerClose" type="button" class="small btn-neon-glass" aria-label="Fechar painel">✕ Fechar</button>
+        </div>
+        <div id="fsDrawerContent"></div>
+      </div>
       <div id="message" role="status" aria-live="polite">Selecione uma foto para começar.</div>
       <details><summary>Observações da proposta inicial</summary><p id="proposalNotes"></p></details>
       <details open><summary>Observações da revisão visual</summary><p id="auditNotes"></p></details>
-      <div class="shortcuts">Atalhos: <kbd>←</kbd> <kbd>→</kbd> fotos · <kbd>B</kbd> desenhar · <kbd>A</kbd> aceitar 1ª sugestão · <kbd>X</kbd> descartar 1ª sugestão · <kbd>Del</kbd> excluir caixa selecionada</div>
+      <div class="shortcuts">Atalhos: <kbd>F</kbd> tela cheia · <kbd>Scroll</kbd> zoom · <kbd>Espaço</kbd>+arrastar · <kbd>B</kbd> desenhar · <kbd>←</kbd> <kbd>→</kbd> fotos · <kbd>A</kbd> aceitar sugestão · <kbd>X</kbd> descartar sugestão · <kbd>Del</kbd> excluir caixa</div>
     </section>
 
     <aside class="inspector" aria-label="Inspetor da foto">
@@ -1320,17 +1517,17 @@ pre.log { max-height: 260px; overflow: auto; margin: 8px 0 0; padding: 10px 12px
   </div>
   <div class="grid two" style="margin-top:16px">
     <div class="card">
-      <div class="card-head"><h2>Execuções de treino</h2><span class="muted small-text" id="runsHint"></span></div>
-      <div class="table-wrap"><table><thead><tr><th>Execução</th><th>Estado</th><th class="num">Épocas</th><th class="num">Melhor mAP50</th><th class="num">s/época</th></tr></thead><tbody id="runsTable"></tbody></table></div>
+      <div class="card-head"><h2>Histórico de Treinamentos Anteriores</h2><span class="muted small-text" id="runsHint"></span></div>
+      <div class="table-wrap"><table><thead><tr><th>Treinamento</th><th>Estado</th><th class="num">Ciclos de Estudo</th><th class="num">Melhor Taxa de Acerto</th><th class="num">Tempo / Ciclo</th></tr></thead><tbody id="runsTable"></tbody></table></div>
     </div>
     <div class="card">
-      <div class="card-head"><h2>Novo treino piloto</h2><span class="chip neutral" id="deviceChip"></span></div>
+      <div class="card-head"><h2>Novo Treino Piloto</h2><span class="chip neutral" id="deviceChip"></span></div>
       <div class="form-grid">
-        <div class="wide"><label for="trainData">Dataset piloto</label><select id="trainData"></select></div>
-        <div class="wide"><label for="trainWeights">Pesos iniciais</label><select id="trainWeights"></select></div>
-        <div><label for="trainEpochs">Épocas</label><input id="trainEpochs" type="number" min="1" max="1000"></div>
-        <div><label for="trainImgsz">imgsz</label><input id="trainImgsz" type="number" min="64" max="2048" step="32"></div>
-        <div><label for="trainBatch">batch</label><input id="trainBatch" type="number" min="1" max="64"></div>
+        <div class="wide"><label for="trainData">Conjunto de fotos (dataset)</label><select id="trainData"></select></div>
+        <div class="wide"><label for="trainWeights">Modelo base / Pesos iniciais</label><select id="trainWeights"></select></div>
+        <div><label for="trainEpochs">Ciclos de estudo (épocas)</label><input id="trainEpochs" type="number" min="1" max="1000"></div>
+        <div><label for="trainImgsz">Tamanho da foto (imgsz)</label><input id="trainImgsz" type="number" min="64" max="2048" step="32"></div>
+        <div><label for="trainBatch">Fotos por vez (batch)</label><input id="trainBatch" type="number" min="1" max="64"></div>
       </div>
       <p class="muted small-text" id="trainEstimate"></p>
       <div class="command" id="trainCommand"></div>
@@ -1339,26 +1536,86 @@ pre.log { max-height: 260px; overflow: auto; margin: 8px 0 0; padding: 10px 12px
     </div>
   </div>
   <div class="card" style="margin-top:16px">
-    <div class="card-head"><h2 id="runDetailTitle">Detalhes da execução</h2><span id="runDetailChips"></span></div>
+    <div class="card-head"><h2 id="runDetailTitle">Detalhes do Treinamento</h2><span id="runDetailChips"></span></div>
     <div class="grid halves">
-      <div><h3>Perdas (treino e validação)</h3><div class="chart" id="runLossChart"></div></div>
-      <div><h3>Métricas de validação</h3><div class="chart" id="runMetricChart"></div></div>
+      <div><h3>Taxa de Erro (Treino e Validação)</h3><div class="chart" id="runLossChart"></div></div>
+      <div><h3>Taxa de Acerto e Sensibilidade</h3><div class="chart" id="runMetricChart"></div></div>
     </div>
     <div class="plots" id="runPlots"></div>
   </div>
 </section>
 
-<!-- ======================= MONITORAMENTO ======================= -->
+<!-- ======================= MONITORAMENTO EM TEMPO REAL ======================= -->
 <section class="view" id="view-monitor">
-  <p class="notice" id="monitorOffline">Instantâneo gerado quando a página foi criada. Para acompanhar um treino ao vivo, abra a plataforma pelo atalho <b>Abrir plataforma DroneCamp.cmd</b> (servidor local).</p>
+  <p class="notice" id="monitorOffline">Instantâneo gerado quando a página foi criada. Para acompanhar um treino ao vivo com atualização contínua, abra a plataforma pelo servidor local (<b>python -m dronecamp_ia platform</b>).</p>
+
+  <!-- Barra de Progresso em Tempo Real -->
+  <div class="card" id="monitorProgressCard" style="margin-bottom:16px">
+    <div class="card-head">
+      <div>
+        <h2 id="monitorProgressCardTitle" style="margin:0 0 4px">Progresso da Rodada de Treinamento</h2>
+        <span class="muted small-text" id="progressSubtitle">Ciclo de Aprendizado (passadas completas por todas as fotos do conjunto)</span>
+      </div>
+      <div style="display:flex; gap:8px; align-items:center">
+        <span id="monitorStatusBadge" class="chip neutral"><span class="dot"></span>Inativo</span>
+        <span class="chip ok" id="progressPercentBadge" style="font-size:14px; font-weight:700">0%</span>
+      </div>
+    </div>
+    <div class="progress-bar-wrap" style="height:14px; border-radius:var(--radius-pill); background:var(--inset); overflow:hidden; margin:14px 0 10px; border:1px solid var(--line); position:relative">
+      <div id="monitorProgressBar" style="height:100%; width:0%; background:linear-gradient(90deg, #19D3C5 0%, #4EA8FF 100%); box-shadow:0 0 16px rgba(25, 211, 197, 0.6); transition:width 0.4s ease"></div>
+    </div>
+    <div style="display:flex; justify-content:space-between; font-size:13px; color:var(--muted); flex-wrap:wrap; gap:8px">
+      <span id="progressCycleText" style="font-weight:600; color:var(--ink)">Ciclo de Aprendizado 0 de 0</span>
+      <span id="progressSpeedText">Velocidade: —</span>
+      <span id="progressEtaText" style="color:var(--primary); font-weight:600">Tempo restante: —</span>
+    </div>
+    <div id="monitorIdleCallout" class="hidden" style="margin-top:12px; padding:10px 14px; border-radius:var(--radius-card); background:rgba(247, 179, 43, 0.08); border:1px solid rgba(247, 179, 43, 0.25); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px">
+      <span style="font-size:13px; color:var(--ink)">💡 <b>Nenhum treino está rodando no momento.</b> Você está visualizando o histórico de uma execução anterior.</span>
+      <button type="button" class="small btn-iridescent" onclick="showView('training')">⚡ Iniciar novo treino</button>
+    </div>
+  </div>
+
+  <!-- Diagnóstico de Autonomia Pericial -->
+  <div class="card" id="autonomyDiagnosisCard" style="margin-bottom:16px; border-left:4px solid var(--primary)">
+    <div class="card-head">
+      <div>
+        <h2 style="margin:0 0 4px">Diagnóstico de Autonomia do Modelo</h2>
+        <span class="muted small-text">Avaliação pericial: o modelo pode operar de forma autônoma sem supervisão humana?</span>
+      </div>
+      <span id="autonomyLevelBadge" class="chip warn">Nível 1: Assistido Obrigatório</span>
+    </div>
+    <div style="display:grid; grid-template-columns:minmax(0, 220px) 1fr; gap:20px; align-items:center; margin-top:12px">
+      <div style="padding:16px; border-radius:var(--radius-card); background:var(--inset); border:1px solid var(--line); text-align:center">
+        <span style="font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px">Prontidão Autônoma</span>
+        <b id="autonomyScoreText" style="display:block; font:700 38px/44px var(--font-display); color:var(--primary); margin:6px 0">0%</b>
+        <span id="autonomyScoreSub" class="small-text muted">Confiabilidade técnica pericial</span>
+      </div>
+      <div id="autonomyExplanation">
+        <b id="autonomyTitle" style="font-size:15px; color:var(--ink)">Avaliando métricas de inspeção...</b>
+        <p id="autonomyDescription" class="small-text muted" style="margin:6px 0 10px; line-height:20px">—</p>
+        <div id="autonomyRequirements" style="font-size:12px; line-height:18px; color:var(--muted)"></div>
+      </div>
+    </div>
+  </div>
+
   <div class="grid two">
     <div class="card">
-      <div class="card-head"><h2 id="monitorTitle">Treino</h2><span id="monitorState"></span></div>
+      <div class="card-head">
+        <div>
+          <h2 id="monitorTitle" style="margin:0 0 2px">Treino</h2>
+          <span class="muted small-text">Inspeção detalhada da execução</span>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+          <label for="monitorRunSelect" class="small-text muted">Execução:</label>
+          <select id="monitorRunSelect" style="font-size:12px; padding:4px 8px; border-radius:var(--radius-ctl); background:var(--control); color:var(--ink); border:1px solid var(--line); max-width:240px"></select>
+          <span id="monitorState"></span>
+        </div>
+      </div>
       <div class="ring-wrap">
         <svg class="ring" viewBox="0 0 132 132" role="img" aria-labelledby="ringLabel"><title id="ringLabel">Progresso do treino</title><circle class="track" cx="66" cy="66" r="54"/><circle class="value" id="ringValue" cx="66" cy="66" r="54" stroke-dasharray="339.3" stroke-dashoffset="339.3"/><text x="66" y="66" text-anchor="middle" id="ringText">0%</text><text x="66" y="86" text-anchor="middle" class="ring-sub" id="ringSub"></text></svg>
         <dl class="facts" id="monitorFacts"></dl>
       </div>
-      <h3>Última época</h3>
+      <h3 style="margin-top:16px">Métricas do Último Ciclo de Estudo</h3>
       <div class="metric-tiles" id="monitorTiles"></div>
     </div>
     <div class="card">
@@ -1373,8 +1630,23 @@ pre.log { max-height: 260px; overflow: auto; margin: 8px 0 0; padding: 10px 12px
     </div>
   </div>
   <div class="grid halves" style="margin-top:16px">
-    <div class="card"><h2>Perdas ao vivo</h2><div class="chart" id="liveLossChart"></div></div>
-    <div class="card"><h2>Métricas ao vivo</h2><div class="chart" id="liveMetricChart"></div></div>
+    <div class="card"><h2>Taxa de Erro (Perdas da Execução Selecionada)</h2><div class="chart" id="liveLossChart"></div></div>
+    <div class="card"><h2>Precisão e Acurácia (Métricas da Execução Selecionada)</h2><div class="chart" id="liveMetricChart"></div></div>
+  </div>
+
+  <!-- Comparativo Histórico de Todos os Treinamentos -->
+  <div class="card" style="margin-top:16px">
+    <div class="card-head">
+      <div>
+        <h2 style="margin:0 0 4px">Comparativo Histórico de Todos os Treinamentos Anteriores</h2>
+        <span class="muted small-text">Curvas de evolução do mAP50 e taxa de erro comparando todas as versões do detector</span>
+      </div>
+      <span class="chip ok" id="totalRunsCount">0 execuções</span>
+    </div>
+    <div class="grid halves" style="margin-top:12px">
+      <div><h3 style="font-size:13px; color:var(--muted); margin-bottom:8px">Acurácia mAP50 por Ciclo (Comparação Multi-Treinos)</h3><div class="chart" id="allRunsMapChart"></div></div>
+      <div><h3 style="font-size:13px; color:var(--muted); margin-bottom:8px">Taxa de Erro de Validação (Box + Class Loss)</h3><div class="chart" id="allRunsLossChart"></div></div>
+    </div>
   </div>
 </section>
 
@@ -1386,16 +1658,16 @@ pre.log { max-height: 260px; overflow: auto; margin: 8px 0 0; padding: 10px 12px
   </div>
   <div class="card" style="margin-top:16px">
     <div class="card-head"><h2>Comparação entre modelos</h2><select id="compareSelect" aria-label="Arquivo de comparação" style="width:auto"></select></div>
-    <p class="muted small-text">Encontradas = caixas verdadeiras recuperadas (recall). Corretas/sugeridas = acertos entre as caixas sugeridas (precisão). Divisões marcadas como “visto no treino” não medem generalização.</p>
+    <p class="muted small-text"><b>Recall</b>: das ocorrências marcadas pelo revisor, quantas o modelo reencontrou. <b>Precisão</b>: das caixas que o modelo sugeriu, quantas estavam certas. Colunas “já visto no treino” ⚠ usam fotos que o modelo estudou e não medem generalização.</p>
     <div class="table-wrap" id="compareTable"></div>
   </div>
   <div class="grid halves" style="margin-top:16px">
     <div class="card">
-      <div class="card-head"><h2>Caixas por classe no dataset do treino</h2><select id="coverageRun" aria-label="Execução" style="width:auto"></select></div>
+      <div class="card-head"><h2>Caixas por classe em cada divisão</h2><select id="coverageRun" aria-label="Treino" style="width:auto"></select></div>
       <div class="table-wrap" id="coverageTable"></div>
     </div>
     <div class="card">
-      <div class="card-head"><h2>Melhor mAP50 de validação por execução</h2></div>
+      <div class="card-head"><h2>Melhor mAP50 na validação, por treino</h2></div>
       <div id="leaderboard"></div>
       <p class="muted small-text">A validação do piloto tem poucas fotos de uma única edificação: diferenças pequenas são ruído.</p>
     </div>
@@ -1744,53 +2016,248 @@ function invalidateDecision(text) {
   message(text)
 }
 
+/* ======================= Zoom, Pan e Navegação Gráfica ======================= */
+const viewTransform = {
+  zoom: 1.0,         // Nível de zoom relativo ao Fit (1.0 = caber na tela)
+  panX: 0,           // Deslocamento X no viewer
+  panY: 0,           // Deslocamento Y no viewer
+  baseScale: 1.0,    // Escala para caber perfeitamente no viewer
+  isDragging: false, // Flag de arraste do mouse
+  spaceDown: false,  // Barra de espaço pressionada
+  startX: 0,
+  startY: 0,
+  startPanX: 0,
+  startPanY: 0
+};
+
+function updateTransform() {
+  const canvas = $('canvas');
+  if (!canvas) return;
+  const scale = viewTransform.baseScale * viewTransform.zoom;
+  canvas.style.transformOrigin = '0 0';
+  canvas.style.transform = `translate(${viewTransform.panX}px, ${viewTransform.panY}px) scale(${scale})`;
+
+  const pct = Math.round(viewTransform.zoom * 100);
+  const text = `${pct}%`;
+  if ($('zoomValue')) $('zoomValue').textContent = text;
+  if ($('hudZoomValue')) $('hudZoomValue').textContent = text;
+}
+
+function fitZoom() {
+  const viewer = $('viewer'), photo = item();
+  if (!viewer || !photo) return;
+  const vw = viewer.clientWidth || 800;
+  const vh = viewer.clientHeight || 520;
+  const pad = 24;
+  const scaleX = (vw - pad * 2) / photo.width;
+  const scaleY = (vh - pad * 2) / photo.height;
+  viewTransform.baseScale = Math.min(scaleX, scaleY);
+  viewTransform.zoom = 1.0;
+  const w = photo.width * viewTransform.baseScale;
+  const h = photo.height * viewTransform.baseScale;
+  viewTransform.panX = Math.round((vw - w) / 2);
+  viewTransform.panY = Math.round((vh - h) / 2);
+  updateTransform();
+}
+
+function zoomAt(factor, clientX, clientY) {
+  const viewer = $('viewer');
+  if (!viewer) return;
+  const rect = viewer.getBoundingClientRect();
+  const fx = clientX != null ? (clientX - rect.left) : (viewer.clientWidth / 2);
+  const fy = clientY != null ? (clientY - rect.top) : (viewer.clientHeight / 2);
+
+  const oldZoom = viewTransform.zoom;
+  let newZoom = Math.max(0.2, Math.min(30.0, oldZoom * factor));
+  if (Math.abs(newZoom - oldZoom) < 1e-4) return;
+
+  const ratio = newZoom / oldZoom;
+  viewTransform.panX = fx - (fx - viewTransform.panX) * ratio;
+  viewTransform.panY = fy - (fy - viewTransform.panY) * ratio;
+  viewTransform.zoom = newZoom;
+  updateTransform();
+}
+
+function zoom100(clientX, clientY) {
+  if (!viewTransform.baseScale) return;
+  const targetZoom = 1.0 / viewTransform.baseScale;
+  const factor = targetZoom / viewTransform.zoom;
+  zoomAt(factor, clientX, clientY);
+}
+
+function toggleFullscreen() {
+  const stage = $('stageSection');
+  if (!stage) return;
+  const isFs = document.fullscreenElement === stage || stage.classList.contains('is-fullscreen');
+  if (isFs) {
+    if (document.fullscreenElement) {
+      document.exitFullscreen().catch(() => {});
+    }
+    stage.classList.remove('is-fullscreen');
+    document.body.classList.remove('has-fullscreen');
+    $('fullscreenToggle').textContent = '⛶ Tela cheia (F)';
+  } else {
+    if (stage.requestFullscreen) {
+      stage.requestFullscreen().catch(() => {
+        stage.classList.add('is-fullscreen');
+      });
+    }
+    stage.classList.add('is-fullscreen');
+    document.body.classList.add('has-fullscreen');
+    $('fullscreenToggle').textContent = '✕ Sair da tela cheia (Esc)';
+  }
+  setTimeout(fitZoom, 120);
+}
+
+document.addEventListener('fullscreenchange', () => {
+  const stage = $('stageSection');
+  if (!stage) return;
+  const inFs = !!document.fullscreenElement;
+  stage.classList.toggle('is-fullscreen', inFs);
+  document.body.classList.toggle('has-fullscreen', inFs);
+  $('fullscreenToggle').textContent = inFs ? '✕ Sair da tela cheia (Esc)' : '⛶ Tela cheia (F)';
+  setTimeout(fitZoom, 100);
+});
+
+function toggleFsDrawer() {
+  const drawer = $('fsDrawer');
+  if (!drawer) return;
+  const isHidden = drawer.classList.contains('hidden');
+  if (isHidden) {
+    syncFsDrawer();
+    drawer.classList.remove('hidden');
+  } else {
+    drawer.classList.add('hidden');
+  }
+}
+
+function syncFsDrawer() {
+  const content = $('fsDrawerContent');
+  if (!content) return;
+  content.replaceChildren();
+
+  // 1. Ocorrências na foto
+  const boxSec = el('div', { class: 'card', style: 'padding:12px;margin-bottom:12px' },
+    el('div', { class: 'section-title', style: 'display:flex;justify-content:space-between;align-items:center;margin-bottom:8px' },
+      el('h4', { style: 'margin:0;font-size:14px' }, 'Ocorrências'),
+      el('span', { class: 'chip neutral' }, `${active.boxes.length} caixas`)
+    )
+  );
+  const boxList = el('div', { class: 'boxes', style: 'max-height:160px;overflow-y:auto;margin-bottom:8px' });
+  active.boxes.forEach((box, idx) => {
+    const cat = classOf(box.class_id);
+    const b = el('button', { type: 'button', class: idx === state.selected ? 'selected' : '', style: 'width:100%;margin-bottom:4px;text-align:left' },
+      `${idx+1}. ${cat.label} (${box.bbox_xyxy.map(Math.round).join(', ')})`
+    );
+    b.onclick = () => { selectBox(idx); syncFsDrawer(); };
+    boxList.append(b);
+  });
+  if (!active.boxes.length) boxList.textContent = 'Nenhuma caixa registrada.';
+  boxSec.append(boxList);
+
+  const selClass = el('select', { style: 'width:100%;margin-bottom:8px' });
+  DATA.classes.forEach(c => {
+    const opt = el('option', { value: c.id }, c.label);
+    if (c.id === Number($('classId').value)) opt.selected = true;
+    selClass.append(opt);
+  });
+  selClass.onchange = () => { $('classId').value = selClass.value; };
+
+  const delBtn = el('button', { type: 'button', class: 'btn-neon-glass bad small', style: 'width:100%' }, 'Excluir caixa selecionada');
+  delBtn.disabled = state.selected < 0;
+  delBtn.onclick = () => { deleteSelected(); syncFsDrawer(); };
+
+  boxSec.append(el('label', { style: 'font-size:12px;color:var(--muted)' }, 'Categoria ativa:'), selClass, delBtn);
+
+  // 2. Decisão e Confirmação
+  const decSec = el('div', { class: 'card', style: 'padding:12px' },
+    el('h4', { style: 'margin:0 0 8px;font-size:14px' }, 'Decisão sobre a foto'),
+    el('label', { style: 'font-size:12px;color:var(--muted)' }, 'Situação:')
+  );
+  const selDec = el('select', { style: 'width:100%;margin-bottom:8px' },
+    el('option', { value: 'pending' }, 'Pendente'),
+    el('option', { value: 'positive' }, 'Revisei: há ocorrências'),
+    el('option', { value: 'negative' }, 'Revisei: nenhuma das classes ativas'),
+    el('option', { value: 'ambiguous' }, 'Há dúvida: precisa de análise técnica'),
+    el('option', { value: 'excluded' }, 'Excluir do treinamento')
+  );
+  selDec.value = $('decision').value;
+  selDec.onchange = () => { $('decision').value = selDec.value; };
+
+  const checkConf = el('input', { type: 'checkbox', id: 'fsConfirmed' });
+  checkConf.checked = $('confirmed').checked;
+  checkConf.onchange = () => { $('confirmed').checked = checkConf.checked; };
+  const checkLabel = el('label', { for: 'fsConfirmed', style: 'font-size:12px;margin-left:6px;cursor:pointer' }, 'Conferi a foto inteira e confirmei as classes e caixas.');
+
+  const checkWrap = el('div', { style: 'display:flex;align-items:flex-start;margin:8px 0' }, checkConf, checkLabel);
+
+  const saveBtn = el('button', { type: 'button', class: 'primary btn-apple-capsule', style: 'width:100%;margin-top:8px' },
+    el('span', { class: 'btn-icon-circle' }, '✓'),
+    el('span', {}, 'Registrar minha decisão')
+  );
+  saveBtn.onclick = () => {
+    $('saveDecision').click();
+    syncFsDrawer();
+  };
+
+  decSec.append(selDec, checkWrap, saveBtn);
+  content.append(boxSec, decSec);
+}
+
 function paint(preview) {
   const canvas = $('canvas'), ctx = canvas.getContext('2d');
   if (!state.img.complete || !state.img.naturalWidth) return;
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(state.img, 0, 0);
+
+  const strokeW = Math.max(3, Math.round(canvas.width / 1100));
+  const fontSize = Math.max(14, Math.round(canvas.width / 140));
+  const tagH = Math.round(fontSize * 1.35);
+
   if ($('showBoxes').checked) {
     active.boxes.forEach((box, index) => {
       const [x1, y1, x2, y2] = box.bbox_xyxy;
       const category = classOf(box.class_id);
       ctx.strokeStyle = category.color;
-      ctx.lineWidth = index === state.selected ? 5 : 3;
+      ctx.lineWidth = index === state.selected ? strokeW + 4 : strokeW;
       ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
-      ctx.font = `600 ${Math.max(14,Math.round(canvas.width/70))}px system-ui, sans-serif`;
+      ctx.font = `600 ${fontSize}px system-ui, sans-serif`;
       const text = `${index+1}: ${category.label}`;
-      const top = Math.max(0, y1 - 24);
+      const top = Math.max(0, y1 - tagH);
       ctx.fillStyle = category.color;
-      ctx.fillRect(x1, top, ctx.measureText(text).width + 12, 24);
-      // Texto escuro: com a paleta atual passa de 4,5:1 nas 13 cores de classe (branco ficava abaixo de 3:1 em 10).
+      ctx.fillRect(x1, top, ctx.measureText(text).width + 14, tagH);
       ctx.fillStyle = '#08111F';
-      ctx.fillText(text, x1 + 5, top + 18)
-    })
+      ctx.fillText(text, x1 + 6, top + fontSize * 1.02);
+    });
   }
+
   if (DATA.suggestions && $('showSuggestions').checked) {
+    const sFontSize = Math.max(13, Math.round(canvas.width / 150));
+    const sTagH = Math.round(sFontSize * 1.35);
     pendingSuggestions().forEach(({ suggestion, index }) => {
       const [x1, y1, x2, y2] = suggestion.bbox_xyxy;
       const category = classOf(suggestion.class_id);
-      ctx.setLineDash([10, 6]);
+      ctx.setLineDash([Math.round(canvas.width / 450), Math.round(canvas.width / 750)]);
       ctx.strokeStyle = category.color;
-      ctx.lineWidth = 3;
+      ctx.lineWidth = strokeW;
       ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
       ctx.setLineDash([]);
-      ctx.font = `${Math.max(13,Math.round(canvas.width/80))}px system-ui, sans-serif`;
+      ctx.font = `${sFontSize}px system-ui, sans-serif`;
       const text = `IA ${index+1}: ${category.label} ${Math.round(suggestion.confidence*100)}%`;
-      const bottom = Math.min(canvas.height - 22, y2);
-      // Placa escura opaca com texto na cor da classe: as 13 cores passam de 4,5:1 e o rótulo difere do sólido das caixas.
+      const bottom = Math.min(canvas.height - sTagH, y2);
       ctx.fillStyle = '#08111F';
-      ctx.fillRect(x1, bottom, ctx.measureText(text).width + 12, 22);
+      ctx.fillRect(x1, bottom, ctx.measureText(text).width + 14, sTagH);
       ctx.fillStyle = category.color;
-      ctx.fillText(text, x1 + 5, bottom + 16)
-    })
+      ctx.fillText(text, x1 + 6, bottom + sFontSize * 1.02);
+    });
   }
+
   if (preview) {
-    ctx.setLineDash([8, 5]);
+    ctx.setLineDash([Math.round(canvas.width / 450), Math.round(canvas.width / 750)]);
     ctx.strokeStyle = '#19D3C5';
-    ctx.lineWidth = 3;
+    ctx.lineWidth = strokeW + 2;
     ctx.strokeRect(preview[0], preview[1], preview[2] - preview[0], preview[3] - preview[1]);
-    ctx.setLineDash([])
+    ctx.setLineDash([]);
   }
 }
 
@@ -1809,7 +2276,6 @@ function openPhoto(index) {
   $('proposalStatus').className = 'chip ' + ({ positive: 'bad', negative: '', ambiguous: 'warn', excluded: 'neutral' }[photo.status] || '');
   $('proposalNotes').textContent = photo.notes;
   $('auditNotes').textContent = [photo.human_notes, photo.second_review_notes, photo.additional_candidate_note, photo.review_focus_note].filter(Boolean).join('\n\n') || 'Segunda leitura ainda não registrada.';
-  // A migração conserva a correção antiga e exige apenas a conferência faltante.
   const reviewedClasses = photo.classes_reviewed_before_migration || [];
   const pendingClasses = DATA.classes.filter(category => !reviewedClasses.includes(category.id)).map(category => category.label);
   $('historyNotice').classList.toggle('hidden', !photo.previous_human_approved);
@@ -1827,13 +2293,18 @@ function openPhoto(index) {
   ['x1', 'x2'].forEach(id => $(id).max = photo.width);
   ['y1', 'y2'].forEach(id => $(id).max = photo.height);
   state.img = new Image();
-  state.img.onload = () => renderBoxes();
+  state.img.onload = () => {
+    renderBoxes();
+    fitZoom();
+  };
   state.img.src = photo.image_url;
   renderBoxes();
+  setTimeout(fitZoom, 60);
   queue();
   const current = $('queue').querySelector('[aria-current="true"]');
   if (current) current.scrollIntoView({ block: 'nearest' });
-  message('Ajuste as propostas e registre sua decisão depois de conferir a foto inteira.')
+  message('Ajuste as propostas e registre sua decisão depois de conferir a foto inteira.');
+  syncFsDrawer();
 }
 
 function validBox(coordinates) {
@@ -1846,12 +2317,11 @@ function validBox(coordinates) {
     && coordinates[3] > coordinates[1]
 }
 
-// Toda edição invalida a confirmação anterior: a foto deve ser revista novamente.
 function commitBox(coordinates) {
   coordinates = coordinates.map(Math.round);
   if (!validBox(coordinates)) {
     message('A caixa precisa ter área e ficar dentro da foto.', true);
-    return
+    return;
   }
   const box = {
     class_id: Number($('classId').value),
@@ -1868,21 +2338,21 @@ function commitBox(coordinates) {
   resetSelection();
   renderBoxes();
   queue();
-  message('Caixa registrada. Confira a foto inteira antes de confirmar a decisão.')
+  syncFsDrawer();
+  message('Caixa registrada. Confira a foto inteira antes de confirmar a decisão.');
 }
 
 $('applyBox').onclick = () => commitBox(
   ['x1', 'y1', 'x2', 'y2'].map(id => $(id).value === '' ? NaN : Number($(id).value))
 );
 
-$('newBox').onclick = () => { resetSelection(); renderBoxes() };
+$('newBox').onclick = () => { resetSelection(); renderBoxes(); syncFsDrawer(); };
 
 $('notes').oninput = () => {
   active.notes = $('notes').value;
-  persist()
+  persist();
 };
 
-// Excluir uma caixa também exige nova decisão humana sobre a foto inteira.
 function deleteSelected() {
   if (state.selected < 0) return;
   active.boxes.splice(state.selected, 1);
@@ -1894,7 +2364,8 @@ function deleteSelected() {
   resetSelection();
   renderBoxes();
   queue();
-  message('Caixa excluída. Confira a foto inteira antes de confirmar a decisão.')
+  syncFsDrawer();
+  message('Caixa excluída. Confira a foto inteira antes de confirmar a decisão.');
 }
 $('deleteBox').onclick = deleteSelected;
 
@@ -1905,62 +2376,160 @@ function toggleDrawing() {
   $('viewer').classList.toggle('drawing', state.drawing);
   renderBoxes();
   message(state.drawing
-    ? 'Arraste sobre a foto para criar uma caixa da categoria selecionada.'
-    : 'Desenho desativado.'
-  )
+    ? 'Arraste sobre a foto para criar uma caixa da categoria selecionada. Use Espaço ou Botão do Meio para mover.'
+    : 'Desenho desativado. Clique para selecionar caixas ou arraste para mover a foto.'
+  );
 }
 $('drawToggle').onclick = toggleDrawing;
 
-// Converta o toque/clique para pixels da foto original, sem depender do tamanho na tela.
+// Converta coordenadas do clique/tela para pixels nativos da foto original
 function point(event) {
-  const rect = $('canvas').getBoundingClientRect();
+  const canvas = $('canvas');
+  const rect = canvas.getBoundingClientRect();
+  const photo = item();
+  if (!rect.width || !rect.height) return [0, 0];
   return [
-    Math.min(item().width, Math.max(0, (event.clientX - rect.left) * item().width / rect.width)),
-    Math.min(item().height, Math.max(0, (event.clientY - rect.top) * item().height / rect.height))
-  ]
+    Math.min(photo.width, Math.max(0, (event.clientX - rect.left) * photo.width / rect.width)),
+    Math.min(photo.height, Math.max(0, (event.clientY - rect.top) * photo.height / rect.height))
+  ];
 }
 
-$('canvas').onpointerdown = event => {
-  if (!state.drawing) return;
+function checkClickBox(pt) {
+  const [px, py] = pt;
+  for (let i = active.boxes.length - 1; i >= 0; i--) {
+    const [x1, y1, x2, y2] = active.boxes[i].bbox_xyxy;
+    if (px >= x1 && px <= x2 && py >= y1 && py <= y2) {
+      selectBox(i);
+      syncFsDrawer();
+      message(`Caixa ${i+1} selecionada.`);
+      return true;
+    }
+  }
+  if (state.selected >= 0) {
+    resetSelection();
+    renderBoxes();
+    syncFsDrawer();
+  }
+  return false;
+}
+
+// Configuração dos eventos de ponteiro no viewer
+const viewerEl = $('viewer');
+
+viewerEl.addEventListener('wheel', event => {
   event.preventDefault();
-  state.start = point(event);
-  $('canvas').setPointerCapture(event.pointerId)
+  const factor = event.deltaY < 0 ? 1.18 : (1 / 1.18);
+  zoomAt(factor, event.clientX, event.clientY);
+}, { passive: false });
+
+viewerEl.onpointerdown = event => {
+  const isPan = event.button === 1 || event.button === 2 || viewTransform.spaceDown || !state.drawing;
+  if (isPan) {
+    event.preventDefault();
+    viewTransform.isDragging = true;
+    viewTransform.startX = event.clientX;
+    viewTransform.startY = event.clientY;
+    viewTransform.startPanX = viewTransform.panX;
+    viewTransform.startPanY = viewTransform.panY;
+    viewerEl.classList.add('is-dragging');
+    viewerEl.setPointerCapture(event.pointerId);
+    return;
+  }
+
+  if (state.drawing && event.button === 0) {
+    event.preventDefault();
+    state.start = point(event);
+    viewerEl.setPointerCapture(event.pointerId);
+  }
 };
 
-$('canvas').onpointermove = event => {
-  if (!state.start) return;
-  const end = point(event);
-  paint([
-    Math.min(state.start[0], end[0]),
-    Math.min(state.start[1], end[1]),
-    Math.max(state.start[0], end[0]),
-    Math.max(state.start[1], end[1])
-  ])
+viewerEl.onpointermove = event => {
+  if (viewTransform.isDragging) {
+    viewTransform.panX = viewTransform.startPanX + (event.clientX - viewTransform.startX);
+    viewTransform.panY = viewTransform.startPanY + (event.clientY - viewTransform.startY);
+    updateTransform();
+    return;
+  }
+
+  if (state.start) {
+    const end = point(event);
+    paint([
+      Math.min(state.start[0], end[0]),
+      Math.min(state.start[1], end[1]),
+      Math.max(state.start[0], end[0]),
+      Math.max(state.start[1], end[1])
+    ]);
+  }
 };
 
-$('canvas').onpointerup = event => {
-  if (!state.start) return;
-  const end = point(event), start = state.start;
+viewerEl.onpointerup = event => {
+  if (viewTransform.isDragging) {
+    const dist = Math.hypot(event.clientX - viewTransform.startX, event.clientY - viewTransform.startY);
+    viewTransform.isDragging = false;
+    viewerEl.classList.remove('is-dragging');
+    if (dist < 6 && !state.drawing && event.button === 0) {
+      checkClickBox(point(event));
+    }
+    return;
+  }
+
+  if (state.start) {
+    const end = point(event), start = state.start;
+    state.start = null;
+    const w = Math.abs(end[0] - start[0]);
+    const h = Math.abs(end[1] - start[1]);
+    if (w >= 4 && h >= 4) {
+      commitBox([
+        Math.min(start[0], end[0]),
+        Math.min(start[1], end[1]),
+        Math.max(start[0], end[0]),
+        Math.max(start[1], end[1])
+      ]);
+    } else {
+      paint();
+    }
+  }
+};
+
+viewerEl.onpointercancel = () => {
+  viewTransform.isDragging = false;
+  viewerEl.classList.remove('is-dragging');
   state.start = null;
-  commitBox([
-    Math.min(start[0], end[0]),
-    Math.min(start[1], end[1]),
-    Math.max(start[0], end[0]),
-    Math.max(start[1], end[1])
-  ])
+  paint();
 };
 
-$('canvas').onpointercancel = () => {
-  state.start = null;
-  paint()
+viewerEl.oncontextmenu = event => {
+  event.preventDefault();
 };
 
 $('showBoxes').onchange = () => paint();
 $('showSuggestions').onchange = () => paint();
 $('confFilter').oninput = () => {
   $('confValue').textContent = `${$('confFilter').value}%`;
-  renderBoxes()
+  renderBoxes();
 };
+
+// Controles de zoom na Toolbar e no HUD
+$('zoomIn').onclick = () => zoomAt(1.25);
+$('zoomOut').onclick = () => zoomAt(1 / 1.25);
+$('zoom100').onclick = () => zoom100();
+$('zoomFit').onclick = () => fitZoom();
+$('fullscreenToggle').onclick = toggleFullscreen;
+
+$('hudZoomIn').onclick = () => zoomAt(1.25);
+$('hudZoomOut').onclick = () => zoomAt(1 / 1.25);
+$('hudZoom100').onclick = () => zoom100();
+$('hudZoomFit').onclick = () => fitZoom();
+$('hudFullscreen').onclick = toggleFullscreen;
+
+$('fsDrawerBtn').onclick = toggleFsDrawer;
+$('fsDrawerClose').onclick = toggleFsDrawer;
+
+window.addEventListener('resize', () => {
+  if (Math.abs(viewTransform.zoom - 1.0) < 0.05) {
+    fitZoom();
+  }
+});
 
 // A aprovação visual exige confirmação da revisão integral e caixas coerentes.
 $('saveDecision').onclick = () => {
@@ -2050,9 +2619,19 @@ $('previous').onclick = () => openPhoto(Math.max(0, state.index - 1));
 $('next').onclick = () => openPhoto(Math.min(DATA.images.length - 1, state.index + 1));
 $('filter').onchange = queue;
 // Seletor de revisão: cada revisão abre na sua própria página (/r/<pasta>/), com fotos,
-// decisões salvas e arquivo exportado separados; trocar não mistura registros.
 if (REVIEWS && Array.isArray(REVIEWS.items) && REVIEWS.items.length > 1) {
-  const reviewLabel = name => /^internet/i.test(name) ? 'Fotos da internet' : /^ceasa/i.test(name) ? 'CEASA — Pavilhão A' : name;
+  const reviewLabel = name => {
+    if (/ceasa_lado_a/i.test(name)) return 'CEASA — Lado A (165 fotos novas)';
+    if (/ceasa_v8/i.test(name)) return 'CEASA — Pavilhão A (v8 oficial)';
+    if (/ceasa_v7/i.test(name)) return 'CEASA — Pavilhão A (v7)';
+    if (/ceasa_v6/i.test(name)) return 'CEASA — Pavilhão A (v6 corrigida)';
+    if (/ceasa_v5/i.test(name)) return 'CEASA — Pavilhão A (v5)';
+    if (/ceasa_v4/i.test(name)) return 'CEASA — Pavilhão A (v4)';
+    if (/internet_v3/i.test(name)) return 'Internet v3 — Busca Aberta (YOLOE)';
+    if (/internet_v2/i.test(name)) return 'Internet v2 — Propostas Assistidas';
+    if (/internet_v1/i.test(name)) return 'Internet v1 — Sugestões Modelo';
+    return name;
+  };
   REVIEWS.items.forEach(value => {
     const count = value.images == null ? '' : ` · ${value.images} fotos`;
     const option = el('option', { value: value.href }, `${reviewLabel(value.name)}${count}`);
@@ -2066,7 +2645,24 @@ if (REVIEWS && Array.isArray(REVIEWS.items) && REVIEWS.items.length > 1) {
 $('reviewer').value = state.reviewer;
 $('reviewer').oninput = persist;
 
-// Atalhos de teclado só na revisão e fora de campos de texto.
+// Atalhos de teclado e manipulação ágil (revisão de alta resolução)
+window.addEventListener('keydown', event => {
+  const tag = (event.target.tagName || '').toLowerCase();
+  if (['input', 'select', 'textarea'].includes(tag)) return;
+  if (event.code === 'Space' && state.view === 'review') {
+    viewTransform.spaceDown = true;
+    $('viewer').classList.add('panning');
+    event.preventDefault();
+  }
+});
+
+window.addEventListener('keyup', event => {
+  if (event.code === 'Space') {
+    viewTransform.spaceDown = false;
+    if (!viewTransform.isDragging) $('viewer').classList.remove('panning');
+  }
+});
+
 document.addEventListener('keydown', event => {
   if (state.view !== 'review' || event.ctrlKey || event.metaKey || event.altKey) return;
   const tag = (event.target.tagName || '').toLowerCase();
@@ -2075,11 +2671,28 @@ document.addEventListener('keydown', event => {
   if (event.key === 'ArrowLeft') openPhoto(Math.max(0, state.index - 1));
   else if (event.key === 'ArrowRight') openPhoto(Math.min(DATA.images.length - 1, state.index + 1));
   else if (event.key.toLowerCase() === 'b') toggleDrawing();
+  else if (event.key.toLowerCase() === 'f') toggleFullscreen();
+  else if (event.key === '+' || event.key === '=') zoomAt(1.25);
+  else if (event.key === '-' || event.key === '_') zoomAt(1 / 1.25);
+  else if (event.key === '0') fitZoom();
+  else if (event.key === '1') zoom100();
+  else if (event.key === 'Escape') {
+    const drawer = $('fsDrawer');
+    if (drawer && !drawer.classList.contains('hidden')) {
+      drawer.classList.add('hidden');
+    } else if (document.fullscreenElement || $('stageSection').classList.contains('is-fullscreen')) {
+      toggleFullscreen();
+    } else if (state.drawing) {
+      toggleDrawing();
+    } else {
+      resetSelection();
+    }
+  }
   else if (event.key.toLowerCase() === 'a' && first) acceptSuggestion(first.suggestion);
   else if (event.key.toLowerCase() === 'x' && first) dismissSuggestion(first.suggestion);
   else if (event.key === 'Delete') deleteSelected();
   else return;
-  event.preventDefault()
+  event.preventDefault();
 });
 
 /* ======================= Visão geral ======================= */
@@ -2141,18 +2754,18 @@ function renderOverview() {
     $('modelChip').replaceChildren(el('span', { class: 'chip warn' }, meta.pilot ? 'piloto · não validado' : 'não validado'));
     $('modelSummary').replaceChildren(
       el('p', {}, `${meta.model_label}. Confiança mínima ${Math.round(meta.conf * 100)}%.`),
-      el('p', { class: 'mono muted' }, `pesos ${String(meta.weights_sha256 || '').slice(0, 12)}…` + (run ? ` · ${run.id}` : '')),
-      run && run.best_epoch ? el('p', {}, `Melhor mAP50 de validação dessa execução: ${pct(run.best_epoch.map50)} (época ${run.best_epoch.epoch}).`) : null)
+      el('p', { class: 'mono muted' }, `pesos ${String(meta.weights_sha256 || '').slice(0, 12)}…` + (run ? ` · ${friendlyRunName(run.id)} (${run.id})` : '')),
+      run && run.best_epoch ? el('p', {}, `Melhor acerto geral (mAP50) dessa execução: ${pct(run.best_epoch.map50)} (ciclo ${run.best_epoch.epoch}).`) : null)
   }
   const last = OPS.runs.find(run => run.curves.length);
   if (!last) $('lastRunSummary').textContent = 'Nenhum treino encontrado em runs/.';
   else {
     const chart = el('div', { class: 'chart' });
     $('lastRunSummary').replaceChildren(
-      el('p', {}, el('span', { class: 'chip ' + stateClass(last.state) }, stateLabel(last.state)), ' ', el('span', { class: 'mono' }, last.id)),
-      el('p', { class: 'muted' }, `${last.epochs_done}/${last.epochs_planned || '?'} épocas · melhor mAP50 ${pct(last.best_epoch && last.best_epoch.map50)}`),
+      el('p', {}, el('span', { class: 'chip ' + stateClass(last.state) }, stateLabel(last.state)), ' ', el('b', {}, friendlyRunName(last.id)), el('span', { class: 'mono muted small-text', style: 'margin-left:6px' }, `(${last.id})`)),
+      el('p', { class: 'muted' }, `${last.epochs_done}/${last.epochs_planned || '?'} ciclos de estudo · melhor acerto geral (mAP50): ${pct(last.best_epoch && last.best_epoch.map50)}`),
       chart);
-    lineChart(chart, last.curves, [{ key: 'map50', label: 'mAP50', color: '#34d17a' }, { key: 'recall', label: 'Recall', color: '#3aa0d0' }], { height: 120, percent: true })
+    lineChart(chart, last.curves, [{ key: 'map50', label: 'Acerto Geral (mAP50)', color: '#34d17a' }, { key: 'recall', label: 'Capacidade de Achar (Recall)', color: '#3aa0d0' }], { height: 120, percent: true })
   }
 }
 
@@ -2176,7 +2789,7 @@ function lineChart(container, points, series, options = {}) {
   const height = options.height || 220, width = Math.max(280, Math.round(container.clientWidth) || 640), pad = { l: 44, r: 12, t: 10, b: 24 };
   const usable = series.filter(serie => points.some(point => point[serie.key] != null));
   if (!points.length || !usable.length) {
-    container.append(el('div', { class: 'empty' }, options.empty || 'Sem dados de épocas ainda.'));
+    container.append(el('div', { class: 'empty' }, options.empty || 'Sem dados de ciclos de estudo ainda.'));
     return
   }
   const xs = points.map(point => point.epoch);
@@ -2205,7 +2818,7 @@ function lineChart(container, points, series, options = {}) {
   [xMin, Math.round((xMin + xMax) / 2), xMax].forEach(x => {
     const anchor = x === xMax ? 'end' : x === xMin ? 'start' : 'middle';
     const label = add('text', { x: sx(x), y: height - 6, 'text-anchor': anchor, 'font-size': 11, fill: 'var(--muted)' });
-    label.textContent = `ép. ${x}`
+    label.textContent = `ciclo ${x}`
   });
   usable.forEach(serie => {
     const path = points.filter(point => point[serie.key] != null).map((point, i) => `${i ? 'L' : 'M'}${sx(point.epoch).toFixed(1)},${sy(point[serie.key]).toFixed(1)}`).join('');
@@ -2224,7 +2837,7 @@ function lineChart(container, points, series, options = {}) {
     const nearest = points.reduce((best, point) => Math.abs(point.epoch - epoch) < Math.abs(best.epoch - epoch) ? point : best, points[0]);
     const x = sx(nearest.epoch);
     cursor.setAttribute('x1', x); cursor.setAttribute('x2', x); cursor.setAttribute('visibility', 'visible');
-    tip.textContent = `Época ${nearest.epoch} · ` + usable.map(serie => `${serie.label} ${nearest[serie.key] == null ? '—' : options.percent ? pct(nearest[serie.key]) : nearest[serie.key].toFixed(3)}`).join(' · ');
+    tip.textContent = `Ciclo ${nearest.epoch} · ` + usable.map(serie => `${serie.label} ${nearest[serie.key] == null ? '—' : options.percent ? pct(nearest[serie.key]) : nearest[serie.key].toFixed(3)}`).join(' · ');
     tip.classList.remove('hidden');
     tip.style.left = '0px';
     const left = Math.max(0, Math.min(rect.width - tip.offsetWidth - 4, x / width * rect.width + 8));
@@ -2238,17 +2851,57 @@ function lineChart(container, points, series, options = {}) {
   })))
 }
 const LOSS_SERIES = [
-  { key: 'train_box', label: 'box treino', color: '#22D3EE' },
-  { key: 'train_cls', label: 'cls treino', color: '#A78BFA' },
-  { key: 'val_box', label: 'box val.', color: '#22D3EE', dashed: true },
-  { key: 'val_cls', label: 'cls val.', color: '#A78BFA', dashed: true }
+  { key: 'train_box', label: 'Erro Posição (Treino)', color: '#22D3EE' },
+  { key: 'train_cls', label: 'Erro Defeito (Treino)', color: '#A78BFA' },
+  { key: 'val_box', label: 'Erro Posição (Validação)', color: '#22D3EE', dashed: true },
+  { key: 'val_cls', label: 'Erro Defeito (Validação)', color: '#A78BFA', dashed: true }
 ];
 const METRIC_SERIES = [
-  { key: 'precision', label: 'Precisão', color: '#F59E0B' },
-  { key: 'recall', label: 'Recall', color: '#4EA8FF' },
-  { key: 'map50', label: 'mAP50', color: '#34D399' },
-  { key: 'map50_95', label: 'mAP50-95', color: '#818CF8' }
+  { key: 'precision', label: 'Certeza da IA (Precisão)', color: '#F59E0B' },
+  { key: 'recall', label: 'Capacidade de Achar (Recall)', color: '#4EA8FF' },
+  { key: 'map50', label: 'Taxa Geral de Acerto (mAP50)', color: '#34D399' },
+  { key: 'map50_95', label: 'Encaixe Perfeito (mAP50-95)', color: '#818CF8' }
 ];
+
+// Nomes de exibição gerados dos dados do run (data, peso inicial, épocas, estado),
+// em vez de rótulos fixos que envelhecem. O id curto aparece à parte para conferência.
+const RUN_SPLIT_LABELS = { train: 'Treino', val: 'Validação', test: 'Teste' };
+const splitLabel = split => {
+  const seen = /visto no treino/i.test(split);
+  const base = RUN_SPLIT_LABELS[String(split).split(' ')[0]] || split;
+  return seen ? `${base} · já visto no treino` : base;
+};
+const shortRunId = id => String(id || '').split('_').pop().slice(0, 8);
+// Treino que gerou as sugestões da revisão: o hash dos pesos é cruzado com as comparações salvas.
+const suggestionRunId = () => {
+  const digest = (DATA.suggestions || {}).weights_sha256;
+  if (!digest || typeof OPS === 'undefined' || !OPS) return '';
+  const hit = (OPS.comparisons || []).flatMap(comparison => comparison.models || []).find(model => model.weights_sha256 === digest);
+  return (hit && hit.run_id) || '';
+};
+const friendlyRunName = id => {
+  if (!id) return 'Treino';
+  const run = ((typeof OPS !== 'undefined' && OPS && OPS.runs) || []).find(value => value.id === id);
+  const kind = /^pilot_train_/i.test(id) ? 'Piloto' : /^train_/i.test(id) ? 'Produção' : /^tune/i.test(id) ? 'Ajuste' : 'Treino';
+  if (!run) return `${kind} ${shortRunId(id)}`;
+  const when = run.started_at ? new Date(run.started_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : shortRunId(id);
+  const size = (String(run.checkpoint || '').match(/yolo(\d+)([nslmx])\.pt$/i) || []);
+  const model = size.length ? `YOLO${size[1]}-${size[2].toUpperCase()}` : (run.checkpoint ? 'continuação' : '');
+  let epochs = run.epochs_planned ? `${run.epochs_planned} épocas` : '';
+  if (run.state === 'running') epochs = `época ${run.epochs_done || 0}/${run.epochs_planned || '?'} · em andamento`;
+  else if (run.epochs_planned && run.epochs_done < run.epochs_planned) epochs = `parou na época ${run.epochs_done}/${run.epochs_planned}`;
+  const reference = suggestionRunId() === id ? ' · referência das sugestões' : '';
+  return [`${kind} ${when}`, model, epochs].filter(Boolean).join(' · ') + reference;
+};
+const friendlyComparisonName = comparison => {
+  const file = String(comparison.file || '');
+  const date = (file.match(/(20\d{2})(\d{2})(\d{2})/) || []);
+  const version = (String(comparison.dataset || '').match(/ceasa_(v\d+[a-z0-9_]*?)_piloto|ceasa_(v\d+)/i) || []);
+  const ids = [...new Set((comparison.models || []).map(model => shortRunId(model.run_id || '')).filter(Boolean))];
+  const parts = [version[1] || version[2] ? `Dataset ${(version[1] || version[2]).replace(/_/g, ' ')}` : 'Comparação',
+    ids.length ? ids.join(' × ') : '', date.length ? `${date[3]}/${date[2]}` : ''];
+  return parts.filter(Boolean).join(' · ');
+};
 
 /* ======================= Treinamento ======================= */
 const stateLabel = value => ({ completed: 'concluído', running: 'em andamento', interrupted: 'interrompido', failed: 'falhou', prepared: 'preparado' }[value] || value);
@@ -2333,7 +2986,7 @@ function updateTrainCommand() {
   $('trainCommand').replaceWith(Object.assign(commandBox(command), { id: 'trainCommand' }));
   const estimate = estimateSeconds(options.imgsz || OPS.pilot_defaults.imgsz);
   $('trainEstimate').textContent = estimate
-    ? `Estimativa em CPU: ≈ ${duration(estimate.perEpoch)} por época, ≈ ${duration(estimate.perEpoch * (options.epochs || OPS.pilot_defaults.epochs || 0))} no total (média de ${estimate.runs} execução(ões) anteriores).`
+    ? `Estimativa em CPU: ≈ ${duration(estimate.perEpoch)} por ciclo de estudo, ≈ ${duration(estimate.perEpoch * (options.epochs || OPS.pilot_defaults.epochs || 0))} no total (média de ${estimate.runs} execução(ões) anteriores).`
     : 'Sem execuções anteriores para estimar a duração.'
 }
 
@@ -2356,10 +3009,14 @@ function renderTraining() {
   if (!OPS.runs.length) body.append(el('tr', {}, el('td', { colspan: 5, class: 'empty' }, 'Nenhum treino encontrado em runs/.')));
   OPS.runs.forEach(run => {
     const row = el('tr', { class: 'clickable', tabindex: 0, 'aria-selected': String(state.run === run.id) },
-      el('td', {}, el('div', { class: 'mono' }, run.id), el('small', { class: 'muted' }, `${new Date(run.started_at).toLocaleString('pt-BR')} · ${run.checkpoint || ''}`)),
+      el('td', {},
+        el('div', { style: 'font-weight:600; color:var(--ink)' }, friendlyRunName(run.id)),
+        el('div', { class: 'mono small-text muted' }, run.id),
+        el('small', { class: 'muted' }, `${new Date(run.started_at).toLocaleString('pt-BR')} · ${run.checkpoint || ''}`)
+      ),
       el('td', {}, el('span', { class: 'chip ' + stateClass(run.state) }, el('span', { class: 'dot' }), stateLabel(run.state))),
       el('td', { class: 'num' }, `${run.epochs_done}/${run.epochs_planned || '?'}`),
-      el('td', { class: 'num' }, run.best_epoch ? `${pct(run.best_epoch.map50)} (ép. ${run.best_epoch.epoch})` : '—'),
+      el('td', { class: 'num' }, run.best_epoch ? `${pct(run.best_epoch.map50)} (ciclo ${run.best_epoch.epoch})` : '—'),
       el('td', { class: 'num' }, run.seconds_per_epoch ? Math.round(run.seconds_per_epoch) : '—'));
     const select = () => { state.run = run.id; renderTraining() };
     row.onclick = select;
@@ -2371,10 +3028,10 @@ function renderTraining() {
 }
 
 function renderRunDetail(run) {
-  $('runDetailTitle').textContent = run ? `Detalhes · ${run.id}` : 'Detalhes da execução';
+  $('runDetailTitle').textContent = run ? `Detalhes · ${friendlyRunName(run.id)}` : 'Detalhes do Treinamento';
   $('runDetailChips').replaceChildren(...(run ? Object.entries(run.parameters).map(([key, value]) => el('span', { class: 'chip neutral', style: 'margin:2px' }, `${key} ${value}`)) : []));
-  lineChart($('runLossChart'), run ? run.curves : [], LOSS_SERIES, { label: 'Perdas por época' });
-  lineChart($('runMetricChart'), run ? run.curves : [], METRIC_SERIES, { percent: true, marker: run && run.best_epoch ? run.best_epoch.epoch : null, label: 'Métricas de validação por época' });
+  lineChart($('runLossChart'), run ? run.curves : [], LOSS_SERIES, { label: 'Perdas por ciclo de estudo' });
+  lineChart($('runMetricChart'), run ? run.curves : [], METRIC_SERIES, { percent: true, marker: run && run.best_epoch ? run.best_epoch.epoch : null, label: 'Métricas de validação por ciclo de estudo' });
   const plotNames = { results: 'Curvas (Ultralytics)', confusion: 'Matriz de confusão normalizada', pr_curve: 'Curva precisão × recall', val_pred: 'Predições na validação', labels: 'Distribuição dos rótulos' };
   // Caminhos relativos à pasta da revisão; pelo servidor, /runs/... é servido de sistema_ia/runs.
   const plotUrl = path => SERVER ? '/' + path.replace(/^(\.\.\/)+/, '') : path;
@@ -2392,41 +3049,182 @@ function renderMonitor() {
   $('monitorOffline').classList.toggle('hidden', SERVER);
   // Treino recém-iniciado pela página ainda sem época gravada: mostra a execução mais nova.
   const starting = jobRunning() && job.kind === 'train-pilot' ? OPS.runs[0] : null;
-  const run = OPS.runs.find(value => value.state === 'running') || starting || OPS.runs.find(value => value.curves.length) || OPS.runs[0];
+  const runningRun = OPS.runs.find(value => value.state === 'running');
+  const run = (state.monitorRun && OPS.runs.find(value => value.id === state.monitorRun))
+    || runningRun || starting || OPS.runs.find(value => value.curves.length) || OPS.runs[0];
+  if (run) state.monitorRun = run.id;
+
+  fillSelect($('monitorRunSelect'), OPS.runs.map(r => [r.id, `${friendlyRunName(r.id)} (${stateLabel(r.state)}, ${r.epochs_done || 0} c.)`]), state.monitorRun);
+  $('monitorRunSelect').onchange = event => {
+    state.monitorRun = event.target.value;
+    renderMonitor();
+  };
+
   document.querySelectorAll('#liveDot, #liveDotDock').forEach(dot => dot.classList.toggle('hidden', !OPS.runs.some(value => value.state === 'running') && !jobRunning()));
   if (!run) {
     $('monitorTitle').textContent = 'Nenhum treino encontrado';
+    $('monitorProgressCardTitle').textContent = 'Progresso da Rodada de Treinamento';
+    $('progressSubtitle').textContent = 'Nenhum ciclo ativo';
+    $('monitorStatusBadge').className = 'chip neutral';
+    $('monitorStatusBadge').replaceChildren(el('span', { class: 'dot' }), 'Inativo');
+    $('monitorIdleCallout').classList.add('hidden');
     $('monitorState').replaceChildren();
     $('monitorFacts').replaceChildren();
     $('monitorTiles').replaceChildren();
+    $('monitorProgressBar').style.width = '0%';
+    $('progressPercentBadge').textContent = '0%';
+    $('progressCycleText').textContent = 'Nenhum ciclo ativo';
+    $('progressEtaText').textContent = '—';
+    $('progressSpeedText').textContent = '—';
+    $('autonomyScoreText').textContent = '0%';
+    $('autonomyTitle').textContent = 'Sem dados de treinamento';
+    $('autonomyDescription').textContent = 'Inicie uma rodada de estudo para que o sistema analise a taxa de erro e meça a prontidão autônoma do modelo.';
   } else {
-    $('monitorTitle').textContent = run.id;
+    $('monitorTitle').textContent = friendlyRunName(run.id);
     $('monitorState').replaceChildren(el('span', { class: 'chip ' + stateClass(run.state) }, el('span', { class: 'dot' }), stateLabel(run.state)));
+    if (run.state === 'running' || jobRunning()) {
+      $('monitorProgressCardTitle').textContent = 'Progresso da Rodada de Treinamento (Ao Vivo)';
+      $('progressSubtitle').textContent = 'Execução em tempo real no servidor local deste PC';
+      $('monitorStatusBadge').className = 'chip ok live';
+      $('monitorStatusBadge').replaceChildren(el('span', { class: 'dot' }), 'Ao Vivo');
+      $('monitorIdleCallout').classList.add('hidden');
+    } else {
+      $('monitorProgressCardTitle').textContent = `Histórico da Rodada: ${friendlyRunName(run.id)}`;
+      $('progressSubtitle').textContent = `Execução anterior (${stateLabel(run.state)}) · Finalizada no ciclo ${run.epochs_done || 0} de ${run.epochs_planned || '?'}`;
+      $('monitorStatusBadge').className = 'chip ' + stateClass(run.state);
+      $('monitorStatusBadge').replaceChildren(el('span', { class: 'dot' }), stateLabel(run.state));
+      $('monitorIdleCallout').classList.remove('hidden');
+    }
     const planned = run.epochs_planned || run.epochs_done || 1;
-    const fraction = Math.min(1, run.epochs_done / planned);
-    $('ringValue').setAttribute('stroke-dashoffset', (339.3 * (1 - fraction)).toFixed(1));
-    $('ringText').textContent = `${Math.round(fraction * 100)}%`;
-    $('ringSub').textContent = `época ${run.epochs_done}/${planned}`;
+    let intraFraction = 0;
+    let intraInfo = '';
+    if ((run.state === 'running' || jobRunning()) && job.log_tail && job.log_tail.length) {
+      for (let i = job.log_tail.length - 1; i >= Math.max(0, job.log_tail.length - 15); i--) {
+        const line = job.log_tail[i] || '';
+        const match = line.match(/(\d+)%\|.*\|\s*(\d+\/\d+)/);
+        if (match) {
+          intraFraction = (Number(match[1]) / 100) / planned;
+          intraInfo = ` · lote ${match[2]} (${match[1]}% do ciclo atual)`;
+          break;
+        }
+      }
+    }
+    const baseFraction = (run.epochs_done || 0) / planned;
+    const fraction = Math.min(1, Math.max(0, baseFraction + intraFraction));
+    const percent = Math.min(100, Math.round(fraction * 100));
+
+    // Barra de Progresso Horizontal em Tempo Real
+    $('monitorProgressBar').style.width = `${percent}%`;
+    $('progressPercentBadge').textContent = `${percent}%`;
+    const cycleDisplay = run.state === 'running' ? Math.min(planned, (run.epochs_done || 0) + 1) : (run.epochs_done || 0);
+    $('progressCycleText').textContent = `Ciclo de Aprendizado ${cycleDisplay} de ${planned} (passadas no acervo)${intraInfo}`;
+
     const elapsed = run.last && run.last.time;
     const remaining = run.state === 'running' && run.seconds_per_epoch ? run.seconds_per_epoch * (planned - run.epochs_done) : null;
+    $('progressEtaText').textContent = run.state === 'running' && remaining != null
+      ? `Tempo restante estimado: ${duration(remaining)}`
+      : (run.state === 'completed' ? 'Treinamento concluído' : 'Tempo restante: —');
+    $('progressSpeedText').textContent = run.seconds_per_epoch ? `Velocidade: ${duration(run.seconds_per_epoch)} / ciclo` : 'Velocidade: —';
+
+    // Ring circular
+    $('ringValue').setAttribute('stroke-dashoffset', (339.3 * (1 - fraction)).toFixed(1));
+    $('ringText').textContent = `${percent}%`;
+    $('ringSub').textContent = `ciclo ${run.epochs_done}/${planned}`;
+
     const facts = [
       ['Tempo decorrido', duration(elapsed)],
       ['Tempo restante', run.state === 'running' ? duration(remaining) : '—'],
-      ['Por época', duration(run.seconds_per_epoch)],
+      ['Por ciclo de estudo', duration(run.seconds_per_epoch)],
       ['Dispositivo', run.device || OPS.device || '—'],
       ['Pesos iniciais', run.checkpoint || '—'],
       ['Última escrita', run.updated_at ? new Date(run.updated_at).toLocaleTimeString('pt-BR') : '—']
     ];
     $('monitorFacts').replaceChildren(...facts.flatMap(([key, value]) => [el('dt', {}, key), el('dd', {}, value)]));
+
+    // Diagnóstico de Autonomia do Modelo
+    const bestMap50 = (run.best_epoch && run.best_epoch.map50) || (run.last && run.last.map50) || 0;
+    const autonomyScore = Math.min(100, Math.round(bestMap50 * 100));
+    $('autonomyScoreText').textContent = `${autonomyScore}%`;
+
+    let levelLabel = 'Nível 1: Assistido Obrigatório';
+    let levelClass = 'chip warn';
+    let titleText = 'Operação Assistida: Humano no Circuito 100% Obrigatório';
+    let descText = 'O modelo opera como assistente de sugestões. Toda não conformidade requer inspeção e aprovação do perito humano antes da geração de laudos técnicos.';
+    let reqText = 'Critérios para Semiautonomia: mAP50 ≥ 70%, precisão consistente em fixadores/telhas e validação de regressões.';
+
+    if (autonomyScore >= 85) {
+      levelLabel = 'Nível 3: Autônomo com Auditoria';
+      levelClass = 'chip ok';
+      titleText = 'Apto para Pré-Laudos com Auditoria Amostral';
+      descText = 'O modelo alcançou alta precisão geométrica e semântica. Pode gerar triagens preliminares de forma independente, exigindo apenas carimbo pericial final por amostragem estatística de 10% das fotos.';
+      reqText = 'Status: Alta robustez nas patologias estruturais críticas.';
+    } else if (autonomyScore >= 50) {
+      levelLabel = 'Nível 2: Semiautônomo (Triagem Inteligente)';
+      levelClass = 'chip live ok';
+      titleText = 'Operação Semiautônoma: Triagem com Validação por Exceção';
+      descText = 'O modelo possui boa capacidade de localização nas patologias frequentes (corrosão, resíduos). Apto para triar a fila; o perito humano foca primariamente nas imagens com incerteza ou classes raras.';
+      reqText = 'Critérios para Autonomia Nível 3: mAP50 ≥ 85% e cobertura de 3 edificações independentes.';
+    }
+
+    $('autonomyLevelBadge').textContent = levelLabel;
+    $('autonomyLevelBadge').className = 'chip ' + levelClass;
+    $('autonomyTitle').textContent = titleText;
+    $('autonomyDescription').textContent = descText;
+    $('autonomyRequirements').textContent = reqText;
+
+    // Tiles de Métricas Expandidas
     const last = run.curves[run.curves.length - 1] || {}, before = run.curves[run.curves.length - 2] || {};
-    $('monitorTiles').replaceChildren(...METRIC_SERIES.map(serie => {
+    const tilesConfig = [
+      ...METRIC_SERIES,
+      { key: 'val_box', label: 'Erro Caixa (Val)', fmt: v => v != null ? v.toFixed(3) : '—' },
+      { key: 'val_cls', label: 'Erro Classe (Val)', fmt: v => v != null ? v.toFixed(3) : '—' },
+      { key: 'lr', label: 'Taxa Aprendizado', fmt: v => v != null ? v.toExponential(2) : '—' },
+    ];
+    $('monitorTiles').replaceChildren(...tilesConfig.map(serie => {
       const value = last[serie.key], delta = value != null && before[serie.key] != null ? value - before[serie.key] : null;
-      return el('div', { class: 'tile' }, el('span', {}, serie.label), el('b', {}, pct(value)),
-        el('span', { class: 'delta ' + (delta > 0 ? 'up' : delta < 0 ? 'down' : '') }, delta == null ? '—' : `${delta >= 0 ? '+' : ''}${(delta * 100).toFixed(1)} p.p.`))
+      const formatted = serie.fmt ? serie.fmt(value) : pct(value);
+      return el('div', { class: 'tile' }, el('span', {}, serie.label), el('b', {}, formatted),
+        el('span', { class: 'delta ' + (delta > 0 ? 'up' : delta < 0 ? 'down' : '') }, delta == null ? '—' : `${delta >= 0 ? '+' : ''}${(delta * (serie.fmt ? 1 : 100)).toFixed(2)}${serie.fmt ? '' : ' p.p.'}`))
     }))
   }
   lineChart($('liveLossChart'), run ? run.curves : [], LOSS_SERIES);
   lineChart($('liveMetricChart'), run ? run.curves : [], METRIC_SERIES, { percent: true, marker: run && run.best_epoch ? run.best_epoch.epoch : null });
+
+  // Comparativo Histórico de Todos os Treinos
+  const RUN_PALETTE = ['#19D3C5', '#4EA8FF', '#F59E0B', '#A78BFA', '#EC4899', '#10B981', '#6366F1', '#F97316'];
+  const runsWithCurves = OPS.runs.filter(r => r.curves && r.curves.length);
+  $('totalRunsCount').textContent = `${runsWithCurves.length} execuções registradas`;
+  if (runsWithCurves.length > 0) {
+    const maxEpoch = Math.max(...runsWithCurves.map(r => (r.curves[r.curves.length - 1] || {}).epoch || 1));
+    const combinedPoints = [];
+    for (let ep = 1; ep <= maxEpoch; ep++) {
+      const pt = { epoch: ep };
+      runsWithCurves.forEach((r, idx) => {
+        const c = r.curves.find(p => p.epoch === ep);
+        if (c) {
+          pt['map_' + r.id] = c.map50;
+          pt['loss_' + r.id] = (c.val_box != null && c.val_cls != null) ? (c.val_box + c.val_cls) : null;
+        }
+      });
+      combinedPoints.push(pt);
+    }
+    const mapSeries = runsWithCurves.map((r, idx) => ({
+      key: 'map_' + r.id,
+      label: `${friendlyRunName(r.id).split(' (')[0]} (${pct(r.best_epoch && r.best_epoch.map50)})`,
+      color: RUN_PALETTE[idx % RUN_PALETTE.length]
+    }));
+    const lossSeries = runsWithCurves.map((r, idx) => ({
+      key: 'loss_' + r.id,
+      label: `${friendlyRunName(r.id).split(' (')[0]}`,
+      color: RUN_PALETTE[idx % RUN_PALETTE.length]
+    }));
+    lineChart($('allRunsMapChart'), combinedPoints, mapSeries, { percent: true });
+    lineChart($('allRunsLossChart'), combinedPoints, lossSeries);
+  } else {
+    $('allRunsMapChart').replaceChildren(el('div', { class: 'empty' }, 'Sem dados de treinos anteriores.'));
+    $('allRunsLossChart').replaceChildren(el('div', { class: 'empty' }, 'Sem dados de treinos anteriores.'));
+  }
+
   fillSelect($('suggestWeights'), OPS.weights.filter(path => path.startsWith('runs/')).map(path => [path, path]), (OPS.runs.find(value => value.weights.best) || { weights: {} }).weights.best);
   if ($('suggestConf').value === '' && OPS.suggestion_conf) $('suggestConf').value = OPS.suggestion_conf;
   renderJob()
@@ -2461,30 +3259,30 @@ function renderModels() {
     el('div', {}, el('b', {}, ok ? 'Critérios básicos atendidos; falta a análise por classe.' : 'Nenhuma versão pode ser adotada como modelo de produção.'),
       el('ul', {}, ...reasons.map(reason => el('li', {}, reason))),
       el('p', { class: 'muted small-text' }, `${pilots.length} treinos piloto registrados. O modelo atual das sugestões continua só como apoio à revisão.`))));
-  fillSelect($('compareSelect'), OPS.comparisons.map((comparison, index) => [String(index), comparison.file]), String(OPS.comparisons.length - 1));
+  fillSelect($('compareSelect'), OPS.comparisons.map((comparison, index) => [String(index), friendlyComparisonName(comparison)]), String(OPS.comparisons.length - 1));
   renderCompare();
   const withCounts = OPS.runs.filter(run => Object.keys(run.class_counts || {}).length);
-  fillSelect($('coverageRun'), withCounts.map(run => [run.id, run.id]), (withCounts[0] || {}).id);
+  fillSelect($('coverageRun'), withCounts.map(run => [run.id, `${friendlyRunName(run.id)} · ${shortRunId(run.id)}`]), (withCounts[0] || {}).id);
   renderCoverage();
   const ranked = OPS.runs.filter(run => run.best_epoch).sort((a, b) => b.best_epoch.map50 - a.best_epoch.map50);
   const max = Math.max(0.01, ...ranked.map(run => run.best_epoch.map50));
-  $('leaderboard').replaceChildren(...(ranked.length ? ranked.map(run => barRow('var(--ok)', run.id.replace('pilot_train_', ''), run.best_epoch.map50, 0, max, pct(run.best_epoch.map50))) : [el('div', { class: 'empty' }, 'Sem métricas.')]))
+  $('leaderboard').replaceChildren(...(ranked.length ? ranked.map(run => barRow('var(--ok)', `${friendlyRunName(run.id)} · ${shortRunId(run.id)}`, run.best_epoch.map50, 0, max, pct(run.best_epoch.map50))) : [el('div', { class: 'empty' }, 'Sem métricas.')]))
 }
 
 function renderCompare() {
   const comparison = OPS.comparisons[Number($('compareSelect').value)];
   if (!comparison) { $('compareTable').replaceChildren(el('div', { class: 'empty' }, 'Nenhuma comparação salva. Etapa 5 do ciclo de fine-tuning.')); return }
   const splits = [...new Set(comparison.models.flatMap(model => Object.keys(model.splits)))];
-  const head = el('tr', {}, el('th', {}, 'Modelo'), ...splits.map(split => el('th', { class: 'num' }, split + (split.includes('visto') ? ' ⚠' : ''))));
-  const rows = comparison.models.map(model => el('tr', {}, el('td', {}, el('div', { class: 'mono' }, model.run_id || model.weights), el('small', { class: 'muted' }, `${model.file} · ${String(model.weights_sha256 || '').slice(0, 10)}…`)),
+  const head = el('tr', {}, el('th', {}, 'Modelo'), ...splits.map(split => el('th', { class: 'num', title: split }, splitLabel(split) + (split.includes('visto') ? ' ⚠' : ''))));
+  const rows = comparison.models.map(model => el('tr', {}, el('td', {}, el('div', { style: 'font-weight:600; color:var(--ink)' }, friendlyRunName(model.run_id || model.file)), el('div', { class: 'mono small-text muted' }, model.run_id || model.weights), el('small', { class: 'muted' }, `${model.file} · SHA-256 ${String(model.weights_sha256 || '').slice(0, 10)}…`)),
     ...splits.map(split => {
       const value = model.splits[split];
-      if (!value) return el('td', { class: 'num muted' }, '—');
+      if (!value || (!value.truth && !value.suggestions)) return el('td', { class: 'num muted' }, '—');
       const recall = value.truth ? value.found / value.truth : null, precision = value.suggestions ? value.correct / value.suggestions : null;
-      return el('td', { class: 'num' }, el('div', {}, `${value.found}/${value.truth} encontradas`), el('small', { class: 'muted' }, `${value.correct}/${value.suggestions} corretas · R\u00a0${pct(recall)} · P\u00a0${pct(precision)}`))
+      return el('td', { class: 'num' }, el('div', {}, `Recall ${pct(recall)} · ${value.found} de ${value.truth} ocorrências`), el('small', { class: 'muted' }, `Precisão ${pct(precision)} · ${value.correct} de ${value.suggestions} sugestões certas`))
     })));
   $('compareTable').replaceChildren(el('table', {}, el('thead', {}, head), el('tbody', {}, ...rows)),
-    el('p', { class: 'muted small-text' }, `Dataset ${comparison.dataset || '—'} · confiança ${comparison.conf} · IoU de acerto ${comparison.iou_match}.`))
+    el('p', { class: 'muted small-text' }, `Dataset ${comparison.dataset || '—'} · confiança mínima ${pct(comparison.conf)} · acerto com IoU ≥ ${comparison.iou_match} · arquivo ${comparison.file}.`))
 }
 
 function renderCoverage() {
@@ -2498,7 +3296,7 @@ function renderCoverage() {
     const value = run.class_counts[split][slug] || 0;
     return el('td', { class: 'num ' + (value === 0 ? 'cell-bad' : value < 5 ? 'cell-warn' : '') }, String(value))
   })));
-  $('coverageTable').replaceChildren(el('table', {}, el('thead', {}, el('tr', {}, el('th', {}, 'Classe'), ...splits.map(split => el('th', { class: 'num' }, split)))), el('tbody', {}, ...rows)),
+  $('coverageTable').replaceChildren(el('table', {}, el('thead', {}, el('tr', {}, el('th', {}, 'Classe'), ...splits.map(split => el('th', { class: 'num' }, splitLabel(split))))), el('tbody', {}, ...rows)),
     el('p', { class: 'muted small-text' }, 'Vermelho: sem exemplos (a classe não é aprendida). Amarelo: menos de 5 caixas.'))
 }
 $('compareSelect').onchange = renderCompare;
@@ -2532,11 +3330,22 @@ async function refreshOperations() {
   }
 }
 
+let pollTimer = null;
+function scheduleOperationsPoll() {
+  clearTimeout(pollTimer);
+  const isLive = jobRunning() || (OPS.runs && OPS.runs.some(value => value.state === 'running'));
+  pollTimer = setTimeout(async () => {
+    await refreshOperations();
+    scheduleOperationsPoll();
+  }, isLive ? 3500 : 6000);
+}
+
 async function startJob(kind, options) {
   try {
     job = await api('/api/jobs', { kind, options });
     renderJob();
     showView('monitor');
+    scheduleOperationsPoll();
     toast('Tarefa iniciada', `${kind} rodando no servidor local. Acompanhe o log e as curvas.`)
   } catch (error) {
     message(error.message, true);
@@ -2546,7 +3355,7 @@ async function startJob(kind, options) {
 }
 $('startTrain').onclick = () => {
   const options = trainOptions();
-  if (!confirm(`Iniciar treino piloto com ${options.epochs || '?'} épocas em ${OPS.device || 'cpu'}? O processo usa o PC até terminar.`)) return;
+  if (!confirm(`Iniciar treino piloto com ${options.epochs || '?'} ciclos de estudo em ${OPS.device || 'cpu'}? O processo usa o PC até terminar.`)) return;
   startJob('train-pilot', options)
 };
 $('startSuggest').onclick = () => startJob('suggest', { review: REVIEWS ? REVIEWS.current : undefined, weights: $('suggestWeights').value, conf: $('suggestConf').value === '' ? null : Number($('suggestConf').value) });
@@ -2589,8 +3398,7 @@ let initialView = location.hash.slice(1);
 if (!viewTitles[initialView]) { try { initialView = sessionStorage.getItem('dronecamp-view') || 'overview' } catch { initialView = 'overview' } }
 showView(initialView);
 if (SERVER) {
-  refreshOperations();
-  setInterval(refreshOperations, 5000)
+  refreshOperations().then(scheduleOperationsPoll);
 }
 </script>
 </body></html>
