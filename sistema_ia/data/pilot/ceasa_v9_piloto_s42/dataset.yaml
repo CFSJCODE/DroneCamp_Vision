@@ -1,0 +1,19 @@
+path: .
+train: images/train
+val: images/val
+test: images/test
+nc: 13
+names:
+- telha_quebrada
+- telha_ausente
+- residuos_telha
+- reparo_telha
+- rufo_ausente
+- rufo_quebrado
+- residuos_calha
+- vegetacao_calha
+- pedaco_telha
+- rufo_deslocado
+- pedaco_telha_sobreposto
+- fixador_telha_frouxo
+- reparo_rufo

@@ -1,0 +1,920 @@
+{
+  "schema_version": 1,
+  "kind": "piloto_edificacao_unica",
+  "created_at": "2026-10-07T01:00:46.354593+00:00",
+  "version": "ceasa_v9_piloto_s42",
+  "taxonomy_sha256": "8e26946337edd42cd86973a5b4ac43cd8f988aeee24aa889fe8dc2c3a9ed4f9a",
+  "seed": 42,
+  "split_policy": "cena_inteira_por_split; classes raras mantidas no treino",
+  "duplicate_policy": {
+    "iou": 0.7,
+    "rule": "mesma classe e IoU >= limite viram uma caixa; prioridade: caixa desenhada/editada pelo revisor, depois sugestão aceita de maior confiança",
+    "boxes_reviewed": 226,
+    "boxes_for_training": 159
+  },
+  "registries": [
+    [
+      "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reviews\\ceasa_v9_rev001\\registry.json",
+      "cf159db92b707383e42e9a318e23220cbb6580bd966808578f852d61a1fec4dd"
+    ]
+  ],
+  "buildings": [
+    "ceasa_pavilhao_a"
+  ],
+  "independent_evaluation": false,
+  "production_ready": false,
+  "warning": "Piloto com fotos de uma única edificação: validação e teste não são independentes. Use os pesos apenas para sugerir caixas à revisão humana.",
+  "images": [
+    {
+      "image": "images/train/0315a58d3dd318107b1cf55b387a7fdfe7c6a7df9e36faebd862f7dcd2e15c69.jpg",
+      "image_sha256": "0315a58d3dd318107b1cf55b387a7fdfe7c6a7df9e36faebd862f7dcd2e15c69",
+      "label": "labels/train/0315a58d3dd318107b1cf55b387a7fdfe7c6a7df9e36faebd862f7dcd2e15c69.txt",
+      "label_sha256": "51170046cee09b76bb032777fb6c0186d7c97bb4ce646d7fc57a887e3a13ca3f",
+      "split": "train",
+      "scene_group": "ceasa_roof_wall_termination",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 1,
+      "boxes_reviewed": 1,
+      "duplicates_consolidated": 0,
+      "classes": [
+        4
+      ],
+      "approval_author": "Rev001",
+      "approved_at": "2026-10-05T19:49:20.791Z",
+      "registry_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reviews\\ceasa_v9_rev001\\registry.json",
+      "registry_sha256": "cf159db92b707383e42e9a318e23220cbb6580bd966808578f852d61a1fec4dd",
+      "source_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p016_img01_0315a58d.jpg"
+    },
+    {
+      "image": "images/train/08772654ea11f2c6d0c3184748a7fffc3525cac35d7042656818500db18458be.jpg",
+      "image_sha256": "08772654ea11f2c6d0c3184748a7fffc3525cac35d7042656818500db18458be",
+      "label": "labels/train/08772654ea11f2c6d0c3184748a7fffc3525cac35d7042656818500db18458be.txt",
+      "label_sha256": "ba1025fc5d841f3aed4db3fb97b0e4393cf4104608bbade60af6d175a74ab2b3",
+      "split": "train",
+      "scene_group": "ceasa_closeup_08772654",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 2,
+      "boxes_reviewed": 2,
+      "duplicates_consolidated": 0,
+      "classes": [
+        5
+      ],
+      "approval_author": "Rev001",
+      "approved_at": "2026-10-05T19:49:20.791Z",
+      "registry_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reviews\\ceasa_v9_rev001\\registry.json",
+      "registry_sha256": "cf159db92b707383e42e9a318e23220cbb6580bd966808578f852d61a1fec4dd",
+      "source_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p004_img01_08772654.jpg"
+    },
+    {
+      "image": "images/train/0f729b3e9a0bab66f6c0f309e403a5eef269f7743702e285122d3ef2d76bf89a.jpg",
+      "image_sha256": "0f729b3e9a0bab66f6c0f309e403a5eef269f7743702e285122d3ef2d76bf89a",
+      "label": "labels/train/0f729b3e9a0bab66f6c0f309e403a5eef269f7743702e285122d3ef2d76bf89a.txt",
+      "label_sha256": "a3db8a0f6b999e32b089a1e99e924860387cce3808759c256b778c9e22893215",
+      "split": "train",
+      "scene_group": "ceasa_roof_foreign_object_0f729b3e",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 3,
+      "boxes_reviewed": 4,
+      "duplicates_consolidated": 1,
+      "classes": [
+        2,
+        11
+      ],
+      "approval_author": "Rev001",
+      "approved_at": "2026-10-05T19:49:20.791Z",
+      "registry_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reviews\\ceasa_v9_rev001\\registry.json",
+      "registry_sha256": "cf159db92b707383e42e9a318e23220cbb6580bd966808578f852d61a1fec4dd",
+      "source_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p033_img02_0f729b3e.jpg"
+    },
+    {
+      "image": "images/test/1b9f5c82a8ae7d21572b1ede62c904d0d0050c5683c5f7cb916992774950bc49.jpg",
+      "image_sha256": "1b9f5c82a8ae7d21572b1ede62c904d0d0050c5683c5f7cb916992774950bc49",
+      "label": "labels/test/1b9f5c82a8ae7d21572b1ede62c904d0d0050c5683c5f7cb916992774950bc49.txt",
+      "label_sha256": "6076cc5c42d46e0968d8074776a49a5afb2f9a8ddd2ccc538a2e2395b529f632",
+      "split": "test",
+      "scene_group": "ceasa_roof_junction_details",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 2,
+      "boxes_reviewed": 2,
+      "duplicates_consolidated": 0,
+      "classes": [
+        5
+      ],
+      "approval_author": "Rev001",
+      "approved_at": "2026-10-05T19:49:20.791Z",
+      "registry_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reviews\\ceasa_v9_rev001\\registry.json",
+      "registry_sha256": "cf159db92b707383e42e9a318e23220cbb6580bd966808578f852d61a1fec4dd",
+      "source_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p019_img01_1b9f5c82.jpg"
+    },
+    {
+      "image": "images/test/1dc91db4ec36a6dad462d3a4b6b6f202c57e0d79d8cd83ec12a45fbfc423b6ee.jpg",
+      "image_sha256": "1dc91db4ec36a6dad462d3a4b6b6f202c57e0d79d8cd83ec12a45fbfc423b6ee",
+      "label": "labels/test/1dc91db4ec36a6dad462d3a4b6b6f202c57e0d79d8cd83ec12a45fbfc423b6ee.txt",
+      "label_sha256": "1c03a8e4eedf344f95f3dad73224ee474f8c39c3b89ba3c0f66fa8e377c2b54c",
+      "split": "test",
+      "scene_group": "ceasa_roof_junction_details",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 2,
+      "boxes_reviewed": 2,
+      "duplicates_consolidated": 0,
+      "classes": [
+        5
+      ],
+      "approval_author": "Rev001",
+      "approved_at": "2026-10-05T19:49:20.791Z",
+      "registry_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reviews\\ceasa_v9_rev001\\registry.json",
+      "registry_sha256": "cf159db92b707383e42e9a318e23220cbb6580bd966808578f852d61a1fec4dd",
+      "source_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p022_img01_1dc91db4.jpg"
+    },
+    {
+      "image": "images/test/23074d75889dd3540178b4f4967277d6dca6fc7066aa3062868c6a4386c3dd38.jpg",
+      "image_sha256": "23074d75889dd3540178b4f4967277d6dca6fc7066aa3062868c6a4386c3dd38",
+      "label": "labels/test/23074d75889dd3540178b4f4967277d6dca6fc7066aa3062868c6a4386c3dd38.txt",
+      "label_sha256": "d26c4c7cfb9f6efa8e542414222d7d74b6f171fd84ac2737e8c1f1f722230c08",
+      "split": "test",
+      "scene_group": "ceasa_roof_junction_details",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 3,
+      "boxes_reviewed": 7,
+      "duplicates_consolidated": 4,
+      "classes": [
+        5
+      ],
+      "approval_author": "Rev001",
+      "approved_at": "2026-10-05T19:49:20.791Z",
+      "registry_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reviews\\ceasa_v9_rev001\\registry.json",
+      "registry_sha256": "cf159db92b707383e42e9a318e23220cbb6580bd966808578f852d61a1fec4dd",
+      "source_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p024_img01_23074d75.jpg"
+    },
+    {
+      "image": "images/val/2ff55c50b1e0a6786404a911e2634bff041762ddd98d0d6f86f83be8061c517b.jpg",
+      "image_sha256": "2ff55c50b1e0a6786404a911e2634bff041762ddd98d0d6f86f83be8061c517b",
+      "label": "labels/val/2ff55c50b1e0a6786404a911e2634bff041762ddd98d0d6f86f83be8061c517b.txt",
+      "label_sha256": "487c9771de45c8538a97ec289b962cb0d3867b1ce79f6bc23dac009a4b83cdc3",
+      "split": "val",
+      "scene_group": "ceasa_roof_overview",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 3,
+      "boxes_reviewed": 4,
+      "duplicates_consolidated": 1,
+      "classes": [
+        3,
+        5
+      ],
+      "approval_author": "Rev001",
+      "approved_at": "2026-10-05T19:49:20.791Z",
+      "registry_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reviews\\ceasa_v9_rev001\\registry.json",
+      "registry_sha256": "cf159db92b707383e42e9a318e23220cbb6580bd966808578f852d61a1fec4dd",
+      "source_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p012_img02_2ff55c50.jpg"
+    },
+    {
+      "image": "images/train/32a3cd23e01454b5e1ffaf38b4df5cd0de526914b65fa973f8398c84d57ec5e2.jpg",
+      "image_sha256": "32a3cd23e01454b5e1ffaf38b4df5cd0de526914b65fa973f8398c84d57ec5e2",
+      "label": "labels/train/32a3cd23e01454b5e1ffaf38b4df5cd0de526914b65fa973f8398c84d57ec5e2.txt",
+      "label_sha256": "187471a5aa45483b35068fcb8076b7917224b3c8f6f88d562da26c39131f066e",
+      "split": "train",
+      "scene_group": "ceasa_roof_foreign_object_32a3cd23",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 1,
+      "boxes_reviewed": 1,
+      "duplicates_consolidated": 0,
+      "classes": [
+        2
+      ],
+      "approval_author": "Rev001",
+      "approved_at": "2026-10-05T19:49:20.791Z",
+      "registry_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reviews\\ceasa_v9_rev001\\registry.json",
+      "registry_sha256": "cf159db92b707383e42e9a318e23220cbb6580bd966808578f852d61a1fec4dd",
+      "source_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p033_img01_32a3cd23.jpg"
+    },
+    {
+      "image": "images/train/36ef7a9ce5bd317bbd359ae04e5fb48b671a00b681a82e822a91c284a3c2434a.jpg",
+      "image_sha256": "36ef7a9ce5bd317bbd359ae04e5fb48b671a00b681a82e822a91c284a3c2434a",
+      "label": "labels/train/36ef7a9ce5bd317bbd359ae04e5fb48b671a00b681a82e822a91c284a3c2434a.txt",
+      "label_sha256": "8ccea284031d5f23090ea96f82489212d3e44b115a09c5ab151c993934c58b96",
+      "split": "train",
+      "scene_group": "ceasa_closeup_36ef7a9c",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 2,
+      "boxes_reviewed": 2,
+      "duplicates_consolidated": 0,
+      "classes": [
+        2,
+        3
+      ],
+      "approval_author": "Rev001",
+      "approved_at": "2026-10-05T19:49:20.791Z",
+      "registry_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reviews\\ceasa_v9_rev001\\registry.json",
+      "registry_sha256": "cf159db92b707383e42e9a318e23220cbb6580bd966808578f852d61a1fec4dd",
+      "source_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p012_img01_36ef7a9c.jpg"
+    },
+    {
+      "image": "images/test/399d7cea73e4de2b057c2ec9863fc2dcf51e68f4aff2d32070c735c208cf36f5.jpg",
+      "image_sha256": "399d7cea73e4de2b057c2ec9863fc2dcf51e68f4aff2d32070c735c208cf36f5",
+      "label": "labels/test/399d7cea73e4de2b057c2ec9863fc2dcf51e68f4aff2d32070c735c208cf36f5.txt",
+      "label_sha256": "22469b2e5bacc7d1ade0a9c3d494173fa67c7c8b12373f7be78aa963b07d3dee",
+      "split": "test",
+      "scene_group": "ceasa_roof_junction_details",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 1,
+      "boxes_reviewed": 1,
+      "duplicates_consolidated": 0,
+      "classes": [
+        5
+      ],
+      "approval_author": "Rev001",
+      "approved_at": "2026-10-05T19:49:20.791Z",
+      "registry_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reviews\\ceasa_v9_rev001\\registry.json",
+      "registry_sha256": "cf159db92b707383e42e9a318e23220cbb6580bd966808578f852d61a1fec4dd",
+      "source_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p027_img01_399d7cea.jpg"
+    },
+    {
+      "image": "images/test/3aa2001d038ca9fef5d597345cc776ec5bf3a6967a2601cda511fe0d58150351.jpg",
+      "image_sha256": "3aa2001d038ca9fef5d597345cc776ec5bf3a6967a2601cda511fe0d58150351",
+      "label": "labels/test/3aa2001d038ca9fef5d597345cc776ec5bf3a6967a2601cda511fe0d58150351.txt",
+      "label_sha256": "5c3e014630d46daea28344f16b947db3a4427cdf03beaef116833aed156325c6",
+      "split": "test",
+      "scene_group": "ceasa_roof_junction_details",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 3,
+      "boxes_reviewed": 3,
+      "duplicates_consolidated": 0,
+      "classes": [
+        2,
+        5
+      ],
+      "approval_author": "Rev001",
+      "approved_at": "2026-10-05T19:49:20.791Z",
+      "registry_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reviews\\ceasa_v9_rev001\\registry.json",
+      "registry_sha256": "cf159db92b707383e42e9a318e23220cbb6580bd966808578f852d61a1fec4dd",
+      "source_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p021_img02_3aa2001d.jpg"
+    },
+    {
+      "image": "images/train/4704f37da1bfe6741cf1cd51e1c0856fa0525abeddb9d7a77649393718c8ac26.jpg",
+      "image_sha256": "4704f37da1bfe6741cf1cd51e1c0856fa0525abeddb9d7a77649393718c8ac26",
+      "label": "labels/train/4704f37da1bfe6741cf1cd51e1c0856fa0525abeddb9d7a77649393718c8ac26.txt",
+      "label_sha256": "d848271f2df00bf83c2a4ac350c67e7864d8f2c8037c9c1cbf1e2fca5561a1be",
+      "split": "train",
+      "scene_group": "ceasa_closeup_rufo_reparo_4704f37d",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 3,
+      "boxes_reviewed": 7,
+      "duplicates_consolidated": 4,
+      "classes": [
+        3,
+        5
+      ],
+      "approval_author": "Rev001",
+      "approved_at": "2026-10-05T19:49:20.791Z",
+      "registry_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reviews\\ceasa_v9_rev001\\registry.json",
+      "registry_sha256": "cf159db92b707383e42e9a318e23220cbb6580bd966808578f852d61a1fec4dd",
+      "source_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p011_img01_4704f37d.jpg"
+    },
+    {
+      "image": "images/train/4c5cb2622f40cf26657de0a09a453ae41aee6b41f611fd4a67f7b6cd4c037dd1.jpg",
+      "image_sha256": "4c5cb2622f40cf26657de0a09a453ae41aee6b41f611fd4a67f7b6cd4c037dd1",
+      "label": "labels/train/4c5cb2622f40cf26657de0a09a453ae41aee6b41f611fd4a67f7b6cd4c037dd1.txt",
+      "label_sha256": "3d55d065bb070dab77b8f5809b431dc542708d192eb614d6559c6a2df8035372",
+      "split": "train",
+      "scene_group": "ceasa_closeup_roof_chimney_88b54f26",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 3,
+      "boxes_reviewed": 3,
+      "duplicates_consolidated": 0,
+      "classes": [
+        3
+      ],
+      "approval_author": "Rev001",
+      "approved_at": "2026-10-05T19:49:20.791Z",
+      "registry_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reviews\\ceasa_v9_rev001\\registry.json",
+      "registry_sha256": "cf159db92b707383e42e9a318e23220cbb6580bd966808578f852d61a1fec4dd",
+      "source_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p013_img01_4c5cb262.jpg"
+    },
+    {
+      "image": "images/train/50f69e0ccb9519d6aa2f58754218c1bf0fbda162a7612c885bd95d875c323ecb.jpg",
+      "image_sha256": "50f69e0ccb9519d6aa2f58754218c1bf0fbda162a7612c885bd95d875c323ecb",
+      "label": "labels/train/50f69e0ccb9519d6aa2f58754218c1bf0fbda162a7612c885bd95d875c323ecb.txt",
+      "label_sha256": "62758b2c3e8370624f17a36d83e5ebc806945bb5595e8743769e4202618c3ccc",
+      "split": "train",
+      "scene_group": "ceasa_gutter_closeup_50f69e0c",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 8,
+      "boxes_reviewed": 8,
+      "duplicates_consolidated": 0,
+      "classes": [
+        0,
+        6
+      ],
+      "approval_author": "Rev001",
+      "approved_at": "2026-10-05T19:49:20.791Z",
+      "registry_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reviews\\ceasa_v9_rev001\\registry.json",
+      "registry_sha256": "cf159db92b707383e42e9a318e23220cbb6580bd966808578f852d61a1fec4dd",
+      "source_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p030_img01_50f69e0c.jpg"
+    },
+    {
+      "image": "images/train/57321a0dfb9ae889ee64d983d2f8422f0075b12ab082934792f0e43d35272a48.jpg",
+      "image_sha256": "57321a0dfb9ae889ee64d983d2f8422f0075b12ab082934792f0e43d35272a48",
+      "label": "labels/train/57321a0dfb9ae889ee64d983d2f8422f0075b12ab082934792f0e43d35272a48.txt",
+      "label_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "split": "train",
+      "scene_group": "ceasa_roof_fastener_details",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "negative",
+      "boxes": 0,
+      "boxes_reviewed": 0,
+      "duplicates_consolidated": 0,
+      "classes": [],
+      "approval_author": "Rev001",
+      "approved_at": "2026-10-05T19:49:20.791Z",
+      "registry_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reviews\\ceasa_v9_rev001\\registry.json",
+      "registry_sha256": "cf159db92b707383e42e9a318e23220cbb6580bd966808578f852d61a1fec4dd",
+      "source_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p014_img01_57321a0d.jpg"
+    },
+    {
+      "image": "images/val/68a5aa9ef07b199298b238f1f81a0b54de86bd771b10d99f151459cea880426d.jpg",
+      "image_sha256": "68a5aa9ef07b199298b238f1f81a0b54de86bd771b10d99f151459cea880426d",
+      "label": "labels/val/68a5aa9ef07b199298b238f1f81a0b54de86bd771b10d99f151459cea880426d.txt",
+      "label_sha256": "09768acbd5f08b21cb4db42b171ecae18c258040775c2308c732da3f81d744e0",
+      "split": "val",
+      "scene_group": "ceasa_roof_overview",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 2,
+      "boxes_reviewed": 2,
+      "duplicates_consolidated": 0,
+      "classes": [
+        3
+      ],
+      "approval_author": "Rev001",
+      "approved_at": "2026-10-05T19:49:20.791Z",
+      "registry_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reviews\\ceasa_v9_rev001\\registry.json",
+      "registry_sha256": "cf159db92b707383e42e9a318e23220cbb6580bd966808578f852d61a1fec4dd",
+      "source_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p004_img02_68a5aa9e.jpg"
+    },
+    {
+      "image": "images/train/68b395f07b3c64efec2bd9c20c917dfb715130797e5f9187738dca2d6a0a21eb.jpg",
+      "image_sha256": "68b395f07b3c64efec2bd9c20c917dfb715130797e5f9187738dca2d6a0a21eb",
+      "label": "labels/train/68b395f07b3c64efec2bd9c20c917dfb715130797e5f9187738dca2d6a0a21eb.txt",
+      "label_sha256": "6c5b51b4d9b9dbe18380847cedf595aaf943846556ba8d23dd0cc255a18a6512",
+      "split": "train",
+      "scene_group": "ceasa_closeup_68b395f0",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 11,
+      "boxes_reviewed": 16,
+      "duplicates_consolidated": 5,
+      "classes": [
+        0,
+        2,
+        10
+      ],
+      "approval_author": "Rev001",
+      "approved_at": "2026-10-05T19:49:20.791Z",
+      "registry_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reviews\\ceasa_v9_rev001\\registry.json",
+      "registry_sha256": "cf159db92b707383e42e9a318e23220cbb6580bd966808578f852d61a1fec4dd",
+      "source_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p008_img02_68b395f0.jpg"
+    },
+    {
+      "image": "images/train/73218070524752bc3173ea9ea6926dcf7bbd6dadb8a0800e4d7ed95d2e5bb971.jpg",
+      "image_sha256": "73218070524752bc3173ea9ea6926dcf7bbd6dadb8a0800e4d7ed95d2e5bb971",
+      "label": "labels/train/73218070524752bc3173ea9ea6926dcf7bbd6dadb8a0800e4d7ed95d2e5bb971.txt",
+      "label_sha256": "70d21fb9386580889b5c18db0e06b6b2b81302766c2a014b65d10b35ae2beec0",
+      "split": "train",
+      "scene_group": "ceasa_gutter_closeup_73218070",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 8,
+      "boxes_reviewed": 10,
+      "duplicates_consolidated": 2,
+      "classes": [
+        0,
+        2,
+        6,
+        7,
+        10
+      ],
+      "approval_author": "Rev001",
+      "approved_at": "2026-10-05T19:49:20.791Z",
+      "registry_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reviews\\ceasa_v9_rev001\\registry.json",
+      "registry_sha256": "cf159db92b707383e42e9a318e23220cbb6580bd966808578f852d61a1fec4dd",
+      "source_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p030_img02_73218070.jpg"
+    },
+    {
+      "image": "images/train/73eefa51e56b97c53d83b5ba4e6d0c05e4f3b97bb0a936b3cb32ca6e889db1cc.jpg",
+      "image_sha256": "73eefa51e56b97c53d83b5ba4e6d0c05e4f3b97bb0a936b3cb32ca6e889db1cc",
+      "label": "labels/train/73eefa51e56b97c53d83b5ba4e6d0c05e4f3b97bb0a936b3cb32ca6e889db1cc.txt",
+      "label_sha256": "13c6f8e930ff6fe8afe2e5485e7f6e32e6bde160e8175374f5c1ac7979ea997c",
+      "split": "train",
+      "scene_group": "ceasa_gutter_closeup_73eefa51",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 13,
+      "boxes_reviewed": 25,
+      "duplicates_consolidated": 12,
+      "classes": [
+        0,
+        2,
+        6,
+        7,
+        8
+      ],
+      "approval_author": "Rev001",
+      "approved_at": "2026-10-05T19:49:20.791Z",
+      "registry_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reviews\\ceasa_v9_rev001\\registry.json",
+      "registry_sha256": "cf159db92b707383e42e9a318e23220cbb6580bd966808578f852d61a1fec4dd",
+      "source_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p035_img01_73eefa51.jpg"
+    },
+    {
+      "image": "images/val/7b8b0c035e2292d990fa0c493c5f25163cdf5572bfd68098ecd9d8f7f2f7ea3b.jpg",
+      "image_sha256": "7b8b0c035e2292d990fa0c493c5f25163cdf5572bfd68098ecd9d8f7f2f7ea3b",
+      "label": "labels/val/7b8b0c035e2292d990fa0c493c5f25163cdf5572bfd68098ecd9d8f7f2f7ea3b.txt",
+      "label_sha256": "5ab52696d48b82700b962d50e0de35de243400f288eee7e66b0c4a576a119d19",
+      "split": "val",
+      "scene_group": "ceasa_service_junction",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 2,
+      "boxes_reviewed": 2,
+      "duplicates_consolidated": 0,
+      "classes": [
+        5
+      ],
+      "approval_author": "Rev001",
+      "approved_at": "2026-10-05T19:49:20.791Z",
+      "registry_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reviews\\ceasa_v9_rev001\\registry.json",
+      "registry_sha256": "cf159db92b707383e42e9a318e23220cbb6580bd966808578f852d61a1fec4dd",
+      "source_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p023_img01_7b8b0c03.jpg"
+    },
+    {
+      "image": "images/train/8052814489da66c77231ff5ffccbee3236719d83408ce298d31fe13f7132aee4.jpg",
+      "image_sha256": "8052814489da66c77231ff5ffccbee3236719d83408ce298d31fe13f7132aee4",
+      "label": "labels/train/8052814489da66c77231ff5ffccbee3236719d83408ce298d31fe13f7132aee4.txt",
+      "label_sha256": "0d42ab00c5717d90898f23d785357d71a16455eaa154a2044f23c382d22ff7fb",
+      "split": "train",
+      "scene_group": "ceasa_closeup_corner_80528144",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 9,
+      "boxes_reviewed": 19,
+      "duplicates_consolidated": 10,
+      "classes": [
+        0,
+        2,
+        6,
+        10
+      ],
+      "approval_author": "Rev001",
+      "approved_at": "2026-10-05T19:49:20.791Z",
+      "registry_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reviews\\ceasa_v9_rev001\\registry.json",
+      "registry_sha256": "cf159db92b707383e42e9a318e23220cbb6580bd966808578f852d61a1fec4dd",
+      "source_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p005_img01_80528144.jpg"
+    },
+    {
+      "image": "images/train/814749e34f1e79fbaf554ffa613901e29147e5e6a088222fd54b6545dc714a3b.jpg",
+      "image_sha256": "814749e34f1e79fbaf554ffa613901e29147e5e6a088222fd54b6545dc714a3b",
+      "label": "labels/train/814749e34f1e79fbaf554ffa613901e29147e5e6a088222fd54b6545dc714a3b.txt",
+      "label_sha256": "d23c655a26ca29867e2b44badfd50271ac684978a655872366d6f8ca422e700f",
+      "split": "train",
+      "scene_group": "ceasa_perimeter_gutter",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 2,
+      "boxes_reviewed": 2,
+      "duplicates_consolidated": 0,
+      "classes": [
+        5
+      ],
+      "approval_author": "Rev001",
+      "approved_at": "2026-10-05T19:49:20.791Z",
+      "registry_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reviews\\ceasa_v9_rev001\\registry.json",
+      "registry_sha256": "cf159db92b707383e42e9a318e23220cbb6580bd966808578f852d61a1fec4dd",
+      "source_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p021_img01_814749e3.jpg"
+    },
+    {
+      "image": "images/train/88b54f26e06a9b1505ee0804e82ffe0d78f490183db9f2707203c3760c2d0dc5.jpg",
+      "image_sha256": "88b54f26e06a9b1505ee0804e82ffe0d78f490183db9f2707203c3760c2d0dc5",
+      "label": "labels/train/88b54f26e06a9b1505ee0804e82ffe0d78f490183db9f2707203c3760c2d0dc5.txt",
+      "label_sha256": "14792609c9dc1c2f7748c53a567895f7cf6fab62ab0a64db7d5367022f54704c",
+      "split": "train",
+      "scene_group": "ceasa_closeup_roof_chimney_88b54f26",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 10,
+      "boxes_reviewed": 12,
+      "duplicates_consolidated": 2,
+      "classes": [
+        2,
+        3,
+        10
+      ],
+      "approval_author": "Rev001",
+      "approved_at": "2026-10-05T19:49:20.791Z",
+      "registry_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reviews\\ceasa_v9_rev001\\registry.json",
+      "registry_sha256": "cf159db92b707383e42e9a318e23220cbb6580bd966808578f852d61a1fec4dd",
+      "source_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p007_img01_88b54f26.jpg"
+    },
+    {
+      "image": "images/train/9227be4e4aff0671548aff993d70008b62a2c51bccd68f1a30f267cceba3bea7.jpg",
+      "image_sha256": "9227be4e4aff0671548aff993d70008b62a2c51bccd68f1a30f267cceba3bea7",
+      "label": "labels/train/9227be4e4aff0671548aff993d70008b62a2c51bccd68f1a30f267cceba3bea7.txt",
+      "label_sha256": "eb7b53227bdf7a7534d948e691df5c8e72854e8af115bf68a9521a982906d8d7",
+      "split": "train",
+      "scene_group": "ceasa_closeup_corner_80528144",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 12,
+      "boxes_reviewed": 19,
+      "duplicates_consolidated": 7,
+      "classes": [
+        1,
+        2,
+        3,
+        6,
+        7
+      ],
+      "approval_author": "Rev001",
+      "approved_at": "2026-10-05T19:49:20.791Z",
+      "registry_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reviews\\ceasa_v9_rev001\\registry.json",
+      "registry_sha256": "cf159db92b707383e42e9a318e23220cbb6580bd966808578f852d61a1fec4dd",
+      "source_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p006_img02_9227be4e.jpg"
+    },
+    {
+      "image": "images/test/985fdab586b64fa0344bdb3d840e2552524d5405e354617938f22443def526e9.jpg",
+      "image_sha256": "985fdab586b64fa0344bdb3d840e2552524d5405e354617938f22443def526e9",
+      "label": "labels/test/985fdab586b64fa0344bdb3d840e2552524d5405e354617938f22443def526e9.txt",
+      "label_sha256": "b925ea120556bd6622d5d7804e8f3fd33db7810ceca7ad98597d6b090905fea3",
+      "split": "test",
+      "scene_group": "ceasa_roof_junction_details",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 10,
+      "boxes_reviewed": 11,
+      "duplicates_consolidated": 1,
+      "classes": [
+        2,
+        3,
+        4
+      ],
+      "approval_author": "Rev001",
+      "approved_at": "2026-10-05T19:49:20.791Z",
+      "registry_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reviews\\ceasa_v9_rev001\\registry.json",
+      "registry_sha256": "cf159db92b707383e42e9a318e23220cbb6580bd966808578f852d61a1fec4dd",
+      "source_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p014_img02_985fdab5.jpg"
+    },
+    {
+      "image": "images/train/9ab86531dec3f81564cc1d51bc5d534cd10d156f60af7ca55c592f5ff5b3b802.jpg",
+      "image_sha256": "9ab86531dec3f81564cc1d51bc5d534cd10d156f60af7ca55c592f5ff5b3b802",
+      "label": "labels/train/9ab86531dec3f81564cc1d51bc5d534cd10d156f60af7ca55c592f5ff5b3b802.txt",
+      "label_sha256": "408b640c1a88b948433220c8e9aac6ae77c3041e56ea4e954895567042203dc3",
+      "split": "train",
+      "scene_group": "ceasa_closeup_9ab86531",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 11,
+      "boxes_reviewed": 16,
+      "duplicates_consolidated": 5,
+      "classes": [
+        2,
+        3,
+        4,
+        8
+      ],
+      "approval_author": "Rev001",
+      "approved_at": "2026-10-05T19:49:20.791Z",
+      "registry_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reviews\\ceasa_v9_rev001\\registry.json",
+      "registry_sha256": "cf159db92b707383e42e9a318e23220cbb6580bd966808578f852d61a1fec4dd",
+      "source_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p011_img02_9ab86531.jpg"
+    },
+    {
+      "image": "images/val/a498d247ae429d0d23701b29a148958e86a3dad6f7e7e01b5186e05c06949a3a.jpg",
+      "image_sha256": "a498d247ae429d0d23701b29a148958e86a3dad6f7e7e01b5186e05c06949a3a",
+      "label": "labels/val/a498d247ae429d0d23701b29a148958e86a3dad6f7e7e01b5186e05c06949a3a.txt",
+      "label_sha256": "f11314cfe249d27f94df4b2b96379204b9a0583d1e0c2c7033201fd3eeec7ac2",
+      "split": "val",
+      "scene_group": "ceasa_service_junction",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 3,
+      "boxes_reviewed": 3,
+      "duplicates_consolidated": 0,
+      "classes": [
+        5
+      ],
+      "approval_author": "Rev001",
+      "approved_at": "2026-10-05T19:49:20.791Z",
+      "registry_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reviews\\ceasa_v9_rev001\\registry.json",
+      "registry_sha256": "cf159db92b707383e42e9a318e23220cbb6580bd966808578f852d61a1fec4dd",
+      "source_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p015_img01_a498d247.jpg"
+    },
+    {
+      "image": "images/train/a64803dabcfcaad82852da022b2a6bc85f6773ffba2e29095c4e67a51c66ff0e.jpg",
+      "image_sha256": "a64803dabcfcaad82852da022b2a6bc85f6773ffba2e29095c4e67a51c66ff0e",
+      "label": "labels/train/a64803dabcfcaad82852da022b2a6bc85f6773ffba2e29095c4e67a51c66ff0e.txt",
+      "label_sha256": "698cd25493e21c904ae15d94b4ae7bed189d011649827292381c949f91bee8ba",
+      "split": "train",
+      "scene_group": "ceasa_gutter_closeup_a64803da",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 1,
+      "boxes_reviewed": 1,
+      "duplicates_consolidated": 0,
+      "classes": [
+        7
+      ],
+      "approval_author": "Rev001",
+      "approved_at": "2026-10-05T19:49:20.791Z",
+      "registry_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reviews\\ceasa_v9_rev001\\registry.json",
+      "registry_sha256": "cf159db92b707383e42e9a318e23220cbb6580bd966808578f852d61a1fec4dd",
+      "source_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p031_img01_a64803da.jpg"
+    },
+    {
+      "image": "images/val/abec366e27c1f5809636c55e9b037bd77134936456ff748e7b1c6852b5a48bb5.jpg",
+      "image_sha256": "abec366e27c1f5809636c55e9b037bd77134936456ff748e7b1c6852b5a48bb5",
+      "label": "labels/val/abec366e27c1f5809636c55e9b037bd77134936456ff748e7b1c6852b5a48bb5.txt",
+      "label_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "split": "val",
+      "scene_group": "ceasa_closeup_abec366e",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "negative",
+      "boxes": 0,
+      "boxes_reviewed": 0,
+      "duplicates_consolidated": 0,
+      "classes": [],
+      "approval_author": "Rev001",
+      "approved_at": "2026-10-05T19:49:20.791Z",
+      "registry_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reviews\\ceasa_v9_rev001\\registry.json",
+      "registry_sha256": "cf159db92b707383e42e9a318e23220cbb6580bd966808578f852d61a1fec4dd",
+      "source_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p003_img01_abec366e.jpg"
+    },
+    {
+      "image": "images/test/bca8f6e02e3f00fe307634bb55cde6ce2fb37cd10f6724a7d814be664ded6a1c.jpg",
+      "image_sha256": "bca8f6e02e3f00fe307634bb55cde6ce2fb37cd10f6724a7d814be664ded6a1c",
+      "label": "labels/test/bca8f6e02e3f00fe307634bb55cde6ce2fb37cd10f6724a7d814be664ded6a1c.txt",
+      "label_sha256": "e268d180a93a5f8c051f8f22cac6aec8ce24bf51d6560c83ab3fb4d87b7c4113",
+      "split": "test",
+      "scene_group": "ceasa_roof_junction_details",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 3,
+      "boxes_reviewed": 4,
+      "duplicates_consolidated": 1,
+      "classes": [
+        4,
+        5
+      ],
+      "approval_author": "Rev001",
+      "approved_at": "2026-10-05T19:49:20.791Z",
+      "registry_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reviews\\ceasa_v9_rev001\\registry.json",
+      "registry_sha256": "cf159db92b707383e42e9a318e23220cbb6580bd966808578f852d61a1fec4dd",
+      "source_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p024_img02_bca8f6e0.jpg"
+    },
+    {
+      "image": "images/train/beebf15ccef412efa39902b3fb0753c5aabf2c0423d26937efedf14027a8d11d.jpg",
+      "image_sha256": "beebf15ccef412efa39902b3fb0753c5aabf2c0423d26937efedf14027a8d11d",
+      "label": "labels/train/beebf15ccef412efa39902b3fb0753c5aabf2c0423d26937efedf14027a8d11d.txt",
+      "label_sha256": "d08c08a69bba17f6a4e04d4ae7a16ccfe29fd0c6fb1c472ef12a964aa51a435a",
+      "split": "train",
+      "scene_group": "ceasa_closeup_beebf15c",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 1,
+      "boxes_reviewed": 1,
+      "duplicates_consolidated": 0,
+      "classes": [
+        3
+      ],
+      "approval_author": "Rev001",
+      "approved_at": "2026-10-05T19:49:20.791Z",
+      "registry_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reviews\\ceasa_v9_rev001\\registry.json",
+      "registry_sha256": "cf159db92b707383e42e9a318e23220cbb6580bd966808578f852d61a1fec4dd",
+      "source_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p010_img01_beebf15c.jpg"
+    },
+    {
+      "image": "images/train/d12131ddee51d3d84ab6bbf5b8f54abdad769800215b5d068e5e8d22b73265cc.jpg",
+      "image_sha256": "d12131ddee51d3d84ab6bbf5b8f54abdad769800215b5d068e5e8d22b73265cc",
+      "label": "labels/train/d12131ddee51d3d84ab6bbf5b8f54abdad769800215b5d068e5e8d22b73265cc.txt",
+      "label_sha256": "146ffc8b38397db1cc6d7c491d9ba283cdc15b8e2f65e87b200eb7545a079a77",
+      "split": "train",
+      "scene_group": "ceasa_closeup_d12131dd",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 11,
+      "boxes_reviewed": 18,
+      "duplicates_consolidated": 7,
+      "classes": [
+        0,
+        2,
+        5,
+        9,
+        10
+      ],
+      "approval_author": "Rev001",
+      "approved_at": "2026-10-05T19:49:20.791Z",
+      "registry_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reviews\\ceasa_v9_rev001\\registry.json",
+      "registry_sha256": "cf159db92b707383e42e9a318e23220cbb6580bd966808578f852d61a1fec4dd",
+      "source_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p008_img01_d12131dd.jpg"
+    },
+    {
+      "image": "images/train/d7dcb606c5b1ff4b0f3ccb31f913ab53f98cc7635c38b2ad9107faed0b6addc6.jpg",
+      "image_sha256": "d7dcb606c5b1ff4b0f3ccb31f913ab53f98cc7635c38b2ad9107faed0b6addc6",
+      "label": "labels/train/d7dcb606c5b1ff4b0f3ccb31f913ab53f98cc7635c38b2ad9107faed0b6addc6.txt",
+      "label_sha256": "267454c88da5cf82e0ef5b304bcc0d5a347e92ccb4c07d7600171eb253b6a378",
+      "split": "train",
+      "scene_group": "ceasa_perimeter_gutter",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 2,
+      "boxes_reviewed": 2,
+      "duplicates_consolidated": 0,
+      "classes": [
+        6
+      ],
+      "approval_author": "Rev001",
+      "approved_at": "2026-10-05T19:49:20.791Z",
+      "registry_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reviews\\ceasa_v9_rev001\\registry.json",
+      "registry_sha256": "cf159db92b707383e42e9a318e23220cbb6580bd966808578f852d61a1fec4dd",
+      "source_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p026_img01_d7dcb606.jpg"
+    },
+    {
+      "image": "images/test/d86cc412a1856b2c5fbc85aeb9e3e83fe6a39ca0e14e9dcca2aee6a61fa6b6a5.jpg",
+      "image_sha256": "d86cc412a1856b2c5fbc85aeb9e3e83fe6a39ca0e14e9dcca2aee6a61fa6b6a5",
+      "label": "labels/test/d86cc412a1856b2c5fbc85aeb9e3e83fe6a39ca0e14e9dcca2aee6a61fa6b6a5.txt",
+      "label_sha256": "a47a97f943e1e6b253c650719bd4c72b1f90c0343340cb98b5d02a97a296334c",
+      "split": "test",
+      "scene_group": "ceasa_roof_junction_details",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 7,
+      "boxes_reviewed": 12,
+      "duplicates_consolidated": 5,
+      "classes": [
+        2,
+        5
+      ],
+      "approval_author": "Rev001",
+      "approved_at": "2026-10-05T19:49:20.791Z",
+      "registry_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reviews\\ceasa_v9_rev001\\registry.json",
+      "registry_sha256": "cf159db92b707383e42e9a318e23220cbb6580bd966808578f852d61a1fec4dd",
+      "source_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p022_img02_d86cc412.jpg"
+    },
+    {
+      "image": "images/val/e59d70812f26fd7a93d9d7020983643e74855ab66410883fedba2ae0646a8b52.jpg",
+      "image_sha256": "e59d70812f26fd7a93d9d7020983643e74855ab66410883fedba2ae0646a8b52",
+      "label": "labels/val/e59d70812f26fd7a93d9d7020983643e74855ab66410883fedba2ae0646a8b52.txt",
+      "label_sha256": "bbd9444f2be0fa2cc828b00b4481b88e46e29adebb6b0f826bf76d719c1be404",
+      "split": "val",
+      "scene_group": "ceasa_closeup_e59d7081",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 1,
+      "boxes_reviewed": 1,
+      "duplicates_consolidated": 0,
+      "classes": [
+        3
+      ],
+      "approval_author": "Rev001",
+      "approved_at": "2026-10-05T19:49:20.791Z",
+      "registry_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reviews\\ceasa_v9_rev001\\registry.json",
+      "registry_sha256": "cf159db92b707383e42e9a318e23220cbb6580bd966808578f852d61a1fec4dd",
+      "source_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p010_img02_e59d7081.jpg"
+    },
+    {
+      "image": "images/val/f55d62a3174c6ebb620fca7ebb863ac08893e9c1c2b8c7e20b8d5bd7fd139e99.jpg",
+      "image_sha256": "f55d62a3174c6ebb620fca7ebb863ac08893e9c1c2b8c7e20b8d5bd7fd139e99",
+      "label": "labels/val/f55d62a3174c6ebb620fca7ebb863ac08893e9c1c2b8c7e20b8d5bd7fd139e99.txt",
+      "label_sha256": "11bf48e4b7e4d53154c0d05a9d907ef2a2eabf0499953167ae25864fea53f140",
+      "split": "val",
+      "scene_group": "ceasa_roof_overview",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 1,
+      "boxes_reviewed": 1,
+      "duplicates_consolidated": 0,
+      "classes": [
+        1
+      ],
+      "approval_author": "Rev001",
+      "approved_at": "2026-10-05T19:49:20.791Z",
+      "registry_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reviews\\ceasa_v9_rev001\\registry.json",
+      "registry_sha256": "cf159db92b707383e42e9a318e23220cbb6580bd966808578f852d61a1fec4dd",
+      "source_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p006_img01_f55d62a3.jpg"
+    },
+    {
+      "image": "images/test/f5b9ef7de70622b39b748bc2ee654166b5facc42a7c5e1ee8c37054f9217588c.jpg",
+      "image_sha256": "f5b9ef7de70622b39b748bc2ee654166b5facc42a7c5e1ee8c37054f9217588c",
+      "label": "labels/test/f5b9ef7de70622b39b748bc2ee654166b5facc42a7c5e1ee8c37054f9217588c.txt",
+      "label_sha256": "693abeed3302183ba21955d69d43505778f17d86cc8c44906ad6348cdcd33198",
+      "split": "test",
+      "scene_group": "ceasa_roof_junction_details",
+      "building_group": "ceasa_pavilhao_a",
+      "status": "positive",
+      "boxes": 2,
+      "boxes_reviewed": 2,
+      "duplicates_consolidated": 0,
+      "classes": [
+        4
+      ],
+      "approval_author": "Rev001",
+      "approved_at": "2026-10-05T19:49:20.791Z",
+      "registry_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reviews\\ceasa_v9_rev001\\registry.json",
+      "registry_sha256": "cf159db92b707383e42e9a318e23220cbb6580bd966808578f852d61a1fec4dd",
+      "source_path": "E:\\Acadêmico\\Faculdade - PUC\\PUC TEC - Drone Camp\\sistema_ia\\data\\reference\\ceasa\\p028_img01_f5b9ef7d.jpg"
+    }
+  ],
+  "boxes_by_class_and_split": {
+    "telha_quebrada": {
+      "train": 12,
+      "val": 0,
+      "test": 0
+    },
+    "telha_ausente": {
+      "train": 1,
+      "val": 1,
+      "test": 0
+    },
+    "residuos_telha": {
+      "train": 42,
+      "val": 0,
+      "test": 14
+    },
+    "reparo_telha": {
+      "train": 16,
+      "val": 5,
+      "test": 2
+    },
+    "rufo_ausente": {
+      "train": 2,
+      "val": 0,
+      "test": 5
+    },
+    "rufo_quebrado": {
+      "train": 9,
+      "val": 6,
+      "test": 12
+    },
+    "residuos_calha": {
+      "train": 14,
+      "val": 0,
+      "test": 0
+    },
+    "vegetacao_calha": {
+      "train": 5,
+      "val": 0,
+      "test": 0
+    },
+    "pedaco_telha": {
+      "train": 2,
+      "val": 0,
+      "test": 0
+    },
+    "rufo_deslocado": {
+      "train": 1,
+      "val": 0,
+      "test": 0
+    },
+    "pedaco_telha_sobreposto": {
+      "train": 9,
+      "val": 0,
+      "test": 0
+    },
+    "fixador_telha_frouxo": {
+      "train": 1,
+      "val": 0,
+      "test": 0
+    },
+    "reparo_rufo": {
+      "train": 0,
+      "val": 0,
+      "test": 0
+    }
+  },
+  "classes_without_training_boxes": [
+    "reparo_rufo"
+  ],
+  "classes_not_measured_in_val": [
+    "telha_quebrada",
+    "residuos_telha",
+    "rufo_ausente",
+    "residuos_calha",
+    "vegetacao_calha",
+    "pedaco_telha",
+    "rufo_deslocado",
+    "pedaco_telha_sobreposto",
+    "fixador_telha_frouxo",
+    "reparo_rufo"
+  ]
+}

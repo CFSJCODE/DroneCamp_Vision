@@ -28,3 +28,7 @@ sistema_ia/models/mobileclip*.ts
 sistema_ia/models/yoloe-*.pt
 # Gerado na primeira execucao de suggest --zero-shot (o envio LFS pela nuvem foi recusado).
 sistema_ia/models/zero_shot/
+
+# Documentos pessoais (identidade, histórico, conta bancária, termos): nunca no repositório público.
+Documentação/Documentos PUCTEC/*
+!Documentação/Documentos PUCTEC/Apresentação DRONECAMP PUCTEC.pdf

@@ -1,0 +1,2774 @@
+{
+  "schema_version": 1,
+  "registry_sha256": "612ff8f63b38108a985fa76281da8e903574fe8fdfccb0464f31c244460c6d02",
+  "reviewer_id": "Rev001",
+  "exported_at": "2026-10-05T19:49:20.791Z",
+  "images": [
+    {
+      "image_sha256": "009ed874804749c2747dcabde4c38bc2aa3a1a3575cb501b5ede6789d9af1dbb",
+      "boxes": [],
+      "status": "ambiguous",
+      "notes": "",
+      "confirmed_complete": true
+    },
+    {
+      "image_sha256": "32a3cd23e01454b5e1ffaf38b4df5cd0de526914b65fa973f8398c84d57ec5e2",
+      "boxes": [
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            523,
+            229,
+            734,
+            611
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true,
+      "dismissed_suggestions": [
+        "s001"
+      ]
+    },
+    {
+      "image_sha256": "a64803dabcfcaad82852da022b2a6bc85f6773ffba2e29095c4e67a51c66ff0e",
+      "boxes": [
+        {
+          "class_id": 7,
+          "bbox_xyxy": [
+            275,
+            329,
+            551,
+            607
+          ],
+          "note": "Sugestão do modelo aceita (confiança 37%); conferida na revisão local."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true,
+      "dismissed_suggestions": [
+        "s003",
+        "s002"
+      ]
+    },
+    {
+      "image_sha256": "abec366e27c1f5809636c55e9b037bd77134936456ff748e7b1c6852b5a48bb5",
+      "boxes": [],
+      "status": "negative",
+      "notes": "",
+      "confirmed_complete": true,
+      "dismissed_suggestions": [
+        "s001",
+        "s002"
+      ]
+    },
+    {
+      "image_sha256": "08772654ea11f2c6d0c3184748a7fffc3525cac35d7042656818500db18458be",
+      "boxes": [
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            90,
+            87,
+            160,
+            128
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            88,
+            79,
+            159,
+            141
+          ],
+          "note": "Sugestão do modelo aceita (confiança 22%); conferida na revisão local."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true
+    },
+    {
+      "image_sha256": "68a5aa9ef07b199298b238f1f81a0b54de86bd771b10d99f151459cea880426d",
+      "boxes": [
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            100,
+            565,
+            161,
+            723
+          ],
+          "note": "Faixa clara aderida sobre a telha, visível até o corte inferior; reparo proposto, sem inferir falha."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            140,
+            578,
+            195,
+            723
+          ],
+          "note": "Segunda faixa clara paralela, inspecionada em zoom; ocorrência cortada pela borda inferior."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true
+    },
+    {
+      "image_sha256": "8052814489da66c77231ff5ffccbee3236719d83408ce298d31fe13f7132aee4",
+      "boxes": [
+        {
+          "class_id": 10,
+          "bbox_xyxy": [
+            0,
+            488,
+            184,
+            675
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            287,
+            476,
+            335,
+            675
+          ],
+          "note": "Caixa candidata: abertura longitudinal junto ao fixador. Classe 0 ainda ambígua entre ruptura instalada e junção aberta; não aprovada."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            704,
+            0,
+            815,
+            87
+          ],
+          "note": "Fragmento solto sobre a telha superior; não foi rotulado como dano no elemento instalado."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            657,
+            197,
+            701,
+            269
+          ],
+          "note": "Sugestão do modelo aceita (confiança 65%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            721,
+            283,
+            812,
+            374
+          ],
+          "note": "Acúmulo de fragmentos sobre a telha próximo à borda."
+        },
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            720,
+            369,
+            891,
+            482
+          ],
+          "note": "Sugestão do modelo aceita (confiança 19%); conferida na revisão local."
+        },
+        {
+          "class_id": 10,
+          "bbox_xyxy": [
+            371,
+            397,
+            487,
+            560
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            661,
+            204,
+            700,
+            271
+          ],
+          "note": "Sugestão do modelo aceita (confiança 97%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            714,
+            281,
+            814,
+            384
+          ],
+          "note": "Sugestão do modelo aceita (confiança 87%); conferida na revisão local."
+        },
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            695,
+            389,
+            872,
+            483
+          ],
+          "note": "Sugestão do modelo aceita (confiança 15%); conferida na revisão local."
+        },
+        {
+          "class_id": 10,
+          "bbox_xyxy": [
+            0,
+            476,
+            174,
+            675
+          ],
+          "note": "Sugestão do modelo aceita (confiança 21%); conferida na revisão local."
+        },
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            702,
+            376,
+            903,
+            483
+          ],
+          "note": "Sugestão do modelo aceita (confiança 22%); conferida na revisão local."
+        },
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            283,
+            476,
+            342,
+            675
+          ],
+          "note": "Sugestão do modelo aceita (confiança 31%); conferida na revisão local."
+        },
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            286,
+            486,
+            332,
+            673
+          ],
+          "note": "Sugestão do modelo aceita (confiança 37%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            718,
+            106,
+            744,
+            139
+          ],
+          "note": "Sugestão do modelo aceita (confiança 41%); conferida na revisão local."
+        },
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            697,
+            382,
+            895,
+            482
+          ],
+          "note": "Sugestão do modelo aceita (confiança 61%); conferida na revisão local."
+        },
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            700,
+            372,
+            900,
+            491
+          ],
+          "note": "Sugestão do modelo aceita (confiança 63%); conferida na revisão local."
+        },
+        {
+          "class_id": 10,
+          "bbox_xyxy": [
+            364,
+            399,
+            495,
+            558
+          ],
+          "note": "Sugestão do modelo aceita (confiança 84%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            703,
+            0,
+            818,
+            91
+          ],
+          "note": "Sugestão do modelo aceita (confiança 85%); conferida na revisão local."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true,
+      "dismissed_suggestions": [
+        "s001",
+        "s004"
+      ]
+    },
+    {
+      "image_sha256": "f55d62a3174c6ebb620fca7ebb863ac08893e9c1c2b8c7e20b8d5bd7fd139e99",
+      "boxes": [
+        {
+          "class_id": 1,
+          "bbox_xyxy": [
+            516,
+            301,
+            546,
+            408
+          ],
+          "note": "Lacuna estreita entre painéis/bordas da faixa lateral; região ampliada mostra interior/estrutura onde a continuidade da telha vizinha fornece contexto. Confirmar projeto da borda na revisão técnica."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true
+    },
+    {
+      "image_sha256": "9227be4e4aff0671548aff993d70008b62a2c51bccd68f1a30f267cceba3bea7",
+      "boxes": [
+        {
+          "class_id": 1,
+          "bbox_xyxy": [
+            536,
+            259,
+            728,
+            616
+          ],
+          "note": "Lacuna ao lado da telha inferior: estrutura e interior expostos; limites parcialmente cortados pela imagem. Confirmar extensão prevista do painel na revisão técnica."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            352,
+            288,
+            560,
+            510
+          ],
+          "note": "Sugestão do modelo aceita (confiança 26%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            623,
+            0,
+            670,
+            70
+          ],
+          "note": "Sugestão do modelo aceita (confiança 16%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            727,
+            0,
+            774,
+            98
+          ],
+          "note": "Sugestão do modelo aceita (confiança 58%); conferida na revisão local."
+        },
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            607,
+            79,
+            845,
+            270
+          ],
+          "note": "Sugestão do modelo aceita (confiança 17%); conferida na revisão local."
+        },
+        {
+          "class_id": 7,
+          "bbox_xyxy": [
+            156,
+            22,
+            636,
+            177
+          ],
+          "note": "Ramos/vegetação ressecada e trechos verdes no canal sombreado da calha."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            726,
+            2,
+            774,
+            99
+          ],
+          "note": "Sugestão do modelo aceita (confiança 86%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            621,
+            0,
+            671,
+            102
+          ],
+          "note": "Sugestão do modelo aceita (confiança 75%); conferida na revisão local."
+        },
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            625,
+            88,
+            863,
+            264
+          ],
+          "note": "Sugestão do modelo aceita (confiança 34%); conferida na revisão local."
+        },
+        {
+          "class_id": 1,
+          "bbox_xyxy": [
+            532,
+            252,
+            758,
+            596
+          ],
+          "note": "Sugestão do modelo aceita (confiança 59%); conferida na revisão local."
+        },
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            544,
+            84,
+            886,
+            271
+          ],
+          "note": "Sugestão do modelo aceita (confiança 41%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            726,
+            0,
+            773,
+            102
+          ],
+          "note": "Sugestão do modelo aceita (confiança 38%); conferida na revisão local."
+        },
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            576,
+            91,
+            875,
+            270
+          ],
+          "note": "Sugestão do modelo aceita (confiança 37%); conferida na revisão local."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            348,
+            280,
+            563,
+            522
+          ],
+          "note": "Sugestão do modelo aceita (confiança 26%); conferida na revisão local."
+        },
+        {
+          "class_id": 7,
+          "bbox_xyxy": [
+            0,
+            18,
+            654,
+            207
+          ],
+          "note": "Sugestão do modelo aceita (confiança 26%); conferida na revisão local."
+        },
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            742,
+            145,
+            892,
+            272
+          ],
+          "note": "Sugestão do modelo aceita (confiança 22%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            91,
+            293,
+            117,
+            327
+          ],
+          "note": "Sugestão do modelo aceita (confiança 53%); conferida na revisão local."
+        },
+        {
+          "class_id": 1,
+          "bbox_xyxy": [
+            541,
+            239,
+            769,
+            616
+          ],
+          "note": "Sugestão do modelo aceita (confiança 17%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            600,
+            0,
+            672,
+            101
+          ],
+          "note": "Sugestão do modelo aceita (confiança 30%); conferida na revisão local."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true,
+      "dismissed_suggestions": [
+        "s008",
+        "s009",
+        "s010",
+        "s011",
+        "s005",
+        "s012"
+      ]
+    },
+    {
+      "image_sha256": "73eefa51e56b97c53d83b5ba4e6d0c05e4f3b97bb0a936b3cb32ca6e889db1cc",
+      "boxes": [
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            146,
+            0,
+            346,
+            292
+          ],
+          "note": "Ruptura longitudinal e canto ausente na telha instalada da metade superior esquerda; parcialmente cortada no topo."
+        },
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            429,
+            202,
+            593,
+            294
+          ],
+          "note": "Perda irregular de material na borda inferior da telha instalada central."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            485,
+            0,
+            654,
+            289
+          ],
+          "note": "Pilha de fragmentos soltos sobre a telha superior direita; caixa toca a borda superior e exige adjudicação do limite entre pilha e peça instalada."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            108,
+            110,
+            159,
+            191
+          ],
+          "note": "Sugestão do modelo aceita (confiança 87%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            631,
+            388,
+            662,
+            433
+          ],
+          "note": "Fragmentos soltos sobre a telha inferior, próximos aos pontos de fixação."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            519,
+            531,
+            612,
+            616
+          ],
+          "note": "Fragmento apoiado sobre a telha na borda inferior; a imagem corta parte da peça e a classificação como material solto deve ser confirmada."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            307,
+            494,
+            327,
+            520
+          ],
+          "note": "Fragmento pequeno apoiado sobre a telha inferior; não interpretar a sombra do tirante como ruptura."
+        },
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            548,
+            289,
+            739,
+            376
+          ],
+          "note": "Segunda leitura: apenas fragmentos no interior reconhecível da calha; removidas faixas acima da borda e a pilha sobre o capeamento à direita."
+        },
+        {
+          "class_id": 7,
+          "bbox_xyxy": [
+            244,
+            322,
+            343,
+            370
+          ],
+          "note": "Ramos secos reconhecíveis dentro da faixa da calha; não inferir água ou percentual de obstrução."
+        },
+        {
+          "class_id": 8,
+          "bbox_xyxy": [
+            14,
+            435,
+            163,
+            616
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 7,
+          "bbox_xyxy": [
+            246,
+            319,
+            346,
+            371
+          ],
+          "note": "Sugestão do modelo aceita (confiança 95%); conferida na revisão local."
+        },
+        {
+          "class_id": 8,
+          "bbox_xyxy": [
+            19,
+            434,
+            171,
+            616
+          ],
+          "note": "Sugestão do modelo aceita (confiança 95%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            631,
+            387,
+            661,
+            433
+          ],
+          "note": "Sugestão do modelo aceita (confiança 84%); conferida na revisão local."
+        },
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            143,
+            0,
+            361,
+            306
+          ],
+          "note": "Sugestão do modelo aceita (confiança 73%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            514,
+            529,
+            613,
+            616
+          ],
+          "note": "Sugestão do modelo aceita (confiança 66%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            471,
+            0,
+            664,
+            292
+          ],
+          "note": "Sugestão do modelo aceita (confiança 65%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            474,
+            1,
+            663,
+            293
+          ],
+          "note": "Sugestão do modelo aceita (confiança 54%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            109,
+            117,
+            159,
+            195
+          ],
+          "note": "Sugestão do modelo aceita (confiança 36%); conferida na revisão local."
+        },
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            131,
+            0,
+            368,
+            314
+          ],
+          "note": "Sugestão do modelo aceita (confiança 32%); conferida na revisão local."
+        },
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            421,
+            198,
+            578,
+            298
+          ],
+          "note": "Sugestão do modelo aceita (confiança 27%); conferida na revisão local."
+        },
+        {
+          "class_id": 8,
+          "bbox_xyxy": [
+            16,
+            432,
+            164,
+            616
+          ],
+          "note": "Sugestão do modelo aceita (confiança 26%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            304,
+            503,
+            326,
+            525
+          ],
+          "note": "Sugestão do modelo aceita (confiança 21%); conferida na revisão local."
+        },
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            552,
+            287,
+            736,
+            379
+          ],
+          "note": "Sugestão do modelo aceita (confiança 21%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            246,
+            319,
+            346,
+            371
+          ],
+          "note": "Sugestão do modelo aceita (confiança 20%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            343,
+            217,
+            367,
+            246
+          ],
+          "note": "Sugestão do modelo aceita (confiança 16%); conferida na revisão local."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true,
+      "dismissed_suggestions": [
+        "s002",
+        "s003",
+        "s004",
+        "s005",
+        "s006",
+        "s007",
+        "s008",
+        "s009",
+        "s010",
+        "s011",
+        "s012",
+        "s013",
+        "s014",
+        "s015",
+        "s016",
+        "s017"
+      ]
+    },
+    {
+      "image_sha256": "88b54f26e06a9b1505ee0804e82ffe0d78f490183db9f2707203c3760c2d0dc5",
+      "boxes": [
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            396,
+            113,
+            833,
+            162
+          ],
+          "note": "Faixa de sedimentos e pequenos resíduos delimitável no vale superior da telha."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            546,
+            166,
+            824,
+            212
+          ],
+          "note": "Resíduos/fragmentos no vale imediatamente abaixo; sombras do suporte ficam fora da evidência principal."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            278,
+            217,
+            448,
+            270
+          ],
+          "note": "Fragmentos e pequeno acúmulo sobre a telha, à esquerda do cabo."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            306,
+            351,
+            853,
+            428
+          ],
+          "note": "Faixa de detritos sobre telha, incluindo fragmentos claros próximos; cabo não é o alvo."
+        },
+        {
+          "class_id": 10,
+          "bbox_xyxy": [
+            560,
+            421,
+            702,
+            520
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            785,
+            322,
+            828,
+            363
+          ],
+          "note": "Pequeno fragmento solto fora do acúmulo inferior."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            213,
+            489,
+            504,
+            616
+          ],
+          "note": "Sugestão do modelo aceita (confiança 21%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            224,
+            211,
+            448,
+            281
+          ],
+          "note": "Sugestão do modelo aceita (confiança 23%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            519,
+            118,
+            836,
+            174
+          ],
+          "note": "Sugestão do modelo aceita (confiança 24%); conferida na revisão local."
+        },
+        {
+          "class_id": 10,
+          "bbox_xyxy": [
+            561,
+            415,
+            709,
+            532
+          ],
+          "note": "Sugestão do modelo aceita (confiança 45%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            783,
+            319,
+            830,
+            363
+          ],
+          "note": "Sugestão do modelo aceita (confiança 53%); conferida na revisão local."
+        },
+        {
+          "class_id": 10,
+          "bbox_xyxy": [
+            571,
+            425,
+            668,
+            516
+          ],
+          "note": "Sugestão do modelo aceita (confiança 51%); conferida na revisão local."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true,
+      "dismissed_suggestions": [
+        "s002"
+      ]
+    },
+    {
+      "image_sha256": "d12131ddee51d3d84ab6bbf5b8f54abdad769800215b5d068e5e8d22b73265cc",
+      "boxes": [
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            630,
+            30,
+            804,
+            117
+          ],
+          "note": "Rupturas irregulares visíveis no corpo da telha superior, distintas da linha do cabo."
+        },
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            1024,
+            113,
+            1093,
+            199
+          ],
+          "note": "Extremidade irregular quebrada da telha instalada à direita; ocorrência cortada."
+        },
+        {
+          "class_id": 10,
+          "bbox_xyxy": [
+            781,
+            190,
+            850,
+            277
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            946,
+            18,
+            1036,
+            117
+          ],
+          "note": "Acúmulo de fragmentos apoiados sobre a telha superior junto ao marcador."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            1021,
+            201,
+            1081,
+            272
+          ],
+          "note": "Sugestão do modelo aceita (confiança 94%); conferida na revisão local."
+        },
+        {
+          "class_id": 10,
+          "bbox_xyxy": [
+            1008,
+            314,
+            1093,
+            490
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            802,
+            105,
+            872,
+            171
+          ],
+          "note": "Ruptura irregular na ponta do elemento transversal de rufo; requer confirmação da denominação do elemento."
+        },
+        {
+          "class_id": 9,
+          "bbox_xyxy": [
+            0,
+            133,
+            223,
+            202
+          ],
+          "note": "Candidato sugerido a partir do recorte discutido com o usuário: extremidade esquerda desalinhada do elemento de arremate. Identidade como rufo e distinção entre junta, desprendimento e ruptura precisam de confirmação. Revisão visual por IA; sem aprovação humana.",
+          "identity_verified": false
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            317,
+            102,
+            545,
+            141
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            1021,
+            203,
+            1085,
+            274
+          ],
+          "note": "Sugestão do modelo aceita (confiança 96%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            935,
+            11,
+            1035,
+            116
+          ],
+          "note": "Sugestão do modelo aceita (confiança 87%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            938,
+            17,
+            1034,
+            118
+          ],
+          "note": "Sugestão do modelo aceita (confiança 40%); conferida na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            797,
+            106,
+            878,
+            172
+          ],
+          "note": "Sugestão do modelo aceita (confiança 36%); conferida na revisão local."
+        },
+        {
+          "class_id": 10,
+          "bbox_xyxy": [
+            1011,
+            310,
+            1093,
+            470
+          ],
+          "note": "Sugestão do modelo aceita (confiança 34%); conferida na revisão local."
+        },
+        {
+          "class_id": 10,
+          "bbox_xyxy": [
+            773,
+            190,
+            850,
+            281
+          ],
+          "note": "Sugestão do modelo aceita (confiança 33%); conferida na revisão local."
+        },
+        {
+          "class_id": 10,
+          "bbox_xyxy": [
+            1015,
+            319,
+            1092,
+            497
+          ],
+          "note": "Sugestão do modelo aceita (confiança 23%); conferida na revisão local."
+        },
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            721,
+            1,
+            791,
+            105
+          ],
+          "note": "Sugestão do modelo aceita (confiança 21%); conferida na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            389,
+            99,
+            544,
+            162
+          ],
+          "note": "Sugestão do modelo aceita (confiança 22%); conferida na revisão local."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true,
+      "dismissed_suggestions": [
+        "s001",
+        "s003",
+        "s006",
+        "s007",
+        "s004"
+      ]
+    },
+    {
+      "image_sha256": "68b395f07b3c64efec2bd9c20c917dfb715130797e5f9187738dca2d6a0a21eb",
+      "boxes": [
+        {
+          "class_id": 10,
+          "bbox_xyxy": [
+            454,
+            242,
+            605,
+            610
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            674,
+            435,
+            797,
+            610
+          ],
+          "note": "Caixa candidata de classe 0: aba inferior direita pode corresponder a ruptura instalada ou fragmento solto sobre a telha. Ambiguidade não resolvida; não aprovada."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            731,
+            22,
+            775,
+            390
+          ],
+          "note": "Faixa de pequenos detritos acumulados no vale da telha, confirmada em zoom."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            369,
+            533,
+            407,
+            565
+          ],
+          "note": "Fragmento solto sobre a telha à esquerda."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            628,
+            550,
+            671,
+            610
+          ],
+          "note": "Fragmentos soltos próximos à borda inferior, parcialmente cortados."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            689,
+            511,
+            722,
+            539
+          ],
+          "note": "Pequeno fragmento claro solto sobre a onda da telha."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            720,
+            7,
+            805,
+            399
+          ],
+          "note": "Sugestão do modelo aceita (confiança 74%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            723,
+            10,
+            779,
+            396
+          ],
+          "note": "Sugestão do modelo aceita (confiança 68%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            627,
+            551,
+            675,
+            601
+          ],
+          "note": "Sugestão do modelo aceita (confiança 68%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            366,
+            534,
+            398,
+            570
+          ],
+          "note": "Sugestão do modelo aceita (confiança 59%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            688,
+            508,
+            721,
+            541
+          ],
+          "note": "Sugestão do modelo aceita (confiança 56%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            625,
+            546,
+            678,
+            610
+          ],
+          "note": "Sugestão do modelo aceita (confiança 55%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            364,
+            530,
+            401,
+            571
+          ],
+          "note": "Sugestão do modelo aceita (confiança 49%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            734,
+            333,
+            768,
+            382
+          ],
+          "note": "Sugestão do modelo aceita (confiança 29%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            730,
+            33,
+            772,
+            205
+          ],
+          "note": "Sugestão do modelo aceita (confiança 24%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            364,
+            535,
+            402,
+            596
+          ],
+          "note": "Sugestão do modelo aceita (confiança 19%); conferida na revisão local."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true,
+      "dismissed_suggestions": [
+        "s001",
+        "s002",
+        "s003",
+        "s004",
+        "s005",
+        "s006",
+        "s007",
+        "s008",
+        "s009",
+        "s010",
+        "s011",
+        "s012",
+        "s013",
+        "s014",
+        "s015",
+        "s016"
+      ]
+    },
+    {
+      "image_sha256": "beebf15ccef412efa39902b3fb0753c5aabf2c0423d26937efedf14027a8d11d",
+      "boxes": [
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            323,
+            269,
+            399,
+            398
+          ],
+          "note": "Remendo escuro com bordas e selante claro sobre a telha; sem concluir não conformidade técnica."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true
+    },
+    {
+      "image_sha256": "e59d70812f26fd7a93d9d7020983643e74855ab66410883fedba2ae0646a8b52",
+      "boxes": [
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            252,
+            245,
+            395,
+            566
+          ],
+          "note": "Peça/remendo retangular com material escuro e perímetro de selante claro sobre a telha."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true
+    },
+    {
+      "image_sha256": "4704f37da1bfe6741cf1cd51e1c0856fa0525abeddb9d7a77649393718c8ac26",
+      "boxes": [
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            247,
+            238,
+            309,
+            580
+          ],
+          "note": "Faixa de intervenção clara/metálica no vale da telha; não mede estanqueidade."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            55,
+            82,
+            215,
+            184
+          ],
+          "note": "Ruptura diagonal irregular atravessando o rufo instalado à esquerda."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            582,
+            21,
+            697,
+            144
+          ],
+          "note": "Trecho quebrado do rufo com parte destacada e lacuna irregular; elemento não inteiramente ausente."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            242,
+            247,
+            317,
+            581
+          ],
+          "note": "Sugestão do modelo aceita (confiança 97%); conferida na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            572,
+            15,
+            701,
+            149
+          ],
+          "note": "Sugestão do modelo aceita (confiança 74%); conferida na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            45,
+            74,
+            217,
+            197
+          ],
+          "note": "Sugestão do modelo aceita (confiança 69%); conferida na revisão local."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            241,
+            249,
+            309,
+            552
+          ],
+          "note": "Sugestão do modelo aceita (confiança 18%); conferida na revisão local."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true,
+      "dismissed_suggestions": [
+        "s001",
+        "s002"
+      ]
+    },
+    {
+      "image_sha256": "9ab86531dec3f81564cc1d51bc5d534cd10d156f60af7ca55c592f5ff5b3b802",
+      "boxes": [
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            56,
+            130,
+            109,
+            471
+          ],
+          "note": "Faixa aderida de intervenção no vale esquerdo da telha."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            112,
+            317,
+            146,
+            473
+          ],
+          "note": "Segunda faixa curta de intervenção no vale ao lado."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            296,
+            125,
+            333,
+            467
+          ],
+          "note": "Faixa longitudinal clara/metálica no painel central esquerdo."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            137,
+            535,
+            254,
+            596
+          ],
+          "note": "Faixa clara de intervenção inclinada na telha inferior."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            350,
+            530,
+            459,
+            587
+          ],
+          "note": "Segunda faixa clara inclinada na telha inferior."
+        },
+        {
+          "class_id": 8,
+          "bbox_xyxy": [
+            659,
+            217,
+            725,
+            332
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            105,
+            313,
+            147,
+            475
+          ],
+          "note": "Sugestão do modelo aceita (confiança 98%); conferida na revisão local."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            53,
+            124,
+            119,
+            482
+          ],
+          "note": "Sugestão do modelo aceita (confiança 89%); conferida na revisão local."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            283,
+            120,
+            342,
+            480
+          ],
+          "note": "Sugestão do modelo aceita (confiança 65%); conferida na revisão local."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            111,
+            311,
+            146,
+            472
+          ],
+          "note": "Sugestão do modelo aceita (confiança 36%); conferida na revisão local."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            69,
+            279,
+            111,
+            479
+          ],
+          "note": "Sugestão do modelo aceita (confiança 35%); conferida na revisão local."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            138,
+            530,
+            260,
+            605
+          ],
+          "note": "Sugestão do modelo aceita (confiança 30%); conferida na revisão local."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            341,
+            528,
+            461,
+            603
+          ],
+          "note": "Sugestão do modelo aceita (confiança 29%); conferida na revisão local."
+        },
+        {
+          "class_id": 4,
+          "bbox_xyxy": [
+            799,
+            382,
+            962,
+            482
+          ],
+          "note": "Sugestão do modelo aceita (confiança 25%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            219,
+            250,
+            255,
+            404
+          ],
+          "note": "Sugestão do modelo aceita (confiança 25%); conferida na revisão local."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            283,
+            121,
+            343,
+            483
+          ],
+          "note": "Sugestão do modelo aceita (confiança 22%); conferida na revisão local."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true,
+      "dismissed_suggestions": [
+        "s001",
+        "s002",
+        "s003",
+        "s004",
+        "s005",
+        "s006",
+        "s007",
+        "s008",
+        "s009",
+        "s010",
+        "s011",
+        "s012",
+        "s013",
+        "s014",
+        "s015",
+        "s016",
+        "s017"
+      ]
+    },
+    {
+      "image_sha256": "36ef7a9ce5bd317bbd359ae04e5fb48b671a00b681a82e822a91c284a3c2434a",
+      "boxes": [
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            201,
+            279,
+            246,
+            379
+          ],
+          "note": "Remendo pequeno com perímetro claro sobre o vale da telha."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            367,
+            335,
+            390,
+            371
+          ],
+          "note": "Sugestão do modelo aceita (confiança 25%); conferida na revisão local."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true,
+      "dismissed_suggestions": [
+        "s001"
+      ]
+    },
+    {
+      "image_sha256": "2ff55c50b1e0a6786404a911e2634bff041762ddd98d0d6f86f83be8061c517b",
+      "boxes": [
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            188,
+            300,
+            354,
+            593
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            159,
+            103,
+            253,
+            159
+          ],
+          "note": "Sugestão do modelo aceita (confiança 17%); conferida na revisão local."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            249,
+            312,
+            351,
+            576
+          ],
+          "note": "Sugestão do modelo aceita (confiança 45%); conferida na revisão local."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            252,
+            317,
+            356,
+            572
+          ],
+          "note": "Sugestão do modelo aceita (confiança 15%); conferida na revisão local."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true
+    },
+    {
+      "image_sha256": "4c5cb2622f40cf26657de0a09a453ae41aee6b41f611fd4a67f7b6cd4c037dd1",
+      "boxes": [
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            6,
+            478,
+            726,
+            616
+          ],
+          "note": "Sugestão do modelo aceita (confiança 16%); conferida na revisão local."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            156,
+            16,
+            824,
+            182
+          ],
+          "note": "Sugestão do modelo aceita (confiança 67%); conferida na revisão local."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            104,
+            274,
+            774,
+            410
+          ],
+          "note": "Sugestão do modelo aceita (confiança 46%); conferida na revisão local."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true,
+      "dismissed_suggestions": [
+        "s003",
+        "s004",
+        "s005",
+        "s006",
+        "s008",
+        "s009",
+        "s010",
+        "s011",
+        "s012",
+        "s013",
+        "s014",
+        "s015",
+        "s016",
+        "s017",
+        "s018",
+        "s019",
+        "s020",
+        "s021",
+        "s022",
+        "s023",
+        "s024",
+        "s025",
+        "s026",
+        "s027",
+        "s028",
+        "s007"
+      ]
+    },
+    {
+      "image_sha256": "57321a0dfb9ae889ee64d983d2f8422f0075b12ab082934792f0e43d35272a48",
+      "boxes": [],
+      "status": "negative",
+      "notes": "",
+      "confirmed_complete": true
+    },
+    {
+      "image_sha256": "985fdab586b64fa0344bdb3d840e2552524d5405e354617938f22443def526e9",
+      "boxes": [
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            285,
+            258,
+            311,
+            285
+          ],
+          "note": "Segunda leitura visual: Pequeno remendo azul sobre a telha; não inferir falha do reparo."
+        },
+        {
+          "class_id": 3,
+          "bbox_xyxy": [
+            485,
+            253,
+            504,
+            286
+          ],
+          "note": "Segunda leitura visual: Pequeno remendo azul sobre a telha, próximo a fixador; revisar distinção entre reparo de telha e intervenção exclusiva no fixador."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            905,
+            115,
+            941,
+            150
+          ],
+          "note": "Segunda leitura visual: Acúmulo elevado e irregular no sulco da telha; composição não determinada."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            979,
+            151,
+            1018,
+            188
+          ],
+          "note": "Segunda leitura visual: Segundo acúmulo separado no sulco; não confundir com mancha."
+        },
+        {
+          "class_id": 4,
+          "bbox_xyxy": [
+            0,
+            238,
+            634,
+            309
+          ],
+          "note": "Segunda leitura visual: Candidato: trecho superior esquerdo sem a faixa de rufo presente à direita; confirmar se o elemento deveria continuar ao longo da borda."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            975,
+            156,
+            1020,
+            193
+          ],
+          "note": "Sugestão do modelo aceita (confiança 90%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            973,
+            149,
+            1022,
+            193
+          ],
+          "note": "Sugestão do modelo aceita (confiança 70%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            906,
+            104,
+            939,
+            147
+          ],
+          "note": "Sugestão do modelo aceita (confiança 65%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            908,
+            177,
+            930,
+            239
+          ],
+          "note": "Sugestão do modelo aceita (confiança 34%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            727,
+            158,
+            748,
+            244
+          ],
+          "note": "Sugestão do modelo aceita (confiança 27%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            904,
+            105,
+            940,
+            227
+          ],
+          "note": "Sugestão do modelo aceita (confiança 25%); conferida na revisão local."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true,
+      "dismissed_suggestions": [
+        "s001",
+        "s002"
+      ]
+    },
+    {
+      "image_sha256": "a498d247ae429d0d23701b29a148958e86a3dad6f7e7e01b5186e05c06949a3a",
+      "boxes": [
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            524,
+            283,
+            797,
+            360
+          ],
+          "note": "Segunda leitura visual: Faixa de rufo superior preservada com perda irregular de material; elemento instalado, não fragmento solto."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            241,
+            392,
+            731,
+            500
+          ],
+          "note": "Segunda leitura visual: caixa reduzida à região de perda e margem rompida do rufo inferior; retirada faixa íntegra à esquerda."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            267,
+            313,
+            342,
+            376
+          ],
+          "note": "Sugestão do modelo aceita (confiança 44%); conferida na revisão local."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true,
+      "dismissed_suggestions": [
+        "s001",
+        "s002",
+        "s003",
+        "s004",
+        "s005",
+        "s006",
+        "s007",
+        "s008",
+        "s009",
+        "s010"
+      ]
+    },
+    {
+      "image_sha256": "0f729b3e9a0bab66f6c0f309e403a5eef269f7743702e285122d3ef2d76bf89a",
+      "boxes": [
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            201,
+            183,
+            434,
+            441
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 11,
+          "bbox_xyxy": [
+            635,
+            221,
+            690,
+            282
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            219,
+            252,
+            413,
+            457
+          ],
+          "note": "Sugestão do modelo aceita (confiança 30%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            210,
+            165,
+            481,
+            459
+          ],
+          "note": "Sugestão do modelo aceita (confiança 20%); conferida na revisão local."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true,
+      "dismissed_suggestions": [
+        "s001"
+      ]
+    },
+    {
+      "image_sha256": "73218070524752bc3173ea9ea6926dcf7bbd6dadb8a0800e4d7ed95d2e5bb971",
+      "boxes": [
+        {
+          "class_id": 10,
+          "bbox_xyxy": [
+            702,
+            251,
+            819,
+            375
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            649,
+            321,
+            690,
+            397
+          ],
+          "note": "Agrupamento de fragmentos soltos apoiados sobre a telha."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            753,
+            353,
+            792,
+            432
+          ],
+          "note": "Segundo agrupamento de fragmentos soltos na telha; não rotular cada fragmento como telha instalada quebrada."
+        },
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            698,
+            450,
+            887,
+            585
+          ],
+          "note": "Segunda leitura: limite apertado ao trecho reconhecível do canal; pilha sobre o capeamento de alvenaria à direita fica fora da classe calha enquanto seu suporte não é confirmado."
+        },
+        {
+          "class_id": 7,
+          "bbox_xyxy": [
+            178,
+            430,
+            715,
+            579
+          ],
+          "note": "Ramos e vegetação seca identificáveis dentro do canal; não é uma medida hidráulica."
+        },
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            694,
+            442,
+            927,
+            601
+          ],
+          "note": "Sugestão do modelo aceita (confiança 62%); conferida na revisão local."
+        },
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            695,
+            440,
+            935,
+            600
+          ],
+          "note": "Sugestão do modelo aceita (confiança 26%); conferida na revisão local."
+        },
+        {
+          "class_id": 10,
+          "bbox_xyxy": [
+            468,
+            0,
+            680,
+            361
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 10,
+          "bbox_xyxy": [
+            468,
+            0,
+            680,
+            361
+          ],
+          "note": "Sugestão do modelo aceita (confiança 26%); conferida na revisão local."
+        },
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            699,
+            238,
+            827,
+            390
+          ],
+          "note": "Sugestão do modelo aceita (confiança 21%); conferida na revisão local."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true,
+      "dismissed_suggestions": [
+        "s001",
+        "s002",
+        "s003",
+        "s004",
+        "s005",
+        "s006",
+        "s007",
+        "s008",
+        "s009",
+        "s010",
+        "s011",
+        "s012",
+        "s013",
+        "s014",
+        "s015"
+      ]
+    },
+    {
+      "image_sha256": "50f69e0ccb9519d6aa2f58754218c1bf0fbda162a7612c885bd95d875c323ecb",
+      "boxes": [
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            0,
+            318,
+            273,
+            421
+          ],
+          "note": "Acúmulo contíguo de fragmentos dentro da faixa escura do canal; tocando a borda esquerda da imagem."
+        },
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            337,
+            338,
+            454,
+            413
+          ],
+          "note": "Segundo acúmulo espacialmente separado no canal; caixa inclui fragmentos próximos deste agrupamento."
+        },
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            549,
+            405,
+            572,
+            432
+          ],
+          "note": "Fragmento isolado visível no canal, próximo à borda inferior."
+        },
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            584,
+            354,
+            614,
+            404
+          ],
+          "note": "Pequenos fragmentos separados à direita no canal; não são rufo ou telha instalada."
+        },
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            8,
+            502,
+            26,
+            533
+          ],
+          "note": "Perfuração irregular com perda visível de material na telha inferior; distinguir dos furos regulares de fixação."
+        },
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            48,
+            482,
+            78,
+            535
+          ],
+          "note": "Grupo contíguo de rupturas na mesma crista da telha, com bordas irregulares."
+        },
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            101,
+            441,
+            128,
+            490
+          ],
+          "note": "Ruptura irregular abaixo do ponto de fixação; inclui a pequena região com perda de material."
+        },
+        {
+          "class_id": 0,
+          "bbox_xyxy": [
+            283,
+            575,
+            318,
+            616
+          ],
+          "note": "Ruptura parcialmente cortada pelo limite inferior da fotografia."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true
+    },
+    {
+      "image_sha256": "f5b9ef7de70622b39b748bc2ee654166b5facc42a7c5e1ee8c37054f9217588c",
+      "boxes": [
+        {
+          "class_id": 4,
+          "bbox_xyxy": [
+            802,
+            409,
+            1091,
+            497
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 4,
+          "bbox_xyxy": [
+            868,
+            283,
+            1086,
+            369
+          ],
+          "note": "Sugestão do modelo aceita (confiança 37%); conferida na revisão local."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true
+    },
+    {
+      "image_sha256": "399d7cea73e4de2b057c2ec9863fc2dcf51e68f4aff2d32070c735c208cf36f5",
+      "boxes": [
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            19,
+            354,
+            176,
+            465
+          ],
+          "note": "Sugestão do modelo aceita (confiança 82%); conferida na revisão local."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true,
+      "dismissed_suggestions": [
+        "s001"
+      ]
+    },
+    {
+      "image_sha256": "d7dcb606c5b1ff4b0f3ccb31f913ab53f98cc7635c38b2ad9107faed0b6addc6",
+      "boxes": [
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            505,
+            1,
+            603,
+            334
+          ],
+          "note": "Segunda leitura visual: Acúmulo de detritos visíveis no segmento superior do canal da calha; material não confirmado."
+        },
+        {
+          "class_id": 6,
+          "bbox_xyxy": [
+            505,
+            408,
+            601,
+            618
+          ],
+          "note": "Segunda leitura visual: Segundo acúmulo no segmento inferior, separado por trecho escuro sem detritos delimitáveis."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true
+    },
+    {
+      "image_sha256": "bca8f6e02e3f00fe307634bb55cde6ce2fb37cd10f6724a7d814be664ded6a1c",
+      "boxes": [
+        {
+          "class_id": 4,
+          "bbox_xyxy": [
+            64,
+            241,
+            870,
+            328
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            0,
+            331,
+            128,
+            400
+          ],
+          "note": "Segunda leitura visual: Fratura separada no rufo inferior à esquerda, parcialmente truncada."
+        },
+        {
+          "class_id": 4,
+          "bbox_xyxy": [
+            416,
+            326,
+            962,
+            398
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            0,
+            324,
+            124,
+            401
+          ],
+          "note": "Sugestão do modelo aceita (confiança 91%); conferida na revisão local."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true,
+      "dismissed_suggestions": [
+        "s001",
+        "s002",
+        "s003",
+        "s004",
+        "s005",
+        "s006"
+      ]
+    },
+    {
+      "image_sha256": "23074d75889dd3540178b4f4967277d6dca6fc7066aa3062868c6a4386c3dd38",
+      "boxes": [
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            361,
+            245,
+            660,
+            342
+          ],
+          "note": "Segunda leitura visual: Rufo superior com perda irregular central e fragmento adjacente; classificar o elemento instalado rompido, não cada fragmento."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            960,
+            243,
+            1063,
+            327
+          ],
+          "note": "Segunda leitura visual: Perda irregular separada no rufo superior à direita."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            0,
+            236,
+            111,
+            300
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            952,
+            237,
+            1067,
+            329
+          ],
+          "note": "Sugestão do modelo aceita (confiança 87%); conferida na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            371,
+            246,
+            657,
+            345
+          ],
+          "note": "Sugestão do modelo aceita (confiança 70%); conferida na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            0,
+            223,
+            109,
+            299
+          ],
+          "note": "Sugestão do modelo aceita (confiança 54%); conferida na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            369,
+            246,
+            656,
+            342
+          ],
+          "note": "Sugestão do modelo aceita (confiança 23%); conferida na revisão local."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true,
+      "dismissed_suggestions": [
+        "s001",
+        "s002",
+        "s003",
+        "s004",
+        "s005",
+        "s006"
+      ]
+    },
+    {
+      "image_sha256": "7b8b0c035e2292d990fa0c493c5f25163cdf5572bfd68098ecd9d8f7f2f7ea3b",
+      "boxes": [
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            0,
+            18,
+            141,
+            130
+          ],
+          "note": "Segunda leitura visual: Rufo superior com perda irregular no canto esquerdo, parcialmente truncado pela imagem."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            146,
+            192,
+            746,
+            305
+          ],
+          "note": "Segunda leitura visual: Grande ruptura no rufo inferior com borda diagonal irregular e perda de material."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true,
+      "dismissed_suggestions": [
+        "s001",
+        "s002"
+      ]
+    },
+    {
+      "image_sha256": "d86cc412a1856b2c5fbc85aeb9e3e83fe6a39ca0e14e9dcca2aee6a61fa6b6a5",
+      "boxes": [
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            703,
+            418,
+            875,
+            506
+          ],
+          "note": "Segunda leitura visual: Perda parcial da faixa do rufo: resta uma estreita borda inferior e há margem irregular à direita. Revisar quebra versus peça completamente ausente."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            73,
+            285,
+            100,
+            423
+          ],
+          "note": "Segunda leitura visual: Depósito escuro irregular num sulco à esquerda; candidato a resíduos, exige distinção de incrustação/textura."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            110,
+            247,
+            139,
+            423
+          ],
+          "note": "Segunda leitura visual: Segundo sulco com material em relevo; candidato separado do primeiro."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            279,
+            324,
+            309,
+            383
+          ],
+          "note": "Segunda leitura visual: Pequeno acúmulo no sulco, separado dos demais; composição não confirmada."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            491,
+            310,
+            524,
+            406
+          ],
+          "note": "Segunda leitura visual: Material elevado no sulco central; distinguir depósito de textura biológica na revisão."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            709,
+            414,
+            872,
+            512
+          ],
+          "note": "Sugestão do modelo aceita (confiança 88%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            276,
+            318,
+            313,
+            383
+          ],
+          "note": "Sugestão do modelo aceita (confiança 74%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            492,
+            314,
+            531,
+            394
+          ],
+          "note": "Sugestão do modelo aceita (confiança 64%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            107,
+            253,
+            140,
+            422
+          ],
+          "note": "Sugestão do modelo aceita (confiança 60%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            66,
+            293,
+            99,
+            420
+          ],
+          "note": "Sugestão do modelo aceita (confiança 47%); conferida na revisão local."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            108,
+            178,
+            139,
+            335
+          ],
+          "note": "Sugestão do modelo aceita (confiança 30%); conferida na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            703,
+            413,
+            879,
+            505
+          ],
+          "note": "Sugestão do modelo aceita (confiança 18%); conferida na revisão local."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true,
+      "dismissed_suggestions": [
+        "s001",
+        "s002",
+        "s003",
+        "s004"
+      ]
+    },
+    {
+      "image_sha256": "0315a58d3dd318107b1cf55b387a7fdfe7c6a7df9e36faebd862f7dcd2e15c69",
+      "boxes": [
+        {
+          "class_id": 4,
+          "bbox_xyxy": [
+            266,
+            93,
+            1098,
+            157
+          ],
+          "note": "Segunda leitura visual: Borda superior exposta em toda a extensão observável, sem faixa de rufo; contexto da parede/junção visível. Conferir expectativa técnica do elemento na aprovação."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true
+    },
+    {
+      "image_sha256": "1b9f5c82a8ae7d21572b1ede62c904d0d0050c5683c5f7cb916992774950bc49",
+      "boxes": [
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            744,
+            171,
+            890,
+            271
+          ],
+          "note": "Sugestão do modelo aceita (confiança 98%); conferida na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            977,
+            209,
+            1093,
+            278
+          ],
+          "note": "Sugestão do modelo aceita (confiança 96%); conferida na revisão local."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true,
+      "dismissed_suggestions": [
+        "s001"
+      ]
+    },
+    {
+      "image_sha256": "814749e34f1e79fbaf554ffa613901e29147e5e6a088222fd54b6545dc714a3b",
+      "boxes": [
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            650,
+            52,
+            715,
+            140
+          ],
+          "note": "Segunda leitura visual: Fratura na extremidade superior do rufo vertical com borda irregular."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            603,
+            190,
+            730,
+            397
+          ],
+          "note": "Segunda leitura visual: Perda irregular extensa no rufo lateral instalado; inclui suas margens preservadas."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true,
+      "dismissed_suggestions": [
+        "s001",
+        "s002",
+        "s003",
+        "s004"
+      ]
+    },
+    {
+      "image_sha256": "3aa2001d038ca9fef5d597345cc776ec5bf3a6967a2601cda511fe0d58150351",
+      "boxes": [
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            786,
+            148,
+            864,
+            280
+          ],
+          "note": "Segunda leitura visual: Perda irregular junto ao extremo do rufo inferior; incluir pequeno fragmento ainda adjacente para contexto."
+        },
+        {
+          "class_id": 2,
+          "bbox_xyxy": [
+            604,
+            344,
+            659,
+            449
+          ],
+          "note": "Caixa conferida/editada na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            997,
+            160,
+            1096,
+            254
+          ],
+          "note": "Sugestão do modelo aceita (confiança 77%); conferida na revisão local."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true,
+      "dismissed_suggestions": [
+        "s001"
+      ]
+    },
+    {
+      "image_sha256": "1dc91db4ec36a6dad462d3a4b6b6f202c57e0d79d8cd83ec12a45fbfc423b6ee",
+      "boxes": [
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            107,
+            190,
+            227,
+            284
+          ],
+          "note": "Sugestão do modelo aceita (confiança 97%); conferida na revisão local."
+        },
+        {
+          "class_id": 5,
+          "bbox_xyxy": [
+            269,
+            185,
+            356,
+            277
+          ],
+          "note": "Sugestão do modelo aceita (confiança 16%); conferida na revisão local."
+        }
+      ],
+      "status": "positive",
+      "notes": "",
+      "confirmed_complete": true,
+      "dismissed_suggestions": [
+        "s001",
+        "s002"
+      ]
+    }
+  ]
+}
