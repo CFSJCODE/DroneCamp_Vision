@@ -1,0 +1,260 @@
+{
+  "conf": 0.15,
+  "iou": 0.5,
+  "models": {
+    "runs\\pilot_train_20261004T214341Z_56038eb9\\fit\\weights\\best.pt": {
+      "val": {
+        "overall": {
+          "P": 0.838,
+          "R": 0.405,
+          "mAP50": 0.38,
+          "mAP50-95": 0.142
+        },
+        "per_class_ultralytics": {
+          "telha_ausente": {
+            "P": 1.0,
+            "R": 0.0,
+            "mAP50": 0.0
+          },
+          "reparo_telha": {
+            "P": 0.793,
+            "R": 0.773,
+            "mAP50": 0.764
+          },
+          "rufo_quebrado": {
+            "P": 0.72,
+            "R": 0.441,
+            "mAP50": 0.376
+          }
+        },
+        "per_class_at_conf": {
+          "reparo_telha": {
+            "truth": 5,
+            "tp": 2,
+            "fp": 1,
+            "fn": 3
+          },
+          "rufo_quebrado": {
+            "truth": 6,
+            "tp": 1,
+            "fp": 0,
+            "fn": 5
+          },
+          "telha_ausente": {
+            "truth": 1,
+            "tp": 0,
+            "fp": 0,
+            "fn": 1
+          }
+        }
+      },
+      "test": {
+        "overall": {
+          "P": 0.425,
+          "R": 0.134,
+          "mAP50": 0.089,
+          "mAP50-95": 0.04
+        },
+        "per_class_ultralytics": {
+          "residuos_telha": {
+            "P": 0.524,
+            "R": 0.286,
+            "mAP50": 0.251
+          },
+          "reparo_telha": {
+            "P": 0.0,
+            "R": 0.0,
+            "mAP50": 0.0
+          },
+          "rufo_ausente": {
+            "P": 1.0,
+            "R": 0.0,
+            "mAP50": 0.02
+          },
+          "rufo_quebrado": {
+            "P": 0.175,
+            "R": 0.25,
+            "mAP50": 0.087
+          }
+        },
+        "per_class_at_conf": {
+          "rufo_quebrado": {
+            "truth": 12,
+            "tp": 0,
+            "fp": 0,
+            "fn": 12
+          },
+          "residuos_telha": {
+            "truth": 14,
+            "tp": 2,
+            "fp": 1,
+            "fn": 12
+          },
+          "reparo_telha": {
+            "truth": 2,
+            "tp": 0,
+            "fp": 0,
+            "fn": 2
+          },
+          "rufo_ausente": {
+            "truth": 5,
+            "tp": 0,
+            "fp": 0,
+            "fn": 5
+          },
+          "telha_quebrada": {
+            "truth": 0,
+            "tp": 0,
+            "fp": 3,
+            "fn": 0
+          }
+        }
+      }
+    },
+    "runs\\pilot_train_20261007T010057Z_f5e5ba8b\\fit\\weights\\best.pt": {
+      "val": {
+        "overall": {
+          "P": 0.528,
+          "R": 0.117,
+          "mAP50": 0.082,
+          "mAP50-95": 0.038
+        },
+        "per_class_ultralytics": {
+          "telha_ausente": {
+            "P": 1.0,
+            "R": 0.0,
+            "mAP50": 0.0
+          },
+          "reparo_telha": {
+            "P": 0.464,
+            "R": 0.186,
+            "mAP50": 0.164
+          },
+          "rufo_quebrado": {
+            "P": 0.119,
+            "R": 0.167,
+            "mAP50": 0.083
+          }
+        },
+        "per_class_at_conf": {
+          "reparo_telha": {
+            "truth": 5,
+            "tp": 0,
+            "fp": 1,
+            "fn": 5
+          },
+          "rufo_quebrado": {
+            "truth": 6,
+            "tp": 1,
+            "fp": 0,
+            "fn": 5
+          },
+          "residuos_telha": {
+            "truth": 0,
+            "tp": 0,
+            "fp": 21,
+            "fn": 0
+          },
+          "telha_quebrada": {
+            "truth": 0,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0
+          },
+          "fixador_telha_frouxo": {
+            "truth": 0,
+            "tp": 0,
+            "fp": 3,
+            "fn": 0
+          },
+          "vegetacao_calha": {
+            "truth": 0,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0
+          },
+          "telha_ausente": {
+            "truth": 1,
+            "tp": 0,
+            "fp": 0,
+            "fn": 1
+          }
+        }
+      },
+      "test": {
+        "overall": {
+          "P": 0.037,
+          "R": 0.107,
+          "mAP50": 0.032,
+          "mAP50-95": 0.011
+        },
+        "per_class_ultralytics": {
+          "residuos_telha": {
+            "P": 0.147,
+            "R": 0.429,
+            "mAP50": 0.083
+          },
+          "reparo_telha": {
+            "P": 0.0,
+            "R": 0.0,
+            "mAP50": 0.026
+          },
+          "rufo_ausente": {
+            "P": 0.0,
+            "R": 0.0,
+            "mAP50": 0.003
+          },
+          "rufo_quebrado": {
+            "P": 0.0,
+            "R": 0.0,
+            "mAP50": 0.015
+          }
+        },
+        "per_class_at_conf": {
+          "rufo_quebrado": {
+            "truth": 12,
+            "tp": 0,
+            "fp": 0,
+            "fn": 12
+          },
+          "residuos_telha": {
+            "truth": 14,
+            "tp": 3,
+            "fp": 20,
+            "fn": 11
+          },
+          "fixador_telha_frouxo": {
+            "truth": 0,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0
+          },
+          "reparo_telha": {
+            "truth": 2,
+            "tp": 0,
+            "fp": 1,
+            "fn": 2
+          },
+          "rufo_ausente": {
+            "truth": 5,
+            "tp": 0,
+            "fp": 0,
+            "fn": 5
+          },
+          "telha_quebrada": {
+            "truth": 0,
+            "tp": 0,
+            "fp": 1,
+            "fn": 0
+          },
+          "vegetacao_calha": {
+            "truth": 0,
+            "tp": 0,
+            "fp": 3,
+            "fn": 0
+          }
+        }
+      }
+    }
+  }
+}

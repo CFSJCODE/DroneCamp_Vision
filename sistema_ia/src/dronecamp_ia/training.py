@@ -28,7 +28,7 @@ import shutil
 
 import yaml
 
-from .backend import check_domain_names, load_detector, runtime_info
+from .backend import check_domain_names, load_detector, load_inference_model, runtime_info
 from .config import ProjectConfig, detection_names, load_taxonomy
 from .dataset import validate_dataset
 from .io import file_hash, make_run_directory, write_json
@@ -266,6 +266,12 @@ def pilot_inference_config(config: ProjectConfig, model) -> ProjectConfig:
     """Pesos piloto inferem no tamanho em que foram treinados, não no da produção."""
     from dataclasses import replace
 
+    # ONNX (load_inference_model): entrada fixa gravada nos metadados do arquivo.
+    if getattr(model, "dronecamp_onnx", None):
+        from .exporting import _onnx_imgsz
+
+        imgsz = _onnx_imgsz(model.dronecamp_onnx)
+        return replace(config, prediction={**config.prediction, "imgsz": imgsz}) if imgsz else config
     if not is_pilot_checkpoint(getattr(model, "ckpt_path", None)):
         return config
     trained = (getattr(model, "ckpt", None) or {}).get("train_args", {}).get("imgsz")
@@ -408,16 +414,20 @@ def review_training_result(run: Path, model, expected_names: list[str], **detail
 # Avaliação e busca de hiperparâmetros (produção).
 # ---------------------------------------------------------------------------
 
-def evaluate(config: ProjectConfig, data_path: Path, weights: str, split: str = "val") -> Path:
+def evaluate(config: ProjectConfig, data_path: Path, weights: str, split: str = "val",
+             onnx_provider: str = "directml") -> Path:
     """Avalie checkpoint especializado; use test apenas para decisão final."""
     run = make_run_directory(config.root, f"evaluate_{split}")
     dataset, counts = prepare_dataset(config, data_path.resolve(), run)
-    model = load_detector(config, weights)
+    # .onnx exportado: GPU via DirectML (batch 1 e tamanho fixo do ONNX).
+    model = load_inference_model(config, weights, onnx_provider)
     check_domain_names(model, detection_names(load_taxonomy(config.taxonomy_path)))
+    onnx = getattr(model, "dronecamp_onnx", None)
+    imgsz = pilot_inference_config(config, model).prediction["imgsz"] if onnx else config.prediction["imgsz"]
     # Não reutilize conf=.25 do predict: AP precisa incluir candidatos de baixa confiança.
     metrics = model.val(data=str(dataset), split=split, device=config.device,
-                        imgsz=config.prediction["imgsz"], conf=0.001, rect=False,
-                        nms=config.prediction["nms"], batch=config.training["batch"],
+                        imgsz=imgsz, conf=0.001, rect=False,
+                        nms=config.prediction["nms"], batch=1 if onnx else config.training["batch"],
                         workers=0, project=str(run), name="metrics", plots=True)
     # Precisão, recall e AP de cada classe medida no split.
     per_class = []
@@ -426,7 +436,9 @@ def evaluate(config: ProjectConfig, data_path: Path, weights: str, split: str = 
         per_class.append({"class_name": model.names[int(class_id)], "precision": float(precision),
                           "recall": float(recall), "ap50": float(ap50), "ap50_95": float(ap)})
     write_json(run / "evaluation.json", {
-        "runtime": runtime_info(model, config), "split": split, "class_counts": counts,
+        "runtime": runtime_info(model, config) if not onnx else {"onnx": str(onnx), "onnx_sha256": file_hash(onnx),
+                                                                "source_checkpoint": str(model.dronecamp_source)},
+        "inference_runtime": model.dronecamp_runtime, "split": split, "class_counts": counts,
         "global_metrics": {key: float(value) for key, value in metrics.results_dict.items()},
         "per_class": per_class, "human_acceptance": "pendente",
     })

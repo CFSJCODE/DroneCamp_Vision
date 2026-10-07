@@ -55,6 +55,8 @@ def build_parser() -> argparse.ArgumentParser:
     evaluation.add_argument("--data", type=Path)
     evaluation.add_argument("--weights", required=True)
     evaluation.add_argument("--split", choices=["val", "test"], default="val")
+    evaluation.add_argument("--onnx-provider", choices=["directml", "cpu"], default="directml",
+                            help="Para --weights .onnx: directml usa a GPU; cpu, o ONNX Runtime na CPU.")
     tuning = commands.add_parser("tune", help="Vários treinos para buscar hiperparâmetros.")
     tuning.add_argument("--data", type=Path)
     tuning.add_argument("--weights")
@@ -99,14 +101,26 @@ def build_parser() -> argparse.ArgumentParser:
     pilot_data.add_argument("--registry", type=Path, action="append", required=True, help="Registro revisado; repita para várias revisões.")
     pilot_data.add_argument("--output", type=Path, required=True)
     pilot_data.add_argument("--seed", type=int, default=42)
+    # Fatiamento em alta resolução (Tiling / Patch Slicing) para pequenos defeitos em fotos de drone.
+    tiling = commands.add_parser("tile-dataset", help="Fatiar fotos em alta resolução em patches uniformes (ex.: 1280x1280 com overlap).")
+    tiling.add_argument("--input", type=Path, required=True, help="Pasta do dataset original com dataset.yaml.")
+    tiling.add_argument("--output", type=Path, required=True, help="Pasta de destino onde o dataset fatiado será criado.")
+    tiling.add_argument("--patch-size", type=int, default=1280, help="Tamanho do patch quadrado em pixels (padrão: 1280).")
+    tiling.add_argument("--overlap", type=float, default=0.2, help="Fração de sobreposição entre patches vizinhos (padrão: 0.20).")
+    tiling.add_argument("--negative-ratio", type=float, default=0.2, help="Proporção máxima de patches sem defeito (padrão: 0.20).")
+    tiling.add_argument("--seed", type=int, default=42, help="Semente aleatória para amostragem.")
     pilot_train = commands.add_parser("train-pilot", help="Treino real com o dataset piloto; pesos só sugerem caixas.")
-    pilot_train.add_argument("--data", type=Path, required=True)
+    pilot_train.add_argument("--data", type=Path, help="Dataset piloto com dataset.yaml (obrigatório se não usar --resume).")
     pilot_train.add_argument("--weights")
     pilot_train.add_argument("--epochs", type=int)
     pilot_train.add_argument("--imgsz", type=int)
     pilot_train.add_argument("--batch", type=int)
     pilot_train.add_argument("--repeat-factor-threshold", type=float,
                              help="Repete fotos de classes raras na lista de treino (RFS); ex.: 0.3.")
+    pilot_train.add_argument("--resume", type=Path,
+                             help="Retoma uma execução piloto anterior a partir de sua pasta (ex.: runs/pilot_train_...).")
+    resume_pilot_cmd = commands.add_parser("resume-pilot", help="Retoma um treino piloto interrompido.")
+    resume_pilot_cmd.add_argument("run", type=Path, help="Pasta da execução em runs/ (ex.: runs/pilot_train_...).")
     suggest = commands.add_parser("suggest", help="Sugerir caixas na página de revisão com um detector treinado.")
     suggest.add_argument("--weights", required=True)
     suggest.add_argument("--registry", type=Path, help="Revisão existente que receberá sugestões.")
@@ -119,6 +133,8 @@ def build_parser() -> argparse.ArgumentParser:
                          help="Usar calibrador sem ganho medido na validação cruzada (só para testes).")
     suggest.add_argument("--zero-shot", action="store_true",
                          help="Somar a busca aberta (YOLOE + configs/zero_shot_prompts.json) às sugestões do piloto.")
+    suggest.add_argument("--onnx-provider", choices=["directml", "cpu"], default="directml",
+                         help="Para --weights .onnx (comando export): directml usa a GPU; cpu, o ONNX Runtime na CPU.")
     autolabel = commands.add_parser("evaluate-autolabel", help="Medir por classe piloto × busca aberta × as duas juntas.")
     autolabel.add_argument("--data", type=Path, required=True)
     autolabel.add_argument("--weights", required=True)
@@ -190,7 +206,7 @@ def main(argv: list[str] | None = None) -> int:
             if args.command == "train":
                 output = train(config, dataset, args.weights)
             elif args.command == "evaluate":
-                output = evaluate(config, dataset, args.weights, args.split)
+                output = evaluate(config, dataset, args.weights, args.split, args.onnx_provider)
             else:
                 output = tune(config, dataset, args.iterations, args.epochs, args.weights)
         elif args.command == "export":
@@ -234,24 +250,38 @@ def main(argv: list[str] | None = None) -> int:
             report = build_pilot_dataset(config, args.registry, args.output, args.seed)
             print(json.dumps(report, ensure_ascii=False, indent=2))
             return 0
+        elif args.command == "tile-dataset":
+            from .tiling import build_tiled_dataset
+            report = build_tiled_dataset(args.input, args.output, args.patch_size, args.overlap, args.negative_ratio, args.seed)
+            print(json.dumps(report, ensure_ascii=False, indent=2))
+            return 0
         elif args.command == "train-pilot":
-            from .training import train_pilot
-            overrides = {key: value for key in ("epochs", "imgsz", "batch", "repeat_factor_threshold")
-                         if (value := getattr(args, key)) is not None}
-            output = train_pilot(config, args.data, args.weights, overrides)
+            if args.resume:
+                from .training import resume_pilot
+                output = resume_pilot(config, args.resume)
+            else:
+                if not args.data:
+                    raise ValueError("Informe --data para iniciar um treino novo ou --resume para retomar.")
+                from .training import train_pilot
+                overrides = {key: value for key in ("epochs", "imgsz", "batch", "repeat_factor_threshold")
+                             if (value := getattr(args, key)) is not None}
+                output = train_pilot(config, args.data, args.weights, overrides)
+        elif args.command == "resume-pilot":
+            from .training import resume_pilot
+            output = resume_pilot(config, args.run)
         elif args.command == "suggest":
             from .suggestions import create_review_for_new_images, suggest_for_registry
             if bool(args.registry) == bool(args.source):
                 raise ValueError("Use --registry (revisão existente) ou --source com --output e --group (fotos novas).")
             if args.registry:
                 output = suggest_for_registry(config, args.registry, args.weights, args.conf, args.calibrator,
-                                              args.allow_unproven_calibrator, args.zero_shot)
+                                              args.allow_unproven_calibrator, args.zero_shot, args.onnx_provider)
             else:
                 if not args.output or not args.group:
                     raise ValueError("Fotos novas exigem --output e --group.")
                 output = create_review_for_new_images(config, args.source, args.output, args.group, args.weights,
                                                       args.conf, args.calibrator, args.allow_unproven_calibrator,
-                                                      args.zero_shot)
+                                                      args.zero_shot, args.onnx_provider)
         elif args.command == "evaluate-autolabel":
             from .autolabel import evaluate_autolabel
             output = evaluate_autolabel(config, args.data, args.weights, args.conf)

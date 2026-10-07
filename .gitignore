@@ -32,3 +32,5 @@ sistema_ia/models/zero_shot/
 # Documentos pessoais (identidade, histórico, conta bancária, termos): nunca no repositório público.
 Documentação/Documentos PUCTEC/*
 !Documentação/Documentos PUCTEC/Apresentação DRONECAMP PUCTEC.pdf
+# Fotos de campanha (GB): ficam no disco; a revisão guarda cópias com hash em data/reviews.
+Conjunto De Dados De Treinamento/Imagens - DroneCamp/

@@ -18,7 +18,7 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from dronecamp_ia.backend import check_domain_names, load_detector  # noqa: E402
+from dronecamp_ia.backend import check_domain_names, load_inference_model  # noqa: E402
 from dronecamp_ia.config import detection_names, load_config, load_taxonomy  # noqa: E402
 from dronecamp_ia.io import file_hash, write_json  # noqa: E402
 from dronecamp_ia.pilot import box_iou  # noqa: E402
@@ -68,6 +68,8 @@ def main() -> int:
     parser.add_argument("--data", type=Path, required=True)
     parser.add_argument("--weights", type=Path, action="append", required=True)
     parser.add_argument("--conf", type=float)
+    parser.add_argument("--onnx-provider", choices=["directml", "cpu"], default="directml",
+                        help="Para --weights .onnx (comando export): directml usa a GPU.")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     config = load_config()
@@ -78,10 +80,11 @@ def main() -> int:
     report = {"dataset": str(args.data), "pilot_sha256": file_hash(root / "pilot.json"), "conf": conf,
               "iou_match": IOU_MATCH, "models": []}
     for weights in args.weights:
-        model = load_detector(config, str(weights))
+        # .onnx roda na GPU (DirectML); fotos de treino vêm do .pt de origem (export.json).
+        model = load_inference_model(config, str(weights), args.onnx_provider)
         check_domain_names(model, names)
         model_config = pilot_inference_config(config, model)
-        seen_in_training = trained_images(weights)
+        seen_in_training = trained_images(model.dronecamp_source)
         totals = defaultdict(lambda: {"images": 0, "truth": 0, "found": 0, "suggestions": 0, "correct": 0})
         for sample in manifest["images"]:
             truth = ground_truth(root, sample)
@@ -95,6 +98,7 @@ def main() -> int:
             entry["suggestions"] += len(predictions)
             entry["correct"] += hits
         report["models"].append({"weights": str(weights), "weights_sha256": file_hash(weights),
+                                 "runtime": model.dronecamp_runtime, "source_checkpoint": str(model.dronecamp_source),
                                  "imgsz": model_config.prediction["imgsz"], "splits": dict(sorted(totals.items()))})
         print(f"\n{weights}")
         for group, entry in sorted(totals.items()):

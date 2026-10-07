@@ -24,7 +24,7 @@ import json
 from pathlib import Path
 import shutil
 
-from .backend import check_domain_names, load_detector
+from .backend import check_domain_names, load_inference_model
 from .config import ProjectConfig, detection_names, load_taxonomy
 from .dataset import IMAGE_EXTENSIONS
 from .io import file_hash, resolve_local_path, write_json
@@ -74,7 +74,7 @@ def detect_boxes(model, path: Path, config: ProjectConfig, conf: float) -> list[
 
 def suggest_for_registry(config: ProjectConfig, registry_path: Path, weights: str, conf: float | None = None,
                          calibrator: Path | str | None = None, allow_unproven_calibrator: bool = False,
-                         zero_shot: bool = False) -> Path:
+                         zero_shot: bool = False, onnx_provider: str = "directml") -> Path:
     """Grave suggestions.json ao lado do registro e regenere a página de revisão.
 
     Com ``calibrator`` (pasta de ``fit-calibrator``), cada caixa ganha
@@ -96,9 +96,10 @@ def suggest_for_registry(config: ProjectConfig, registry_path: Path, weights: st
     if not 0 < conf <= 1:
         raise ValueError("conf deve estar no intervalo (0, 1].")
     # 2. Modelo com as 13 classes; pesos piloto inferem no tamanho do treino (640).
-    model = load_detector(config, weights)
+    # .onnx exportado roda na GPU (DirectML) por padrão; .pt roda no PyTorch (CPU).
+    model = load_inference_model(config, weights, onnx_provider)
     check_domain_names(model, detection_names(load_taxonomy(config.taxonomy_path)))
-    pilot = is_pilot_checkpoint(model.ckpt_path)
+    pilot = is_pilot_checkpoint(model.dronecamp_source)
     config = pilot_inference_config(config, model)
     calibration = load_calibrator(config, calibrator, allow_unproven_calibrator)
     open_search = None
@@ -128,12 +129,13 @@ def suggest_for_registry(config: ProjectConfig, registry_path: Path, weights: st
             boxes = calibration.annotate(boxes, width, height)
         images[item["image_sha256"]] = boxes
     # 4. suggestions.json fica preso a esta versão do registro (hash) e aos pesos usados.
-    checkpoint = Path(model.ckpt_path).resolve()
+    checkpoint = Path(getattr(model, "dronecamp_onnx", None) or model.dronecamp_source).resolve()
     write_json(registry_path.parent / "suggestions.json", {
         "schema_version": 1, "registry_sha256": file_hash(registry_path),
         "created_at": datetime.now(timezone.utc).isoformat(),
         "weights": str(checkpoint), "weights_sha256": file_hash(checkpoint), "pilot": pilot,
         "model_label": "Modelo piloto (não validado)" if pilot else "Modelo especializado",
+        "runtime": model.dronecamp_runtime, "source_checkpoint": str(model.dronecamp_source),
         "conf": conf, "imgsz": config.prediction["imgsz"], "warning": SUGGESTION_WARNING, "images": images,
         "calibrator": calibration.describe() if calibration else None,
         "zero_shot": open_search[3] if open_search else None,
@@ -147,7 +149,8 @@ def suggest_for_registry(config: ProjectConfig, registry_path: Path, weights: st
 
 def create_review_for_new_images(config: ProjectConfig, source: Path, output: Path, building_group: str,
                                  weights: str, conf: float | None = None, calibrator: Path | str | None = None,
-                                 allow_unproven_calibrator: bool = False, zero_shot: bool = False) -> Path:
+                                 allow_unproven_calibrator: bool = False, zero_shot: bool = False,
+                                 onnx_provider: str = "directml") -> Path:
     """Fotos novas viram uma revisão própria, com originais congelados por hash."""
     # 1. Pasta de saída nova, grupo da edificação e lista de fotos suportadas.
     source, output = Path(source).expanduser().resolve(), Path(output)
@@ -195,4 +198,5 @@ def create_review_for_new_images(config: ProjectConfig, source: Path, output: Pa
     }
     registry_path = output / "registry.json"
     write_json(registry_path, registry)
-    return suggest_for_registry(config, registry_path, weights, conf, calibrator, allow_unproven_calibrator, zero_shot)
+    return suggest_for_registry(config, registry_path, weights, conf, calibrator, allow_unproven_calibrator, zero_shot,
+                                onnx_provider)

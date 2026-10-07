@@ -1,0 +1,78 @@
+{
+  "dataset": "data\\pilot\\ceasa_v9_piloto_s42\\dataset.yaml",
+  "pilot_sha256": "fa563e7d9429c75256bfe301bd48720175bb9c9e3a7e0ea69f1d143f60dd3c1e",
+  "conf": 0.15,
+  "iou_match": 0.5,
+  "models": [
+    {
+      "weights": "runs\\pilot_train_20261004T214341Z_56038eb9\\fit\\weights\\best.pt",
+      "weights_sha256": "92da6550442d3dcb6e94af8b5ace5c49dd53ee7070751aec0c25d17c4a4b4e31",
+      "imgsz": 640,
+      "splits": {
+        "test": {
+          "images": 9,
+          "truth": 33,
+          "found": 2,
+          "suggestions": 6,
+          "correct": 2
+        },
+        "train": {
+          "images": 1,
+          "truth": 0,
+          "found": 0,
+          "suggestions": 0,
+          "correct": 0
+        },
+        "train (visto no treino)": {
+          "images": 20,
+          "truth": 114,
+          "found": 31,
+          "suggestions": 90,
+          "correct": 31
+        },
+        "val": {
+          "images": 5,
+          "truth": 7,
+          "found": 2,
+          "suggestions": 3,
+          "correct": 2
+        },
+        "val (visto no treino)": {
+          "images": 2,
+          "truth": 5,
+          "found": 1,
+          "suggestions": 1,
+          "correct": 1
+        }
+      }
+    },
+    {
+      "weights": "runs\\pilot_train_20261007T010057Z_f5e5ba8b\\fit\\weights\\best.pt",
+      "weights_sha256": "444dd1957ed99c652085ef563dcca51b4dbba3e7084f43ad5683bf64efc7fdad",
+      "imgsz": 640,
+      "splits": {
+        "test": {
+          "images": 9,
+          "truth": 33,
+          "found": 3,
+          "suggestions": 29,
+          "correct": 3
+        },
+        "train (visto no treino)": {
+          "images": 21,
+          "truth": 114,
+          "found": 83,
+          "suggestions": 205,
+          "correct": 83
+        },
+        "val": {
+          "images": 7,
+          "truth": 12,
+          "found": 1,
+          "suggestions": 28,
+          "correct": 1
+        }
+      }
+    }
+  ]
+}
