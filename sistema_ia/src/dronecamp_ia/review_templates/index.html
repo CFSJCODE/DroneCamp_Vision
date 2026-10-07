@@ -1321,7 +1321,7 @@ pre.log { max-height: 260px; overflow: auto; margin: 8px 0 0; padding: 10px 12px
   <div class="grid two" style="margin-top:16px">
     <div class="card">
       <div class="card-head"><h2>Execuções de treino</h2><span class="muted small-text" id="runsHint"></span></div>
-      <div class="table-wrap"><table><thead><tr><th>Execução</th><th>Estado</th><th class="num">Épocas</th><th class="num">Melhor mAP50</th><th class="num">s/época</th></tr></thead><tbody id="runsTable"></tbody></table></div>
+      <div class="table-wrap"><table><thead><tr><th>Treino</th><th>Estado</th><th class="num">Épocas feitas</th><th class="num">Melhor mAP50 na validação</th><th class="num">Segundos por época</th></tr></thead><tbody id="runsTable"></tbody></table></div>
     </div>
     <div class="card">
       <div class="card-head"><h2>Novo treino piloto</h2><span class="chip neutral" id="deviceChip"></span></div>
@@ -1386,16 +1386,16 @@ pre.log { max-height: 260px; overflow: auto; margin: 8px 0 0; padding: 10px 12px
   </div>
   <div class="card" style="margin-top:16px">
     <div class="card-head"><h2>Comparação entre modelos</h2><select id="compareSelect" aria-label="Arquivo de comparação" style="width:auto"></select></div>
-    <p class="muted small-text">Encontradas = caixas verdadeiras recuperadas (recall). Corretas/sugeridas = acertos entre as caixas sugeridas (precisão). Divisões marcadas como “visto no treino” não medem generalização.</p>
+    <p class="muted small-text">Recall = quantas caixas marcadas pela equipe o modelo encontrou. Precisão = quantas caixas sugeridas pelo modelo estavam certas. Colunas marcadas com ⚠ usam fotos que o modelo viu no treino e não medem generalização.</p>
     <div class="table-wrap" id="compareTable"></div>
   </div>
   <div class="grid halves" style="margin-top:16px">
     <div class="card">
-      <div class="card-head"><h2>Caixas por classe no dataset do treino</h2><select id="coverageRun" aria-label="Execução" style="width:auto"></select></div>
+      <div class="card-head"><h2>Caixas aprovadas por classe em cada divisão do treino</h2><select id="coverageRun" aria-label="Execução" style="width:auto"></select></div>
       <div class="table-wrap" id="coverageTable"></div>
     </div>
     <div class="card">
-      <div class="card-head"><h2>Melhor mAP50 de validação por execução</h2></div>
+      <div class="card-head"><h2>Melhor mAP50 na validação, por treino</h2></div>
       <div id="leaderboard"></div>
       <p class="muted small-text">A validação do piloto tem poucas fotos de uma única edificação: diferenças pequenas são ruído.</p>
     </div>
@@ -2141,7 +2141,7 @@ function renderOverview() {
     $('modelChip').replaceChildren(el('span', { class: 'chip warn' }, meta.pilot ? 'piloto · não validado' : 'não validado'));
     $('modelSummary').replaceChildren(
       el('p', {}, `${meta.model_label}. Confiança mínima ${Math.round(meta.conf * 100)}%.`),
-      el('p', { class: 'mono muted' }, `pesos ${String(meta.weights_sha256 || '').slice(0, 12)}…` + (run ? ` · ${run.id}` : '')),
+      el('p', { class: 'mono muted' }, `pesos ${String(meta.weights_sha256 || '').slice(0, 12)}…` + (run ? ` · ${runName(run)} (${run.id})` : '')),
       run && run.best_epoch ? el('p', {}, `Melhor mAP50 de validação dessa execução: ${pct(run.best_epoch.map50)} (época ${run.best_epoch.epoch}).`) : null)
   }
   const last = OPS.runs.find(run => run.curves.length);
@@ -2149,7 +2149,7 @@ function renderOverview() {
   else {
     const chart = el('div', { class: 'chart' });
     $('lastRunSummary').replaceChildren(
-      el('p', {}, el('span', { class: 'chip ' + stateClass(last.state) }, stateLabel(last.state)), ' ', el('span', { class: 'mono' }, last.id)),
+      el('p', {}, el('span', { class: 'chip ' + stateClass(last.state) }, stateLabel(last.state)), ' ', el('b', {}, runName(last)), ' ', el('span', { class: 'mono muted small-text' }, last.id)),
       el('p', { class: 'muted' }, `${last.epochs_done}/${last.epochs_planned || '?'} épocas · melhor mAP50 ${pct(last.best_epoch && last.best_epoch.map50)}`),
       chart);
     lineChart(chart, last.curves, [{ key: 'map50', label: 'mAP50', color: '#34d17a' }, { key: 'recall', label: 'Recall', color: '#3aa0d0' }], { height: 120, percent: true })
@@ -2237,17 +2237,28 @@ function lineChart(container, points, series, options = {}) {
     return item
   })))
 }
+/* Nome legível da execução (operations.py grava display_name/display_detail; runs/nomes.json personaliza). */
+const runName = run => run ? (run.display_name || run.id) : '';
+const runById = id => OPS.runs.find(run => run.id === id) || { id };
+const runLabel = id => runName(runById(id));
+const SPLIT_LABELS = { train: 'Treino', val: 'Validação', test: 'Teste' };
+const splitLabel = split => {
+  const base = String(split || '');
+  const seen = base.includes('visto');
+  const key = base.split(' ')[0].split('(')[0];
+  return (SPLIT_LABELS[key] || key) + (seen ? ' ⚠ fotos vistas no treino' : '');
+};
 const LOSS_SERIES = [
-  { key: 'train_box', label: 'box treino', color: '#22D3EE' },
-  { key: 'train_cls', label: 'cls treino', color: '#A78BFA' },
-  { key: 'val_box', label: 'box val.', color: '#22D3EE', dashed: true },
-  { key: 'val_cls', label: 'cls val.', color: '#A78BFA', dashed: true }
+  { key: 'train_box', label: 'Erro de posição (treino)', color: '#22D3EE' },
+  { key: 'train_cls', label: 'Erro de classe (treino)', color: '#A78BFA' },
+  { key: 'val_box', label: 'Erro de posição (validação)', color: '#22D3EE', dashed: true },
+  { key: 'val_cls', label: 'Erro de classe (validação)', color: '#A78BFA', dashed: true }
 ];
 const METRIC_SERIES = [
-  { key: 'precision', label: 'Precisão', color: '#F59E0B' },
-  { key: 'recall', label: 'Recall', color: '#4EA8FF' },
-  { key: 'map50', label: 'mAP50', color: '#34D399' },
-  { key: 'map50_95', label: 'mAP50-95', color: '#818CF8' }
+  { key: 'precision', label: 'Precisão (sugestões certas)', color: '#F59E0B' },
+  { key: 'recall', label: 'Recall (caixas encontradas)', color: '#4EA8FF' },
+  { key: 'map50', label: 'mAP50 (acerto geral)', color: '#34D399' },
+  { key: 'map50_95', label: 'mAP50-95 (acerto com encaixe exato)', color: '#818CF8' }
 ];
 
 /* ======================= Treinamento ======================= */
@@ -2356,7 +2367,7 @@ function renderTraining() {
   if (!OPS.runs.length) body.append(el('tr', {}, el('td', { colspan: 5, class: 'empty' }, 'Nenhum treino encontrado em runs/.')));
   OPS.runs.forEach(run => {
     const row = el('tr', { class: 'clickable', tabindex: 0, 'aria-selected': String(state.run === run.id) },
-      el('td', {}, el('div', { class: 'mono' }, run.id), el('small', { class: 'muted' }, `${new Date(run.started_at).toLocaleString('pt-BR')} · ${run.checkpoint || ''}`)),
+      el('td', {}, el('div', {}, el('b', {}, runName(run))), el('div', { class: 'mono small-text muted' }, run.id), el('small', { class: 'muted' }, `${new Date(run.started_at).toLocaleString('pt-BR')} · ${run.display_detail || run.checkpoint || ''}`)),
       el('td', {}, el('span', { class: 'chip ' + stateClass(run.state) }, el('span', { class: 'dot' }), stateLabel(run.state))),
       el('td', { class: 'num' }, `${run.epochs_done}/${run.epochs_planned || '?'}`),
       el('td', { class: 'num' }, run.best_epoch ? `${pct(run.best_epoch.map50)} (ép. ${run.best_epoch.epoch})` : '—'),
@@ -2371,7 +2382,7 @@ function renderTraining() {
 }
 
 function renderRunDetail(run) {
-  $('runDetailTitle').textContent = run ? `Detalhes · ${run.id}` : 'Detalhes da execução';
+  $('runDetailTitle').textContent = run ? `Detalhes · ${runName(run)}` : 'Detalhes da execução';
   $('runDetailChips').replaceChildren(...(run ? Object.entries(run.parameters).map(([key, value]) => el('span', { class: 'chip neutral', style: 'margin:2px' }, `${key} ${value}`)) : []));
   lineChart($('runLossChart'), run ? run.curves : [], LOSS_SERIES, { label: 'Perdas por época' });
   lineChart($('runMetricChart'), run ? run.curves : [], METRIC_SERIES, { percent: true, marker: run && run.best_epoch ? run.best_epoch.epoch : null, label: 'Métricas de validação por época' });
@@ -2400,7 +2411,7 @@ function renderMonitor() {
     $('monitorFacts').replaceChildren();
     $('monitorTiles').replaceChildren();
   } else {
-    $('monitorTitle').textContent = run.id;
+    $('monitorTitle').textContent = `${runName(run)} · ${run.id}`;
     $('monitorState').replaceChildren(el('span', { class: 'chip ' + stateClass(run.state) }, el('span', { class: 'dot' }), stateLabel(run.state)));
     const planned = run.epochs_planned || run.epochs_done || 1;
     const fraction = Math.min(1, run.epochs_done / planned);
@@ -2464,27 +2475,27 @@ function renderModels() {
   fillSelect($('compareSelect'), OPS.comparisons.map((comparison, index) => [String(index), comparison.file]), String(OPS.comparisons.length - 1));
   renderCompare();
   const withCounts = OPS.runs.filter(run => Object.keys(run.class_counts || {}).length);
-  fillSelect($('coverageRun'), withCounts.map(run => [run.id, run.id]), (withCounts[0] || {}).id);
+  fillSelect($('coverageRun'), withCounts.map(run => [run.id, `${runName(run)} (${run.id})`]), (withCounts[0] || {}).id);
   renderCoverage();
   const ranked = OPS.runs.filter(run => run.best_epoch).sort((a, b) => b.best_epoch.map50 - a.best_epoch.map50);
   const max = Math.max(0.01, ...ranked.map(run => run.best_epoch.map50));
-  $('leaderboard').replaceChildren(...(ranked.length ? ranked.map(run => barRow('var(--ok)', run.id.replace('pilot_train_', ''), run.best_epoch.map50, 0, max, pct(run.best_epoch.map50))) : [el('div', { class: 'empty' }, 'Sem métricas.')]))
+  $('leaderboard').replaceChildren(...(ranked.length ? ranked.map(run => barRow('var(--ok)', `${runName(run)} · ${run.display_detail || run.id}`, run.best_epoch.map50, 0, max, pct(run.best_epoch.map50))) : [el('div', { class: 'empty' }, 'Sem métricas.')]))
 }
 
 function renderCompare() {
   const comparison = OPS.comparisons[Number($('compareSelect').value)];
   if (!comparison) { $('compareTable').replaceChildren(el('div', { class: 'empty' }, 'Nenhuma comparação salva. Etapa 5 do ciclo de fine-tuning.')); return }
   const splits = [...new Set(comparison.models.flatMap(model => Object.keys(model.splits)))];
-  const head = el('tr', {}, el('th', {}, 'Modelo'), ...splits.map(split => el('th', { class: 'num' }, split + (split.includes('visto') ? ' ⚠' : ''))));
-  const rows = comparison.models.map(model => el('tr', {}, el('td', {}, el('div', { class: 'mono' }, model.run_id || model.weights), el('small', { class: 'muted' }, `${model.file} · ${String(model.weights_sha256 || '').slice(0, 10)}…`)),
+  const head = el('tr', {}, el('th', {}, 'Modelo'), ...splits.map(split => el('th', { class: 'num' }, splitLabel(split))));
+  const rows = comparison.models.map(model => el('tr', {}, el('td', {}, el('div', {}, el('b', {}, model.run_id ? runLabel(model.run_id) : model.file)), el('div', { class: 'mono small-text muted' }, model.run_id || model.weights), el('small', { class: 'muted' }, `${model.run_id && runById(model.run_id).display_detail ? runById(model.run_id).display_detail + ' · ' : ''}${model.file} · ${String(model.weights_sha256 || '').slice(0, 10)}…`)),
     ...splits.map(split => {
       const value = model.splits[split];
       if (!value) return el('td', { class: 'num muted' }, '—');
       const recall = value.truth ? value.found / value.truth : null, precision = value.suggestions ? value.correct / value.suggestions : null;
-      return el('td', { class: 'num' }, el('div', {}, `${value.found}/${value.truth} encontradas`), el('small', { class: 'muted' }, `${value.correct}/${value.suggestions} corretas · R\u00a0${pct(recall)} · P\u00a0${pct(precision)}`))
+      return el('td', { class: 'num' }, el('div', {}, `Recall ${pct(recall)}`, el('small', { class: 'muted' }, ` · ${value.found} de ${value.truth} caixas encontradas`)), el('div', {}, `Precisão ${pct(precision)}`, el('small', { class: 'muted' }, ` · ${value.correct} de ${value.suggestions} sugestões certas`)))
     })));
   $('compareTable').replaceChildren(el('table', {}, el('thead', {}, head), el('tbody', {}, ...rows)),
-    el('p', { class: 'muted small-text' }, `Dataset ${comparison.dataset || '—'} · confiança ${comparison.conf} · IoU de acerto ${comparison.iou_match}.`))
+    el('p', { class: 'muted small-text' }, `Dataset ${comparison.dataset || '—'} · confiança mínima ${pct(comparison.conf)} · uma sugestão conta como certa com sobreposição (IoU) ≥ ${comparison.iou_match}.`))
 }
 
 function renderCoverage() {
@@ -2498,7 +2509,7 @@ function renderCoverage() {
     const value = run.class_counts[split][slug] || 0;
     return el('td', { class: 'num ' + (value === 0 ? 'cell-bad' : value < 5 ? 'cell-warn' : '') }, String(value))
   })));
-  $('coverageTable').replaceChildren(el('table', {}, el('thead', {}, el('tr', {}, el('th', {}, 'Classe'), ...splits.map(split => el('th', { class: 'num' }, split)))), el('tbody', {}, ...rows)),
+  $('coverageTable').replaceChildren(el('table', {}, el('thead', {}, el('tr', {}, el('th', {}, 'Classe'), ...splits.map(split => el('th', { class: 'num' }, splitLabel(split))))), el('tbody', {}, ...rows)),
     el('p', { class: 'muted small-text' }, 'Vermelho: sem exemplos (a classe não é aprendida). Amarelo: menos de 5 caixas.'))
 }
 $('compareSelect').onchange = renderCompare;

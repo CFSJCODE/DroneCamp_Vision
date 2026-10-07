@@ -8,7 +8,17 @@ A página de revisão (`data/reviews/<registro>/index.html`) virou uma plataform
 | Revisão e classificação | Fila com miniaturas, foto com caixas e sugestões tracejadas, filtro de confiança, editor de caixas e decisão por foto | Registro + `suggestions.json` (mesma lógica de antes) |
 | Treinamento e fine-tuning | Ciclo de seis etapas com os comandos prontos, execuções em `runs/`, curvas de perda e métricas por época, gráficos da Ultralytics e formulário de novo treino piloto com estimativa de duração em CPU | `runs/*/execution.json`, `summary.json`, `fit/results.csv`, `data/pilot/*` |
 | Monitoramento | Progresso do treino (época, tempo decorrido, tempo restante), métricas da última época, curvas e a tarefa em andamento no servidor local com o log | `fit/results.csv` relido a cada 5 s pelo servidor local |
-| Modelos e comparação | Critério de adoção, comparação entre modelos por divisão (encontradas/corretas), caixas por classe no dataset de cada treino e melhor mAP50 por execução | `runs/compare_*.json`, `execution.json` |
+| Modelos e comparação | Critério de adoção, comparação entre modelos por divisão (recall e precisão), caixas por classe no dataset de cada treino e melhor mAP50 por treino | `runs/compare_*.json`, `execution.json` |
+
+## Nomes dos treinos
+
+Cada execução de `runs/` aparece com um nome legível no lugar do id (`pilot_train_<data>_<hash>`): por padrão "Treino piloto N", numerado em ordem cronológica dentro da etapa, seguido de um resumo (modelo base, épocas feitas, treino em janelas e melhor mAP50 na validação). Para dar o nome que a equipe usa, crie `runs/nomes.json` com o id completo ou só o sufixo de 8 caracteres como chave:
+
+```json
+{ "56038eb9": "v7.4 referência", "f5e5ba8b": "v9 Lado A parcial" }
+```
+
+O id continua visível em letra pequena, porque é ele que aparece nos comandos e nas pastas.
 
 O tema escuro é o padrão; o botão da lua alterna para o tema claro, que mantém a paleta original da revisão. Atalhos na revisão: `←`/`→` fotos, `B` desenhar, `A` aceitar a primeira sugestão, `X` descartar a primeira sugestão, `Del` excluir a caixa selecionada.
 

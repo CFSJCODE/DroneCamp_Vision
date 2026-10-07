@@ -190,7 +190,47 @@ def collect_runs(root: Path, page_directory: Path | None = None, now: float | No
             "notes": (summary or {}).get("reasons") or [],
             "updated_at": datetime.fromtimestamp(results_csv.stat().st_mtime, timezone.utc).isoformat() if results_csv.is_file() else None,
         })
-    return sorted(runs, key=lambda run: run["id"].split("_")[-2], reverse=True)
+    runs.sort(key=lambda run: run["id"].split("_")[-2], reverse=True)
+    _name_runs(runs, _read_json(runs_dir / "nomes.json") or {})
+    return runs
+
+
+STAGE_LABELS = {"pilot_train": "Treino piloto", "train": "Treino de produção", "tune": "Ajuste de hiperparâmetros"}
+
+
+def _percent(value) -> str:
+    return f"{float(value) * 100:.1f}%".replace(".", ",")
+
+
+def _name_runs(runs: list[dict], custom: dict) -> None:
+    """Nome legível de cada execução (``display_name``) e um resumo (``display_detail``).
+
+    O nome automático numera as execuções de cada etapa em ordem cronológica
+    ("Treino piloto 7"); ``runs/nomes.json`` troca o nome pelo escolhido pela
+    equipe, com a chave sendo o id completo ou só o sufixo de 8 caracteres
+    (ex.: ``{"56038eb9": "v7.4 referência"}``). O resumo junta o que a pessoa
+    procura ao comparar: modelo base, épocas feitas, melhor mAP50 e se treinou
+    em janelas.
+    """
+    by_stage: dict[str, list[dict]] = {}
+    for run in sorted(runs, key=lambda run: run["started_at"]):
+        by_stage.setdefault(run["stage"], []).append(run)
+    for stage, items in by_stage.items():
+        for number, run in enumerate(items, start=1):
+            suffix = run["id"].rsplit("_", 1)[-1]
+            custom_name = custom.get(run["id"]) or custom.get(suffix)
+            run["display_name"] = str(custom_name).strip() if custom_name else f"{STAGE_LABELS.get(stage, stage)} {number}"
+            parts = []
+            if run.get("checkpoint"):
+                parts.append(str(run["checkpoint"]).rsplit(".", 1)[0])
+            done, planned = run.get("epochs_done") or 0, run.get("epochs_planned")
+            parts.append(f"{done}/{planned} épocas" if planned else f"{done} épocas")
+            if run.get("label_unit") == "janelas":
+                parts.append("em janelas")
+            best = run.get("best_epoch")
+            parts.append(f"mAP50 val {_percent(best['map50'])} (época {best['epoch']})" if best and best.get("map50") is not None
+                         else "sem validação")
+            run["display_detail"] = " · ".join(parts)
 
 
 def collect_comparisons(root: Path) -> list[dict]:
