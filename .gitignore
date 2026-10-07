@@ -40,3 +40,5 @@ Conjunto De Dados De Treinamento/Imagens - DroneCamp/
 sistema_ia/data/reviews/ceasa_lado_a_*/originals/
 sistema_ia/data/reviews/ceasa_lado_a_*/images/
 sistema_ia/data/reviews/ceasa_lado_a_*/evidence/
+# Datasets piloto com fotos de drone de 20 MP: imagens refeitas pelo build-pilot-data (hash conferido).
+sistema_ia/data/pilot/*ladoA*/images/
