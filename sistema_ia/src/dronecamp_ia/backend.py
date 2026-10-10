@@ -12,23 +12,23 @@ O que faz:
 - ``check_domain_names``: recusa pesos cujas classes não são as 13 do projeto.
 - ``runtime_info``: versões de Python/torch/Ultralytics e hash do checkpoint.
 
-Quando mexer: para trocar de família de modelo (outro YOLO) ou de biblioteca.
-Para trocar só o tamanho do modelo (n/s/m/l/x), basta mudar ``model`` e
-``pilot.model`` em ``configs/project.yaml``.
+Quando mexer: para trocar de biblioteca. A família/versão do YOLO (26 hoje, 27
+quando sair) fica em ``model_family.py``; trocar de versão ou de tamanho
+(n/s/m/l/x) é mudar ``model`` e ``pilot.model`` em ``configs/project.yaml``.
 """
 
 from pathlib import Path
 import json
 import os
 import platform
-import re
 
 from .config import ProjectConfig
 from .io import file_hash
+from .model_family import describe_checkpoint, ensure_downloadable, parse_model_name
 
 
 def load_detector(config: ProjectConfig, weights: str | None = None):
-    """Carregue checkpoint local ou peso oficial YOLO26; sem fallback silencioso."""
+    """Carregue checkpoint local ou peso oficial de uma família publicada; sem fallback silencioso."""
     # Só checkpoints PyTorch: o ONNX é conferido à parte (exporting.py).
     selected = weights or config.model
     if Path(selected).suffix.lower() != ".pt":
@@ -37,13 +37,11 @@ def load_detector(config: ProjectConfig, weights: str | None = None):
     local = Path(selected).expanduser()
     if not local.is_absolute():
         local = config.root / local
-    # Sem arquivo local, só aceita baixar os pesos oficiais YOLO26 para models/.
+    # Sem arquivo local, só aceita baixar pesos oficiais de detecção de família
+    # publicada (model_family.py) para models/; YOLO27 falha com explicação até sair.
     if not local.is_file():
-        if re.fullmatch(r"yolo27[nslm]\.pt", selected, re.IGNORECASE):
-            raise ValueError("YOLO27 ainda não foi publicado. Use YOLO26 ou um checkpoint local validado; consulte docs/pesquisa_ultralytics.md.")
-        if not re.fullmatch(r"yolo26[nslmx]\.pt", selected):
-            raise ValueError(f"Checkpoint local não encontrado: {local}. Downloads automáticos limitados aos pesos oficiais YOLO26 de detecção.")
-        local = config.root / "models" / selected
+        ensure_downloadable(parse_model_name(selected), local)
+        local = config.root / "models" / Path(selected).name
         local.parent.mkdir(parents=True, exist_ok=True)
     # Abre o modelo pela Ultralytics e garante que é de detecção (caixas).
     YOLO = _ultralytics(config)
@@ -186,5 +184,7 @@ def runtime_info(model, config: ProjectConfig) -> dict:
         "python": platform.python_version(), "ultralytics": ultralytics.__version__,
         "torch": torch.__version__, "device_requested": config.device,
         "checkpoint": str(checkpoint.resolve()), "checkpoint_sha256": file_hash(checkpoint),
+        # Família/versão do YOLO (ex.: YOLO26L partindo de yolo26l.pt): procedência do modelo.
+        "model_family": describe_checkpoint(checkpoint, (getattr(model, "ckpt", None) or {}).get("train_args")),
         "requested_future_model": config.requested_model,
     }

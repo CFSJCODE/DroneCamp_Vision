@@ -11,8 +11,8 @@
 # Caminhos abaixo são relativos à pasta sistema_ia, independentemente do terminal.
 # =============================================================================
 schema_version: 1
-requested_model: yolo27l.pt        # modelo desejado no futuro; só registrado (ainda não existe)
-model: yolo26l.pt                  # peso base: n (menor/rápido) < s < m < l < x (maior/lento)
+requested_model: yolo27l.pt        # alvo futuro; `model-info` diz quando a Ultralytics instalada já o tem (model_family.py)
+model: yolo26l.pt                  # peso base: n (menor/rápido) < s < m < l < x (maior/lento); trocar de versão é só mudar aqui, após o compare-models
 task: detect                       # detecção com caixas (único modo implementado)
 taxonomy: configs/taxonomy.json    # classes (IDs, nomes, critérios)
 dataset: configs/dataset.yaml      # dataset de produção

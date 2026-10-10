@@ -34,6 +34,7 @@ from .backend import check_domain_names, load_detector, load_inference_model, ru
 from .config import ProjectConfig, detection_names, load_taxonomy
 from .dataset import validate_dataset
 from .io import file_hash, make_run_directory, write_json
+from .model_family import GENERIC_DISTANCE_LOSS, distance_loss_columns
 
 # Intervalo mínimo entre toques em fit/heartbeat (plataforma: treino vivo × interrompido).
 HEARTBEAT_SECONDS = 60
@@ -418,7 +419,7 @@ def _write_training_summary(run: Path, reasons: list[str], **details) -> dict:
     return summary
 
 
-def _review_training_csv(path: Path) -> tuple[list[str], dict]:
+def _review_training_csv(path: Path, distance_loss: tuple[str, ...] = GENERIC_DISTANCE_LOSS) -> tuple[list[str], dict]:
     """Confira métricas e perdas reais, aceitando parada antecipada com épocas válidas."""
     reasons, rows = [], []
     try:
@@ -437,9 +438,10 @@ def _review_training_csv(path: Path) -> tuple[list[str], dict]:
     missing = sorted(required.difference(columns))
     if missing:
         reasons.append("results.csv sem colunas obrigatórias: " + ", ".join(missing) + ".")
-    # A biblioteca local nomeia a distância l1_loss no YOLO26 e dfl_loss em outras cabeças.
-    if not any(f"train/{name}" in columns and f"val/{name}" in columns for name in ("l1_loss", "dfl_loss")):
-        reasons.append("results.csv precisa de perdas de distância correspondentes no treino e na validação (l1_loss ou dfl_loss).")
+    # Perda de distância da família (model_family.py): l1_loss no YOLO26, dfl_loss em outras cabeças.
+    if not any(f"train/{name}" in columns and f"val/{name}" in columns for name in distance_loss):
+        reasons.append("results.csv precisa de perdas de distância correspondentes no treino e na validação "
+                       f"({' ou '.join(distance_loss)}).")
     loss_columns = [name for name in columns if name.startswith(("train/", "val/")) and name.endswith("_loss")]
     if not rows:
         reasons.append("results.csv não contém nenhuma época de treinamento.")
@@ -504,7 +506,7 @@ def review_training_result(run: Path, model, expected_names: list[str], **detail
     # 2. Épocas, perdas e métricas finitas no results.csv.
     csv_details = {"epochs_recorded": 0}
     if artifacts["results_csv"]["present"] and artifacts["results_csv"]["size_bytes"] > 0:
-        csv_reasons, csv_details = _review_training_csv(paths["results_csv"])
+        csv_reasons, csv_details = _review_training_csv(paths["results_csv"], distance_loss_columns(model))
         reasons.extend(csv_reasons)
     # 3. O modelo treinado precisa ter exatamente as classes ativas da taxonomia.
     class_contract_verified = False
