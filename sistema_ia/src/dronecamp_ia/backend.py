@@ -40,8 +40,13 @@ def load_detector(config: ProjectConfig, weights: str | None = None):
     # Sem arquivo local, só aceita baixar pesos oficiais de detecção de família
     # publicada (model_family.py) para models/; YOLO27 falha com explicação até sair.
     if not local.is_file():
+        # Um caminho de checkpoint que não existe é erro: nunca trocar por pesos genéricos
+        # só porque o nome do arquivo parece oficial (ex.: runs/anterior/yolo26l.pt).
+        if "/" in str(selected) or "\\" in str(selected):
+            raise ValueError(f"Checkpoint local não encontrado: {local}. Para baixar um peso oficial, informe só o nome "
+                             "(ex.: yolo26l.pt).")
         ensure_downloadable(parse_model_name(selected), local)
-        local = config.root / "models" / Path(selected).name
+        local = config.root / "models" / selected
         local.parent.mkdir(parents=True, exist_ok=True)
     # Abre o modelo pela Ultralytics e garante que é de detecção (caixas).
     YOLO = _ultralytics(config)

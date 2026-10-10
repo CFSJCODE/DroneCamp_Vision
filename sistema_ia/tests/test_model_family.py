@@ -65,6 +65,12 @@ class DownloadPolicyTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Checkpoint local não encontrado"):
             load_detector(self.config, "runs/inexistente/best.pt")
 
+    def test_missing_checkpoint_path_with_official_basename_never_downloads(self):
+        # runs/anterior/yolo26l.pt inexistente é erro, não um download silencioso de pesos genéricos.
+        for path in ("runs/anterior/yolo26l.pt", r"runs\anterior\yolo26l.pt", "./yolo26l.pt"):
+            with self.assertRaisesRegex(ValueError, "Checkpoint local não encontrado"):
+                load_detector(self.config, path)
+
     def test_released_family_passes_without_network(self):
         ensure_downloadable(parse_model_name("yolo26n.pt"), Path("yolo26n.pt"))
 
@@ -115,7 +121,16 @@ class ModelInfoTests(unittest.TestCase):
     def test_same_model_has_no_migration_and_custom_model_is_accepted(self):
         config = replace(load_config(), requested_model="yolo26l.pt")
         self.assertNotIn("migration", model_info(config))
-        self.assertEqual(model_info(config, "yolo26n.pt")["configured"]["size"], "n")
+        report = model_info(config, "yolo26n.pt")
+        self.assertEqual((report["configured"]["size"], report["inspected"]["size"]), ("l", "n"))
+        self.assertIn("migration_to_inspected", report)
+
+    def test_inspecting_the_target_keeps_the_configured_model_and_the_migration(self):
+        config = load_config()  # configurado yolo26l, alvo yolo27l
+        report = model_info(config, "yolo27l.pt")
+        self.assertEqual((report["configured"]["family"], report["inspected"]["family"]), (26, 27))
+        self.assertIn("migration", report)
+        self.assertNotIn("migration_to_inspected", report)
 
     def test_checklist_requires_gate_before_config_change(self):
         steps = migration_checklist(parse_model_name("yolo26l.pt"), parse_model_name("yolo27l.pt"))

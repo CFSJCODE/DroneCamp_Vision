@@ -285,6 +285,16 @@ def prompt_digest(taxonomy: dict) -> str:
     return sha256(json.dumps([PROMPT_VERSION, system, taxonomy_prompt(taxonomy)]).encode("utf-8")).hexdigest()
 
 
+def resume_digest(settings: VLMSettings, prompt_sha256: str) -> str:
+    """Chave da retomada: prompt + o que muda a resposta (modelo pedido, temperatura, tokens).
+
+    Trocar ``--model``/``OPENROUTER_MODEL`` invalida as notas antigas: os recortes
+    são enviados de novo ao modelo novo. Os parâmetros do recorte já entram no
+    hash do JPEG de cada caixa.
+    """
+    return sha256(json.dumps([prompt_sha256, settings.model, settings.temperature, settings.max_output_tokens]).encode("utf-8")).hexdigest()
+
+
 def parse_answer(text: str, names: list[str]) -> dict:
     """Aceita JSON puro, com cerca ``json`` ou com texto em volta; o que não encaixa vira ``incerto``."""
     candidate = text.strip()
@@ -323,10 +333,13 @@ def _boxes_to_describe(registry: dict, suggestions: dict | None, include_suggest
     rows = []
     for item in registry["images"]:
         count = 0
+        # Caixas de foto sem aprovação humana podem ser propostas de IA (first_pass_ai):
+        # entram como "proposta" e ficam fora da concordância.
+        source = "humana" if item.get("human_approved") is True else "proposta"
         for box in item.get("boxes", []):
             if count >= per_image:
                 break
-            rows.append((item, box, "humana"))
+            rows.append((item, box, source))
             count += 1
         if include_suggestions and suggestions:
             for box in suggestions.get("images", {}).get(item["image_sha256"], []):
@@ -376,12 +389,13 @@ def describe_occurrences(config: ProjectConfig, registry_path: Path, include_sug
     settings = load_vlm_settings(config, model, environ)
     client = OpenRouterClient(settings, transport)  # falha cedo sem chave
     digest = prompt_digest(taxonomy)
+    resume_key = resume_digest(settings, digest)
     registry_sha = file_hash(registry_path)
     notes_path = registry_path.parent / NOTES_FILE
     previous = {}
     if resume and notes_path.is_file():
         old = json.loads(notes_path.read_text(encoding="utf-8"))
-        if old.get("registry_sha256") == registry_sha and old.get("prompt_sha256") == digest:
+        if old.get("registry_sha256") == registry_sha and old.get("resume_sha256") == resume_key:
             previous = {entry["crop_sha256"]: entry for entries in old.get("images", {}).values() for entry in entries
                         if entry.get("description")}
     rows = _boxes_to_describe(registry, _load_suggestions(registry_path) if include_suggestions else None,
@@ -427,7 +441,8 @@ def describe_occurrences(config: ProjectConfig, registry_path: Path, include_sug
     described = [entry for entries in images.values() for entry in entries if entry.get("description")]
     report = {
         "schema_version": 1, "kind": "vlm_notes", "registry_sha256": registry_sha, "registry_version": registry.get("version"),
-        "created_at": datetime.now(timezone.utc).isoformat(), "prompt_sha256": digest, "settings": settings.describe(),
+        "created_at": datetime.now(timezone.utc).isoformat(), "prompt_sha256": digest, "resume_sha256": resume_key,
+        "settings": settings.describe(),
         "include_suggestions": include_suggestions, "calls_this_run": calls, "errors_this_run": errors,
         "seconds": round(time.monotonic() - started, 1), "warning": WARNING, "human_acceptance": "pendente",
         "images": images, "total_boxes": len(rows), "described": len(described),
@@ -474,13 +489,17 @@ def agreement_report(images: dict[str, list[dict]], names: list[str]) -> dict:
 def draft_report_support(config: ProjectConfig, registry_path: Path, output: Path | None = None) -> Path:
     """Grave ``laudo_apoio.json`` e ``laudo_apoio.md`` com as ocorrências da revisão.
 
-    Entram só fotos com aprovação humana e suas caixas; a descrição do VLM
+    Entram só fotos com aprovação humana e suas caixas (registro na taxonomia
+    atual, conferida pelo hash); a descrição do VLM
     (``ai_notes.json``, quando existir e for desta versão do registro) aparece
     marcada como pendente. Gravidade, diagnóstico e recomendação ficam em branco
     para o responsável técnico; nada é preenchido por inferência.
     """
     registry_path = Path(registry_path).resolve()
     registry = json.loads(registry_path.read_text(encoding="utf-8"))
+    # IDs de classe mudaram entre versões da taxonomia: um registro antigo sairia com slugs errados.
+    if registry.get("taxonomy_sha256") != file_hash(config.taxonomy_path):
+        raise ValueError("Taxonomia mudou: migre a revisão (migrate-review) antes de gerar o apoio ao laudo.")
     taxonomy = load_taxonomy(config.taxonomy_path)
     classes = {item["id"]: item for item in taxonomy["classes"] if item.get("phase") == 1}
     registry_sha = file_hash(registry_path)

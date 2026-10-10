@@ -198,6 +198,30 @@ class DescribeOccurrencesTests(unittest.TestCase):
         notes = json.loads((self.registry.parent / NOTES_FILE).read_text(encoding="utf-8"))
         self.assertEqual((notes["described"], notes["errors_this_run"]), (1, 2))
 
+    def test_boxes_of_unapproved_photos_are_proposals_outside_the_agreement(self):
+        registry = json.loads(self.registry.read_text(encoding="utf-8"))
+        registry["images"][1]["human_approved"] = False
+        registry["images"][1]["annotator"] = "first_pass_ai"
+        write_json(self.registry, registry)
+        describe_occurrences(self.config, self.registry, transport=FakeTransport([answer(GOOD)]), environ=self.environ)
+        notes = json.loads((self.registry.parent / NOTES_FILE).read_text(encoding="utf-8"))
+        entries = [entry for entries in notes["images"].values() for entry in entries]
+        self.assertEqual(sorted(entry["source"] for entry in entries), ["humana", "humana", "proposta"])
+        self.assertEqual(notes["agreement"]["human_boxes_described"], 2)
+        self.assertNotIn("reparo_telha", notes["agreement"]["per_class"])
+
+    def test_changing_the_model_invalidates_resumed_notes(self):
+        describe_occurrences(self.config, self.registry, transport=FakeTransport([answer(GOOD)]), environ=self.environ)
+        same = FakeTransport([answer(NONE)])
+        describe_occurrences(self.config, self.registry, transport=same, environ=self.environ)
+        self.assertEqual(len(same.calls), 0)
+        other = FakeTransport([answer(NONE)])
+        describe_occurrences(self.config, self.registry, model="outro/modelo:free", transport=other, environ=self.environ)
+        self.assertEqual(len(other.calls), 3)
+        notes = json.loads((self.registry.parent / NOTES_FILE).read_text(encoding="utf-8"))
+        self.assertEqual(notes["settings"]["model_requested"], "outro/modelo:free")
+        self.assertFalse(any(entry.get("reused") for entries in notes["images"].values() for entry in entries))
+
     def test_taxonomy_or_photo_change_is_refused(self):
         registry = json.loads(self.registry.read_text(encoding="utf-8"))
         registry["taxonomy_sha256"] = "0" * 64
@@ -229,6 +253,17 @@ class ReportSupportTests(unittest.TestCase):
             self.assertIn("Gravidade: a definir pelo responsável técnico", markdown)
             self.assertIn("Descrição da IA (pendente)", markdown)
             self.assertNotIn(KEY, markdown)
+
+    def test_registry_from_another_taxonomy_is_refused(self):
+        with TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            registry = make_review(root)
+            data = json.loads(registry.read_text(encoding="utf-8"))
+            data["taxonomy_sha256"] = "0" * 64
+            write_json(registry, data)
+            with self.assertRaisesRegex(ValueError, "Taxonomia mudou"):
+                draft_report_support(replace(REAL, root=root), registry)
+            self.assertFalse((registry.parent / "laudo_apoio.json").exists())
 
 
 if __name__ == "__main__":

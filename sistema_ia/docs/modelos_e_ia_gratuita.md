@@ -50,11 +50,11 @@ Ele mostra o modelo configurado, o alvo (`requested_model: yolo27l.pt`), o supor
 .\.venv\Scripts\python.exe -m dronecamp_ia describe-occurrences --registry data\reviews\ceasa_lado_a_v1\registry.json --include-suggestions --limit 60
 ```
 
-1. Para cada caixa humana (e, com `--include-suggestions`, cada sugestão pendente do modelo) o comando recorta a foto com 30% de margem, lado mínimo 96 px e máximo 768 px (`configs/vlm_assist.json`), e confere o SHA-256 do original antes.
+1. Para cada caixa de foto com aprovação humana (`source: humana`; caixas de fotos sem aprovação, como propostas `first_pass_ai`, entram como `proposta` e ficam fora da concordância) e, com `--include-suggestions`, cada sugestão pendente do modelo, o comando recorta a foto com 30% de margem, lado mínimo 96 px e máximo 768 px (`configs/vlm_assist.json`), e confere o SHA-256 do original antes.
 2. Envia o recorte ao OpenRouter (`openrouter/free` por padrão: o roteador sorteia um modelo gratuito que aceita imagem) com as 13 classes e seus critérios. **A classe humana ou sugerida não vai no prompt**: a resposta é uma leitura independente.
 3. O VLM responde em JSON: `descricao` (1–3 frases), `classe_sugerida` (um slug, `nenhuma` ou `incerto`), `evidencias` e `legibilidade`. O prompt proíbe gravidade, causa, risco e recomendação; se o modelo responder fora do formato, a nota fica como `incerto` com o texto bruto.
 4. Grava `ai_notes.json` ao lado do registro, preso ao hash do registro e ao hash do prompt (`PROMPT_VERSION`), com o modelo que de fato respondeu (`model_used`), tokens, `status: "pendente"` e `severity/diagnosis/recommendation: null`.
-5. É **retomável**: notas já gravadas para o mesmo recorte não são pedidas de novo; `--limit N` limita as chamadas da execução (os modelos gratuitos têm cota). Chave recusada (401/403), cota (429) ou rede fora interrompem o comando sem gravar nada inventado; erros depois da primeira resposta ficam registrados por caixa.
+5. É **retomável**: notas já gravadas para o mesmo recorte, mesmo prompt e mesmo modelo pedido (`resume_sha256`; trocar `--model`/`OPENROUTER_MODEL` reenvia tudo) não são pedidas de novo; `--limit N` limita as chamadas da execução (os modelos gratuitos têm cota). Chave recusada (401/403), cota (429) ou rede fora interrompem o comando sem gravar nada inventado; erros depois da primeira resposta ficam registrados por caixa.
 6. `agreement` no mesmo arquivo mede, por classe, se a classe sugerida pelo VLM coincide com a humana (`agree`), se ele não viu ocorrência (`none_or_uncertain`) ou confundiu com outra (`confusions`). **É essa medida que decide se o VLM ajuda na triagem**; sem ela, o texto é só descrição.
 
 Outros comandos:
@@ -65,7 +65,7 @@ Outros comandos:
 .\.venv\Scripts\python.exe -m dronecamp_ia report-support --registry data\reviews\ceasa_v8_revisao002_ff34e226416c\registry.json
 ```
 
-`report-support` grava `laudo_apoio.json` e `laudo_apoio.md` na pasta da revisão: só fotos com aprovação humana, uma ocorrência por caixa, com classe, critério da taxonomia, nota do revisor, gravidade histórica do laudo de referência (só como referência) e a descrição da IA quando existir. Gravidade, diagnóstico e recomendação saem como `null`/"a definir pelo responsável técnico". A plataforma pode consumir `draft_report_support()` e `describe_occurrences()` de `vlm_assist.py`.
+`report-support` grava `laudo_apoio.json` e `laudo_apoio.md` na pasta da revisão (o registro precisa estar na taxonomia atual, conferida pelo hash, como no `suggest`): só fotos com aprovação humana, uma ocorrência por caixa, com classe, critério da taxonomia, nota do revisor, gravidade histórica do laudo de referência (só como referência) e a descrição da IA quando existir. Gravidade, diagnóstico e recomendação saem como `null`/"a definir pelo responsável técnico". A plataforma pode consumir `draft_report_support()` e `describe_occurrences()` de `vlm_assist.py`.
 
 ### 2.2 Segurança da chave
 

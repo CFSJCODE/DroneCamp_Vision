@@ -185,19 +185,31 @@ def migration_checklist(current: ModelSpec, target: ModelSpec) -> list[dict]:
     ]
 
 
+def _spec_report(spec: ModelSpec) -> dict:
+    return {**asdict(spec), "label": spec.label, "support": family_support(spec)}
+
+
 def model_info(config, model: str | None = None) -> dict:
-    """Relatório do comando ``model-info``: família configurada, alvo e suporte instalado."""
-    current = parse_model_name(model or config.model)
+    """Relatório do comando ``model-info``: configurado, alvo, suporte instalado e migração.
+
+    ``model`` (opção ``--model``) é só o peso inspecionado: o configurado continua
+    sendo ``config.model`` e a lista de migração continua indo dele para o alvo.
+    """
+    current = parse_model_name(config.model)
     requested = parse_model_name(config.requested_model)
     report = {
-        "configured": {**asdict(current), "label": current.label, "support": family_support(current)},
-        "requested": {**asdict(requested), "label": requested.label, "support": family_support(requested)},
+        "configured": _spec_report(current), "requested": _spec_report(requested),
         "families": {version: {key: (list(value) if isinstance(value, tuple) else value) for key, value in family.items()}
                      for version, family in FAMILIES.items()},
         "local_weights": sorted(path.name for path in (config.root / "models").glob("*.pt")) if (config.root / "models").is_dir() else [],
     }
     if requested.name.lower() != current.name.lower():
         report["migration"] = migration_checklist(current, requested)
+    if model:
+        inspected = parse_model_name(model)
+        report["inspected"] = _spec_report(inspected)
+        if inspected.name.lower() not in (current.name.lower(), requested.name.lower()):
+            report["migration_to_inspected"] = migration_checklist(current, inspected)
     return report
 
 
