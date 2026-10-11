@@ -462,6 +462,15 @@ class WorkspaceServerTests(PlatformFixture):
         status, page = self.request("/r/fixture_v1/" + report["html"])
         self.assertEqual(status, 200)
         self.assertIn("CEASA Minas".encode(), page)
+        # Dados técnicos chegam ao laudo; campo com nome errado é recusado, não descartado em silêncio.
+        status, body = self.request("/api/report", {"review": "fixture_v1", "decisions": decisions, "pdf": False,
+                                                   "details": {"art_number": "MG-123", "inspection_date": "06/08/2025"}}, self.token)
+        self.assertEqual(status, 200, body)
+        status, page = self.request("/r/fixture_v1/" + json.loads(body)["html"])
+        self.assertIn(b"MG-123", page)
+        status, body = self.request("/api/report", {"review": "fixture_v1", "pdf": False, "details": {"art_numero": "MG-123"}}, self.token)
+        self.assertEqual(status, 400, body)
+        self.assertIn("art_numero", body.decode() if isinstance(body, bytes) else body)
         self.assertIn("pendente de validação técnica".encode(), page, "Gravidade e diagnóstico nunca são inferidos.")
         files = json.loads(self.request("/api/reviews/fixture_v1/files")[1])["files"]
         self.assertEqual({item["kind"] for item in files}, {"zip", "html", "json"})

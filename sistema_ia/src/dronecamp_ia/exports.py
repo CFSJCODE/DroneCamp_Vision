@@ -645,7 +645,8 @@ def _report_items(context: _Context, occurrences: list[dict], entries: list[dict
         present = sorted({box["class_id"] for box in entry["boxes"]})
         names = ", ".join(context.labels.get(class_id, f"classe {class_id}") for class_id in present) if entry["status"] == "positive" else ""
         caption = f"{names} (fotografia {position:03d})" if names else f"Fotografia {position:03d} — {STATUS_LABELS[entry['status']]}"
-        source = (f"inspeção aérea com drone; arquivo {image['filename']}, {image['width']} × {image['height']} px, "
+        # Origem neutra: o registro não guarda como a foto foi obtida (há revisões com imagens de referência).
+        source = (f"registro de revisão {context.version}; arquivo {image['filename']}, {image['width']} × {image['height']} px, "
                   f"SHA-256 {image['image_sha256']}; demarcações: {SOURCE_LABELS[entry['source']]}")
         figures.append({"number": len(figures) + 1, "numero_foto": position, "caption": caption, "source": source, "item": item_number})
         figure_of[position] = len(figures)
@@ -667,7 +668,10 @@ def _report_items(context: _Context, occurrences: list[dict], entries: list[dict
                      f"{len(positions)} fotografia(s){figure_text}. Critério de identificação adotado: "
                      f"{category.get('criterion') or 'conforme taxonomia'}. Estes pontos podem vir a ser quantificados em campo; a "
                      "contagem por fotografia pode repetir o mesmo elemento em imagens sobrepostas.")
-        notes = list(dict.fromkeys(box["nota"] for box in confirmed if box["nota"]))[:6]
+        # Notas da fotografia (acesso, observações da cena) antes das notas de cada caixa.
+        photo_notes = [f"fotografia {position:03d}: {by_position[position]['notes']}" for position in positions
+                       if by_position[position]["notes"]]
+        notes = list(dict.fromkeys(photo_notes + [box["nota"] for box in confirmed if box["nota"]]))[:8]
         ai_rows = []
         for box in confirmed:
             note = laudo_abnt.match_ai_note(ai_notes, box["image_sha256"], {"class_id": box["class_id"], "bbox_xyxy": box["bbox_xyxy"]})
@@ -732,7 +736,12 @@ def _build_report_files(config: ProjectConfig, context: _Context, directory: Pat
     for record in occurrences + drafts:
         record["figura"] = figure_by_photo.get(record["numero_foto"])
     positive_photos = counts["by_status"]["positive"]
-    facts = (f"Foram revisadas {counts['images']} fotografias da revisão {context.version}: {positive_photos} com ocorrências "
+    # Revisada = decisão humana nesta exportação (não rascunho) ou aprovação humana gravada no registro.
+    reviewed = sum((entry["source"] == "revisao_humana" and entry["status"] != "pending")
+                   or (entry["source"] == "registro" and entry["image"].get("human_approved") is True) for entry in entries)
+    facts = (f"O registro {context.version} reúne {counts['images']} fotografias, das quais {reviewed} têm decisão humana "
+             f"registrada" + (f" e {counts['images'] - reviewed} ainda não foram revisadas" if reviewed < counts["images"] else "")
+             + f". Situação das fotografias: {positive_photos} com ocorrências "
              f"confirmadas, {counts['by_status']['negative']} sem ocorrências, {counts['by_status']['ambiguous']} ambíguas, "
              f"{counts['by_status']['excluded']} excluídas e {counts['by_status']['pending']} pendentes. Foram confirmadas "
              f"{counts['confirmed_boxes']} demarcações em {len(items)} categoria(s) da lista de verificação"
@@ -755,7 +764,7 @@ def _build_report_files(config: ProjectConfig, context: _Context, directory: Pat
         "pending_suggestions": {"total": counts["pending_suggestions"], "by_class": pending_by_class,
                                 "note": "Sugestões automáticas pendentes não constituem ocorrências; aguardam decisão humana na plataforma de revisão."},
         "ai_support": laudo_abnt.ai_summary(ai_notes, ai_note, {category["slug"]: category["label"] for category in context.classes}),
-        "conclusion": {"facts": facts, "technical_conclusion": PENDING_TEXT},
+        "conclusion": {"facts": facts, "reviewed_images": reviewed, "technical_conclusion": PENDING_TEXT},
         "technical_responsibility": {"name": details["responsible_name"], "title": details["responsible_title"],
                                      "registry": details["responsible_registry"], "art": details["art_number"],
                                      "statement": "Este laudo foi elaborado com base em inspeção visual aérea, não substituindo "

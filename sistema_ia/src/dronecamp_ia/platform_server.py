@@ -185,6 +185,9 @@ def _report_details(value) -> dict | None:
         return None
     if not isinstance(value, dict):
         raise ValueError("details deve ser um objeto.")
+    unknown = set(value) - set(DETAIL_FIELDS)
+    if unknown:  # Campo com nome errado não pode sumir em silêncio do laudo (ex.: ART).
+        raise ValueError(f"Campo desconhecido nos dados do laudo: {sorted(unknown)[0]}.")
     return {key: _text(value, key, 500) for key in DETAIL_FIELDS if key in value}
 
 

@@ -68,7 +68,7 @@ NORMATIVE_REFERENCES = [
      "use": "Referência para calhas, condutores e escoamento das águas pluviais."},
     {"code": "ABNT NBR 16280", "year": None, "title": "Reforma em edificações — Sistema de gestão de reformas — Requisitos",
      "use": "Planejamento e execução das intervenções de reparo decorrentes deste laudo."},
-    {"code": "ABNT NBR 13752", "year": 1996, "title": "Perícias de engenharia na construção civil",
+    {"code": "ABNT NBR 13752", "year": None, "title": "Perícias de engenharia na construção civil",
      "use": "Terminologia e conduta técnica na elaboração de laudos de engenharia."},
     {"code": "ABNT NBR 10719", "year": 2015, "title": "Informação e documentação — Relatório técnico e/ou científico — Apresentação",
      "use": "Estrutura e apresentação do documento (elementos pré-textuais, textuais e pós-textuais)."},
@@ -278,7 +278,7 @@ def ai_summary(notes: dict | None, note: str | None, labels_by_slug: dict[str, s
     """Bloco ``ai_support`` do laudo.json (Anexo C): modelo, contagens e concordância por classe."""
     if not notes:
         return {"available": False, "note": note or "Nenhuma descrição por modelo de visão e linguagem nesta revisão "
-                                                     "(comando describe-occurrences)."}
+                                                     "(ai_notes.json do vlm_assist)."}
     settings = notes.get("settings") or {}
     agreement = notes.get("agreement") or {}
     per_class = []
@@ -307,6 +307,17 @@ def _or_blank(value: str) -> str:
 
 def _pct(value) -> str:
     return "—" if value is None else f"{round(float(value) * 100)}%"
+
+
+def detector_step(header: dict) -> str:
+    """Etapa do detector na metodologia: só afirma a detecção quando há procedência do modelo."""
+    model = header.get("suggestion_model") or {}
+    if not model:
+        return ("Detecção automática: sem arquivo de sugestões do detector nesta revisão; as demarcações vêm da revisão "
+                "humana e do registro de propostas.")
+    text = f"{model.get('model_label') or 'modelo'} (pesos SHA-256 {model.get('weights_sha256') or '—'}"
+    text += f", confiança mínima {model['conf']})" if model.get("conf") is not None else ")"
+    return f"Detecção automática de candidatas por categoria da taxonomia {header.get('taxonomy_version') or '—'} com o detector {text}."
 
 
 def table_of_contents(report: dict) -> list[tuple[str, str, int]]:
@@ -461,7 +472,7 @@ def render_html(report: dict, evidences: dict[int, bytes]) -> str:
                  "A operação da aeronave não tripulada observa a regulamentação da ANAC (RBAC-E nº 94) e do DECEA.</p>"
                  '<h3 id="s4-2">4.2 Processamento assistido por IA</h3><ol class="lista">'
                  f"<li>Registro das fotografias com hash SHA-256 (revisão {_esc(header['registry_version'])}, {summary['images']} fotografias).</li>"
-                 f"<li>Detecção automática de candidatas por categoria da taxonomia {_esc(header['taxonomy_version'] or '—')} com o detector {_esc(model_text)}.</li>"
+                 f"<li>{_esc(detector_step(header))}</li>"
                  "<li>Revisão humana de cada fotografia na plataforma: aceite, correção ou descarte das demarcações e classificação "
                  "da fotografia (positiva, negativa, ambígua ou excluída). Apenas demarcações em fotografias positivas constituem constatações.</li>"
                  f"<li>Modelo de visão e linguagem: {_esc(vlm_text)}.</li>"
@@ -741,7 +752,7 @@ def write_pdf(path: Path, report: dict, evidences: dict[int, bytes]) -> None:
                 "da ANAC (RBAC-E nº 94) e do DECEA."),
               heading("4.2 Processamento assistido por IA", 1),
               p(f"1. Registro das fotografias com hash SHA-256 (revisão {header['registry_version']}, {summary['images']} fotografias)."),
-              p(f"2. Detecção automática de candidatas por categoria da taxonomia {header['taxonomy_version'] or '—'} com o detector {model_text}."),
+              p(f"2. {detector_step(header)}"),
               p("3. Revisão humana de cada fotografia: aceite, correção ou descarte das demarcações e classificação da fotografia. "
                 "Apenas demarcações em fotografias positivas constituem constatações."),
               p(f"4. Modelo de visão e linguagem: {vlm_text}."),

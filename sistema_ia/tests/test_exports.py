@@ -335,6 +335,17 @@ class ReportTests(ExportsFixture):
         self.assertEqual([record["figura"] for record in data["occurrences"]], [1, 2])
         # Dados do imóvel não informados não são estimados.
         self.assertIn("Área total estimada</th><td>não informado", html)
+        # Nota da fotografia positiva aparece no item; origem da figura é neutra (o registro não diz se foi drone).
+        self.assertIn("fotografia 002: Conferida.", data["items"][1]["notes"])
+        self.assertIn("Nota da revisão: fotografia 002: Conferida.", html)
+        self.assertTrue(data["figures"][0]["source"].startswith("registro de revisão fixture_v1"))
+        self.assertNotIn("Fonte: inspeção aérea", html)
+        # Só foto com decisão humana (ou aprovação no registro) conta como revisada.
+        self.assertEqual(data["conclusion"]["reviewed_images"], 1)
+        self.assertIn("das quais 1 têm decisão humana registrada e 2 ainda não foram revisadas", html)
+        # Sem suggestions.json, a metodologia não afirma que o detector rodou.
+        self.assertIn("sem arquivo de sugestões do detector", html)
+        self.assertNotIn("Detecção automática de candidatas", html)
 
     def test_details_are_shown_as_given_and_unknown_keys_are_rejected(self) -> None:
         details = {"inspection_date": "06/08/2025", "roof_type": "Telhas de fibrocimento tipo canaleta", "area": "6040 m²",

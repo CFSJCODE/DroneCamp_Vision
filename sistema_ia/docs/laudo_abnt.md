@@ -24,7 +24,7 @@ A apresentação segue a ABNT NBR 10719 (relatório técnico), com seções nume
 
 ## Normas citadas
 
-ABNT NBR 16747:2020, NBR 5674, NBR 7196, NBR 15575-5, NBR 10844:1989, NBR 16280, NBR 13752:1996, NBR 10719:2015, NBR 6023:2018, NBR 6024:2012, NBR 6027:2012, ANAC RBAC-E nº 94 e Lei nº 6.496/1977 (ART). A lista e o uso de cada uma estão em `NORMATIVE_REFERENCES`. Normas sem ano no código tiveram edições recentes (a NBR 7196, por exemplo, tem edições de 2020 e 2026 no catálogo): confirme a edição vigente no Catálogo ABNT antes de emitir, e preencha o ano em `NORMATIVE_REFERENCES` quando o responsável técnico definir. NBR 13531 e 13532 tratam de elaboração de projetos e não se aplicam a laudo de inspeção.
+ABNT NBR 16747:2020, NBR 5674, NBR 7196, NBR 15575-5, NBR 10844:1989, NBR 16280, NBR 13752, NBR 10719:2015, NBR 6023:2018, NBR 6024:2012, NBR 6027:2012, ANAC RBAC-E nº 94 e Lei nº 6.496/1977 (ART). A lista e o uso de cada uma estão em `NORMATIVE_REFERENCES`. Normas sem ano no código tiveram edições recentes (a NBR 7196 tem edições de 2020 e 2026 no catálogo e a NBR 13752 foi revisada em 2024): confirme a edição vigente no Catálogo ABNT antes de emitir, e preencha o ano em `NORMATIVE_REFERENCES` quando o responsável técnico definir. NBR 13531 e 13532 tratam de elaboração de projetos e não se aplicam a laudo de inspeção.
 
 ## O que nunca é preenchido pelo sistema
 
@@ -35,7 +35,7 @@ ABNT NBR 16747:2020, NBR 5674, NBR 7196, NBR 15575-5, NBR 10844:1989, NBR 16280,
 ## Uso dos modelos de IA
 
 - Detector YOLO: as sugestões sem decisão humana ficam no Anexo B e não entram em contagens nem figuras.
-- Modelo de visão e linguagem (`describe-occurrences`, PR #11): quando existe `ai_notes.json` da mesma versão do registro, a descrição de cada caixa humana entra no item como "Subsídio de IA" e a concordância por classe vai ao Anexo C. Notas de outra versão são ignoradas.
+- Modelo de visão e linguagem: o comando `describe-occurrences` que grava o `ai_notes.json` está no PR #11, ainda não mesclado nesta branch. Quando existe `ai_notes.json` da mesma versão do registro, a descrição de cada caixa humana entra no item como "Subsídio de IA" e a concordância por classe vai ao Anexo C. Notas de outra versão são ignoradas.
 
 ## Dados técnicos opcionais
 
