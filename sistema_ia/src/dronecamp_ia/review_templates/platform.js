@@ -41,6 +41,8 @@ const pct = value => value == null ? '—' : `${(value * 100).toFixed(1)}%`;
 const fmtBytes = n => n == null ? '—' : n >= 1e9 ? `${(n / 1e9).toFixed(2)} GB` : n >= 1e6 ? `${(n / 1e6).toFixed(1)} MB` : n >= 1e3 ? `${Math.round(n / 1e3)} kB` : `${n} B`;
 // Data legível dd/mm/aaaa hh:mm no fuso do navegador (nunca o carimbo ISO cru).
 const fmtDate = value => { if (!value) return '—'; const date = new Date(value); return isNaN(date) ? String(value) : date.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '') };
+// Quantas edificações a inspeção cobre, sem expor os códigos internos (building_group).
+const buildingCount = n => n ? `${n} edificaç${n > 1 ? 'ões' : 'ão'}` : 'edificação não informada';
 /* ======================= Nomes legíveis ======================= */
 // Mesmo algoritmo de naming.py (tests/test_naming.py roda os dois e exige resultados iguais).
 // Ids e pastas em disco nunca mudam; aqui só se deriva o nome mostrado.
@@ -409,7 +411,7 @@ function openPhoto(index) {
   $('viewer').classList.remove('drawing');
   const photo = item();
   $('photoTitle').textContent = `Foto ${index + 1} de ${DATA.images.length}`;
-  $('photoMeta').textContent = [photo.filename, photo.pages && photo.pages.length ? `páginas ${photo.pages.join(', ')}` : null, `${photo.width} × ${photo.height}`, photo.building_group, photo.ingest && photo.ingest.kind === 'video_frame' ? `quadro de vídeo em ${photo.ingest.frame_time_s}s` : null].filter(Boolean).join(' · ');
+  $('photoMeta').textContent = [photo.filename, photo.pages && photo.pages.length ? `páginas ${photo.pages.join(', ')}` : null, `${photo.width} × ${photo.height}`, photo.ingest && photo.ingest.kind === 'video_frame' ? `quadro de vídeo em ${photo.ingest.frame_time_s}s` : null].filter(Boolean).join(' · ');
   $('proposalStatus').textContent = names[photo.status];
   $('proposalStatus').className = 'chip ' + ({ positive: 'bad', negative: 'ok', ambiguous: 'warn', excluded: 'neutral' }[photo.status] || '');
   $('proposalNotes').textContent = photo.notes;
@@ -615,7 +617,7 @@ function renderHome() {
   const sparse = DATA.classes.filter(category => totals[category.id].boxes < 5);
   $('kpiPhotos').textContent = DATA.images.length;
   const groups = [...new Set(DATA.images.map(photo => photo.building_group).filter(Boolean))];
-  $('kpiPhotosHint').textContent = !HAS_IMAGES ? 'nenhuma inspeção aberta' : groups.length ? `${groups.length} edificaç${groups.length > 1 ? 'ões' : 'ão'}: ${groups.join(', ')}` : 'edificação não informada';
+  $('kpiPhotosHint').textContent = !HAS_IMAGES ? 'nenhuma inspeção aberta' : buildingCount(groups.length);
   $('kpiDecisions').textContent = `${decided}/${DATA.images.length}`;
   $('kpiDecisionsBar').style.width = `${DATA.images.length ? decided / DATA.images.length * 100 : 0}%`;
   $('kpiBoxes').textContent = boxes;
@@ -685,7 +687,8 @@ function inspectionCards(compact) {
     const card = el('div', { class: 'inspection' + (review.current ? ' current' : '') });
     card.append(
       el('div', { class: 'head' }, el('b', { title: review.name }, reviewLabel(review.name, review.display_name)), el('span', { class: 'chip ' + (review.current ? 'primary' : review.page_ready === false ? 'warn' : 'neutral') }, review.current ? 'aberta' : review.page_ready === false ? 'página não gerada' : review.scope_label || 'revisão')),
-      el('div', { class: 'meta' }, el('span', {}, (review.buildings || []).join(', ') || 'edificação não informada'), review.updated_at ? el('span', {}, `atualizada ${fmtDate(review.updated_at)}`) : null),
+      // Só a contagem: o código interno da edificação (ex.: ceasa_pavilhao_a) não é mostrado.
+      el('div', { class: 'meta' }, el('span', {}, buildingCount((review.buildings || []).length)), review.updated_at ? el('span', {}, `atualizada ${fmtDate(review.updated_at)}`) : null),
       el('div', { class: 'nums' }, el('div', {}, el('b', {}, review.images ?? '—'), 'fotos'), el('div', {}, el('b', {}, `${progress}%`), 'decididas'), el('div', {}, el('b', { class: review.suggestions_pending ? 'cell-ai' : '' }, review.suggestions_pending ?? 0), 'sugestões IA')),
       el('div', { class: 'progress ok' }, el('i', { style: `width:${progress}%` })));
     const actions = el('div', { class: 'actions' });
