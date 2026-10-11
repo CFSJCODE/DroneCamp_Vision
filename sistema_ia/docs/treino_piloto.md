@@ -37,7 +37,7 @@ Conferência das sugestões (confiança ≥ 0,15) contra as caixas humanas, mesm
 
 ## Sugestões na página de revisão
 
-`suggest --registry` grava `suggestions.json` ao lado do registro (hash do registro, hash dos pesos, confiança mínima e tamanho da imagem) e regenera a página. O atalho [Abrir revisao DroneCamp.cmd](../../Abrir%20revisao%20DroneCamp.cmd) agora abre a v7, com **170 sugestões em 33 fotos**.
+`suggest --registry` grava `suggestions.json` ao lado do registro (hash do registro, hash dos pesos, confiança mínima e tamanho da imagem) e regenera a página. O antigo atalho `Abrir revisao DroneCamp.cmd` abria então a v7, com **170 sugestões em 33 fotos** (atalho removido em 11/10/2026; use `Abrir plataforma DroneCamp.cmd`).
 
 Na página, as sugestões aparecem tracejadas com “IA n” e a confiança. **Aceitar** copia a caixa para a revisão, com nota de origem, e volta a decisão da foto para pendente; **Descartar** esconde a sugestão nesta revisão. Exportar e importar o arquivo de revisão continua sendo o único caminho para uma caixa chegar ao dataset.
 

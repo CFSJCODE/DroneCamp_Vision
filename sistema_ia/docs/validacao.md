@@ -157,7 +157,7 @@ A [página corrigida](../data/reviews/ceasa_v6_corrigida_a36ea7f67d08/index.html
 
 A captura de tela vazia foi investigada. O inventário de abas confirmou abertura direta de `src/dronecamp_ia/review_templates/index.html`. Esse modelo contém o marcador `__REVIEW_DATA__`; sua execução direta gera `ReferenceError` antes de preencher fila e fotografia. O arquivo gerado da revisão tem os dados preenchidos.
 
-Foi aberto no Edge `data/reviews/ceasa_v6_corrigida_a36ea7f67d08/index.html`, e a URL da nova aba foi confirmada. Na pasta principal foi criado [Abrir revisao DroneCamp.cmd](../../Abrir%20revisao%20DroneCamp.cmd), com caminho relativo à sua própria localização e verificação de existência da página. O README passou a orientar esse acesso.
+Foi aberto no Edge `data/reviews/ceasa_v6_corrigida_a36ea7f67d08/index.html`, e a URL da nova aba foi confirmada. Na pasta principal foi criado `Abrir revisao DroneCamp.cmd` (removido em 11/10/2026, substituído por `Abrir plataforma DroneCamp.cmd`), com caminho relativo à sua própria localização e verificação de existência da página. O README passou a orientar esse acesso.
 
 [Verificação desta correção de acesso](../runs/review_opening_fix_20261004T024452Z_040b147c/validation.json): 38 imagens presentes com hashes corretos, 13 categorias, registro e pesos iguais à verificação anterior, e 173 links locais conferidos antes desta nota. Não foi necessário alterar a interface, regenerar a revisão ou reimportar decisões. A abertura da aba foi confirmada; a interação visual com a página local não foi automatizada nesta execução.
 
