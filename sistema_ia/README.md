@@ -28,6 +28,7 @@ Base local de **detecção assistida** para inspeção de telhados industriais. 
 - [Novas imagens e anomalias](docs/novas_imagens_e_anomalias.md): como incorporar exemplos e tratar defeitos inéditos.
 - [Decisões do projeto](docs/decisoes.md): diretriz registrada de melhoria progressiva.
 - [Aprendizado por reforço, scikit-learn e PyTorch](docs/aprendizado_rl_sklearn.md): fila de revisão por bandit LinUCB, calibração das sugestões, reamostragem de classes raras, busca de hiperparâmetros por successive halving, adoção por classe e por que não TensorFlow.
+- [Modelos de visão: YOLO26 → YOLO27 e IA gratuita de apoio](docs/modelos_e_ia_gratuita.md): família/versão do detector num só lugar (`model-info`, lista de migração para o YOLO27 sem mudar código) e VLM gratuito via OpenRouter que descreve recortes e rascunha o apoio ao laudo, sempre pendente (`describe-occurrences`, `report-support`, `list-free-models`).
 - [Marcação automática](docs/marcacao_automatica.md): a IA procura e classifica não conformidades sozinha (piloto + busca aberta YOLOE por descrição, ex.: detritos na calha) e tudo fica pendente da sua revisão; `suggest --zero-shot`.
 - [Validações desta entrega](docs/validacao.md): verificações executadas e limites reais.
 - `configs/taxonomy.json`: catálogo com IDs, critérios, páginas e gravidade histórica.
@@ -196,11 +197,12 @@ O exportador trabalha sobre cópia do checkpoint e registra hash do artefato. Em
 
 1. **Categorias:** `configs/taxonomy.json` e `detection_names()` em `config.py`. Não alterar IDs depois de anotar sem migrar dataset e treinar novo modelo.
 2. **Dados:** `validate_dataset()` em `dataset.py`. `groups.csv` precisa representar a verdadeira origem; o código só verifica consistência declarada e hashes idênticos.
-3. **Modelo/API:** `load_detector()` e `check_domain_names()` em `backend.py`. Revalidar YOLO27l quando publicado e comparar no mesmo teste.
+3. **Modelo/API:** `load_detector()` e `check_domain_names()` em `backend.py`; família/versão (YOLO26 → YOLO27) em `model_family.py` (`FAMILIES`, `model-info`). Quando o YOLO27 for publicado, seguir a lista de migração de [modelos e IA gratuita](docs/modelos_e_ia_gratuita.md): treino no mesmo dataset, paridade ONNX e `compare-models` antes de trocar `model` em `configs/project.yaml`.
 4. **Evidências:** `serialize_detections()` e `predict()` em `prediction.py`. Severidade permanece vazia; referência histórica é identificada separadamente.
 5. **Experimentos:** `prepare_dataset()`, `train()`, `evaluate()` e `tune()` em `training.py`.
 6. **Extração:** `extract_report_images()` em `report_images.py`. Sem caixas inventadas e sem conversão automática de figura em classe.
 7. **Revisão:** `review_data.py`, `review_render.py` e `review_templates/index.html`. Decisões são separadas das propostas; edição invalida aprovação e importação preserva versões anteriores.
 8. **Dados aprovados:** `build_approved_dataset()` em `review_dataset.py` e `validate_training_provenance()` em `review_provenance.py`. Conferem origem, autoria declarada, integridade e prontidão. Esses registros não autenticam uma pessoa nem comprovam diversidade real por conta própria.
+9. **IA de apoio (VLM):** `describe_occurrences()` e `draft_report_support()` em `vlm_assist.py`. A chave fica só em `OPENROUTER_API_KEY`/`.env`; descrições, classe sugerida, gravidade e recomendações nunca entram como decisão: `status: pendente` e campos técnicos `null`.
 
 O projeto usa bibliotecas com licenças próprias. A licença Ultralytics deve ser avaliada antes do uso comercial/SaaS: a fabricante apresenta opções AGPL-3.0 e Enterprise. Esta entrega não determina enquadramento jurídico. [Licenciamento oficial](https://www.ultralytics.com/license)

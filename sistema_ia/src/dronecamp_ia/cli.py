@@ -17,6 +17,8 @@ Comandos e onde está o código de cada um:
   ``report-models`` → ``model_report.py``; ``train-pilot --gpu-eval`` / ``gpu-eval-worker`` → ``gpu_eval.py``;
   ``retrain-cycle`` → ``cycle.py``
 - Marcação automática: ``suggest --zero-shot`` e ``evaluate-autolabel`` → ``autolabel.py`` (YOLOE)
+- Família/versão do YOLO (26 → 27): ``model-info`` → ``model_family.py``
+- VLM gratuito (OpenRouter): ``describe-occurrences`` / ``report-support`` / ``list-free-models`` → ``vlm_assist.py``
 - Plataforma comercial: ``import-media`` → ``ingest.py`` (fotos e vídeos enviados viram revisão nova)
 
 Quando mexer: para criar um comando novo ou uma opção nova (``--algo``) em um
@@ -241,6 +243,22 @@ def build_parser() -> argparse.ArgumentParser:
     bandit.add_argument("--imgsz", type=int)
     bandit.add_argument("--batch", type=int)
     exporting.add_argument("--parity-source", type=Path, help="Pasta de fotos para comparar .pt e .onnx.")
+    # Família/versão do detector (YOLO26 hoje; YOLO27 quando a Ultralytics publicar).
+    info = commands.add_parser("model-info", help="Família configurada, alvo (YOLO27) e suporte na Ultralytics instalada.")
+    info.add_argument("--model", help="Peso a conferir (padrão: model do project.yaml).")
+    info.add_argument("--output", type=Path, help="Salvar o relatório JSON.")
+    # Apoio de um VLM gratuito (OpenRouter): descrições e texto de apoio, sempre pendentes.
+    describe = commands.add_parser("describe-occurrences", help="VLM gratuito descreve os recortes das caixas (ai_notes.json, pendente).")
+    describe.add_argument("--registry", type=Path, required=True)
+    describe.add_argument("--include-suggestions", action="store_true", help="Descrever também as sugestões pendentes do modelo.")
+    describe.add_argument("--limit", type=int, help="Máximo de chamadas nesta execução (limites dos modelos gratuitos).")
+    describe.add_argument("--model", help="Slug do OpenRouter (padrão: configs/vlm_assist.json ou OPENROUTER_MODEL).")
+    describe.add_argument("--no-resume", action="store_true", help="Ignorar descrições já gravadas para este registro.")
+    support = commands.add_parser("report-support", help="Rascunho de apoio ao laudo (laudo_apoio.json/.md) com campos técnicos em branco.")
+    support.add_argument("--registry", type=Path, required=True)
+    support.add_argument("--output", type=Path, help="Pasta de destino (padrão: a pasta da revisão).")
+    free_models = commands.add_parser("list-free-models", help="Modelos gratuitos com entrada de imagem no OpenRouter.")
+    free_models.add_argument("--output", type=Path, help="Salvar a lista em JSON.")
     return parser
 
 
@@ -416,6 +434,30 @@ def main(argv: list[str] | None = None) -> int:
             fixed = {key: value for key in ("imgsz", "batch") if (value := getattr(args, key)) is not None}
             output = successive_halving(config, args.data, args.weights, args.arms, args.min_epochs, args.eta,
                                         args.rounds, space=load_space(args.space), fixed=fixed)
+        elif args.command == "model-info":
+            from .model_family import format_model_info, model_info
+            report = model_info(config, args.model)
+            if args.output:
+                write_json(args.output, report)
+            print(format_model_info(report))
+            return 0
+        elif args.command == "describe-occurrences":
+            from .vlm_assist import describe_occurrences
+            output = describe_occurrences(config, args.registry, args.include_suggestions, args.limit, args.model,
+                                          resume=not args.no_resume)
+            notes = json.loads(output.read_text(encoding="utf-8"))
+            print(json.dumps({key: notes[key] for key in ("described", "total_boxes", "calls_this_run", "errors_this_run", "agreement")},
+                             ensure_ascii=False, indent=2))
+        elif args.command == "report-support":
+            from .vlm_assist import draft_report_support
+            output = draft_report_support(config, args.registry, args.output)
+        elif args.command == "list-free-models":
+            from .vlm_assist import list_free_vision_models, load_vlm_settings
+            rows = list_free_vision_models(load_vlm_settings(config))
+            if args.output:
+                write_json(args.output, rows)
+            print(json.dumps(rows, ensure_ascii=False, indent=2))
+            return 0
         elif args.command == "migrate-review":
             from .review_data import migrate_review_taxonomy
             migrate_review_taxonomy(config, args.registry, args.previous_taxonomy, args.output)

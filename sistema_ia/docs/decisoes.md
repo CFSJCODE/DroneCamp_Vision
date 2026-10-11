@@ -97,3 +97,14 @@ A APU entra só na predição ONNX via DirectML; o treino segue na CPU. Resultad
 - **Classes sugeridas, nenhuma ativada:** `telha_trincada`, ativar o ID 17 `objeto_estranho_cobertura`, `residuo_tinta_argamassa`, `crescimento_biologico` ([detalhes](novas_classes_propostas.md)).
 
 **Estado validado:** revisão v8 com 37 fotos aprovadas e 246 caixas (155 no treino); treino piloto de 80 épocas auditado; nas fotos não vistas o v8 reencontrou 9/41 caixas humanas (época 41), contra 7/29 do v7, diferença dentro do ruído; paridade ONNX 11/11; 181 testes OK, incluindo os e2e reais. **Não validado:** melhora de generalização, revisão humana das fotos da internet e das classes sugeridas, aparência da página no Windows. Resultados em [treino piloto](treino_piloto.md#rodada-v8--2ª-revisão-da-revisao002-04102026).
+
+## 10/10/2026 — família/versão do detector e VLM gratuito de apoio
+
+**Origem:** pedido do Cláudio para aprimorar e refatorar o código e os modelos de visão com YOLO26 preparado para o YOLO27 e modelos gratuitos de IA adequados a cada etapa (roteador `openrouter/free`). Detalhes em [modelos e IA gratuita](modelos_e_ia_gratuita.md).
+
+- **Família/versão num só lugar.** `model_family.py` responde o que é cada peso, se pode ser baixado, se a Ultralytics instalada já tem a família e que perda auditar. `yolo27l.pt` continua recusado com explicação enquanto a biblioteca não o publicar (8.4.172 instalada e 8.4.175 do PyPI conferidas: sem YOLO27). A troca futura é só `model`/`pilot.model` no `project.yaml`, depois de treino no mesmo dataset, paridade ONNX e `compare-models`; `model-info` imprime essa lista.
+- **VLM gratuito só como apoio.** `describe-occurrences` pede a um modelo gratuito do OpenRouter a descrição do recorte de cada caixa, sem revelar a classe humana, e grava `ai_notes.json` pendente com a concordância por classe. `report-support` monta `laudo_apoio.json/.md` com as ocorrências aprovadas e os campos de gravidade, diagnóstico e recomendação em branco. Chave só em variável de ambiente ou `.env` ignorado pelo git.
+- **Não implementado por falta de ganho mensurável:** SAM, Grounding DINO e OWLv2; a busca aberta (YOLOE) já medida continua opcional.
+
+**Estado validado:** 34 testes novos sem rede; suíte completa na nuvem com Ultralytics 8.4.172 e `yolo26l.pt` real. **Não validado:** chamadas reais ao OpenRouter (a nuvem não alcança o serviço), qualidade das descrições nas fotos do projeto, YOLO27.
+
