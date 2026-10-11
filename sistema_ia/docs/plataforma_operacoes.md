@@ -1,14 +1,63 @@
-# Plataforma de operações YOLO
+# Plataforma DroneCamp Vision
 
-A página de revisão (`data/reviews/<registro>/index.html`) virou uma plataforma com cinco seções, navegáveis pelo trilho à esquerda:
+A página de revisão (`data/reviews/<inspeção>/index.html`) é a plataforma do produto: uma única página, sem dependências externas, com oito seções navegáveis pela barra lateral. Com o servidor local ela recebe fotos e vídeos, gera laudos e pacotes de evidências e acompanha treinos ao vivo; aberta do disco, a revisão continua funcionando inteira.
 
-| Seção | O que mostra | De onde vêm os dados |
+| Seção | O que faz | De onde vêm os dados |
 | --- | --- | --- |
-| Visão geral | Fotos, decisões, caixas atuais, sugestões da IA pendentes, cobertura por classe, triagem, modelo das sugestões e último treino | Registro da revisão, rascunho local do navegador e `runs/` |
-| Revisão e classificação | Fila com miniaturas, foto com caixas e sugestões tracejadas, filtro de confiança, editor de caixas e decisão por foto | Registro + `suggestions.json` (mesma lógica de antes) |
-| Treinamento e fine-tuning | Ciclo de seis etapas com os comandos prontos, execuções em `runs/`, curvas de perda e métricas por época, gráficos da Ultralytics e formulário de novo treino piloto com estimativa de duração em CPU | `runs/*/execution.json`, `summary.json`, `fit/results.csv`, `data/pilot/*` |
-| Monitoramento | Progresso do treino (época, tempo decorrido, tempo restante), métricas da última época, curvas e a tarefa em andamento no servidor local com o log | `fit/results.csv` relido a cada 5 s pelo servidor local |
-| Modelos e comparação | Critério de adoção, comparação entre modelos por divisão (recall e precisão), caixas por classe no dataset de cada treino e melhor mAP50 por treino | `runs/compare_*.json`, `execution.json` |
+| Início | Indicadores da inspeção aberta (fotos, decisões, ocorrências, sugestões da IA pendentes, classes com poucos exemplos), ações rápidas, cobertura por classe, triagem, modelo das sugestões, último treino e inspeções recentes | Registro da revisão, rascunho local do navegador e `runs/` |
+| Inspeções | Todas as inspeções do espaço de trabalho com fotos, progresso das decisões, sugestões pendentes e atalhos para revisar, gerar laudo ou abrir | `data/reviews/*/registry.json` (servidor) ou só a inspeção da página (disco) |
+| Importar mídia | Arrastar fotos (JPG, PNG, WEBP) e vídeos (MP4, MOV, AVI, MKV); vídeos viram quadros no intervalo escolhido; cria uma inspeção nova e, se pedido, gera as sugestões do modelo em seguida | `ingest.py` pelo servidor local |
+| Revisão | Fila com miniaturas e filtros, foto com caixas e sugestões tracejadas, limiar de confiança, editor de caixas (desenho ou coordenadas), decisão por foto e salvamento do arquivo de revisão | Registro + `suggestions.json` (mesma lógica de antes) |
+| Laudos e downloads | Laudo preliminar em HTML e PDF com as evidências, pacote ZIP das fotos demarcadas (com CSV e manifesto), CSV das ocorrências, arquivo de revisão e histórico do que já foi gerado | `exports.py` pelo servidor local; CSV e JSON também offline |
+| Treinamento | Ciclo de fine-tuning com os comandos prontos, execuções de `runs/`, curvas por época e formulário de novo treino piloto com estimativa de duração | `runs/*/execution.json`, `summary.json`, `fit/results.csv`, `data/pilot/*` |
+| Monitoramento | Progresso do treino em andamento, métricas da última época, curvas ao vivo e a tarefa do servidor com o log | `fit/results.csv` relido a cada 5 s pelo servidor local |
+| Modelos | Critério de adoção, comparação entre modelos por divisão, caixas por classe no dataset de cada treino e melhor mAP50 por treino | `runs/compare_*.json`, `execution.json` |
+
+Em toda seção a página repete o limite do produto: sugestões da IA aguardam decisão humana; gravidade, diagnóstico e recomendações dependem de validação técnica e nunca são inferidos. O laudo sai como "preliminar, sujeito a validação por responsável técnico", com esses campos em branco.
+
+## Dois modos de abrir
+
+1. **Direto do disco** (`Abrir revisao DroneCamp.cmd` ou o `index.html` da inspeção): funciona offline e sem Python. Revisão, CSV e arquivo de revisão funcionam; importação, laudos e pacotes mostram um aviso pedindo o servidor; treinamento, monitoramento e modelos exibem o instantâneo de quando a página foi gerada.
+2. **Servidor local** (`Abrir plataforma DroneCamp.cmd`, ou `python -m dronecamp_ia platform`): servidor da biblioteca padrão preso a `127.0.0.1:8765`. Sem `--registry`, trabalha com todas as inspeções de `data/reviews/` (modo espaço de trabalho) e abre a mais recente; `--registry` (repetível) limita a lista. Acrescenta:
+   - importação de fotos e vídeos pela página (uma importação por vez; os arquivos ficam em `.runtime/uploads/<lote>/` só até virarem a inspeção);
+   - laudo preliminar em `data/reviews/<inspeção>/laudos/<data>_laudo_<inspeção>/` (`laudo.html`, `laudo.json`, `manifesto.json` e `laudo.pdf` quando o extra `reports` está instalado) e pacote ZIP em `exportacoes/`;
+   - monitoramento ao vivo de um treino em andamento (lê `results.csv` enquanto a Ultralytics escreve);
+   - **Iniciar treino** (`train-pilot`) e **Gerar sugestões** (`suggest` na inspeção aberta), uma tarefa por vez, com log em `.runtime/jobs/`;
+   - ao salvar o arquivo de revisão, uma cópia vai para `data/reviews/<inspeção>/feedback_inbox/` (além do download).
+
+O servidor não aprova dados, não adota modelos, não apaga inspeções e não infere gravidade. Só aceita os comandos `train-pilot` e `suggest`, com cada opção validada (datasets só de `data/pilot/`, pesos só de `models/` ou `runs/`, `imgsz` múltiplo de 32), serve arquivos apenas da pasta de cada inspeção e de `runs/`, e exige um token sorteado na partida para qualquer alteração ou envio, o que impede que outro site aberto no navegador dispare treinos ou envie arquivos.
+
+### Rotas do servidor
+
+| Rota | Uso |
+| --- | --- |
+| `GET /`, `GET /r/<pasta>/` | Página da inspeção padrão ou de uma inspeção específica |
+| `GET /api/workspace?review=<pasta>` | Inspeções com fotos, decisões, sugestões pendentes e edificações; capacidades deste PC (`pdf`, `video_frames`) |
+| `GET /api/operations?review=<pasta>` | Treinos, curvas, comparações, datasets, pesos e arquivos gerados da inspeção |
+| `GET /api/jobs`, `POST /api/jobs`, `POST /api/jobs/stop` | Tarefa em andamento, iniciar e interromper |
+| `POST /api/uploads` → `PUT /api/uploads/<lote>/files` → `POST /api/uploads/<lote>/ingest` → `GET /api/uploads/<lote>` | Lote de envio, um arquivo por requisição (cabeçalho `X-File-Name`), importação em segundo plano e acompanhamento |
+| `POST /api/export/evidence` | ZIP das fotos demarcadas (`only`: all, decided, positive; `max_side`; `include_suggestions`) |
+| `POST /api/report` | Laudo preliminar (título, cliente, local, responsável técnico, observações, `pdf`, `all_images`) |
+| `GET /api/reviews/<pasta>/files` | Laudos e pacotes já gerados |
+| `POST /api/feedback` | Cópia do arquivo de revisão exportado |
+
+As rotas que alteram algo exigem o cabeçalho `X-DroneCamp-Token`. Decisões enviadas aos laudos e pacotes são as mesmas do arquivo de revisão (`image_sha256`, `status`, `boxes`, `notes`, `confirmed_complete`, `dismissed_suggestions`): valem sobre o registro, foto a foto.
+
+## Importar mídia pelo terminal
+
+O mesmo fluxo da página existe como comando, útil para pastas grandes já no disco:
+
+```powershell
+.\.venv\Scripts\python.exe -m dronecamp_ia import-media --source "D:\voo\fotos" --source "D:\voo\video.mp4" --output "data\reviews\galpao_b_2026_10" --group galpao_b --every-seconds 2 --max-frames 200
+```
+
+Cada foto é congelada por SHA-256 em `originals/` (girada pelo EXIF antes, quando preciso); cada vídeo vira quadros JPEG amostrados a cada `--every-seconds` segundos (no máximo `--max-frames` por vídeo, todos na mesma cena); fotos repetidas entram uma vez. A inspeção nasce com todas as fotos "ambíguas", sem caixas e com `visual_review_status = pending_model_suggestions`; as sugestões vêm de `suggest --registry ...` (ou da opção "Gerar sugestões da IA após importar" na página). Quadros de vídeo exigem OpenCV (vem com a Ultralytics) ou `ffmpeg` no PATH. Inspeções com muitas fotos ocupam GB em `originals/`, `images/` e `evidence/`; acrescente a pasta ao `.gitignore` como foi feito com `ceasa_lado_a_*`.
+
+## Laudos e pacotes de evidências
+
+- **Pacote de evidências (ZIP)**: `evidencias/NNN_<nome>.jpg` (fotos com as caixas desenhadas; sugestões pendentes tracejadas só se marcado), `ocorrencias.csv` (uma linha por caixa, com classe, coordenadas e origem: revisão humana ou registro), `fotos.csv`, `LEIA-ME.txt` e `manifesto.json` com o SHA-256 de cada arquivo e do registro.
+- **Laudo preliminar**: identificação (cliente, local, responsável técnico, revisor), resumo por classe com o critério da taxonomia, uma seção por foto positiva com a evidência e a tabela de caixas, anexos com as demais fotos e as sugestões pendentes, metodologia e limitações. Gravidade, diagnóstico e recomendação saem como "pendente de validação técnica". O PDF usa `reportlab` (`pip install -e .[reports]`); sem ele, HTML e JSON saem normalmente.
+- **CSV de ocorrências** e **arquivo de revisão (JSON)**: montados no navegador com o estado atual (rascunho local sobre o registro), também offline.
 
 ## Nomes dos treinos
 
@@ -20,35 +69,24 @@ Cada execução de `runs/` aparece com um nome legível no lugar do id (`pilot_t
 
 O id continua visível em letra pequena, porque é ele que aparece nos comandos e nas pastas.
 
-O tema escuro é o padrão; o botão da lua alterna para o tema claro, que mantém a paleta original da revisão. Atalhos na revisão: `←`/`→` fotos, `B` desenhar, `A` aceitar a primeira sugestão, `X` descartar a primeira sugestão, `Del` excluir a caixa selecionada.
+Atalhos na revisão: `←`/`→` fotos, `B` desenhar, `A` aceitar a primeira sugestão, `X` descartar a primeira sugestão, `Del` excluir a caixa selecionada.
 
 ## Design
 
-Uma única linguagem visual: estrutura **Fluent 2** com **Liquid Glass** (vidro acrílico) e paleta escura inspirada no Moonlight (Deep Navy e Aqua Cyan). Os dois temas têm a mesma forma e mudam só os tokens de cor; o escuro é o padrão.
+Identidade comercial clara, pensada para o cliente ver a tela ao lado do inspetor: barra lateral escura com rótulos, conteúdo em cartões brancos sobre fundo cinza-azulado, uma cor primária e uma cor própria para tudo o que veio da IA. O tema escuro é opcional (botão no rodapé da barra lateral; a escolha fica no navegador).
 
 | Elemento | Como é |
 | --- | --- |
-| Tipografia | Poppins e Roboto (Google Fonts) com Segoe UI Variable e fontes do sistema como reserva; sem internet, a página usa a reserva |
-| Cores | Base Deep Navy `#08111F` / Midnight Slate `#0D1726`; destaque Aqua Cyan `--primary`; âmbar `--ai` marca o que veio da IA; verde, âmbar e vermelho indicam estado. O trilho e o dock usam `--bg-secondary`, então ficam claros no tema claro |
-| Cantos | 7px em controles, 14px em cartões, cápsula nos botões táteis |
-| Botões | Cápsula com ícone (salvar), botões neon de vidro com raio de luz (ações das caixas) e botão iridescente; desabilitados ficam apagados e sem brilho |
-| Navegação | Trilho compacto no computador; até 1000px vira dock com lupa de vidro na base (com o ponto verde de treino em andamento), e o botão de tema flutua no topo |
-| Vidro | Translucidez com `backdrop-filter` (desfoque 28px e saturação), borda especular de 1px e fundo com gradientes estáticos |
+| Tipografia | Manrope (títulos) e Inter (texto), com Segoe UI e fontes do sistema como reserva; sem internet, a página usa a reserva. Mono: Cascadia/Consolas |
+| Cores | Primária azul `#2457F5`; violeta `#7C3AED` marca sugestões e tarefas da IA; verde, âmbar e vermelho indicam estado. Superfícies brancas sobre `#F4F6F9`, bordas `#E3E8EF`; no escuro, os mesmos papéis com tokens próprios |
+| Superfícies | Cartões planos com borda de 1 px e sombra discreta; sem vidro nem desfoque |
+| Cantos | 8 px em controles, 12 px em cartões, cápsula nas etiquetas |
+| Navegação | Barra lateral fixa com dois grupos (Operação, Inteligência artificial) e contadores; até 860 px vira menu lateral deslizante com barra superior |
 | Rótulos nas fotos | Caixas: rótulo na cor da classe com texto escuro. Sugestões da IA: placa escura com texto na cor da classe e contorno tracejado |
 | Foco | Anel duplo em todos os controles, inclusive caixas de seleção, controle de confiança e foto |
-| Movimento | 100–600ms; "reduzir movimento" desliga animações, inclusive o brilho da decisão |
+| Movimento | 100–300 ms; "reduzir movimento" desliga animações |
 
-Sem suporte a `backdrop-filter`, ou com "reduzir transparência" ativado, o vidro vira superfície opaca. Tudo fica em `review_templates/index.html`, com os tokens no início do `<style>`; os nomes `--primary`, `--ai`, `--ok`, `--warn`, `--muted`, `--line-strong` e `--chart-grid` também são lidos pelo script dos gráficos.
-
-## Dois modos de abrir
-
-1. **Direto do disco** (`Abrir revisao DroneCamp.cmd`): funciona offline e sem Python. A revisão funciona inteira; treino, monitoramento e modelos mostram um instantâneo de quando a página foi gerada.
-2. **Servidor local** (`Abrir plataforma DroneCamp.cmd`, ou `python -m dronecamp_ia platform --registry ...`): servidor da biblioteca padrão preso a `127.0.0.1:8765`. Acrescenta:
-   - monitoramento ao vivo de um treino em andamento (lê `results.csv` enquanto a Ultralytics escreve);
-   - botão **Iniciar treino** (`train-pilot`) e **Gerar sugestões** (`suggest` nesta revisão), uma tarefa por vez, com log em `.runtime/jobs/`;
-   - ao salvar o arquivo de revisão, uma cópia vai para `data/reviews/<registro>/feedback_inbox/` (além do download).
-
-A escolha por um servidor leve, e não por um backend permanente, mantém a página estática como fonte principal: o navegador não permite que um arquivo aberto do disco leia `runs/` durante um treino nem inicie processos. O servidor não importa revisões, não aprova dados, não adota modelos e não apaga arquivos. Ele só aceita os comandos `train-pilot` e `suggest`, com cada opção validada (datasets só de `data/pilot/`, pesos só de `models/` ou `runs/`, `imgsz` múltiplo de 32) e exige um token sorteado na partida para qualquer alteração, o que impede que outro site aberto no navegador dispare treinos.
+Os arquivos ficam em `review_templates/`: `index.html` (estrutura), `platform.css` (tokens no início, em `:root` e `[data-theme="dark"]`) e `platform.js` (comportamento). `build_page` embute os três em um único HTML, então a página continua abrindo do disco. Os nomes `--primary`, `--ai`, `--ok`, `--warn`, `--bad`, `--muted`, `--line-strong` e `--chart-grid` também são lidos pelo script dos gráficos.
 
 ## Atualizar a página sem regerar as evidências
 
@@ -56,7 +94,7 @@ A escolha por um servidor leve, e não por um backend permanente, mantém a pág
 .\.venv\Scripts\python.exe -m dronecamp_ia refresh-page --registry "data\reviews\ceasa_v8_revisao002_ff34e226416c\registry.json"
 ```
 
-Regrava só o `index.html` com o modelo atual e o instantâneo de `runs/`. Fotos, evidências, rótulos propostos e `browser_data.json` ficam como estão; o comando recusa o registro se `browser_data.json` pertencer a outra versão.
+Regrava só o `index.html` com o modelo atual e o instantâneo de `runs/`. Fotos, evidências, rótulos propostos e `browser_data.json` ficam como estão; o comando recusa o registro se `browser_data.json` pertencer a outra versão. Rode uma vez por inspeção depois de atualizar o código para que as páginas em disco ganhem o visual novo (o servidor local já monta a página atual a cada abertura).
 
 ## Limites
 
@@ -64,11 +102,15 @@ Regrava só o `index.html` com o modelo atual e o instantâneo de `runs/`. Fotos
 - A estimativa de duração usa a média de segundos por época das execuções anteriores no mesmo PC (escala com imgsz²); é uma ordem de grandeza.
 - Um treino sem `summary.json` e sem nova época há mais de 15 minutos aparece como interrompido.
 - A comparação depende de `scripts/compare_pilot_models.py`; a página só lê o JSON gerado.
+- O laudo em HTML carrega as evidências dentro do arquivo (alguns MB por dezenas de fotos); para centenas de fotos, prefira o PDF ou o pacote ZIP.
+- Repetição de fotos é detectada dentro da mesma importação, não entre inspeções.
 
 ## Código
 
-- `src/dronecamp_ia/operations.py`: coleta treinos, curvas, comparações e datasets (só leitura).
-- `src/dronecamp_ia/platform_server.py`: servidor local, lista fechada de tarefas e gravação do arquivo de revisão.
-- `src/dronecamp_ia/review_render.py`: `build_page` e `refresh_review_page`.
-- `src/dronecamp_ia/review_templates/index.html`: interface (HTML, CSS e JavaScript sem dependências externas).
-- `tests/test_platform.py`: testes do painel, da página gerada e do servidor (caminhos, token, comandos permitidos).
+- `src/dronecamp_ia/platform_server.py`: servidor local, espaço de trabalho, lotes de envio, laudos/pacotes e lista fechada de tarefas.
+- `src/dronecamp_ia/ingest.py`: importação de fotos e vídeos (hash, EXIF, quadros) para um registro novo; comando `import-media`.
+- `src/dronecamp_ia/exports.py`: pacote de evidências, laudo preliminar (HTML/JSON/PDF) e CSV de ocorrências.
+- `src/dronecamp_ia/operations.py`: coleta treinos, curvas, comparações, datasets e arquivos gerados (só leitura).
+- `src/dronecamp_ia/review_render.py`: `build_page`, `empty_page_payload` e `refresh_review_page`.
+- `src/dronecamp_ia/review_templates/`: `index.html`, `platform.css`, `platform.js`.
+- `tests/test_platform.py`, `tests/test_ingest.py`, `tests/test_exports.py`: painel, página gerada, servidor (espaço de trabalho, envio, laudos), importação e exportações.

@@ -274,6 +274,29 @@ def collect_datasets(root: Path) -> list[dict]:
     return datasets
 
 
+def collect_review_files(directory: Path | None) -> list[dict]:
+    """Laudos (``laudos/<pasta>/``) e pacotes de evidências (``exportacoes/``) já gerados para uma revisão.
+
+    Caminhos relativos à pasta da revisão: servem de link tanto na página aberta do
+    disco quanto na servida em ``/r/<pasta>/``. Mais recentes primeiro.
+    """
+    if not directory or not Path(directory).is_dir():
+        return []
+    directory = Path(directory)
+    files = []
+    for report in sorted(directory.glob("laudos/*/")):
+        for name, kind in (("laudo.pdf", "pdf"), ("laudo.html", "html"), ("laudo.json", "json")):
+            path = report / name
+            if path.is_file():
+                files.append({"kind": kind, "label": report.name, "name": f"laudos/{report.name}/{name}", "href": f"laudos/{report.name}/{name}",
+                              "bytes": path.stat().st_size, "modified": datetime.fromtimestamp(path.stat().st_mtime, timezone.utc).isoformat(timespec="seconds")})
+    for path in sorted(directory.glob("exportacoes/*.zip")):
+        files.append({"kind": "zip", "label": None, "name": f"exportacoes/{path.name}", "href": f"exportacoes/{path.name}",
+                      "bytes": path.stat().st_size, "modified": datetime.fromtimestamp(path.stat().st_mtime, timezone.utc).isoformat(timespec="seconds")})
+    files.sort(key=lambda item: item["modified"], reverse=True)
+    return files
+
+
 def collect_operations(config: ProjectConfig, page_directory: Path | None = None) -> dict:
     """Instantâneo completo para a página (sem treinar, aprovar ou copiar nada)."""
     root = config.root
@@ -283,6 +306,8 @@ def collect_operations(config: ProjectConfig, page_directory: Path | None = None
     for run in runs:
         weights.extend(run["weights"].values())
     return {
+        # Laudos e pacotes já gerados nesta revisão (links relativos; o servidor lista ao vivo em /api/reviews/<pasta>/files).
+        "review_files": collect_review_files(page_directory),
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         # Pasta da revisão relativa a sistema_ia: a página monta os comandos do ciclo com ela.
         "review_directory": _relative(page_directory, root) if page_directory else None,

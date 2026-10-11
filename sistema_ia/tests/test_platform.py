@@ -6,15 +6,19 @@ arquivos da revisão/``runs`` e só inicia comandos da lista fechada com token.
 """
 
 from pathlib import Path
+import io
 import json
 import os
+import shutil
 import sys
 import tempfile
 import threading
 import time
 import unittest
 import urllib.error
+import urllib.parse
 import urllib.request
+import zipfile
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -23,7 +27,7 @@ from PIL import Image
 from dronecamp_ia.config import ProjectConfig
 from dronecamp_ia.io import file_hash
 from dronecamp_ia.operations import collect_comparisons, collect_runs, read_curves
-from dronecamp_ia.platform_server import JobRunner, _job_arguments, make_handler
+from dronecamp_ia.platform_server import JobRunner, _decisions_map, _job_arguments, make_handler
 from dronecamp_ia.review_render import refresh_review_page, render_review_package
 
 RESULTS_HEADER = ("epoch,time,train/box_loss,train/cls_loss,train/l1_loss,metrics/precision(B),metrics/recall(B),"
@@ -230,9 +234,6 @@ class ServerTests(PlatformFixture):
         self.assertEqual(json.loads(saved.read_text(encoding="utf-8"))["reviewer_id"], "rev/../01")
 
 
-if __name__ == "__main__":
-    unittest.main()
-
 
 class MultiReviewServerTests(PlatformFixture):
     """Duas revisões no mesmo servidor: cada uma na sua página, fotos e arquivos separados."""
@@ -281,3 +282,155 @@ class MultiReviewServerTests(PlatformFixture):
         status, body = self.request("/api/jobs", {"kind": "suggest", "options": {"review": "outra", "weights": "x.pt"}}, self.token)
         self.assertEqual(status, 400)
         self.assertIn("não aberta", json.loads(body)["error"])
+
+def png_bytes(color: tuple[int, int, int]) -> bytes:
+    buffer = io.BytesIO()
+    Image.new("RGB", (32, 24), color=color).save(buffer, format="PNG")
+    return buffer.getvalue()
+
+
+class WorkspaceServerTests(PlatformFixture):
+    """Modo espaço de trabalho: inspeções descobertas em data/reviews, importação pela página, laudos e pacotes."""
+
+    def setUp(self) -> None:
+        super().setUp()
+        from http.server import ThreadingHTTPServer
+        render_review_package(self.config, self.registry_path)
+        self.token = "token-de-teste"
+        self.server = ThreadingHTTPServer(("127.0.0.1", 0), make_handler(self.config, None, self.token, JobRunner(self.root)))
+        threading.Thread(target=self.server.serve_forever, daemon=True).start()
+        self.addCleanup(self.server.server_close)
+        self.addCleanup(self.server.shutdown)
+        self.base = f"http://127.0.0.1:{self.server.server_address[1]}"
+
+    request = ServerTests.request
+
+    def put(self, path: str, data: bytes, filename: str, token: str | None = None) -> tuple[int, bytes]:
+        request = urllib.request.Request(self.base + path, data=data, method="PUT")
+        request.add_header("X-File-Name", urllib.parse.quote(filename))
+        request.add_header("Content-Type", "application/octet-stream")
+        if token:
+            request.add_header("X-DroneCamp-Token", token)
+        try:
+            with urllib.request.urlopen(request) as response:
+                return response.status, response.read()
+        except urllib.error.HTTPError as error:
+            return error.code, error.read()
+
+    def test_workspace_lists_reviews_and_opens_the_most_recent_page(self) -> None:
+        status, body = self.request("/api/workspace?review=fixture_v1")
+        self.assertEqual(status, 200)
+        workspace = json.loads(body)
+        self.assertEqual((workspace["mode"], workspace["default"]), ("workspace", "fixture_v1"))
+        review = workspace["reviews"][0]
+        self.assertEqual((review["name"], review["images"], review["current"], review["page_ready"]), ("fixture_v1", 1, True, True))
+        self.assertEqual(review["buildings"], ["b1"])
+        self.assertIn("pdf", workspace["capabilities"])
+        status, page = self.request("/")
+        self.assertEqual(status, 200)
+        self.assertIn(file_hash(self.registry_path).encode(), page, "Sem --registry, a revisão mais recente abre em /.")
+        # Registro sem página gerada: aparece na lista, não vira padrão e a página explica o que falta.
+        other = self.root / "data" / "reviews" / "sem_pagina" / "registry.json"
+        write_json(other, {**json.loads(self.registry_path.read_text(encoding="utf-8")), "version": "sem_pagina"})
+        workspace = json.loads(self.request("/api/workspace")[1])
+        names = {item["name"]: item for item in workspace["reviews"]}
+        self.assertFalse(names["sem_pagina"]["page_ready"])
+        self.assertEqual(workspace["default"], "fixture_v1")
+        self.assertEqual(self.request("/r/sem_pagina/")[0], 409)
+        self.assertIn(b"/r/sem_pagina/", self.request("/")[1], "O seletor lista as revisões descobertas.")
+
+    def test_empty_workspace_serves_the_page_without_an_inspection(self) -> None:
+        shutil.rmtree(self.root / "data" / "reviews")
+        status, page = self.request("/")
+        self.assertEqual(status, 200)
+        self.assertIn(b'"images": []', page)
+        self.assertIn("Resíduos em calha".encode(), page, "As classes da taxonomia continuam na página.")
+        workspace = json.loads(self.request("/api/workspace")[1])
+        self.assertEqual((workspace["reviews"], workspace["default"]), ([], None))
+        self.assertEqual(self.request("/api/operations")[0], 200)
+        self.assertEqual(self.request("/r/fixture_v1/")[0], 404)
+
+    def test_upload_flow_creates_a_new_inspection_from_photos(self) -> None:
+        self.assertEqual(self.request("/api/uploads", {"name": "Galpão Norte 2026"})[0], 403)
+        status, body = self.request("/api/uploads", {"name": "Galpão Norte 2026"}, self.token)
+        self.assertEqual(status, 200, body)
+        batch = json.loads(body)["batch"]
+        self.assertEqual(json.loads(body)["name"], "galpao_norte_2026")
+        first, second = png_bytes((10, 120, 200)), png_bytes((200, 90, 10))
+        self.assertEqual(self.put(f"/api/uploads/{batch}/files", first, "foto1.png")[0], 403)
+        status, body = self.put(f"/api/uploads/{batch}/files", first, "../../foto1.png", self.token)
+        self.assertEqual(status, 200, body)
+        self.assertEqual(json.loads(body)["stored"], "foto1.png", "Só o nome do arquivo conta; pastas são descartadas.")
+        self.assertEqual(self.put(f"/api/uploads/{batch}/files", b"texto", "notas.txt", self.token)[0], 400)
+        self.assertEqual(self.put(f"/api/uploads/{batch}/files", second, "foto2.png", self.token)[0], 200)
+        self.assertEqual(self.put(f"/api/uploads/{batch}/files", first, "foto1 copia.png", self.token)[0], 200)
+        self.assertEqual(self.put(f"/api/uploads/lote_inexistente/files", first, "x.png", self.token)[0], 400)
+        self.assertEqual(self.request(f"/api/uploads/{batch}/ingest", {"group": ""}, self.token)[0], 400)
+        self.assertEqual(self.request(f"/api/uploads/{batch}/ingest", {"group": "galpao_norte", "weights": "../fora.pt"}, self.token)[0], 400)
+        status, body = self.request(f"/api/uploads/{batch}/ingest", {"group": "galpao_norte", "every_seconds": 2, "max_frames": 50,
+                                                                   "notes": "voo de teste", "uploaded_by": "rev01"}, self.token)
+        self.assertEqual(status, 200, body)
+        for _ in range(200):
+            progress = json.loads(self.request(f"/api/uploads/{batch}")[1])
+            if progress["state"] != "running":
+                break
+            time.sleep(0.1)
+        self.assertEqual(progress["state"], "finished", progress)
+        result = progress["result"]
+        self.assertEqual((result["images"], result["photos"], result["videos"]), (2, 2, 0))
+        self.assertEqual([item["reason"] for item in result["skipped"]], ["foto_repetida"])
+        self.assertEqual(result["href"], "/r/galpao_norte_2026/")
+        self.assertIsNone(result["suggest_job"], "Sem pesos escolhidos, nenhuma tarefa de sugestões é iniciada.")
+        directory = self.root / "data" / "reviews" / "galpao_norte_2026"
+        registry = json.loads((directory / "registry.json").read_text(encoding="utf-8"))
+        self.assertEqual(registry["ingest"]["uploaded_by"], "rev01")
+        self.assertEqual({item["building_group"] for item in registry["images"]}, {"galpao_norte"})
+        self.assertTrue((directory / "index.html").is_file())
+        self.assertFalse((self.root / ".runtime" / "uploads" / batch).exists(), "Os arquivos do lote saem da área temporária.")
+        workspace = json.loads(self.request("/api/workspace")[1])
+        created = next(item for item in workspace["reviews"] if item["name"] == "galpao_norte_2026")
+        self.assertEqual((created["images"], created["page_ready"], created["scope_label"]), (2, True, "importada pela plataforma"))
+        status, page = self.request("/r/galpao_norte_2026/")
+        self.assertEqual(status, 200)
+        image_url = json.loads((directory / "browser_data.json").read_text(encoding="utf-8"))["images"][0]["image_url"]
+        self.assertEqual(self.request(f"/r/galpao_norte_2026/{image_url}")[0], 200)
+        self.assertEqual(self.request("/api/uploads", {"name": "galpao_norte_2026"}, self.token)[0], 400, "Nome já usado é recusado antes do envio.")
+        self.assertEqual(self.request("/api/uploads/lote_inexistente")[0], 404)
+
+    def test_evidence_package_and_report_are_written_inside_the_review(self) -> None:
+        digest = json.loads(self.registry_path.read_text(encoding="utf-8"))["images"][0]["image_sha256"]
+        decisions = [{"image_sha256": digest, "status": "positive", "boxes": [{"class_id": 1, "bbox_xyxy": [1, 1, 8, 9], "note": "revisada"}],
+                      "notes": "", "confirmed_complete": True, "dismissed_suggestions": []}]
+        self.assertEqual(_decisions_map(decisions)[digest]["boxes"][0]["class_id"], 1)
+        self.assertEqual(self.request("/api/export/evidence", {"review": "fixture_v1", "only": "tudo"}, self.token)[0], 400)
+        status, body = self.request("/api/export/evidence", {"review": "fixture_v1", "decisions": decisions, "max_side": 1024,
+                                                            "only": "all", "include_suggestions": False}, self.token)
+        self.assertEqual(status, 200, body)
+        result = json.loads(body)
+        self.assertEqual(result["images"], 1)
+        self.assertTrue(result["href"].startswith("exportacoes/"))
+        archive = self.directory / result["file"]
+        with zipfile.ZipFile(archive) as package:
+            self.assertIn("Resíduos em calha", package.read("ocorrencias.csv").decode("utf-8-sig"), "A decisão da página vale sobre o registro.")
+        status, data = self.request("/" + result["href"])
+        self.assertEqual((status, data[:2]), (200, b"PK"))
+        status, body = self.request("/api/report", {"review": "fixture_v1", "decisions": decisions, "reviewer": "rev01", "client": "CEASA Minas",
+                                                   "site": "Pavilhão A", "pdf": False}, self.token)
+        self.assertEqual(status, 200, body)
+        report = json.loads(body)
+        self.assertEqual((report["occurrences"], report["pdf"]), (1, None))
+        self.assertTrue(report["html"].startswith("laudos/"))
+        status, page = self.request("/r/fixture_v1/" + report["html"])
+        self.assertEqual(status, 200)
+        self.assertIn("CEASA Minas".encode(), page)
+        self.assertIn("pendente de validação técnica".encode(), page, "Gravidade e diagnóstico nunca são inferidos.")
+        files = json.loads(self.request("/api/reviews/fixture_v1/files")[1])["files"]
+        self.assertEqual({item["kind"] for item in files}, {"zip", "html", "json"})
+        self.assertEqual(json.loads(self.request("/api/operations?review=fixture_v1")[1])["review_files"][0]["kind"], files[0]["kind"])
+        (self.directory / "laudos" / "pesos.pt").write_bytes(b"x")
+        self.assertEqual(self.request("/laudos/pesos.pt")[0], 404, "Só os tipos de arquivo gerados são servidos.")
+        self.assertEqual(self.request("/api/reviews/outra/files")[0], 404)
+
+
+if __name__ == "__main__":
+    unittest.main()

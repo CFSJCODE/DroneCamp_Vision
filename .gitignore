@@ -18,6 +18,8 @@
 sistema_ia/.runtime/*.log
 sistema_ia/.runtime/review_server.json
 sistema_ia/.runtime/jobs/
+# Arquivos recebidos pela página ficam aqui só até virarem uma inspeção em data/reviews.
+sistema_ia/.runtime/uploads/
 
 # Documentos pessoais aguardam a decisao sobre publicacao/visibilidade.
 /Documentos PUCTEC/*
@@ -40,3 +42,6 @@ Conjunto De Dados De Treinamento/Imagens - DroneCamp/
 sistema_ia/data/reviews/ceasa_lado_a_*/originals/
 sistema_ia/data/reviews/ceasa_lado_a_*/images/
 sistema_ia/data/reviews/ceasa_lado_a_*/evidence/
+# Laudos e pacotes de evidências gerados pela plataforma (regeráveis a partir do registro e das decisões).
+sistema_ia/data/reviews/*/laudos/
+sistema_ia/data/reviews/*/exportacoes/
