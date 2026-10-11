@@ -15,6 +15,8 @@ documents = ["pypdf>=6,<7"]
 learning = ["scikit-learn>=1.5,<2"]
 # Só para recodificar as frases de configs/zero_shot_prompts.json (busca aberta, YOLOE).
 zero-shot = ["clip @ git+https://github.com/ultralytics/CLIP.git"]
+# Laudo preliminar em PDF (exports.build_report); HTML e JSON saem sem isto.
+reports = ["reportlab>=4,<5"]
 export = ["onnx>=1.19,<2", "onnxruntime>=1.23,<2", "onnxscript>=0.5,<1"]
 # Windows com GPU/APU AMD ou Intel: troca o onnxruntime da CPU (instale um ou outro).
 directml = ["onnx>=1.19,<2", "onnxruntime-directml>=1.24,<2", "onnxscript>=0.5,<1"]
@@ -26,4 +28,4 @@ dronecamp-ia = "dronecamp_ia.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-dronecamp_ia = ["review_templates/*.html"]
+dronecamp_ia = ["review_templates/*"]
