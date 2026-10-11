@@ -10,7 +10,7 @@ Base local de **detecção assistida** para inspeção de telhados industriais. 
 
 ## Material entregue
 
-- [Plataforma DroneCamp Vision](docs/plataforma_operacoes.md): a página única do produto com início, inspeções, importação de fotos e vídeos, revisão, laudos e downloads (PDF/HTML, ZIP de evidências, CSV), treinamento, monitoramento ao vivo e comparação de modelos. Abra pelo [Abrir plataforma DroneCamp.cmd](../Abrir%20plataforma%20DroneCamp.cmd) (servidor local, `python -m dronecamp_ia platform`) ou, offline, pelo [Abrir revisao DroneCamp.cmd](../Abrir%20revisao%20DroneCamp.cmd).
+- [Plataforma DroneCamp Vision](docs/plataforma_operacoes.md): a página única do produto com início, inspeções, importação de fotos e vídeos, revisão, laudos e downloads (PDF/HTML, ZIP de evidências, CSV), treinamento, monitoramento ao vivo e comparação de modelos. Abra pelo [Abrir plataforma DroneCamp.cmd](../Abrir%20plataforma%20DroneCamp.cmd) (servidor local, `python -m dronecamp_ia platform`).
 - [Análise documental e categorias](docs/analise_documental.md): pesquisa inicial do laudo, planos e apresentação, com oito classes ativas de origem documental; a taxonomia atual está em `configs/taxonomy.json`.
 - [Pedaço de telha](docs/categoria_pedaco_telha.md): critério da nova classe ativa ID 8 e distinção entre fragmento, dano instalado e resíduos.
 - [Rufo deslocado/desalinhado](docs/categoria_rufo_deslocado.md): critério da classe ativa ID 9, contexto de alinhamento e incerteza sobre a identidade do elemento.
@@ -35,7 +35,7 @@ Base local de **detecção assistida** para inspeção de telhados industriais. 
 
 **Abertura da revisão corrigida:** abra `data/reviews/ceasa_v6_corrigida_a36ea7f67d08/index.html` pelo Explorer no seu navegador. O servidor temporário em `http://127.0.0.1:8765/` serve a v3; sua atualização automática foi bloqueada na etapa anterior, e o navegador integrado recusou arquivos locais. A nova tela corrigida não recebeu teste visual no navegador nesta execução. Os detalhes estão em [Validação](docs/validacao.md).
 
-Na pasta principal do projeto, dê dois cliques em [Abrir revisao DroneCamp.cmd](../Abrir%20revisao%20DroneCamp.cmd) para acessar essa versão. O arquivo `src/dronecamp_ia/review_templates/index.html` é o modelo interno usado na geração; abri-lo diretamente exibe a estrutura vazia porque seus dados ainda não foram preenchidos. O atalho não importa decisões, não altera anotações e não inicia treinamento.
+Abra as inspeções pelo [Abrir plataforma DroneCamp.cmd](../Abrir%20plataforma%20DroneCamp.cmd). O arquivo `src/dronecamp_ia/review_templates/index.html` é o modelo interno usado na geração; abri-lo diretamente exibe a estrutura vazia porque seus dados ainda não foram preenchidos.
 
 ## Ambiente local
 

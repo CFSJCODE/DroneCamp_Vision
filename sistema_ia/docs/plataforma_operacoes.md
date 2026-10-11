@@ -17,7 +17,7 @@ Em toda seção a página repete o limite do produto: sugestões da IA aguardam 
 
 ## Dois modos de abrir
 
-1. **Direto do disco** (`Abrir revisao DroneCamp.cmd` ou o `index.html` da inspeção): funciona offline e sem Python. Revisão, CSV e arquivo de revisão funcionam; importação, laudos e pacotes mostram um aviso pedindo o servidor; treinamento, monitoramento e modelos exibem o instantâneo de quando a página foi gerada.
+1. **Direto do disco** (o `index.html` da inspeção, sem servidor): funciona offline e sem Python. Revisão, CSV e arquivo de revisão funcionam; importação, laudos e pacotes mostram um aviso pedindo o servidor; treinamento, monitoramento e modelos exibem o instantâneo de quando a página foi gerada.
 2. **Servidor local** (`Abrir plataforma DroneCamp.cmd`, ou `python -m dronecamp_ia platform`): servidor da biblioteca padrão preso a `127.0.0.1:8765`. Sem `--registry`, trabalha com todas as inspeções de `data/reviews/` (modo espaço de trabalho) e abre a mais recente; `--registry` (repetível) limita a lista. Acrescenta:
    - importação de fotos e vídeos pela página (uma importação por vez; os arquivos passam por `.runtime/uploads/<lote>/` e, criada a inspeção, ficam guardados em `data/reviews/<inspeção>/midia_enviada/`, vídeos inteiros inclusive);
    - laudo preliminar em `data/reviews/<inspeção>/laudos/<data>_laudo_<inspeção>/` (`laudo.html`, `laudo.json`, `manifesto.json` e `laudo.pdf` quando o extra `reports` está instalado) e pacote ZIP em `exportacoes/`;

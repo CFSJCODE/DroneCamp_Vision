@@ -66,7 +66,6 @@ DroneCamp_Vision/
 ├── CONTRIBUTING.md                    # Contribuições e mensagens de commit
 ├── PUBLICACAO.md                      # Escopo, exclusões e integridade
 ├── inventario-publicacao.json          # Arquivos, tamanhos e hashes SHA-256
-├── Abrir revisao DroneCamp.cmd         # Abre a revisão v8 no Windows (offline)
 ├── Abrir plataforma DroneCamp.cmd      # Plataforma com servidor local (inspeções, importação, laudos, treino ao vivo)
 ├── Documentação Do Projeto/            # Laudo técnico e propostas
 ├── Documentos PUCTEC/                  # Apresentação institucional publicada
@@ -134,9 +133,7 @@ Os exemplos completos de predição, revisão, treinamento e exportação estão
 
 ## Abrir a revisão das imagens
 
-Na raiz do clone, dê dois cliques em **[Abrir revisao DroneCamp.cmd](Abrir%20revisao%20DroneCamp.cmd)**. O atalho encontra a pasta do próprio projeto e abre a [revisão v8](sistema_ia/data/reviews/ceasa_v8_revisao002_ff34e226416c/index.html) no navegador local, sem servidor.
-
-Para usar a plataforma completa (todas as inspeções de `data/reviews`, importação de fotos e vídeos pela página, laudo preliminar em PDF/HTML, pacote de evidências, treinos ao vivo e `suggest`), use **[Abrir plataforma DroneCamp.cmd](Abrir%20plataforma%20DroneCamp.cmd)**, que sobe um servidor local em `127.0.0.1:8765` com o `.venv` do `sistema_ia`. As seções e as rotas estão descritas em [Plataforma DroneCamp Vision](sistema_ia/docs/plataforma_operacoes.md).
+Na raiz do clone, dê dois cliques em **[Abrir plataforma DroneCamp.cmd](Abrir%20plataforma%20DroneCamp.cmd)**. É a única forma de abrir a plataforma: ela reúne todas as inspeções de `data/reviews`, importação de fotos e vídeos pela página, laudo preliminar em PDF/HTML, pacote de evidências, treinos ao vivo e `suggest`) e sobe um servidor local em `127.0.0.1:8765` com o `.venv` do `sistema_ia`. As seções e as rotas estão descritas em [Plataforma DroneCamp Vision](sistema_ia/docs/plataforma_operacoes.md).
 
 Também é possível abrir diretamente:
 
