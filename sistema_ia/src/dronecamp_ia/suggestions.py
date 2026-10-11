@@ -147,7 +147,7 @@ def suggest_for_registry(config: ProjectConfig, registry_path: Path, weights: st
     conf = float(conf if conf is not None else config.pilot.get("suggestion_conf", config.prediction["conf"]))
     if not 0 < conf <= 1:
         raise ValueError("conf deve estar no intervalo (0, 1].")
-    # 2. Modelo com as 13 classes; pesos piloto inferem no tamanho do treino (640).
+    # 2. Modelo com as 14 classes; pesos piloto inferem no tamanho do treino (640).
     # .onnx exportado roda na GPU (DirectML) por padrão; .pt roda no PyTorch (CPU).
     model = load_inference_model(config, weights, onnx_provider)
     check_domain_names(model, detection_names(load_taxonomy(config.taxonomy_path)))

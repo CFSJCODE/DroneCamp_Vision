@@ -1,6 +1,6 @@
 # Plataforma DroneCamp Vision
 
-A página de revisão (`data/reviews/<inspeção>/index.html`) é a plataforma do produto: uma única página, sem dependências externas, com oito seções navegáveis pela barra lateral. Com o servidor local ela recebe fotos e vídeos, gera laudos e pacotes de evidências e acompanha treinos ao vivo; aberta do disco, a revisão continua funcionando inteira.
+A página de revisão (`data/reviews/<inspeção>/index.html`) é a plataforma do produto: uma única página, sem dependências externas, com nove seções navegáveis pela barra lateral. Com o servidor local ela recebe fotos e vídeos, gera laudos e pacotes de evidências e acompanha treinos ao vivo; aberta do disco, a revisão continua funcionando inteira.
 
 | Seção | O que faz | De onde vêm os dados |
 | --- | --- | --- |
@@ -12,6 +12,7 @@ A página de revisão (`data/reviews/<inspeção>/index.html`) é a plataforma d
 | Treinamento | Ciclo de fine-tuning com os comandos prontos, execuções de `runs/`, curvas por época e formulário de novo treino piloto com estimativa de duração | `runs/*/execution.json`, `summary.json`, `fit/results.csv`, `data/pilot/*` |
 | Monitoramento | Progresso do treino em andamento, métricas da última época, curvas ao vivo e a tarefa do servidor com o log | `fit/results.csv` relido a cada 5 s pelo servidor local |
 | Modelos | Critério de adoção, comparação entre modelos por divisão, caixas por classe no dataset de cada treino e melhor mAP50 por treino | `runs/compare_*.json`, `execution.json` |
+| Classes | Cadastro das categorias de ocorrência: nome de exibição, cor, ativo/inativo e classes propostas (sempre marcadas como "exige treino"); aviso fixo de que mudanças nas classes exigem novo ciclo de treinamento | `configs/taxonomy.json` (só leitura) + `configs/taxonomy_overrides.json` pelo servidor local ([análise da taxonomia](analise_taxonomia_classes.md)) |
 
 Em toda seção a página repete o limite do produto: sugestões da IA aguardam decisão humana; gravidade, diagnóstico e recomendações dependem de validação técnica e nunca são inferidos. O laudo sai como "preliminar, sujeito a validação por responsável técnico", com esses campos em branco.
 
@@ -40,6 +41,10 @@ O servidor não aprova dados, não adota modelos, não apaga inspeções e não 
 | `POST /api/report` | Laudo técnico ABNT (título, cliente, local, responsável técnico, observações, `details` com os dados técnicos opcionais, `pdf`, `all_images`) |
 | `GET /api/reviews/<pasta>/files` | Laudos e pacotes já gerados |
 | `POST /api/feedback` | Cópia do arquivo de revisão exportado |
+| `GET /api/classes` | Classes da taxonomia e propostas, com `id`, `name` (slug), `display_name`, `color`, `active`, `in_detector`, `requires_training` |
+| `POST /api/classes` | Nova classe proposta (`name` em snake_case, `display_name`, `color`, `criterion`); grava em `configs/taxonomy_overrides.json`, nunca em `taxonomy.json`, e não retreina nada |
+| `PUT /api/classes/<id>` | Edita `display_name`, `color` e `active`; `name` e `criterion` só nas propostas (o slug das classes da taxonomia é o que os pesos conferem) |
+| `DELETE /api/classes/<id>` | Exclusão lógica (`active: false`); a classe some das opções de caixa nova e pode ser reativada |
 
 As rotas que alteram algo exigem o cabeçalho `X-DroneCamp-Token`. Decisões enviadas aos laudos e pacotes são as mesmas do arquivo de revisão (`image_sha256`, `status`, `boxes`, `notes`, `confirmed_complete`, `dismissed_suggestions`): valem sobre o registro, foto a foto.
 
@@ -108,6 +113,7 @@ Regrava só o `index.html` com o modelo atual e o instantâneo de `runs/`. Fotos
 ## Código
 
 - `src/dronecamp_ia/platform_server.py`: servidor local, espaço de trabalho, lotes de envio, laudos/pacotes e lista fechada de tarefas.
+- `src/dronecamp_ia/class_catalog.py`: cadastro das classes (rotas `/api/classes`), edições em `configs/taxonomy_overrides.json` com histórico.
 - `src/dronecamp_ia/ingest.py`: importação de fotos e vídeos (hash, EXIF, quadros) para um registro novo; comando `import-media`.
 - `src/dronecamp_ia/exports.py`: pacote de evidências, dados do laudo (`laudo.json`) e CSV de ocorrências.
 - `src/dronecamp_ia/laudo_abnt.py`: estrutura ABNT, normas, lista de verificação e desenho do laudo em HTML/PDF ([laudo_abnt.md](laudo_abnt.md)).

@@ -76,7 +76,8 @@ const VIEWS = {
   reports: ['Laudos e downloads', 'Laudo técnico (ABNT), evidências e arquivos da inspeção'],
   training: ['Treinamento', 'Ciclo de fine-tuning com as correções humanas'],
   monitor: ['Monitoramento', 'Treino em andamento e tarefas do servidor local'],
-  models: ['Modelos', 'Comparação, cobertura e critério de adoção']
+  models: ['Modelos', 'Comparação, cobertura e critério de adoção'],
+  classes: ['Classes', 'Categorias de ocorrência: nomes, cores e classes propostas']
 };
 function showView(view) {
   if (!VIEWS[view]) view = 'home';
@@ -96,6 +97,7 @@ function showView(view) {
   if (view === 'training') renderTraining();
   if (view === 'monitor') renderMonitor();
   if (view === 'models') renderModels();
+  if (view === 'classes') renderClasses();
   window.scrollTo({ top: 0 })
 }
 document.querySelectorAll('[data-view]').forEach(node => node.onclick = event => { event.preventDefault(); showView(node.dataset.view) });
@@ -348,7 +350,11 @@ function validBox(coordinates) {
 function commitBox(coordinates) {
   coordinates = coordinates.map(Math.round);
   if (!validBox(coordinates)) { message('A caixa precisa ter área e ficar dentro da foto.', true); return }
-  const box = { class_id: Number($('classId').value), bbox_xyxy: coordinates, note: 'Caixa conferida/editada na revisão local.' };
+  const classId = $('classId').value === '' ? NaN : Number($('classId').value);
+  if (!Number.isInteger(classId)) { message('Escolha a categoria da caixa.', true); return }
+  // Classe inativa (seção Classes): caixas já existentes mantêm a categoria; caixas novas não a recebem.
+  if (state.selected < 0 && classOf(classId).active === false) { message('Categoria inativa: reative-a na seção Classes para usá-la em caixas novas.', true); return }
+  const box = { class_id: classId, bbox_xyxy: coordinates, note: 'Caixa conferida/editada na revisão local.' };
   if (state.selected < 0) active.boxes.push(box); else active.boxes[state.selected] = box;
   active.confirmed_complete = false; active.status = 'pending';
   $('confirmed').checked = false; $('decision').value = 'pending';
@@ -1077,6 +1083,95 @@ function renderCoverage() {
 $('compareSelect').onchange = renderCompare;
 $('coverageRun').onchange = renderCoverage;
 
+/* ======================= Classes (cadastro) ======================= */
+// Aberta do disco, a lista vem das classes embutidas; pelo servidor, de /api/classes (editável).
+let CLASSES = null;
+let editingClass = null;
+function classRows() {
+  if (CLASSES) return CLASSES.classes;
+  return DATA.classes.map(category => ({ id: category.id, name: category.slug || '', display_name: category.label, color: category.color, active: category.active !== false, phase: 1, in_detector: !category.requires_training, requires_training: Boolean(category.requires_training), source: 'taxonomia', name_editable: false }))
+}
+function classSituation(entry) {
+  if (!entry.active) return el('span', { class: 'chip neutral' }, 'inativa');
+  if (entry.in_detector) return el('span', { class: 'chip ok' }, 'no detector');
+  const title = 'Só passa a ser detectada depois de dados aprovados e novo treino.';
+  if (entry.source === 'proposta') return el('span', { class: 'chip warn', title }, 'proposta · exige treino');
+  return el('span', { class: 'chip warn', title }, entry.phase === 1 ? 'ativa · exige treino' : 'catálogo · exige treino')
+}
+async function classRequest(method, path, body) {
+  const response = await fetch(path, { method, headers: { 'Content-Type': 'application/json', 'X-DroneCamp-Token': TOKEN }, body: body === undefined ? undefined : JSON.stringify(body) });
+  const value = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(value.error || `HTTP ${response.status}`);
+  return value
+}
+async function loadClasses() {
+  if (!SERVER) return;
+  try { CLASSES = await classRequest('GET', '/api/classes') } catch (error) { $('classesStatus').textContent = error.message }
+}
+function classStatus(text, error = false) { $('classesStatus').textContent = text; $('classesStatus').classList.toggle('error', error) }
+async function saveClass(id, body, done) {
+  try {
+    await classRequest('PUT', `/api/classes/${id}`, { ...body, author: $('reviewer').value || undefined });
+    await loadClasses(); editingClass = null; renderClasses();
+    toast('Classe atualizada', done)
+  } catch (error) { classStatus(error.message, true) }
+}
+function renderClasses() {
+  const rows = classRows();
+  $('classesOffline').classList.toggle('hidden', SERVER);
+  $('classesHint').textContent = CLASSES ? `${CLASSES.summary.in_detector} no detector atual · ${CLASSES.summary.requires_training} exigem treino · ${CLASSES.summary.inactive} inativas` : `${rows.length} classes embutidas nesta página`;
+  $('classesVersion').textContent = CLASSES ? CLASSES.taxonomy_version || '' : '';
+  $('createClass').disabled = !SERVER;
+  const canEdit = SERVER && CLASSES;
+  $('classesTable').replaceChildren(...rows.map(entry => {
+    const editing = canEdit && editingClass === entry.id;
+    const name = el('div', { class: 'class-name', style: `--c:${entry.color}` });
+    let displayInput, colorInput, slugInput;
+    if (editing) {
+      colorInput = el('input', { type: 'color', value: entry.color, 'aria-label': 'Cor da classe' });
+      displayInput = el('input', { type: 'text', value: entry.display_name, maxlength: '80', 'aria-label': 'Nome de exibição' });
+      name.append(colorInput, displayInput)
+    } else name.append(el('span', { class: 'swatch' }), el('span', {}, entry.display_name));
+    // Nome técnico (slug) sob o nome de exibição; editável só nas classes propostas (os pesos conferem o slug da taxonomia).
+    if (editing && entry.name_editable) slugInput = el('input', { type: 'text', value: entry.name, maxlength: '60', 'aria-label': 'Nome técnico', class: 'mono' });
+    const nameCell = el('td', {}, name, el('div', { class: 'class-slug' }, slugInput || el('span', { class: 'mono' }, entry.name)));
+    const actions = el('div', { class: 'class-actions' });
+    if (editing) {
+      actions.append(
+        el('button', { type: 'button', class: 'small primary', onclick: () => {
+          const body = { display_name: displayInput.value.trim(), color: colorInput.value.toUpperCase() };
+          if (slugInput) body.name = slugInput.value.trim();
+          saveClass(entry.id, body, `${body.display_name} salva. Mudanças nas classes exigem novo ciclo de treinamento para ter efeito nos modelos.`)
+        } }, 'Salvar'),
+        el('button', { type: 'button', class: 'small', onclick: () => { editingClass = null; renderClasses() } }, 'Cancelar'))
+    } else if (canEdit) {
+      actions.append(el('button', { type: 'button', class: 'small', onclick: () => { editingClass = entry.id; renderClasses() } }, 'Editar'));
+      if (entry.active) actions.append(el('button', { type: 'button', class: 'small bad', onclick: async () => {
+        if (!confirm(`Desativar a classe "${entry.display_name}"? Ela some das opções de caixa nova; nada é apagado e pode ser reativada.`)) return;
+        try { await classRequest('DELETE', `/api/classes/${entry.id}` + ($('reviewer').value ? '?author=' + encodeURIComponent($('reviewer').value) : '')); await loadClasses(); renderClasses(); toast('Classe desativada', `${entry.display_name} ficou inativa.`) } catch (error) { classStatus(error.message, true) }
+      } }, 'Desativar'));
+      else actions.append(el('button', { type: 'button', class: 'small', onclick: () => saveClass(entry.id, { active: true }, `${entry.display_name} reativada.`) }, 'Reativar'))
+    }
+    return el('tr', { class: entry.active ? '' : 'inactive' },
+      el('td', { class: 'num mono' }, String(entry.id)),
+      nameCell,
+      el('td', {}, classSituation(entry)),
+      el('td', {}, actions))
+  }))
+}
+function newClassValid() { return SERVER && /^[a-z][a-z0-9]*(?:_[a-z0-9]+)*$/.test($('newClassName').value) && $('newClassDisplay').value.trim().length > 0 }
+['newClassName', 'newClassDisplay'].forEach(id => $(id).oninput = () => { $('createClass').disabled = !newClassValid() });
+$('createClass').onclick = async () => {
+  if (!newClassValid()) return;
+  try {
+    const created = await classRequest('POST', '/api/classes', { name: $('newClassName').value, display_name: $('newClassDisplay').value.trim(), color: $('newClassColor').value.toUpperCase(), criterion: $('newClassCriterion').value.trim() || undefined, author: $('reviewer').value || undefined });
+    $('newClassName').value = ''; $('newClassDisplay').value = ''; $('newClassCriterion').value = ''; $('createClass').disabled = true;
+    await loadClasses(); renderClasses();
+    classStatus(`Classe ${created.id} (${created.display_name}) registrada como proposta. Mudanças nas classes exigem novo ciclo de treinamento para ter efeito nos modelos.`);
+    toast('Classe adicionada', `${created.display_name} aguarda fotos aprovadas e novo treino.`)
+  } catch (error) { classStatus(error.message, true) }
+};
+
 /* ======================= Servidor local (opcional) ======================= */
 async function api(path, body) {
   const response = await fetch(path, body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-DroneCamp-Token': TOKEN }, body: JSON.stringify(body) });
@@ -1140,7 +1235,8 @@ $('themeToggle').onclick = () => applyTheme(document.documentElement.dataset.the
 (() => { let theme = 'light'; try { theme = localStorage.getItem('dronecamp-theme') || 'light' } catch {} document.documentElement.dataset.theme = theme; $('themeToggle').replaceChildren(icon(theme === 'dark' ? 'i-sun' : 'i-moon'), el('span', {}, theme === 'dark' ? 'Claro' : 'Escuro')) })();
 
 $('versionLabel').textContent = DATA.version || '';
-DATA.classes.forEach(category => $('classId').append(el('option', { value: category.id }, category.label)));
+// Inativas continuam na lista (desabilitadas) para que uma caixa existente dessa classe mostre e preserve a categoria.
+DATA.classes.forEach(category => $('classId').append(el('option', category.active === false ? { value: category.id, disabled: 'disabled' } : { value: category.id }, category.active === false ? `${category.label} (inativa)` : category.label)));
 if (DATA.suggestions) {
   $('confFilter').value = Math.round(DATA.suggestions.conf * 100);
   $('confFilter').min = Math.round(DATA.suggestions.conf * 100);
@@ -1162,4 +1258,4 @@ if (!VIEWS[initialView]) { try { initialView = sessionStorage.getItem('dronecamp
 if (!HAS_IMAGES && initialView === 'review') initialView = SERVER ? 'inspections' : 'home';
 showView(initialView);
 addEventListener('hashchange', () => { const view = location.hash.slice(1); if (VIEWS[view] && view !== state.view) showView(view) });
-if (SERVER) { refreshOperations(); refreshWorkspace(); setInterval(refreshOperations, 5000); setInterval(refreshWorkspace, 30000) }
+if (SERVER) { refreshOperations(); refreshWorkspace(); loadClasses().then(() => { if (state.view === 'classes') renderClasses() }); setInterval(refreshOperations, 5000); setInterval(refreshWorkspace, 30000) }

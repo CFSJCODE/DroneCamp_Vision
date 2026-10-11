@@ -23,10 +23,10 @@ for corpus_dir in SRC.glob("ceasa_v*"):
 if copied == 0:
     raise SystemExit(f"Nenhuma foto encontrada em {SRC}/ceasa_v*/images.")
 (OUT / "data.yaml").write_text(
-    f"path: {OUT.resolve().as_posix()}\ntrain: images/train\nval: images/train\nnc: 13\n"
+    f"path: {OUT.resolve().as_posix()}\ntrain: images/train\nval: images/train\nnc: 14\n"
     "names: [telha_quebrada,telha_ausente,residuos_telha,reparo_telha,rufo_ausente,"
     "rufo_quebrado,residuos_calha,vegetacao_calha,pedaco_telha,rufo_deslocado,"
-    "pedaco_telha_sobreposto,fixador_telha_frouxo,reparo_rufo]\n",
+    "pedaco_telha_sobreposto,fixador_telha_frouxo,reparo_rufo,pedaco_calha_sobre_telha]\n",
     encoding="utf-8",
 )
 print("OK:", OUT, f"({copied} fotos)")

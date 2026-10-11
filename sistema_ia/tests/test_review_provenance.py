@@ -167,7 +167,7 @@ class TrainingProvenanceTests(unittest.TestCase):
 
     def test_missing_train_class_cannot_be_unblocked_by_saved_readiness(self):
         complete_boxes = list(self.items[0]["boxes"])
-        for missing_name in ("pedaco_telha", "rufo_deslocado", "pedaco_telha_sobreposto", "fixador_telha_frouxo", "reparo_rufo"):
+        for missing_name in ("pedaco_telha", "rufo_deslocado", "pedaco_telha_sobreposto", "fixador_telha_frouxo", "reparo_rufo", "pedaco_calha_sobre_telha"):
             with self.subTest(missing_class=missing_name):
                 missing_id = MVP_NAMES.index(missing_name)
                 self.items[0]["boxes"] = [box for box in complete_boxes if box["class_id"] != missing_id]
@@ -196,7 +196,7 @@ class TrainingProvenanceTests(unittest.TestCase):
         result = self.check()
         self.assertTrue(result["ready_for_training"])
         self.assertEqual(MVP_NAMES[10:12], ("pedaco_telha_sobreposto", "fixador_telha_frouxo"))
-        self.assertEqual(len(result["train_boxes_by_class"]), 13)
+        self.assertEqual(len(result["train_boxes_by_class"]), 14)
         for class_id in (10, 11):
             with self.subTest(class_id=class_id):
                 self.assertEqual(result["train_boxes_by_class"][str(class_id)], 1)
@@ -206,12 +206,20 @@ class TrainingProvenanceTests(unittest.TestCase):
         result = self.check()
         self.assertTrue(result["ready_for_training"])
         self.assertEqual(MVP_NAMES[12], "reparo_rufo")
-        self.assertEqual(len(result["train_boxes_by_class"]), 13)
+        self.assertEqual(len(result["train_boxes_by_class"]), 14)
         self.assertEqual(result["train_boxes_by_class"]["12"], 1)
         sample = next(item for item in self.provenance["images"] if item["split"] == "train")
         label = self.output / sample["label"]
         self.assertIn("12", [line.split()[0] for line in label.read_text(encoding="utf-8").splitlines()])
         self.assertEqual(sample["approval_author"], "human_test")
+
+    def test_gutter_piece_on_tile_class_id13_validates_human_provenance(self):
+        self.build()
+        result = self.check()
+        self.assertTrue(result["ready_for_training"])
+        self.assertEqual(MVP_NAMES[13], "pedaco_calha_sobre_telha")
+        self.assertEqual(len(result["train_boxes_by_class"]), 14)
+        self.assertEqual(result["train_boxes_by_class"]["13"], 1)
 
     def test_single_ceasa_draft_cannot_train(self):
         self.items = self.items[:1]

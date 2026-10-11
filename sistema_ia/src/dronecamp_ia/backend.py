@@ -9,7 +9,7 @@ O que faz:
 - ``load_exported_detector``: abre um ``.onnx`` exportado, só para conferir paridade.
 - ``load_inference_model``: abre ``.pt`` ou ``.onnx`` para sugerir/avaliar; o ONNX
   roda por padrão na GPU via DirectML (gancho em ``ONNXBackend.load_model``).
-- ``check_domain_names``: recusa pesos cujas classes não são as 13 do projeto.
+- ``check_domain_names``: recusa pesos cujas classes não são as 14 do projeto.
 - ``runtime_info``: versões de Python/torch/Ultralytics e hash do checkpoint.
 
 Quando mexer: para trocar de biblioteca. A família/versão do YOLO (26 hoje, 27

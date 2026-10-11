@@ -31,7 +31,7 @@ from .operations import collect_operations
 from .review_data import boxes_to_yolo, review_image_size, validate_boxes, write_review_summary
 
 # Uma cor por classe (índice = ID da classe), usada nas evidências e na página (paleta controlada e harmoniosa).
-COLORS = ["#FF5C70", "#E63950", "#FF9F43", "#42B8E8", "#9B6DF2", "#EC5DAA", "#52C79A", "#2BBE72", "#F4C542", "#56D1E8", "#FF7A1A", "#F5D547", "#B89AF8"]
+COLORS = ["#FF5C70", "#E63950", "#FF9F43", "#42B8E8", "#9B6DF2", "#EC5DAA", "#52C79A", "#2BBE72", "#F4C542", "#56D1E8", "#FF7A1A", "#F5D547", "#B89AF8", "#4F7DFF"]
 
 
 def _font(size: int):

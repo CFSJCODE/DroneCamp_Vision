@@ -25,6 +25,9 @@ REGISTRY = REAL.root / "data" / "reviews" / "ceasa_v7_revisao002_ba8cc323c8a1" /
 # Pesos piloto v7 reais (Git LFS) e dataset v8: usados no teste do calibrador.
 PILOT_V7 = REAL.root / "runs" / "pilot_train_20261004T170212Z_dd284411" / "fit" / "weights" / "best.pt"
 DATASET_V8 = REAL.root / "data" / "pilot" / "ceasa_v8_piloto_s42" / "dataset.yaml"
+# Fotos aprovadas, pesos piloto e dataset acima seguem a taxonomia v5 (13 classes). O teste
+# verifica o encadeamento, então roda nesse contrato; a v6 só terá dados após nova revisão.
+TAXONOMY_V5 = REAL.root / "configs" / "taxonomy_ceasa_v5_reparo_rufo.json"
 # YOLOE com as frases de configs/zero_shot_prompts.json já embutidas (Git LFS).
 ZERO_SHOT_DIR = REAL.root / "models" / "zero_shot"
 TINY = {"epochs": 1, "imgsz": 160, "batch": 8, "plots": False, "patience": 0}
@@ -42,10 +45,17 @@ class EndToEndUltralyticsTests(unittest.TestCase):
 
         cls.temporary = TemporaryDirectory()
         cls.root = Path(cls.temporary.name)
-        cls.config = replace(REAL, root=cls.root)
         # O worker de avaliação (processo à parte) lê configs/project.yaml da raiz do teste.
         shutil.copytree(REAL.root / "configs", cls.root / "configs")
-        cls.names = detection_names(load_taxonomy(REAL.taxonomy_path))
+        taxonomy = cls.root / "configs" / "taxonomy.json"
+        shutil.copyfile(TAXONOMY_V5, taxonomy)
+        cls.config = replace(REAL, root=cls.root, taxonomy_path=taxonomy)
+        cls.names = detection_names(load_taxonomy(taxonomy))
+        # Frases da busca aberta só das classes v5: mesmo vocabulário do checkpoint YOLOE salvo.
+        prompts_path = cls.root / "configs" / "zero_shot_prompts.json"
+        prompts = json.loads(prompts_path.read_text(encoding="utf-8"))
+        prompts["classes"] = {slug: values for slug, values in prompts["classes"].items() if slug in cls.names}
+        prompts_path.write_text(json.dumps(prompts, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         cls.dataset = cls.root / "data" / "pilot" / "e2e"
         cls.build = build_pilot_dataset(cls.config, [REGISTRY], cls.dataset)
         # CPU + GPU em conjunto, com o ONNX Runtime na CPU no lugar do DirectML (ausente aqui).

@@ -122,6 +122,7 @@ CHECKLIST = {
                                 "Realizar teste de estanqueidade; substituir a telha reparada se houver falha."),
     "fixador_telha_frouxo": ("Existem parafusos de fixação das telhas frouxos?", "17", "Não conformidade média", "Apertar os parafusos soltos."),
     "reparo_rufo": ("Existem reparos nos rufos?", None, None, None),
+    "pedaco_calha_sobre_telha": ("Há pedaços de calha soltos sobre as telhas?", None, None, None),
     "fixador_rufo_ausente": ("Estão faltando parafusos de fixação dos rufos?", "22", "Não conformidade média",
                              "Fixar os rufos com parafusos ou rebites conforme o fabricante e selar os fixadores."),
     "junta_rufo_sem_selante": ("Há falhas ou ausências de selantes nas juntas dos rufos?", "23", "Não conformidade média", "Aplicar selante nas juntas dos rufos."),
