@@ -886,14 +886,19 @@ addEventListener('resize', () => {
   clearTimeout(chartTimer);
   chartTimer = setTimeout(() => drawnCharts.forEach((args, node) => { if (!node.isConnected) drawnCharts.delete(node); else if (node.offsetParent) lineChart(node, ...args) }), 150)
 });
+// Por padrão o eixo X é a época (curvas de um treino). Opções para eixos de categorias
+// (ex.: um ponto por treino na Evolução dos modelos): xKey, xRange [mín, máx], xTicks
+// [{ x, label, sub }], tipTitle(ponto), dots, highlight (x com anel), hollow (x com
+// ponto vazado) e dividers [{ x, label }] (linha vertical tracejada antes do ponto x).
 function lineChart(container, points, series, options = {}) {
   drawnCharts.set(container, [points, series, options]);
   container.replaceChildren();
-  const height = options.height || 220, width = Math.max(280, Math.round(container.clientWidth) || 640), pad = { l: 44, r: 12, t: 10, b: 24 };
+  const xKey = options.xKey || 'epoch';
+  const height = options.height || 220, width = Math.max(280, Math.round(container.clientWidth) || 640), pad = { l: 44, r: 12, t: options.highlight != null ? 22 : 10, b: options.xTicks ? 40 : 24 };
   const usable = series.filter(serie => points.some(point => point[serie.key] != null));
   if (!points.length || !usable.length) { container.append(el('div', { class: 'empty' }, options.empty || 'Sem dados de épocas ainda.')); return }
-  const xs = points.map(point => point.epoch);
-  const xMin = Math.min(...xs), xMax = Math.max(...xs, xMin + 1);
+  const xs = points.map(point => point[xKey]);
+  const [xMin, xMax] = options.xRange || [Math.min(...xs), Math.max(...xs, Math.min(...xs) + 1)];
   const values = usable.flatMap(serie => points.map(point => point[serie.key]).filter(value => value != null));
   let yMax = options.percent ? Math.max(0.05, ...values) : Math.max(...values);
   let yMin = options.percent ? 0 : Math.min(...values);
@@ -912,14 +917,37 @@ function lineChart(container, points, series, options = {}) {
     const label = add('text', { x: pad.l - 6, y: y + 4, 'text-anchor': 'end', 'font-size': 11, fill: 'var(--muted)' });
     label.textContent = options.percent ? `${Math.round(value * 100)}%` : value.toFixed(value >= 10 ? 0 : 2)
   }
-  [xMin, Math.round((xMin + xMax) / 2), xMax].forEach(x => {
+  if (options.xTicks) {
+    // Rótulos de categoria: com muitos pontos, só um a cada "step" para não sobrepor.
+    const step = Math.max(1, Math.ceil(options.xTicks.length / Math.max(1, Math.floor((width - pad.l - pad.r) / 76))));
+    options.xTicks.forEach((tick, index) => {
+      if (index % step && index !== options.xTicks.length - 1) return;
+      const label = add('text', { x: sx(tick.x), y: height - 22, 'text-anchor': 'middle', 'font-size': 11, fill: 'var(--ink-2)', 'font-weight': 600 });
+      label.textContent = tick.label;
+      if (tick.sub) { const sub = add('text', { x: sx(tick.x), y: height - 8, 'text-anchor': 'middle', 'font-size': 10.5, fill: 'var(--muted)' }); sub.textContent = tick.sub }
+    })
+  } else [xMin, Math.round((xMin + xMax) / 2), xMax].forEach(x => {
     const anchor = x === xMax ? 'end' : x === xMin ? 'start' : 'middle';
     const label = add('text', { x: sx(x), y: height - 6, 'text-anchor': anchor, 'font-size': 11, fill: 'var(--muted)' });
     label.textContent = `ép. ${x}`
   });
+  (options.dividers || []).forEach(divider => {
+    const x = sx(divider.x - .5);
+    add('line', { x1: x, x2: x, y1: pad.t, y2: height - pad.b, stroke: 'var(--line-strong)', 'stroke-dasharray': '4 4', 'vector-effect': 'non-scaling-stroke' });
+    if (divider.label) { const text = add('text', { x: x + 4, y: height - pad.b - 6, 'font-size': 10.5, fill: 'var(--muted)' }); text.textContent = divider.label }
+  });
+  if (options.highlight != null) {
+    const x = sx(options.highlight);
+    add('rect', { x: x - 14, y: pad.t, width: 28, height: height - pad.t - pad.b, rx: 6, fill: 'var(--primary-soft)' });
+    const text = add('text', { x, y: pad.t - 8, 'text-anchor': 'middle', 'font-size': 10.5, 'font-weight': 600, fill: 'var(--primary)' });
+    text.textContent = options.highlightLabel || 'em uso'
+  }
+  const hollow = new Set(options.hollow || []);
   usable.forEach(serie => {
-    const path = points.filter(point => point[serie.key] != null).map((point, i) => `${i ? 'L' : 'M'}${sx(point.epoch).toFixed(1)},${sy(point[serie.key]).toFixed(1)}`).join('');
-    add('path', { d: path, fill: 'none', stroke: serie.color, 'stroke-width': 2, 'vector-effect': 'non-scaling-stroke', 'stroke-dasharray': serie.dashed ? '5 4' : '' })
+    const drawn = points.filter(point => point[serie.key] != null);
+    const path = drawn.map((point, i) => `${i ? 'L' : 'M'}${sx(point[xKey]).toFixed(1)},${sy(point[serie.key]).toFixed(1)}`).join('');
+    add('path', { d: path, fill: 'none', stroke: serie.color, 'stroke-width': 2, 'vector-effect': 'non-scaling-stroke', 'stroke-dasharray': serie.dashed ? '5 4' : '' });
+    if (options.dots) drawn.forEach(point => add('circle', { cx: sx(point[xKey]), cy: sy(point[serie.key]), r: point[xKey] === options.highlight ? 5 : 3.5, fill: hollow.has(point[xKey]) ? 'var(--surface)' : serie.color, stroke: serie.color, 'stroke-width': 2 }))
   });
   if (options.marker != null) { const x = sx(options.marker); add('line', { x1: x, x2: x, y1: pad.t, y2: height - pad.b, stroke: 'var(--ai)', 'stroke-dasharray': '3 3', 'vector-effect': 'non-scaling-stroke' }) }
   const cursor = add('line', { x1: 0, x2: 0, y1: pad.t, y2: height - pad.b, stroke: 'var(--line-strong)', visibility: 'hidden', 'vector-effect': 'non-scaling-stroke' });
@@ -927,11 +955,14 @@ function lineChart(container, points, series, options = {}) {
   svg.addEventListener('pointermove', event => {
     const rect = svg.getBoundingClientRect();
     const vx = (event.clientX - rect.left) / rect.width * width;
-    const epoch = xMin + (vx - pad.l) / (width - pad.l - pad.r) * (xMax - xMin);
-    const nearest = points.reduce((best, point) => Math.abs(point.epoch - epoch) < Math.abs(best.epoch - epoch) ? point : best, points[0]);
-    const x = sx(nearest.epoch);
+    const at = xMin + (vx - pad.l) / (width - pad.l - pad.r) * (xMax - xMin);
+    const nearest = points.reduce((best, point) => Math.abs(point[xKey] - at) < Math.abs(best[xKey] - at) ? point : best, points[0]);
+    const x = sx(nearest[xKey]);
     cursor.setAttribute('x1', x); cursor.setAttribute('x2', x); cursor.setAttribute('visibility', 'visible');
-    tip.textContent = `Época ${nearest.epoch} · ` + usable.map(serie => `${serie.label} ${nearest[serie.key] == null ? '—' : options.percent ? pct(nearest[serie.key]) : nearest[serie.key].toFixed(3)}`).join(' · ');
+    // Com tipTitle (eixo de categorias) a dica tem uma linha por métrica.
+    const glue = options.tipTitle ? '\n' : ' · ';
+    tip.textContent = (options.tipTitle ? options.tipTitle(nearest) : `Época ${nearest.epoch}`) + glue + usable.map(serie => `${serie.label} ${nearest[serie.key] == null ? '—' : options.percent ? pct(nearest[serie.key]) : nearest[serie.key].toFixed(3)}`).join(glue);
+    tip.classList.toggle('multi', Boolean(options.tipTitle));
     tip.classList.remove('hidden'); tip.style.left = '0px';
     const left = Math.max(0, Math.min(rect.width - tip.offsetWidth - 4, x / width * rect.width + 8));
     tip.style.left = left + 'px'; tip.style.top = '4px'
@@ -1161,7 +1192,43 @@ function renderModels() {
   const ranked = OPS.runs.filter(run => run.best_epoch).sort((a, b) => b.best_epoch.map50 - a.best_epoch.map50);
   const max = Math.max(0.01, ...ranked.map(run => run.best_epoch.map50));
   $('leaderboard').replaceChildren(...(ranked.length ? ranked.map(run => barRow('var(--ok)', run.display_detail ? `${runName(run)} · ${run.display_detail}` : runName(run), run.best_epoch.map50, 0, max, pct(run.best_epoch.map50))) : [el('div', { class: 'empty' }, 'Sem métricas.')]))
+  renderEvolution()
 }
+/* Evolução dos modelos: um ponto por treino (ordem cronológica), lido de OPS.runs a cada
+   atualização do instantâneo; nada fixo no código, então cada treino novo aparece sozinho. */
+const codeOf = id => String(id).slice(-8).toUpperCase();
+function evolutionPoints(filter) {
+  return OPS.runs.filter(run => run.best_epoch && run.best_epoch.map50 != null && (filter !== 'completed' || run.state === 'completed'))
+    .slice().sort((a, b) => String(a.started_at).localeCompare(String(b.started_at)))
+    .map((run, index) => ({ x: index + 1, run, ...Object.fromEntries(METRIC_SERIES.map(serie => [serie.key, run.best_epoch[serie.key]])) }))
+}
+function renderEvolution() {
+  const points = evolutionPoints($('evolutionFilter').value);
+  // Modelo das sugestões desta inspeção (ligado à execução pelo SHA dos pesos nas comparações).
+  const inUse = runForWeights(DATA.suggestions && DATA.suggestions.weights_sha256);
+  const used = inUse && points.find(point => point.run.id === inUse.id);
+  const dividers = points.slice(1).filter((point, index) => point.run.dataset_sha256 && points[index].run.dataset_sha256 && point.run.dataset_sha256 !== points[index].run.dataset_sha256)
+    .map(point => ({ x: point.x, label: 'novo dataset' }));
+  $('evolutionHint').textContent = points.length ? `${points.length} treino${points.length > 1 ? 's' : ''} com validação · atualizado ${fmtDate(OPS.generated_at || Date.now())}` : '';
+  lineChart($('evolutionChart'), points, METRIC_SERIES, {
+    xKey: 'x', xRange: [.5, points.length + .5], percent: true, dots: true, height: 260,
+    xTicks: points.map(point => ({ x: point.x, label: point.run.display_name && !point.run.display_name.endsWith(codeOf(point.run.id)) ? point.run.display_name.slice(0, 14) : codeOf(point.run.id), sub: fmtDate(point.run.started_at).slice(0, 5) })),
+    tipTitle: point => `${runName(point.run)} · ${fmtDate(point.run.started_at)} · ${stateLabel(point.run.state)} · melhor época ${point.run.best_epoch.epoch}/${point.run.epochs_planned || point.run.epochs_done}`,
+    highlight: used ? used.x : null, highlightLabel: 'em uso', hollow: points.filter(point => point.run.state === 'running').map(point => point.x), dividers,
+    label: 'Evolução das métricas de validação por treino', empty: 'Nenhum treino com métricas de validação em runs/ ainda.'
+  });
+  // Resumo: último treino contra o anterior e contra o modelo em uso (pontos percentuais de mAP50).
+  const last = points[points.length - 1];
+  const delta = (a, b) => { const value = (a - b) * 100; return `${value >= 0 ? '+' : '−'}${Math.abs(value).toFixed(1)} p.p.` };
+  const crosses = (a, b) => dividers.some(divider => divider.x > Math.min(a.x, b.x) && divider.x <= Math.max(a.x, b.x));
+  const versus = (other, text) => el('span', {}, ` · ${delta(last.map50, other.map50)} ${text}`, crosses(last, other) ? el('span', { class: 'muted' }, ' (outro dataset de validação)') : null);
+  const parts = [];
+  if (last) parts.push(el('span', {}, 'Último: ', el('b', {}, runName(last.run)), ` · mAP50 ${pct(last.map50)}`));
+  if (last && points.length > 1) parts.push(versus(points[points.length - 2], 'vs. o anterior'));
+  if (last && used && used !== last) parts.push(versus(used, `vs. o modelo em uso (${runName(used.run)})`));
+  $('evolutionSummary').replaceChildren(...parts)
+}
+$('evolutionFilter').onchange = renderEvolution;
 function renderCompare() {
   const comparison = OPS.comparisons[Number($('compareSelect').value)];
   if (!comparison) { $('compareTable').replaceChildren(el('div', { class: 'empty' }, 'Nenhuma comparação salva. Etapa 5 do ciclo de fine-tuning.')); return }

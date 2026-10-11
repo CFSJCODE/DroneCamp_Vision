@@ -10,6 +10,7 @@ import io
 import json
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 import threading
@@ -121,6 +122,30 @@ class OperationsTests(PlatformFixture):
         write_json(self.root / "runs" / "nomes.json", {"dd284411": "v7 base", second: "v7.1"})
         renamed = {run["id"]: run["display_name"] for run in collect_runs(self.root)}
         self.assertEqual((renamed[first], renamed[second]), ("v7 base", "v7.1"))
+
+    @unittest.skipUnless(shutil.which("node"), "Node não instalado: gráfico de evolução não verificado.")
+    def test_evolution_chart_takes_every_run_with_validation_in_start_order(self) -> None:
+        """O gráfico da seção Modelos lê os treinos do instantâneo: um treino novo entra sozinho."""
+        self.make_run("pilot_train_20261007T010057Z_f5e5ba8b", 3, {"state": "completed", "complete": True})
+        self.make_run("pilot_train_20261004T170212Z_dd284411", 2, {"state": "completed", "complete": True})
+        self.make_run("tune_20261008T120000Z_0000abcd", 1, {"state": "failed", "complete": False})
+        source = (Path(__file__).resolve().parents[1] / "src" / "dronecamp_ia" / "review_templates" / "platform.js").read_text(encoding="utf-8")
+        series = source[source.index("const METRIC_SERIES"):source.index("];", source.index("const METRIC_SERIES")) + 2]
+        points = source[source.index("function evolutionPoints"):source.index("function renderEvolution")]
+
+        def evolution(runs: list[dict], filter_: str) -> list[list]:
+            script = f"{series}\nconst OPS = {{ runs: {json.dumps(runs)} }};\n{points}\n" + \
+                f"process.stdout.write(JSON.stringify(evolutionPoints({json.dumps(filter_)}).map(p => [p.x, p.run.id.slice(-8), p.map50])));"
+            return json.loads(subprocess.run(["node", "-e", script], capture_output=True, text=True, check=True, encoding="utf-8").stdout)
+
+        runs = collect_runs(self.root)
+        everything = evolution(runs, "all")
+        self.assertEqual([point[1] for point in everything], ["dd284411", "f5e5ba8b", "0000abcd"], "Ordem em que os treinos começaram.")
+        self.assertEqual([point[0] for point in everything], [1, 2, 3])
+        self.assertAlmostEqual(everything[1][2], 0.3, msg="Métricas da melhor época de validação.")
+        self.assertEqual([point[1] for point in evolution(runs, "completed")], ["dd284411", "f5e5ba8b"])
+        self.make_run("pilot_train_20261012T090000Z_1234beef", 1, None)
+        self.assertEqual(evolution(collect_runs(self.root), "all")[-1][1], "1234beef", "Treino novo aparece sem mudar o código.")
 
     def test_comparisons_link_weights_to_runs(self) -> None:
         write_json(self.root / "runs" / "compare_fixture.json", {"dataset": "d.yaml", "conf": 0.15, "iou_match": 0.5, "models": [
