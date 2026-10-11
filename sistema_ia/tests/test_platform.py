@@ -181,6 +181,26 @@ class ServerTests(PlatformFixture):
         except urllib.error.HTTPError as error:
             return error.code, error.read()
 
+    def put(self, path: str, data: bytes, filename: str, token: str | None = None) -> tuple[int, bytes]:
+        request = urllib.request.Request(self.base + path, data=data, method="PUT")
+        request.add_header("X-File-Name", urllib.parse.quote(filename))
+        request.add_header("Content-Type", "application/octet-stream")
+        if token:
+            request.add_header("X-DroneCamp-Token", token)
+        try:
+            with urllib.request.urlopen(request) as response:
+                return response.status, response.read()
+        except urllib.error.HTTPError as error:
+            return error.code, error.read()
+
+    def wait_ingest(self, batch: str) -> dict:
+        for _ in range(200):
+            progress = json.loads(self.request(f"/api/uploads/{batch}")[1])
+            if progress["state"] != "running":
+                return progress
+            time.sleep(0.1)
+        return progress
+
     def test_served_page_has_token_and_live_operations(self) -> None:
         status, page = self.request("/")
         self.assertEqual(status, 200)
@@ -206,7 +226,7 @@ class ServerTests(PlatformFixture):
         dataset = self.root / "data" / "pilot" / "v1" / "dataset.yaml"
         dataset.parent.mkdir(parents=True)
         dataset.write_text("path: .\n", encoding="utf-8")
-        arguments = _job_arguments(self.root, self.registry_path, "train-pilot",
+        arguments = _job_arguments(self.root, None, "train-pilot",  # treinar não depende de uma revisão aberta
                                    {"data": "data\\pilot\\v1\\dataset.yaml", "epochs": 10, "imgsz": 640, "batch": 2,
                                     "weights": "runs/pilot_train_20261004T170212Z_dd284411/fit/weights/best.pt"})
         self.assertEqual(arguments[:2], ["--data", "data/pilot/v1/dataset.yaml"])
@@ -232,6 +252,18 @@ class ServerTests(PlatformFixture):
         self.assertEqual(saved.parent, self.directory / "feedback_inbox")
         self.assertNotIn("..", saved.name)
         self.assertEqual(json.loads(saved.read_text(encoding="utf-8"))["reviewer_id"], "rev/../01")
+
+    def test_imported_inspection_joins_the_fixed_list(self) -> None:
+        batch = json.loads(self.request("/api/uploads", {"name": "lote_fixo"}, self.token)[1])["batch"]
+        self.assertEqual(self.put(f"/api/uploads/{batch}/files", png_bytes((10, 120, 200)), "foto.png", self.token)[0], 200)
+        self.assertEqual(self.request(f"/api/uploads/{batch}/ingest", {"group": "galpao_f"}, self.token)[0], 200)
+        progress = self.wait_ingest(batch)
+        self.assertEqual(progress["state"], "finished", progress)
+        self.assertEqual(self.request("/r/lote_fixo/")[0], 200, "Com --registry, a inspeção importada também fica aberta.")
+        workspace = json.loads(self.request("/api/workspace")[1])
+        self.assertEqual((workspace["mode"], workspace["default"]), ("fixed", "fixture_v1"))
+        self.assertIn("lote_fixo", {item["name"] for item in workspace["reviews"]})
+        self.assertEqual(self.request("/r/outra_pasta/")[0], 404)
 
 
 
@@ -303,19 +335,7 @@ class WorkspaceServerTests(PlatformFixture):
         self.addCleanup(self.server.shutdown)
         self.base = f"http://127.0.0.1:{self.server.server_address[1]}"
 
-    request = ServerTests.request
-
-    def put(self, path: str, data: bytes, filename: str, token: str | None = None) -> tuple[int, bytes]:
-        request = urllib.request.Request(self.base + path, data=data, method="PUT")
-        request.add_header("X-File-Name", urllib.parse.quote(filename))
-        request.add_header("Content-Type", "application/octet-stream")
-        if token:
-            request.add_header("X-DroneCamp-Token", token)
-        try:
-            with urllib.request.urlopen(request) as response:
-                return response.status, response.read()
-        except urllib.error.HTTPError as error:
-            return error.code, error.read()
+    request, put, wait_ingest = ServerTests.request, ServerTests.put, ServerTests.wait_ingest
 
     def test_workspace_lists_reviews_and_opens_the_most_recent_page(self) -> None:
         status, body = self.request("/api/workspace?review=fixture_v1")
@@ -349,6 +369,12 @@ class WorkspaceServerTests(PlatformFixture):
         self.assertEqual((workspace["reviews"], workspace["default"]), ([], None))
         self.assertEqual(self.request("/api/operations")[0], 200)
         self.assertEqual(self.request("/r/fixture_v1/")[0], 404)
+        # Treinar não exige uma inspeção aberta: só a validação do dataset falha aqui; sugerir exige.
+        status, body = self.request("/api/jobs", {"kind": "train-pilot", "options": {"data": "data/pilot/inexistente.yaml"}}, self.token)
+        self.assertEqual(status, 400)
+        self.assertNotIn("Revisão", json.loads(body)["error"])
+        status, body = self.request("/api/jobs", {"kind": "suggest", "options": {"weights": "models/x.pt"}}, self.token)
+        self.assertIn("Revisão não aberta", json.loads(body)["error"])
 
     def test_upload_flow_creates_a_new_inspection_from_photos(self) -> None:
         self.assertEqual(self.request("/api/uploads", {"name": "Galpão Norte 2026"})[0], 403)
@@ -370,11 +396,7 @@ class WorkspaceServerTests(PlatformFixture):
         status, body = self.request(f"/api/uploads/{batch}/ingest", {"group": "galpao_norte", "every_seconds": 2, "max_frames": 50,
                                                                    "notes": "voo de teste", "uploaded_by": "rev01"}, self.token)
         self.assertEqual(status, 200, body)
-        for _ in range(200):
-            progress = json.loads(self.request(f"/api/uploads/{batch}")[1])
-            if progress["state"] != "running":
-                break
-            time.sleep(0.1)
+        progress = self.wait_ingest(batch)
         self.assertEqual(progress["state"], "finished", progress)
         result = progress["result"]
         self.assertEqual((result["images"], result["photos"], result["videos"]), (2, 2, 0))
@@ -386,6 +408,9 @@ class WorkspaceServerTests(PlatformFixture):
         self.assertEqual(registry["ingest"]["uploaded_by"], "rev01")
         self.assertEqual({item["building_group"] for item in registry["images"]}, {"galpao_norte"})
         self.assertTrue((directory / "index.html").is_file())
+        kept = directory / "midia_enviada"
+        self.assertEqual(sorted(path.name for path in kept.iterdir()), ["foto1 copia.png", "foto1.png", "foto2.png"], "Os arquivos enviados ficam na inspeção.")
+        self.assertEqual({Path(source["path"]).parent for source in registry["sources"]}, {kept.resolve()})
         self.assertFalse((self.root / ".runtime" / "uploads" / batch).exists(), "Os arquivos do lote saem da área temporária.")
         workspace = json.loads(self.request("/api/workspace")[1])
         created = next(item for item in workspace["reviews"] if item["name"] == "galpao_norte_2026")
@@ -396,6 +421,20 @@ class WorkspaceServerTests(PlatformFixture):
         self.assertEqual(self.request(f"/r/galpao_norte_2026/{image_url}")[0], 200)
         self.assertEqual(self.request("/api/uploads", {"name": "galpao_norte_2026"}, self.token)[0], 400, "Nome já usado é recusado antes do envio.")
         self.assertEqual(self.request("/api/uploads/lote_inexistente")[0], 404)
+
+    def test_workspace_counts_only_suggestions_still_pending_after_feedback(self) -> None:
+        digest = json.loads(self.registry_path.read_text(encoding="utf-8"))["images"][0]["image_sha256"]
+        write_json(self.directory / "suggestions.json", {"schema_version": 1, "registry_sha256": file_hash(self.registry_path), "images": {digest: [
+            {"id": "s001", "class_id": 0, "bbox_xyxy": [3, 3, 12, 11], "confidence": 0.8},
+            {"id": "s002", "class_id": 1, "bbox_xyxy": [10, 3, 18, 12], "confidence": 0.4}]}})
+        review = json.loads(self.request("/api/workspace")[1])["reviews"][0]
+        self.assertEqual((review["suggestions_pending"], review["decided"]), (2, 0))
+        feedback = {"schema_version": 1, "registry_sha256": file_hash(self.registry_path), "reviewer_id": "rev01",
+                    "images": [{"image_sha256": digest, "status": "positive", "boxes": [{"class_id": 0, "bbox_xyxy": [3, 3, 12, 11], "note": ""}],
+                                "notes": "", "confirmed_complete": True, "dismissed_suggestions": ["s002"]}]}
+        self.assertEqual(self.request("/api/feedback", feedback, self.token)[0], 200)
+        review = json.loads(self.request("/api/workspace")[1])["reviews"][0]
+        self.assertEqual((review["suggestions_pending"], review["decided"]), (0, 1), "Aceita (mesma caixa) e descartada deixam de ser pendentes.")
 
     def test_evidence_package_and_report_are_written_inside_the_review(self) -> None:
         digest = json.loads(self.registry_path.read_text(encoding="utf-8"))["images"][0]["image_sha256"]

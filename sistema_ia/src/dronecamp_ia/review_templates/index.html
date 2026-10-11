@@ -148,12 +148,12 @@ __PLATFORM_CSS__
   <p class="notice info hidden" id="uploadOffline">Para enviar fotos e vídeos pela interface, abra a plataforma pelo servidor local (<b>Abrir plataforma DroneCamp.cmd</b>). Aberta direto do disco, use o comando <code>import-media</code> no terminal.</p>
   <div class="grid two">
     <div class="card">
-      <div class="card-head"><div><h2>Enviar fotos e vídeos</h2><p>Fotos (JPG, PNG, WEBP) e vídeos (MP4, MOV, AVI, MKV). Vídeos viram quadros amostrados no intervalo escolhido.</p></div></div>
+      <div class="card-head"><div><h2>Enviar fotos e vídeos</h2><p>Fotos (JPG, PNG, WEBP, TIFF, BMP) e vídeos (MP4, MOV, AVI, MKV). TIFF e BMP são regravadas como JPEG; vídeos viram quadros amostrados no intervalo escolhido. Os arquivos enviados ficam guardados na pasta da inspeção.</p></div></div>
       <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Selecionar ou arrastar arquivos">
         <svg><use href="#i-upload"/></svg>
         <b>Arraste os arquivos aqui ou clique para escolher</b>
         <p>Os originais são preservados; nada é alterado ou apagado.</p>
-        <input type="file" id="fileInput" class="hidden" multiple accept="image/*,video/*,.jpg,.jpeg,.png,.webp,.mp4,.mov,.avi,.mkv,.m4v,.webm">
+        <input type="file" id="fileInput" class="hidden" multiple accept="image/*,video/*,.jpg,.jpeg,.png,.webp,.tif,.tiff,.bmp,.mp4,.mov,.avi,.mkv,.m4v,.webm">
       </div>
       <div class="file-list" id="fileList"></div>
       <p class="muted small-text" id="fileSummary"></p>

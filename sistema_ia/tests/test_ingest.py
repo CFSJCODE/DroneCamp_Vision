@@ -170,6 +170,36 @@ class PhotoIngestTests(IngestFixture):
         self.assertEqual(len(payload["images"]), 2)
         self.assertTrue(all(image["image_url"].startswith("images/") for image in payload["images"]))
 
+    def test_bmp_and_tiff_photos_are_rewritten_as_jpeg(self) -> None:
+        bmp = self.photo("mapa.bmp")
+        tif = self.photo("scan.TIF", color=(120, 60, 30))  # conteúdo distinto do BMP, senão vira foto repetida
+        path, info = canonicalize_photo(bmp, self.root / "congeladas")
+        self.assertEqual((path.suffix, info), (".jpg", {"canonicalized_from_sha256": file_hash(bmp), "exif_orientation": 1}))
+        result = ingest_media(self.config, [bmp, tif], self.reviews / "formatos_v1", "galpao_b")
+        self.assertEqual((result["images"], result["skipped"]), (2, []))
+        images = {item["filename"]: item for item in self.registry(result)["images"]}
+        for name, original in (("mapa.bmp", bmp), ("scan.TIF", tif)):
+            item = images[name]
+            self.assertTrue(item["source_path"].endswith(".jpg"), "O navegador não exibe BMP/TIFF: a cópia congelada é JPEG.")
+            self.assertEqual(Path(item["source_path"]).stem, item["image_sha256"])
+            self.assertEqual(item["ingest"]["canonicalized_from_sha256"], file_hash(original))
+            self.assertEqual(item["ingest"]["exif_orientation"], 1)
+            self.assertEqual(review_image_size(Path(item["source_path"])), (24, 18))
+        payload = json.loads((Path(result["registry"]).parent / "browser_data.json").read_text(encoding="utf-8"))
+        self.assertTrue(all(image["image_url"].endswith(".jpg") for image in payload["images"]))
+
+    def test_keep_sources_moves_uploads_into_the_inspection(self) -> None:
+        png = self.photo("a.png")
+        jpg = self.photo("b.jpg", quality=90)
+        result = ingest_media(self.config, [png, jpg], self.reviews / "lote_v2", "galpao_b", keep_sources=True)
+        kept = (Path(result["registry"]).parent / "midia_enviada").resolve()
+        self.assertEqual(sorted(path.name for path in kept.iterdir()), ["a.png", "b.jpg"])
+        self.assertEqual(list(self.uploads.iterdir()), [], "Os arquivos saem da área temporária em vez de serem copiados.")
+        registry = self.registry(result)
+        self.assertEqual([source["path"] for source in registry["sources"]], [str(kept / "a.png"), str(kept / "b.jpg")])
+        self.assertEqual({item["original_path"] for item in registry["images"]}, {str(kept / "a.png"), str(kept / "b.jpg")})
+        self.assertTrue(all(Path(item["original_path"]).is_file() and Path(item["source_path"]).is_file() for item in registry["images"]))
+
     def test_registry_is_accepted_by_pilot_selection(self) -> None:
         """Mesma leitura que build-pilot-data faz: schema, taxonomia e campos por foto."""
         from dronecamp_ia.pilot import _approved
@@ -304,6 +334,17 @@ class VideoIngestTests(IngestFixture):
         self.assertEqual(len(list((directory / "originals").iterdir())), 3)
         self.assertTrue((directory / "index.html").is_file())
         self.assertEqual(len(json.loads((directory / "browser_data.json").read_text(encoding="utf-8"))["images"]), 3)
+
+    def test_keep_sources_keeps_the_whole_video(self) -> None:
+        video = self.video()
+        digest = file_hash(video)
+        result = ingest_media(self.config, [video], self.reviews / "video_v2", "galpao_b", every_seconds=1, keep_sources=True)
+        kept = (Path(result["registry"]).parent / "midia_enviada" / "voo.mp4").resolve()
+        self.assertEqual(file_hash(kept), digest, "O vídeo inteiro fica guardado na inspeção, não só os quadros.")
+        self.assertFalse(video.exists())
+        registry = self.registry(result)
+        self.assertEqual(registry["sources"][0]["path"], str(kept))
+        self.assertEqual({item["original_path"] for item in registry["images"]}, {str(kept)})
 
     def test_max_frames_increases_the_interval_uniformly(self) -> None:
         video = self.video()

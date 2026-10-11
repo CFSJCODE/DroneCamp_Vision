@@ -44,11 +44,13 @@ from .io import file_hash, write_json
 from .review_data import REVIEW_SCHEMA, review_image_size
 from .review_render import render_review_package
 
-__all__ = ["IMAGE_EXTENSIONS", "VIDEO_EXTENSIONS", "media_kind", "slugify_review_name",
+__all__ = ["IMAGE_EXTENSIONS", "VIDEO_EXTENSIONS", "WEB_IMAGE_SUFFIXES", "media_kind", "slugify_review_name",
            "extract_video_frames", "canonicalize_photo", "ingest_media"]
 
 # Contêineres de vídeo aceitos (a decodificação fica com OpenCV ou ffmpeg).
 VIDEO_EXTENSIONS = frozenset({".mp4", ".mov", ".avi", ".mkv", ".m4v", ".webm"})
+# Formatos que o navegador exibe e o servidor serve; fotos nos demais (TIFF, BMP) são regravadas como JPEG ao congelar.
+WEB_IMAGE_SUFFIXES = frozenset({".jpg", ".jpeg", ".png", ".webp"})
 # Limites da amostragem de quadros: intervalo em segundos e quadros por vídeo.
 EVERY_SECONDS_RANGE = (0.2, 600.0)
 MAX_FRAMES_RANGE = (1, 2000)
@@ -294,19 +296,20 @@ def _transposed(image: Image.Image, orientation: int) -> Image.Image:
 def canonicalize_photo(source: Path, destination_dir: Path) -> tuple[Path, dict]:
     """Congele a foto em ``destination_dir`` com o nome igual ao seu SHA-256.
 
-    Orientação EXIF (tag 274) igual a 1: cópia byte a byte em
-    ``<sha256><extensão minúscula>`` e ``{}``. Diferente de 1: a rotação é
-    aplicada (``ImageOps.exif_transpose``), o resultado é salvo como JPEG
-    (qualidade 95) em ``<novo sha256>.jpg`` e o retorno traz
-    ``{"canonicalized_from_sha256": sha_original, "exif_orientation": n}``.
-    A foto final sempre passa em ``review_image_size``.
+    JPG/PNG/WEBP (``WEB_IMAGE_SUFFIXES``) com orientação EXIF (tag 274) igual
+    a 1: cópia byte a byte em ``<sha256><extensão minúscula>`` e ``{}``. Nos
+    outros casos (foto girada pelo EXIF, ou formato que o navegador não exibe,
+    como TIFF e BMP) a rotação é aplicada (``ImageOps.exif_transpose``), o
+    resultado é salvo como JPEG (qualidade 95) em ``<novo sha256>.jpg`` e o
+    retorno traz ``{"canonicalized_from_sha256": sha_original,
+    "exif_orientation": n}``. A foto final sempre passa em ``review_image_size``.
     """
     source, destination_dir = Path(source), Path(destination_dir)
     destination_dir.mkdir(parents=True, exist_ok=True)
     original_digest = file_hash(source)
     with Image.open(source) as image:
         orientation = int(image.getexif().get(274, 1))
-        if orientation == 1:
+        if orientation == 1 and source.suffix.lower() in WEB_IMAGE_SUFFIXES:
             target = destination_dir / f"{original_digest}{source.suffix.lower()}"
             if not target.exists():
                 shutil.copyfile(source, target)
@@ -340,6 +343,18 @@ def canonicalize_photo(source: Path, destination_dir: Path) -> tuple[Path, dict]
 # ---------------------------------------------------------------------------
 # Importação: revisão nova com fotos, quadros de vídeo, registro e página.
 # ---------------------------------------------------------------------------
+
+def _move_into(path: Path, directory: Path) -> Path:
+    """Move ``path`` para ``directory`` sem sobrescrever (``nome_2.ext`` se o nome já existir)."""
+    directory.mkdir(parents=True, exist_ok=True)
+    target = directory / path.name
+    counter = 1
+    while target.exists():
+        counter += 1
+        target = directory / f"{path.stem}_{counter}{path.suffix}"
+    shutil.move(str(path), str(target))
+    return target.resolve()
+
 
 def _collect_inputs(inputs) -> tuple[list[tuple[Path, str]], list[dict]]:
     """Arquivos suportados (na ordem informada; pastas em ordem alfabética) e os ignorados."""
@@ -417,7 +432,7 @@ class _Importer:
 
 def ingest_media(config: ProjectConfig, inputs: list[Path], output: Path, building_group: str, *,
                  every_seconds: float = 2.0, max_frames: int = 200, uploaded_by: str | None = None,
-                 campaign_notes: str = "") -> dict:
+                 campaign_notes: str = "", keep_sources: bool = False) -> dict:
     """Fotos e vídeos enviados viram uma revisão nova em ``output`` (registro + página).
 
     ``inputs``: arquivos ou pastas (pastas são varridas recursivamente; só
@@ -426,6 +441,12 @@ def ingest_media(config: ProjectConfig, inputs: list[Path], output: Path, buildi
     Fotos repetidas (mesmo SHA-256 final) entram uma vez; arquivos ilegíveis e
     repetidos ficam em ``skipped``. ValueError se nada for suportado, se
     ``output`` já existir ou se ``building_group`` for vazio ou > 100 caracteres.
+
+    ``keep_sources`` (envio pela plataforma): os arquivos de entrada são
+    MOVIDOS para ``output/midia_enviada/`` antes de serem lidos, para que
+    ``sources[].path`` e ``original_path`` continuem válidos depois que a área
+    temporária do lote for apagada e para que o vídeo inteiro fique guardado.
+    Com arquivos do próprio usuário (``import-media``), deixe ``False``.
     """
     every, limit = _validate_sampling(every_seconds, max_frames)
     if not isinstance(building_group, str) or not building_group.strip() or len(building_group) > 100:
@@ -452,6 +473,8 @@ def ingest_media(config: ProjectConfig, inputs: list[Path], output: Path, buildi
     sources: list[dict] = []
     seen_videos: dict[str, str] = {}
     try:
+        if keep_sources:
+            files = [(_move_into(path, output / "midia_enviada"), kind) for path, kind in files]
         for path, kind in files:
             digest = file_hash(path)
             entry = {"file": path.name, "path": str(path), "kind": kind, "bytes": path.stat().st_size,

@@ -49,7 +49,7 @@ import threading
 from urllib.parse import parse_qs, unquote, urlsplit
 import webbrowser
 
-from .config import ProjectConfig
+from .config import ProjectConfig, detection_names, load_taxonomy
 from .io import file_hash
 from .operations import collect_operations, collect_review_files
 from .review_render import build_page, empty_page_payload, load_page_payload
@@ -142,8 +142,8 @@ def _integer(options: dict, key: str, low: int, high: int) -> list[str]:
     return [f"--{key}", str(value)]
 
 
-def _job_arguments(root: Path, registry_path: Path, kind: str, options: dict) -> list[str]:
-    """Lista fechada de comandos e opções que a página pode iniciar."""
+def _job_arguments(root: Path, registry_path: Path | None, kind: str, options: dict) -> list[str]:
+    """Lista fechada de comandos e opções que a página pode iniciar; só ``suggest`` precisa de ``registry_path``."""
     if kind == "train-pilot":
         arguments = ["--data", _project_file(root, options.get("data"), ("data/pilot",), ".yaml")]
         if options.get("weights"):
@@ -214,8 +214,9 @@ class Workspace:
     uma inspeção importada ou criada pelo terminal aparece sem reiniciar.
     """
 
-    def __init__(self, root: Path, registries: list[Path] | None):
-        self.root = root.resolve()
+    def __init__(self, config: ProjectConfig, registries: list[Path] | None):
+        self.config = config
+        self.root = config.root.resolve()
         self.reviews_dir = self.root / "data" / "reviews"
         self.fixed = {path.parent.name: path.resolve() for path in registries} if registries else None
         self._cache: dict[str, tuple[tuple, dict]] = {}
@@ -223,7 +224,8 @@ class Workspace:
 
     def reviews(self) -> dict[str, Path]:
         if self.fixed is not None:
-            return dict(self.fixed)
+            with self._lock:
+                return dict(self.fixed)
         if not self.reviews_dir.is_dir():
             return {}
         return {path.parent.name: path for path in sorted(self.reviews_dir.glob("*/registry.json")) if path.is_file()}
@@ -235,6 +237,13 @@ class Workspace:
             return True
         except (OSError, ValueError):
             return False
+
+    def register(self, name: str, path: Path) -> None:
+        """Inspeção recém-importada: entra na lista fixa (no espaço de trabalho ela já é descoberta)."""
+        with self._lock:
+            self._cache.pop(name, None)
+            if self.fixed is not None:
+                self.fixed[name] = path.resolve()
 
     def default(self) -> str | None:
         """Primeira da lista fixa; no espaço de trabalho, a inspeção com página mais recente."""
@@ -256,14 +265,15 @@ class Workspace:
                 return dict(cached[1])
         registry = json.loads(path.read_text(encoding="utf-8"))
         images = registry.get("images") or []
-        decided = 0
+        decided, decisions = 0, None
         if latest is not None:
             try:
                 feedback = json.loads(latest.read_text(encoding="utf-8"))
                 if feedback.get("registry_sha256") == file_hash(path):
                     decided = sum(1 for item in feedback.get("images") or [] if item.get("status") not in (None, "pending"))
+                    decisions = _decisions_map(feedback.get("images"))
             except (OSError, ValueError):
-                decided = 0
+                decided, decisions = 0, None
         if not decided:
             decided = sum(1 for item in images if item.get("human_approved") is True)
         pending = 0
@@ -272,7 +282,7 @@ class Workspace:
             try:
                 suggestions = json.loads(suggestions_path.read_text(encoding="utf-8"))
                 if suggestions.get("registry_sha256") == file_hash(path):
-                    pending = sum(len(values) for values in (suggestions.get("images") or {}).values())
+                    pending = self._pending_suggestions(registry, decisions, suggestions)
             except (OSError, ValueError):
                 pending = 0
         updated = max([path.stat().st_mtime] + [file.stat().st_mtime for file in inbox])
@@ -285,6 +295,16 @@ class Workspace:
         with self._lock:
             self._cache[name] = (key, summary)
         return dict(summary)
+
+    def _pending_suggestions(self, registry: dict, decisions: dict | None, suggestions: dict) -> int:
+        """Sugestões que o último arquivo de revisão válido ainda não aceitou nem descartou (mesma regra da página e do laudo)."""
+        from .exports import resolve_decisions
+        try:
+            class_count = len(detection_names(load_taxonomy(self.config.taxonomy_path)))
+            return sum(entry["pending_suggestions"] for entry in resolve_decisions(registry, decisions, class_count, suggestions))
+        except (OSError, ValueError, KeyError, TypeError):
+            # Decisões ou sugestões fora do contrato: conta todas, como antes de qualquer revisão.
+            return sum(len(values) for values in (suggestions.get("images") or {}).values() if isinstance(values, list))
 
     def describe(self, current: str | None) -> dict:
         reviews = []
@@ -338,7 +358,7 @@ class UploadManager:
         name = Path(unquote(filename or "")).name
         kind = media_kind(Path(name))
         if not name or kind is None:
-            raise ValueError(f"Tipo de arquivo não suportado: {name or '(sem nome)'}. Envie fotos (JPG, PNG, WEBP) ou vídeos (MP4, MOV, AVI, MKV).")
+            raise ValueError(f"Tipo de arquivo não suportado: {name or '(sem nome)'}. Envie fotos (JPG, PNG, WEBP, TIFF, BMP) ou vídeos (MP4, MOV, AVI, MKV).")
         if length <= 0 or length > MAX_UPLOAD_FILE_BYTES:
             raise ValueError("Arquivo vazio ou maior que o limite de envio.")
         if entry["bytes"] + length > MAX_UPLOAD_BATCH_BYTES:
@@ -396,9 +416,11 @@ class UploadManager:
         output = self.workspace.reviews_dir / entry["name"]
         try:
             inputs = [entry["directory"] / name for name in entry["files"]]
-            result = ingest_media(config, inputs, output, parameters.pop("building_group"), **parameters)
+            # keep_sources: os arquivos enviados passam a morar em <inspeção>/midia_enviada/ (o lote temporário some).
+            result = ingest_media(config, inputs, output, parameters.pop("building_group"), keep_sources=True, **parameters)
             result = {key: (str(value) if isinstance(value, Path) else value) for key, value in result.items()}
             result["href"] = f"/r/{entry['name']}/"
+            self.workspace.register(entry["name"], output / "registry.json")
             result["suggest_job"] = None
             if weights:
                 try:
@@ -446,7 +468,7 @@ def make_handler(config: ProjectConfig, registry_path: Path | list[Path] | None,
         paths = None
     else:
         paths = registry_path if isinstance(registry_path, list) else [registry_path]
-    workspace = Workspace(root, paths)
+    workspace = Workspace(config, paths)
     uploads = UploadManager(root, workspace)
 
     def split_review(path: str, reviews: dict[str, Path]) -> tuple[str | None, str]:
@@ -605,7 +627,8 @@ def make_handler(config: ProjectConfig, registry_path: Path | list[Path] | None,
                 if path == "/api/jobs":
                     kind = body.get("kind")
                     options = dict(body.get("options") or {})
-                    selected = registry_for(options, reviews)  # sugestões vão para a revisão aberta na página
+                    # Só as sugestões precisam de uma revisão (a aberta na página); o treino roda com o espaço vazio.
+                    selected = registry_for(options, reviews) if kind == "suggest" else None
                     return self._json(jobs.start(kind, _job_arguments(root, selected, kind, options)))
                 if path == "/api/jobs/stop":
                     return self._json(jobs.stop())
@@ -703,7 +726,7 @@ def serve_platform(config: ProjectConfig, registry: Path | list[Path] | None = N
     token = secrets.token_urlsafe(24)
     server = ThreadingHTTPServer(("127.0.0.1", port), make_handler(config, paths, token, JobRunner(config.root)))
     url = f"http://127.0.0.1:{server.server_address[1]}/"
-    reviews = Workspace(config.root, paths).reviews()
+    reviews = Workspace(config, paths).reviews()
     print(f"Plataforma DroneCamp em {url} (Ctrl+C para encerrar). Inspeções abertas: {len(reviews)}.", flush=True)
     if open_browser:
         webbrowser.open(url)

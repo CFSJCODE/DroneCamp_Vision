@@ -407,8 +407,13 @@ $('saveDecision').onclick = () => {
   if (status !== 'pending') toast('Decisão registrada', `Foto ${state.index + 1}: ${decisionNames[status]}. Fica no rascunho local até salvar o arquivo.`)
 };
 
-// Decisões do rascunho local (todas, inclusive pendentes com caixas editadas), para o servidor desenhar.
-const allDrafts = () => Object.entries(state.drafts).map(([id, value]) => ({ image_sha256: id, ...value }));
+// Abrir uma foto já guarda um rascunho igual ao registro. Esse rascunho "intocado" não é decisão humana:
+// não vai ao servidor (senão uma foto positiva do registro viraria pendente no laudo) nem ao CSV.
+const untouched = (photo, value) => !value || (value.status === 'pending' && !value.confirmed_complete && !(value.dismissed_suggestions || []).length
+  && (value.notes || '') === (photo.human_notes || '') && JSON.stringify(value.boxes) === JSON.stringify(photo.boxes));
+const touchedDraft = photo => { const value = state.drafts[photo.image_sha256]; return untouched(photo, value) ? null : value };
+// Decisões do rascunho local (as editadas, inclusive pendentes com caixas mexidas), para o servidor desenhar.
+const allDrafts = () => DATA.images.flatMap(photo => { const value = touchedDraft(photo); return value ? [{ image_sha256: photo.image_sha256, ...value }] : [] });
 const decidedDrafts = () => allDrafts().filter(value => value.status !== 'pending');
 function reviewFile() {
   const reviewer = $('reviewer').value.trim();
@@ -645,6 +650,7 @@ function putFile(url, file, onProgress) {
     request.upload.onprogress = event => { if (event.lengthComputable) onProgress(event.loaded / event.total) };
     request.onload = () => { let value = {}; try { value = JSON.parse(request.responseText) } catch {} request.status < 300 ? resolve(value) : reject(new Error(value.error || `HTTP ${request.status}`)) };
     request.onerror = () => reject(new Error('Falha de rede ao enviar o arquivo.'));
+    request.onabort = () => reject(new Error('Envio cancelado.'));
     upload.request = request;
     request.send(file)
   })
@@ -747,9 +753,9 @@ $('makeEvidence').onclick = async () => {
 $('downloadCsv').onclick = () => {
   const rows = [['numero_foto', 'image_sha256', 'filename', 'status', 'origem', 'caixa', 'classe_id', 'classe', 'x1', 'y1', 'x2', 'y2', 'nota']];
   DATA.images.forEach((photo, index) => {
-    const decision = state.drafts[photo.image_sha256];
+    const decision = touchedDraft(photo);  // rascunho editado vale como está (até "pending"); intocado, vale o registro
     const boxes = decision ? decision.boxes : photo.boxes;
-    const status = decision && decision.status !== 'pending' ? decision.status : photo.status;
+    const status = decision ? decision.status : photo.status;
     if (!boxes.length) rows.push([index + 1, photo.image_sha256, photo.filename, status, decision ? 'revisao_humana' : 'registro', '', '', '', '', '', '', '', '']);
     boxes.forEach((box, position) => rows.push([index + 1, photo.image_sha256, photo.filename, status, decision ? 'revisao_humana' : 'registro', position + 1, box.class_id, classOf(box.class_id).label, ...box.bbox_xyxy.map(Math.round), box.note || '']))
   });
