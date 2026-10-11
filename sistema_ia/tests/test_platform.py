@@ -23,7 +23,7 @@ from PIL import Image
 from dronecamp_ia.config import ProjectConfig
 from dronecamp_ia.io import file_hash
 from dronecamp_ia.operations import collect_comparisons, collect_runs, read_curves
-from dronecamp_ia.platform_server import JobRunner, _job_arguments, make_handler
+from dronecamp_ia.platform_server import JobRunner, _job_arguments, make_handler, serve_platform
 from dronecamp_ia.review_render import refresh_review_page, render_review_package
 
 RESULTS_HEADER = ("epoch,time,train/box_loss,train/cls_loss,train/l1_loss,metrics/precision(B),metrics/recall(B),"
@@ -136,6 +136,15 @@ class OperationsTests(PlatformFixture):
         write_json(self.registry_path, registry)
         with self.assertRaises(ValueError):
             refresh_review_page(self.config, self.registry_path)
+
+    def test_platform_refuses_review_from_previous_taxonomy(self) -> None:
+        # Ex.: página v8 (13 classes) aberta depois da troca para a taxonomia v6.
+        render_review_package(self.config, self.registry_path)
+        taxonomy = json.loads(self.taxonomy_path.read_text(encoding="utf-8"))
+        taxonomy["classes"].append({"id": 2, "slug": "nova", "label": "Nova", "phase": 1})
+        write_json(self.taxonomy_path, taxonomy)
+        with self.assertRaisesRegex(ValueError, "migrate-review"):
+            serve_platform(self.config, self.registry_path, port=0, open_browser=False)
 
 
 class ServerTests(PlatformFixture):

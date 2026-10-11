@@ -50,6 +50,8 @@ python -m dronecamp_ia migrate-review ^
   --output data\reviews\ceasa_v10_pedaco_calha\registry.json
 ```
 
+Depois da migração, gere a página com `render-review --registry data\reviews\ceasa_v10_pedaco_calha\registry.json` e aponte os atalhos `Abrir revisao DroneCamp.cmd` e `Abrir plataforma DroneCamp.cmd` para a nova pasta (hoje apontam para a `ceasa_v8`, da v5). Até lá, o comando `platform` recusa a revisão antiga com uma mensagem pedindo a migração, em vez de abrir uma página sem o ID 13 cujas exportações seriam recusadas. A busca aberta (YOLOE) recria seu checkpoint na primeira execução, porque as frases ganharam a nova classe.
+
 Ensaio na nuvem com `ceasa_v9_rev001` (38 fotos): 226 caixas preservadas, zero caixas da classe 13 inventadas, 37 aprovações anteriores movidas para o histórico e 38 fotos marcadas para reconferência.
 
 Cadastrar a classe não modifica os pesos do YOLO. O reconhecimento exigirá exemplos aprovados de pedaços de calha (de preferência de mais de uma edificação), negativos revisados com calhas instaladas, rufos e reflexos, novo treinamento e avaliação por classe. Compare especialmente confusões com resíduos sobre telhas, rufo deslocado e pedaço de telha, além de regressões nas classes já existentes.

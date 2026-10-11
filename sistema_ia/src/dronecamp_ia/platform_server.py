@@ -288,6 +288,16 @@ def _save_feedback(root: Path, registry_path: Path, feedback: dict) -> dict:
     return {"saved": target.resolve().relative_to(root).as_posix(), "decisions": len(feedback["images"])}
 
 
+def _require_current_taxonomy(config: ProjectConfig, registry_path: Path) -> None:
+    """Revisão de taxonomia anterior mostraria classes a menos e geraria arquivos recusados."""
+    registry = json.loads(registry_path.read_text(encoding="utf-8"))
+    if registry.get("taxonomy_sha256") != file_hash(config.taxonomy_path):
+        raise ValueError(
+            f"A revisão {registry_path.parent.name} usa uma taxonomia anterior à atual "
+            "(classes diferentes). Migre-a com migrate-review e gere a página com render-review "
+            "antes de abri-la na plataforma.")
+
+
 def serve_platform(config: ProjectConfig, registry: Path | list[Path], port: int = 8765, open_browser: bool = True) -> None:
     """Inicia o servidor em 127.0.0.1 até Ctrl+C; várias revisões viram um seletor na fila."""
     paths = []
@@ -295,6 +305,7 @@ def serve_platform(config: ProjectConfig, registry: Path | list[Path], port: int
         # Caminho relativo vale a partir do terminal ou, se não existir, da pasta sistema_ia.
         path = (value if value.is_absolute() or value.exists() else config.root / value).resolve()
         load_page_payload(path)  # falha cedo se a página não foi gerada para este registro
+        _require_current_taxonomy(config, path)
         paths.append(path)
     if len({path.parent.name for path in paths}) != len(paths):
         raise ValueError("Duas revisões com o mesmo nome de pasta; o endereço /r/<pasta>/ ficaria ambíguo.")

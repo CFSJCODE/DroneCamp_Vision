@@ -135,6 +135,11 @@ class TaxonomyMigrationTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             check_domain_names(checkpoint, self.names)
 
+    def test_review_palette_has_a_color_for_every_active_class(self) -> None:
+        from dronecamp_ia.review_render import COLORS
+        self.assertGreaterEqual(len(COLORS), len(self.names))
+        self.assertEqual(len(set(COLORS[:len(self.names)])), len(self.names))
+
     def test_matching_fourteen_class_checkpoint_is_accepted(self) -> None:
         checkpoint = SimpleNamespace(names=dict(enumerate(self.names)))
         check_domain_names(checkpoint, self.names)
