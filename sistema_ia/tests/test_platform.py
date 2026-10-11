@@ -27,7 +27,7 @@ from PIL import Image
 
 from dronecamp_ia.config import ProjectConfig
 from dronecamp_ia.io import file_hash
-from dronecamp_ia.operations import collect_comparisons, collect_runs, read_curves
+from dronecamp_ia.operations import collect_comparisons, collect_runs, read_curves, run_id_from_path
 from dronecamp_ia.platform_server import JobRunner, _decisions_map, _job_arguments, make_handler, serve_platform
 from dronecamp_ia.review_render import refresh_review_page, render_review_package
 
@@ -146,6 +146,15 @@ class OperationsTests(PlatformFixture):
         self.assertEqual([point[1] for point in evolution(runs, "completed")], ["dd284411", "f5e5ba8b"])
         self.make_run("pilot_train_20261012T090000Z_1234beef", 1, None)
         self.assertEqual(evolution(collect_runs(self.root), "all")[-1][1], "1234beef", "Treino novo aparece sem mudar o código.")
+
+    def test_dataset_identity_and_run_of_weights_cover_production_runs(self) -> None:
+        """Treino de produção também tem identidade de dataset (divisória do gráfico de evolução)."""
+        run = self.make_run("train_20261009T120000Z_0badc0de", 2, {"state": "completed", "complete": True})
+        (run / "pilot_provenance.json").unlink()
+        write_json(run / "training_provenance.json", {"valid": True, "dataset_yaml_sha256": "yaml123", "provenance_sha256": "prov456"})
+        self.assertEqual(collect_runs(self.root)[0]["dataset_sha256"], "yaml123")
+        self.assertEqual(run_id_from_path("E:\\proj\\runs\\train_20261009T120000Z_0badc0de\\fit\\weights\\last.pt"), "train_20261009T120000Z_0badc0de")
+        self.assertIsNone(run_id_from_path("models/yolo26l.pt"))
 
     def test_comparisons_link_weights_to_runs(self) -> None:
         write_json(self.root / "runs" / "compare_fixture.json", {"dataset": "d.yaml", "conf": 0.15, "iou_match": 0.5, "models": [

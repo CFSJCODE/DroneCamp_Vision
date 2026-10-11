@@ -28,7 +28,7 @@ from PIL import Image, ImageDraw, ImageFont
 from .config import ProjectConfig, detection_names, load_taxonomy
 from .io import file_hash, resolve_local_path, write_json
 from .naming import review_name
-from .operations import collect_operations
+from .operations import collect_operations, run_id_from_path
 from .review_data import boxes_to_yolo, review_image_size, validate_boxes, write_review_summary
 
 # Uma cor por classe (índice = ID da classe), usada nas evidências e na página (paleta controlada e harmoniosa).
@@ -199,7 +199,10 @@ def render_review_package(config: ProjectConfig, registry_path: Path) -> Path:
                "classes_requiring_review": [labels[key] for key in sorted(pending_class_ids)],
                "classes": [{"id": key, "label": value, "color": COLORS[key]} for key,value in labels.items()],
                "duplicate_iou": config.pilot.get("duplicate_iou"),
-               "suggestions": {key: suggestions.get(key) for key in ("model_label", "conf", "warning", "weights_sha256", "pilot", "calibrator")} if suggestions else None}
+               # weights_run_id: execução dos pesos das sugestões (só o id, nunca o caminho do PC),
+               # para a página ligar o modelo em uso ao treino sem depender de uma comparação salva.
+               "suggestions": {**{key: suggestions.get(key) for key in ("model_label", "conf", "warning", "weights_sha256", "pilot", "calibrator")},
+                               "weights_run_id": run_id_from_path(suggestions.get("weights"))} if suggestions else None}
     write_json(directory / "browser_data.json", payload)
     (directory / "index.html").write_text(build_page(payload, collect_operations(config, directory)), encoding="utf-8")
     # 5. Resumo e rascunho de relatório em Markdown com links para fotos e evidências.

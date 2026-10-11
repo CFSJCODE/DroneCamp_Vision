@@ -1204,8 +1204,10 @@ function evolutionPoints(filter) {
 }
 function renderEvolution() {
   const points = evolutionPoints($('evolutionFilter').value);
-  // Modelo das sugestões desta inspeção (ligado à execução pelo SHA dos pesos nas comparações).
-  const inUse = runForWeights(DATA.suggestions && DATA.suggestions.weights_sha256);
+  // Modelo das sugestões desta inspeção: id da execução gravado na página ou, em páginas
+  // antigas, o SHA dos pesos procurado nas comparações salvas.
+  const meta = DATA.suggestions || {};
+  const inUse = (meta.weights_run_id && { id: meta.weights_run_id }) || runForWeights(meta.weights_sha256);
   const used = inUse && points.find(point => point.run.id === inUse.id);
   const dividers = points.slice(1).filter((point, index) => point.run.dataset_sha256 && points[index].run.dataset_sha256 && point.run.dataset_sha256 !== points[index].run.dataset_sha256)
     .map(point => ({ x: point.x, label: 'novo dataset' }));
