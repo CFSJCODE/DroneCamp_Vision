@@ -19,12 +19,14 @@ chegam ao ``model.train`` ou como o resultado é auditado. Para mudar como o
 dataset piloto é montado (splits, duplicatas), o arquivo é ``pilot.py``.
 """
 
+from datetime import datetime, timezone
 from pathlib import Path
 import csv
 import json
 import math
 import os
 import shutil
+import time
 
 import yaml
 
@@ -32,6 +34,9 @@ from .backend import check_domain_names, load_detector, load_inference_model, ru
 from .config import ProjectConfig, detection_names, load_taxonomy
 from .dataset import validate_dataset
 from .io import file_hash, make_run_directory, write_json
+
+# Intervalo mínimo entre toques em fit/heartbeat (plataforma: treino vivo × interrompido).
+HEARTBEAT_SECONDS = 60
 
 
 # ---------------------------------------------------------------------------
@@ -128,14 +133,21 @@ def train(config: ProjectConfig, data_path: Path, weights: str | None = None) ->
     return run
 
 
-def train_pilot(config: ProjectConfig, data_path: Path, weights: str | None = None, overrides: dict | None = None) -> Path:
-    """Treino real e exploratório com o dataset piloto; nunca aprova o modelo para uso."""
+def train_pilot(config: ProjectConfig, data_path: Path, weights: str | None = None, overrides: dict | None = None,
+                gpu_eval: dict | None = None) -> Path:
+    """Treino real e exploratório com o dataset piloto; nunca aprova o modelo para uso.
+
+    ``gpu_eval`` (opções ``--gpu-eval*`` sobre ``pilot.gpu_eval``): enquanto a CPU
+    treina, um worker avalia na GPU os checkpoints de N em N épocas (``gpu_eval.py``).
+    """
+    from . import gpu_eval as gpu
     from .pilot import validate_pilot_dataset
 
     # 1. Pasta nova runs/pilot_train_<data>_<id>; summary marcado como piloto.
     run = make_run_directory(config.root, "pilot_train")
     pilot_details = {"pilot": True, "production_ready": False}
     _write_training_summary(run, ["A preparação e o treinamento piloto ainda não concluíram."], state="running", **pilot_details)
+    worker, gpu_settings = None, gpu.gpu_eval_settings(config, gpu_eval)
     try:
         # 2. Reconfere hashes e labels do dataset piloto contra os registros humanos.
         names = detection_names(load_taxonomy(config.taxonomy_path))
@@ -162,22 +174,93 @@ def train_pilot(config: ProjectConfig, data_path: Path, weights: str | None = No
                                                                      int(parameters.get("seed", 0)))
         pilot_details["classes_without_training_boxes"] = [name for name, count in counts["train"].items() if count == 0]
         pilot_details["warning"] = audit["warning"]
+        # class_counts conta caixas da unidade treinada: fotos, ou janelas com --tile
+        # (uma caixa na sobreposição de duas janelas conta duas vezes).
+        pilot_details["label_unit"] = "janelas" if "tiling" in pilot_details else "fotos"
         staging = _fit_staging(run)
         if staging:
             pilot_details["fit_staging"] = str(staging)
-        write_json(run / "execution.json", {"runtime": runtime_info(model, config), "parameters": parameters,
-                                           "class_counts": counts, "stage": "fine_tuning_piloto", **pilot_details})
+        execution = {"runtime": runtime_info(model, config), "parameters": parameters,
+                     "class_counts": counts, "stage": "fine_tuning_piloto", **pilot_details}
+        write_json(run / "execution.json", execution)
         # 5. Treino de verdade (Ultralytics); best.pt/last.pt vão para run/fit/weights
         #    (ou para a área de gravação no disco interno, copiada de volta no fim).
         if staging:
             model.add_callback("on_fit_epoch_end", lambda trainer: _mirror_results(staging, run))
+        # 5a. Batimento: fit/heartbeat é tocado a cada minuto para a plataforma distinguir
+        #     "treinando" (época longa, results.csv parado) de "interrompido".
+        heartbeat = {"path": run / "fit" / "heartbeat", "at": 0.0}
+
+        def beat(trainer):
+            now = time.time()
+            if now - heartbeat["at"] >= HEARTBEAT_SECONDS:
+                heartbeat["at"] = now
+                try:
+                    heartbeat["path"].parent.mkdir(parents=True, exist_ok=True)
+                    heartbeat["path"].write_text(datetime.now(timezone.utc).isoformat(), encoding="utf-8")
+                except OSError:
+                    pass
+
+        model.add_callback("on_train_batch_end", beat)
+        # 5b. CPU + GPU em conjunto: o worker avalia last.pt na GPU enquanto o treino continua.
+        #     on_model_save dispara depois de last.pt ser gravado (on_fit_epoch_end viria antes).
+        if gpu_settings:
+            work = gpu.work_directory(run)
+            gpu_state = {"settings": gpu_settings, "state": "running", "enqueued": [], "skipped": [], "last_epoch": 0}
+            pilot_details["gpu_eval"] = gpu_state
+            worker = gpu.start_worker(config, run, data_path.resolve(), gpu_settings, int(parameters["imgsz"]))
+            if worker is None:
+                gpu_state["state"] = "skipped"
+                print("gpu-eval: DirectML indisponível; o treino segue sem a avaliação paralela na GPU.")
+
+            def enqueue(trainer):
+                epoch = trainer.epoch + 1
+                gpu_state["last_epoch"] = epoch
+                final = epoch == trainer.epochs
+                if worker is None or epoch in gpu_state["enqueued"] or not Path(trainer.last).is_file():
+                    return
+                if not (epoch % gpu_settings["every"] == 0 or final):
+                    return
+                # A GPU é mais lenta que a época: com fila ocupada pula a época (menos a última).
+                if gpu.pending_checkpoints(work) and not final:
+                    gpu_state["skipped"].append(epoch)
+                    return
+                try:
+                    gpu.enqueue_checkpoint(work, Path(trainer.last), epoch)
+                    gpu_state["enqueued"].append(epoch)
+                except Exception as error:  # fila cheia/disco: o treino não para por causa da curva
+                    gpu_state["skipped"].append(epoch)
+                    print(f"gpu-eval: não foi possível enfileirar a época {epoch}: {error}")
+
+            model.add_callback("on_model_save", enqueue)
+        trained = False
         try:
             model.train(data=str(dataset), device=config.device, project=str(staging.parent if staging else run),
                         name=staging.name if staging else "fit", exist_ok=False, **parameters)
+            trained = True
         finally:
             if staging:
                 _copy_back_fit(staging, run)
+            if gpu_settings:
+                # A última época entra na fila mesmo que o callback não a tenha visto; só num
+                # treino concluído (Ctrl+C ou erro deixam um last.pt parcial que não é a época final).
+                last = run / "fit" / "weights" / "last.pt"
+                final_epoch = int(gpu_state["last_epoch"])  # época real de last.pt (parada antecipada inclusa)
+                if trained and worker is not None and last.is_file() and final_epoch and final_epoch not in gpu_state["enqueued"]:
+                    try:
+                        gpu.enqueue_checkpoint(work, last, final_epoch)
+                        gpu_state["enqueued"].append(final_epoch)
+                    except Exception as error:
+                        print(f"gpu-eval: não foi possível enfileirar a época final: {error}")
+                timeout = float(gpu_settings["timeout"]) if trained else 0.0
+                summary = gpu.finish_worker(run, worker, timeout) if worker is not None else {}
+                state = "finished" if trained else "interrupted"
+                pilot_details["gpu_eval"] = {**gpu_state, "state": state if worker is not None else "skipped", **summary}
+                worker = None
+                write_json(run / "execution.json", {**execution, "gpu_eval": pilot_details["gpu_eval"]})
     except Exception as error:
+        if worker is not None:
+            gpu.finish_worker(run, worker, 0)
         reason = f"Execução interrompida por {type(error).__name__}: {error}"
         _write_training_summary(run, [reason], state="failed", **pilot_details)
         raise ValueError(f"Treino piloto incompleto: {reason}. Revise {run}.") from error

@@ -20,9 +20,13 @@ Quando mexer: confiança/tamanho da inferência ficam em ``prediction`` no
 from pathlib import Path
 from hashlib import sha256
 import json
+import time
+
+from PIL import Image, ImageDraw
 
 from .backend import check_domain_names, load_detector, runtime_info
 from .config import ProjectConfig, detection_names, load_taxonomy
+from .dataset import IMAGE_EXTENSIONS
 from .io import file_hash, make_run_directory, write_json
 
 # Fotos e vídeos aceitos (vídeos são lidos quadro a quadro).
@@ -45,11 +49,18 @@ def serialize_detections(result, taxonomy: dict, demo: bool) -> list[dict]:
     """Separe a classe visual da severidade: esta será confirmada na revisão."""
     if result.boxes is None:
         return []
-    categories = {item["slug"]: item for item in taxonomy["classes"]}
     boxes = result.boxes
+    rows = [(int(class_id), float(confidence), coordinates) for coordinates, confidence, class_id in
+            zip(boxes.xyxy.cpu().tolist(), boxes.conf.cpu().tolist(), boxes.cls.cpu().tolist())]
+    return serialize_boxes(rows, result.names, taxonomy, demo)
+
+
+def serialize_boxes(rows: list[tuple[int, float, list[float]]], names, taxonomy: dict, demo: bool) -> list[dict]:
+    """Mesmo formato de ``serialize_detections`` a partir de (classe, confiança, xyxy)."""
+    categories = {item["slug"]: item for item in taxonomy["classes"]}
     detections = []
-    for coordinates, confidence, class_id in zip(boxes.xyxy.cpu().tolist(), boxes.conf.cpu().tolist(), boxes.cls.cpu().tolist()):
-        name = result.names[int(class_id)]
+    for class_id, confidence, coordinates in rows:
+        name = names[int(class_id)]
         category = categories.get(name) if not demo else None
         detections.append({
             "class_id": int(class_id), "class_name": name,
@@ -63,6 +74,18 @@ def serialize_detections(result, taxonomy: dict, demo: bool) -> list[dict]:
             } if category else None,
         })
     return detections
+
+
+def _draw_boxes(image, boxes: list[dict], names) -> "Image.Image":
+    """Evidência com as caixas (classe e confiança), para fotos inferidas em janelas."""
+    draw = ImageDraw.Draw(image)
+    stroke = max(2, round(max(image.size) / 1500))
+    for box in boxes:
+        x1, y1, x2, y2 = box["bbox_xyxy"]
+        draw.rectangle([x1, y1, x2, y2], outline=(255, 64, 32), width=stroke)
+        label = f"{names[int(box['class_id'])]} {box['confidence']:.2f}"
+        draw.text((x1 + stroke, max(0, y1 - 12 * stroke)), label, fill=(255, 64, 32))
+    return image
 
 
 def predict(config: ProjectConfig, source: Path, weights: str | None = None, demo: bool = False) -> Path:
@@ -94,11 +117,44 @@ def predict(config: ProjectConfig, source: Path, weights: str | None = None, dem
         else "Achados candidatos exigem revisão; nenhum laudo é emitido automaticamente.",
         "files": [{"path": str(path), "sha256": file_hash(path)} for path in media],
     })
+    # 2b. Pesos piloto: fotos de drone grandes são inferidas janela a janela
+    #     (pilot.tiling, suggestions.detect_boxes), como na revisão e no gate.
+    from .suggestions import detect_boxes, review_image_size, tiling_plan
+    from .tiling import calculate_patch_windows
+
     # 3. Cada foto/quadro: imagem com caixas em evidence/ e uma linha em findings.jsonl.
     processed = 0
     with (run / "findings.jsonl").open("w", encoding="utf-8") as stream:
         for path in media:
             key = sha256(str(path).encode("utf-8")).hexdigest()[:12]
+            plan = None
+            if pilot and path.suffix.lower() in IMAGE_EXTENSIONS:
+                try:
+                    width, height = review_image_size(path)
+                    plan = tiling_plan(config, width, height)
+                except ValueError:  # orientação EXIF: a Ultralytics trata a foto inteira
+                    plan = None
+            if plan:
+                started = time.perf_counter()
+                boxes = detect_boxes(model, path, config, float(config.prediction["conf"]))
+                evidence_path = evidence / f"{key}_{1:06d}.jpg"
+                with Image.open(path) as image:
+                    _draw_boxes(image.convert("RGB"), boxes, model.names).save(evidence_path, quality=90)
+                detections = serialize_boxes([(box["class_id"], box["confidence"], box["bbox_xyxy"]) for box in boxes],
+                                             model.names, taxonomy, demo)
+                row = {
+                    "source": str(path), "frame_index_processed": 1, "image_size_hw": [height, width],
+                    "evidence": str(evidence_path), "mode": mode,
+                    "status": "candidatos_detectados" if detections else "sem_deteccoes_acima_limiar",
+                    "detections": detections, "review_status": "pendente",
+                    "inference": {"regime": "janelas", "patch": plan["patch"],
+                                  "windows": len(calculate_patch_windows(width, height, plan["patch"], plan["overlap"]))},
+                    "speed_ms": {"total": round((time.perf_counter() - started) * 1000, 1)},
+                }
+                stream.write(json.dumps(row, ensure_ascii=False, allow_nan=False) + "\n")
+                stream.flush()
+                processed += 1
+                continue
             # stream=True mantém o consumo de memória limitado durante vídeos.
             results = model.predict(source=str(path), stream=True, device=config.device,
                                     save=False, verbose=False, rect=False, vid_stride=1,

@@ -81,6 +81,36 @@ def read_curves(results_csv: Path) -> list[dict]:
     return curves
 
 
+def read_gpu_curve(run_directory: Path) -> list[dict]:
+    """Pontos da avaliação paralela na GPU: ``gpu_eval/eval_curve.jsonl`` (gpu_eval.py)
+    ou ``gpu_eval/curve.jsonl`` (scripts/gpu_eval_watcher.py)."""
+    points = []
+    for name in ("eval_curve.jsonl", "curve.jsonl"):
+        path = run_directory / "gpu_eval" / name
+        try:
+            lines = path.read_text(encoding="utf-8").splitlines()
+        except OSError:
+            continue
+        for line in lines:
+            try:
+                entry = json.loads(line)
+            except ValueError:
+                continue
+            if not isinstance(entry, dict) or not isinstance(entry.get("epoch"), int):
+                continue
+            if entry.get("map50") is not None:
+                points.append({"epoch": entry["epoch"], "map50": entry["map50"], "map50_95": entry.get("map50_95"),
+                               "split": entry.get("split"), "provider": entry.get("provider_active") or entry.get("provider"),
+                               "seconds": entry.get("seconds")})
+            elif isinstance(entry.get("sets"), dict):  # formato do vigia: um bloco por conjunto
+                for split, values in entry["sets"].items():
+                    map50 = (values.get("totals") or {}).get("map50")
+                    if map50 is not None:
+                        points.append({"epoch": entry["epoch"], "map50": map50, "map50_95": None, "split": split,
+                                       "provider": entry.get("provider"), "seconds": entry.get("seconds")})
+    return sorted(points, key=lambda point: (point["epoch"], str(point["split"])))
+
+
 def _relative(path: Path, start: Path) -> str:
     """Caminho relativo com "/" para links da página (funciona aberto do disco)."""
     return Path(os.path.relpath(path, start)).as_posix()
@@ -93,8 +123,11 @@ def _run_state(summary: dict | None, results_csv: Path, now: float) -> str:
             return "completed"
         if summary.get("state") == "failed" or summary.get("complete") is False:
             return "failed"
-    if results_csv.is_file() and now - results_csv.stat().st_mtime < RUNNING_WINDOW_SECONDS:
-        return "running"
+    # fit/heartbeat é tocado a cada minuto pelo treino (training.py): uma época longa
+    # deixa results.csv parado por mais que a janela sem que o treino tenha morrido.
+    for marker in (results_csv, results_csv.parent / "heartbeat"):
+        if marker.is_file() and now - marker.stat().st_mtime < RUNNING_WINDOW_SECONDS:
+            return "running"
     return "interrupted" if results_csv.is_file() else "prepared"
 
 
@@ -150,12 +183,55 @@ def collect_runs(root: Path, page_directory: Path | None = None, now: float | No
             "best_epoch": best,
             "last": curves[-1] if curves else None,
             "curves": curves,
+            "gpu_eval": read_gpu_curve(directory),
+            "label_unit": execution.get("label_unit") or "fotos",
             "weights": weights,
             "plots": plots,
             "notes": (summary or {}).get("reasons") or [],
             "updated_at": datetime.fromtimestamp(results_csv.stat().st_mtime, timezone.utc).isoformat() if results_csv.is_file() else None,
         })
-    return sorted(runs, key=lambda run: run["id"].split("_")[-2], reverse=True)
+    runs.sort(key=lambda run: run["id"].split("_")[-2], reverse=True)
+    _custom = _read_json(runs_dir / "nomes.json")
+    _name_runs(runs, _custom if isinstance(_custom, dict) else {})
+    return runs
+
+
+STAGE_LABELS = {"pilot_train": "Treino piloto", "train": "Treino de produção", "tune": "Ajuste de hiperparâmetros"}
+
+
+def _percent(value) -> str:
+    return f"{float(value) * 100:.1f}%".replace(".", ",")
+
+
+def _name_runs(runs: list[dict], custom: dict) -> None:
+    """Nome legível de cada execução (``display_name``) e um resumo (``display_detail``).
+
+    O nome automático numera as execuções de cada etapa em ordem cronológica
+    ("Treino piloto 7"); ``runs/nomes.json`` troca o nome pelo escolhido pela
+    equipe, com a chave sendo o id completo ou só o sufixo de 8 caracteres
+    (ex.: ``{"56038eb9": "v7.4 referência"}``). O resumo junta o que a pessoa
+    procura ao comparar: modelo base, épocas feitas, melhor mAP50 e se treinou
+    em janelas.
+    """
+    by_stage: dict[str, list[dict]] = {}
+    for run in sorted(runs, key=lambda run: run["started_at"]):
+        by_stage.setdefault(run["stage"], []).append(run)
+    for stage, items in by_stage.items():
+        for number, run in enumerate(items, start=1):
+            suffix = run["id"].rsplit("_", 1)[-1]
+            custom_name = custom.get(run["id"]) or custom.get(suffix)
+            run["display_name"] = str(custom_name).strip() if custom_name else f"{STAGE_LABELS.get(stage, stage)} {number}"
+            parts = []
+            if run.get("checkpoint"):
+                parts.append(str(run["checkpoint"]).rsplit(".", 1)[0])
+            done, planned = run.get("epochs_done") or 0, run.get("epochs_planned")
+            parts.append(f"{done}/{planned} épocas" if planned else f"{done} épocas")
+            if run.get("label_unit") == "janelas":
+                parts.append("em janelas")
+            best = run.get("best_epoch")
+            parts.append(f"mAP50 val {_percent(best['map50'])} (época {best['epoch']})" if best and best.get("map50") is not None
+                         else "sem validação")
+            run["display_detail"] = " · ".join(parts)
 
 
 def collect_comparisons(root: Path) -> list[dict]:
@@ -198,6 +274,29 @@ def collect_datasets(root: Path) -> list[dict]:
     return datasets
 
 
+def collect_review_files(directory: Path | None) -> list[dict]:
+    """Laudos (``laudos/<pasta>/``) e pacotes de evidências (``exportacoes/``) já gerados para uma revisão.
+
+    Caminhos relativos à pasta da revisão: servem de link tanto na página aberta do
+    disco quanto na servida em ``/r/<pasta>/``. Mais recentes primeiro.
+    """
+    if not directory or not Path(directory).is_dir():
+        return []
+    directory = Path(directory)
+    files = []
+    for report in sorted(directory.glob("laudos/*/")):
+        for name, kind in (("laudo.pdf", "pdf"), ("laudo.html", "html"), ("laudo.json", "json")):
+            path = report / name
+            if path.is_file():
+                files.append({"kind": kind, "label": report.name, "name": f"laudos/{report.name}/{name}", "href": f"laudos/{report.name}/{name}",
+                              "bytes": path.stat().st_size, "modified": datetime.fromtimestamp(path.stat().st_mtime, timezone.utc).isoformat(timespec="seconds")})
+    for path in sorted(directory.glob("exportacoes/*.zip")):
+        files.append({"kind": "zip", "label": None, "name": f"exportacoes/{path.name}", "href": f"exportacoes/{path.name}",
+                      "bytes": path.stat().st_size, "modified": datetime.fromtimestamp(path.stat().st_mtime, timezone.utc).isoformat(timespec="seconds")})
+    files.sort(key=lambda item: item["modified"], reverse=True)
+    return files
+
+
 def collect_operations(config: ProjectConfig, page_directory: Path | None = None) -> dict:
     """Instantâneo completo para a página (sem treinar, aprovar ou copiar nada)."""
     root = config.root
@@ -207,6 +306,8 @@ def collect_operations(config: ProjectConfig, page_directory: Path | None = None
     for run in runs:
         weights.extend(run["weights"].values())
     return {
+        # Laudos e pacotes já gerados nesta revisão (links relativos; o servidor lista ao vivo em /api/reviews/<pasta>/files).
+        "review_files": collect_review_files(page_directory),
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         # Pasta da revisão relativa a sistema_ia: a página monta os comandos do ciclo com ela.
         "review_directory": _relative(page_directory, root) if page_directory else None,
