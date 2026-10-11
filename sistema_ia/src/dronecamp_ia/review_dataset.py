@@ -35,7 +35,7 @@ from .dataset import IMAGE_EXTENSIONS, SPLITS, validate_dataset
 from .io import file_hash, write_json
 from .review_data import boxes_to_yolo, review_image_size, validate_boxes
 
-# As 13 classes ativas, na ordem dos IDs (precisa coincidir com configs/taxonomy.json).
+# As 14 classes ativas, na ordem dos IDs (precisa coincidir com configs/taxonomy.json).
 MVP_NAMES = (
     "telha_quebrada", "telha_ausente", "residuos_telha", "reparo_telha",
     "rufo_ausente", "rufo_quebrado", "residuos_calha", "vegetacao_calha",
@@ -45,6 +45,7 @@ MVP_NAMES = (
     "pedaco_telha_sobreposto",
     "fixador_telha_frouxo",
     "reparo_rufo",
+    "pedaco_calha_sobre_telha",
 )
 
 

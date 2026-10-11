@@ -87,7 +87,7 @@ def consolidate_duplicates(boxes: list[dict], iou_threshold: float | None) -> li
 
 def _approved(registry_path: Path, taxonomy_digest: str, class_count: int, root: Path) -> list[dict]:
     """Somente decisões humanas completas entram; o resto fica na fila de revisão."""
-    # O registro precisa ser da taxonomia atual (mesmas 13 classes, mesmo hash).
+    # O registro precisa ser da taxonomia atual (mesmas 14 classes, mesmo hash).
     registry = json.loads(registry_path.read_text(encoding="utf-8"))
     if not isinstance(registry, dict) or registry.get("schema_version") != 1:
         raise ValueError(f"Schema inválido no registro {registry_path}.")

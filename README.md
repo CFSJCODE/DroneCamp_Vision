@@ -150,7 +150,7 @@ No GitHub, o link para um arquivo HTML mostra seu código. A interface de revis�
 
 | Item | Estado em 04/10/2026 |
 | --- | --- |
-| Taxonomia | 13 classes ativas |
+| Taxonomia | 14 classes ativas (v6) |
 | Revisão atual | v7, com 38 fotos e 117 caixas registradas |
 | Decisões das fotos | 34 aprovadas e 4 ambíguas |
 | Acervo usado no piloto | Uma edificação: CEASA |

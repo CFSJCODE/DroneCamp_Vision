@@ -2,7 +2,7 @@
 
 > **Publicação DroneCamp Vision — 04/10/2026:** já existe treinamento piloto real e a revisão atual é a [v7](data/reviews/ceasa_v7_revisao002_ba8cc323c8a1/index.html), aberta pelo atalho na raiz. Os resultados e limites estão em [Treino piloto](docs/treino_piloto.md); o modelo permanece com `production_ready: false`. As seções iniciais abaixo preservam o histórico de 03/10. Consulte também o [guia da raiz](../README.md) para clonagem com Git LFS e limites dos caminhos absolutos nos registros históricos.
 
-Base local de **detecção assistida** para inspeção de telhados industriais. As categorias iniciais vêm do laudo CEASA; cinco categorias foram acrescentadas ou ativadas a pedido do usuário. O resultado são caixas candidatas, imagens demarcadas e metadados para revisão. Estado atual em 03/10/2026: **taxonomia v5 com 13 classes ativas; nenhum detector especializado treinado**.
+Base local de **detecção assistida** para inspeção de telhados industriais. As categorias iniciais vêm do laudo CEASA; seis categorias foram acrescentadas ou ativadas a pedido do usuário. O resultado são caixas candidatas, imagens demarcadas e metadados para revisão. Estado atual em 11/10/2026: **taxonomia v6 com 14 classes ativas** (ID 13 `pedaco_calha_sobre_telha` acrescentado; os pesos piloto de 13 classes precisam de novo treino e as revisões v5, de `migrate-review`).
 
 **Revisão humana incorporada:** o arquivo fornecido pelo usuário preserva 33 fotos positivas com 108 caixas aprovadas para as dez classes da v3. A [página corrigida atual](data/reviews/ceasa_v6_corrigida_a36ea7f67d08/index.html) mantém essas correções e solicita a conferência das três categorias posteriores. A fila completa tem 38 fotos e 115 caixas, incluindo sete propostas das duas fotos sem decisão; três fotos continuam ambíguas. A aprovação histórica não libera treinamento nas 13 classes. Consulte o [resultado da importação](docs/resultado_revisao_humana_ceasa.md), o [plano de coleta](docs/plano_coleta_imagens.md) e o [protocolo de novas imagens e anomalias](docs/novas_imagens_e_anomalias.md).
 
@@ -17,6 +17,7 @@ Base local de **detecção assistida** para inspeção de telhados industriais. 
 - [Pedaço de telha sobreposto à telha](docs/categoria_pedaco_telha_sobreposto.md): classe ativa ID 10, preferida ao ID 8 quando o fragmento está apoiado sobre telha instalada.
 - [Elemento de fixação de telha solto/frouxo](docs/categoria_fixador_telha_frouxo.md): classe ativa ID 11, com evidência visual de soltura e limites da interpretação de aperto.
 - [Reparo em rufo](docs/categoria_reparo_rufo.md): classe ativa ID 12, com intervenção identificável no próprio rufo e distinção de reparo em telha.
+- [Pedaço de calha sobre telha](docs/categoria_pedaco_calha_sobre_telha.md): classe ativa ID 13, segmento solto de calha apoiado sobre as telhas, com distinção de resíduos e rufo deslocado.
 - [Pesquisa Ultralytics](docs/pesquisa_ultralytics.md): todas as páginas solicitadas, exemplos, API atual e boas práticas.
 - [Fine-tuning e preparação dos dados](docs/fine_tuning_e_anotacao.md): roteiro de anotações, splits e avaliação.
 - [Plano de revisão e melhoria contínua](docs/plano_revisao_e_melhoria_continua.md): correções humanas, diversidade de dados, comparação de versões e evolução dos relatórios.
@@ -103,11 +104,11 @@ A 2ª rodada da `revisao002` já foi importada em `data/reviews/ceasa_v8_revisao
 
 O primeiro comando exige o arquivo exportado pela página corrigida e preserva o registro anterior. O segundo gera uma versão nova com fotos, labels, grupos, proveniência e prontidão. Se a saída já existir, escolha outro nome de versão. **Sem aprovação compatível com a taxonomia atual, nenhum dataset é criado.** O acervo humano histórico em `data/annotation_corpus/ceasa_v3_a36ea7f67d08/` é uma referência de dez classes, sem YAML de treino. O arquivo de grupos fornecido reserva todo o CEASA para treino. Depois da revisão, esse único caso pode gerar um rascunho, com retorno de erro explicando a falta de prontidão. Validação e teste dependem de outras edificações reais.
 
-Os IDs ativos originais 0–7 mantiveram seus significados; as adições são 8 (`pedaco_telha`), 9 (`rufo_deslocado`), 10 (`pedaco_telha_sobreposto`) e 12 (`reparo_rufo`); ID 11 (`fixador_telha_frouxo`) foi promovido da fase 2, preservando seu significado. Os antigos IDs 8, 9 e 10 do catálogo de fase 2 foram deslocados para 19, 20 e 21, respectivamente. O antigo ID 12 de `reparo_selante_fixador_telha` passa ao ID 22. O catálogo atual tem 23 categorias, com 13 ativas. Snapshots das taxonomias anteriores e metadados de migração preservam essa distinção; não reinterpretar um ID antigo sem sua versão. Acrescentar nomes não ensina o modelo: reconhecimento das 13 classes exige dados aprovados, novo treino e comparação.
+Os IDs ativos originais 0–7 mantiveram seus significados; as adições são 8 (`pedaco_telha`), 9 (`rufo_deslocado`), 10 (`pedaco_telha_sobreposto`) e 12 (`reparo_rufo`); ID 11 (`fixador_telha_frouxo`) foi promovido da fase 2, preservando seu significado. Os antigos IDs 8, 9 e 10 do catálogo de fase 2 foram deslocados para 19, 20 e 21, respectivamente. O antigo ID 12 de `reparo_selante_fixador_telha` passa ao ID 22. Na v6, ID 13 passa a `pedaco_calha_sobre_telha` e o antigo ID 13 de `fixador_rufo_ausente` vai ao ID 23. O catálogo atual tem 24 categorias, com 14 ativas. Snapshots das taxonomias anteriores e metadados de migração preservam essa distinção; não reinterpretar um ID antigo sem sua versão. Acrescentar nomes não ensina o modelo: reconhecimento das 14 classes exige dados aprovados, novo treino e comparação.
 
 ## Treino piloto, sugestões e ciclo de melhoria
 
-Enquanto só houver fotos do CEASA, o treino de produção continua bloqueado (exige três edificações e exemplos das 13 classes). O **piloto** treina de verdade com as fotos que têm aprovação humana, para o modelo passar a **sugerir caixas** na página de revisão. Detalhes, resultados e limites: [treino piloto](docs/treino_piloto.md).
+Enquanto só houver fotos do CEASA, o treino de produção continua bloqueado (exige três edificações e exemplos das 14 classes). O **piloto** treina de verdade com as fotos que têm aprovação humana, para o modelo passar a **sugerir caixas** na página de revisão. Detalhes, resultados e limites: [treino piloto](docs/treino_piloto.md).
 
 ```powershell
 # 1. Importar o arquivo exportado pela página (gera uma nova versão da revisão)
@@ -143,7 +144,7 @@ Enquanto só houver fotos do CEASA, o treino de produção continua bloqueado (e
 
 ## Treinar e comparar
 
-Uma versão pronta precisa de revisão humana, exemplos positivos das **13 classes** no treino e grupos independentes nos três splits. A pasta segue esta estrutura:
+Uma versão pronta precisa de revisão humana, exemplos positivos das **14 classes** no treino e grupos independentes nos três splits. A pasta segue esta estrutura:
 
 ```text
 data/versions/SUA_VERSAO/

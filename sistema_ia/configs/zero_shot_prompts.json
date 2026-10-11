@@ -17,7 +17,8 @@
     "rufo_deslocado": ["displaced roof flashing", "lifted metal flashing"],
     "pedaco_telha_sobreposto": ["piece of broken tile lying on roof sheet"],
     "fixador_telha_frouxo": ["loose roof screw", "loose roof hook bolt", "missing washer on roof fastener"],
-    "reparo_rufo": ["sealant repair on flashing", "patched metal flashing"]
+    "reparo_rufo": ["sealant repair on flashing", "patched metal flashing"],
+    "pedaco_calha_sobre_telha": ["loose piece of metal gutter lying on roof sheets", "detached gutter section on roof"]
   },
   "uncatalogued": ["rust on roof sheet", "standing water on roof", "hole in roof", "bird nest on roof", "damaged skylight"]
 }

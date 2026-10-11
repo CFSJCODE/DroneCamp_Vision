@@ -36,12 +36,12 @@ class TaxonomyMigrationTests(unittest.TestCase):
         self.names = detection_names(self.taxonomy)
         self.snapshot_path = self.config.taxonomy_path.with_name("taxonomy_ceasa_v1.json")
 
-    def test_current_active_classes_preserve_ids_and_append_reparo_rufo(self) -> None:
+    def test_current_active_classes_preserve_ids_and_append_pedaco_calha_sobre_telha(self) -> None:
         self.assertEqual(self.names, [
             "telha_quebrada", "telha_ausente", "residuos_telha", "reparo_telha",
             "rufo_ausente", "rufo_quebrado", "residuos_calha", "vegetacao_calha",
             "pedaco_telha", "rufo_deslocado", "pedaco_telha_sobreposto", "fixador_telha_frouxo",
-            "reparo_rufo",
+            "reparo_rufo", "pedaco_calha_sobre_telha",
         ])
         category = self.taxonomy["classes"][8]
         self.assertEqual(category["id"], 8)
@@ -51,17 +51,21 @@ class TaxonomyMigrationTests(unittest.TestCase):
         self.assertEqual(self.taxonomy["classes"][9]["phase"], 1)
         for class_id, slug in (
             (10, "pedaco_telha_sobreposto"), (11, "fixador_telha_frouxo"), (12, "reparo_rufo"),
+            (13, "pedaco_calha_sobre_telha"),
         ):
             with self.subTest(class_id=class_id):
                 self.assertEqual(self.taxonomy["classes"][class_id]["slug"], slug)
                 self.assertEqual(self.taxonomy["classes"][class_id]["phase"], 1)
-        self.assertEqual([category["id"] for category in self.taxonomy["classes"]], list(range(23)))
+        self.assertEqual([category["id"] for category in self.taxonomy["classes"]], list(range(24)))
         corroded = self.taxonomy["classes"][21]
         self.assertEqual(corroded["slug"], "fixador_telha_corroido")
         self.assertEqual(corroded["phase"], 2)
         sealant = self.taxonomy["classes"][22]
         self.assertEqual(sealant["slug"], "reparo_selante_fixador_telha")
         self.assertEqual(sealant["phase"], 2)
+        flashing_fastener = self.taxonomy["classes"][23]
+        self.assertEqual(flashing_fastener["slug"], "fixador_rufo_ausente")
+        self.assertEqual(flashing_fastener["phase"], 2)
 
     def test_snapshot_preserves_eight_class_contract_and_original_phase2_id8(self) -> None:
         snapshot = load_taxonomy(self.snapshot_path)
@@ -77,7 +81,7 @@ class TaxonomyMigrationTests(unittest.TestCase):
         self.assertEqual(old_fixador["id"], 20)
         self.assertEqual(old_fixador["phase"], 2)
 
-    def test_old_eight_class_checkpoint_cannot_claim_new_thirteen_class_contract(self) -> None:
+    def test_old_eight_class_checkpoint_cannot_claim_new_fourteen_class_contract(self) -> None:
         snapshot = load_taxonomy(self.snapshot_path)
         checkpoint = SimpleNamespace(names=dict(enumerate(detection_names(snapshot))))
         with self.assertRaises(ValueError):
@@ -118,7 +122,20 @@ class TaxonomyMigrationTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             check_domain_names(checkpoint, self.names)
 
-    def test_matching_thirteen_class_checkpoint_is_accepted(self) -> None:
+    def test_previous_snapshot_preserves_thirteen_classes_and_original_phase2_id13(self) -> None:
+        # Pesos piloto atuais (13 classes) ficam presos à v5: não servem à v6 sem novo treino.
+        path = self.config.taxonomy_path.with_name("taxonomy_ceasa_v5_reparo_rufo.json")
+        snapshot = load_taxonomy(path)
+        names = detection_names(snapshot)
+        self.assertEqual(names, self.names[:13])
+        self.assertEqual(snapshot["version"], "ceasa-v5-proposta-reparo-rufo")
+        self.assertEqual(snapshot["classes"][13]["slug"], "fixador_rufo_ausente")
+        self.assertEqual(snapshot["classes"][13]["phase"], 2)
+        checkpoint = SimpleNamespace(names=dict(enumerate(names)))
+        with self.assertRaises(ValueError):
+            check_domain_names(checkpoint, self.names)
+
+    def test_matching_fourteen_class_checkpoint_is_accepted(self) -> None:
         checkpoint = SimpleNamespace(names=dict(enumerate(self.names)))
         check_domain_names(checkpoint, self.names)
 
@@ -126,7 +143,7 @@ class TaxonomyMigrationTests(unittest.TestCase):
         for class_id, slug in (
             (8, "pedaco_telha"), (9, "rufo_deslocado"),
             (10, "pedaco_telha_sobreposto"), (11, "fixador_telha_frouxo"),
-            (12, "reparo_rufo"),
+            (12, "reparo_rufo"), (13, "pedaco_calha_sobre_telha"),
         ):
             with self.subTest(class_id=class_id):
                 result = SimpleNamespace(
@@ -159,6 +176,25 @@ class TaxonomyMigrationTests(unittest.TestCase):
         )
         finding = serialize_detections(result, self.taxonomy, demo=False)[0]
         self.assertEqual(finding["category_label"], "Reparo em rufo")
+        self.assertEqual(finding["review_status"], "pendente")
+        self.assertIsNone(finding["severity"])
+
+    def test_pedaco_calha_sobre_telha_label_is_explicit_and_requires_human_review(self) -> None:
+        category = self.taxonomy["classes"][13]
+        self.assertEqual(category["label"], "Pedaço de calha sobre telha")
+        self.assertEqual(category["phase"], 1)
+        self.assertIsNone(category["reference_severity"])
+        self.assertEqual(self.taxonomy["migration"]["new_active_class_ids"], [13])
+        self.assertEqual(self.taxonomy["migration"]["catalog_id_mapping"], {"13": 23})
+        result = SimpleNamespace(
+            names=dict(enumerate(self.names)),
+            boxes=SimpleNamespace(
+                xyxy=_Values([[10, 20, 50, 60]]),
+                conf=_Values([0.999]), cls=_Values([13]),
+            ),
+        )
+        finding = serialize_detections(result, self.taxonomy, demo=False)[0]
+        self.assertEqual(finding["category_label"], "Pedaço de calha sobre telha")
         self.assertEqual(finding["review_status"], "pendente")
         self.assertIsNone(finding["severity"])
 
