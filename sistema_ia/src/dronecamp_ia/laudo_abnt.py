@@ -43,6 +43,8 @@ import json
 import math
 from pathlib import Path
 
+from .naming import review_name
+
 PENDING_TEXT = "pendente de validação técnica"
 PRELIMINARY_TEXT = "preliminar, sujeito a validação por responsável técnico"
 NOT_INFORMED = "não informado"
@@ -302,6 +304,13 @@ def _esc(value) -> str:
     return html.escape("" if value is None else str(value), quote=True)
 
 
+def registry_label(header: dict) -> str:
+    """Inspeção no laudo: nome legível seguido da pasta do registro, que garante a rastreabilidade."""
+    version = str(header.get("registry_version") or "")
+    name = header.get("registry_display_name") or review_name(version)
+    return f"{name} ({version})" if version and name != version else version
+
+
 def _or_blank(value: str) -> str:
     return value if value else NOT_INFORMED
 
@@ -427,7 +436,7 @@ def render_html(report: dict, evidences: dict[int, bytes]) -> str:
     parts.append(f'<section id="folha-rosto" class="rosto"><p style="text-align:center">{_esc(details["responsible_name"] or "")}</p>'
                  f'<h1 style="margin-top:36pt">{_esc(header["title"])}</h1><p style="text-align:center">{_esc(header["site"] or "")}</p>'
                  f'<p class="natureza">{_esc(nature)}</p>'
-                 + _rows([("Número do laudo", _esc(_or_blank(details["report_number"]))), ("Versão da revisão", _esc(header["registry_version"])),
+                 + _rows([("Número do laudo", _esc(_or_blank(details["report_number"]))), ("Inspeção", _esc(registry_label(header))),
                           ("Data de emissão", _esc(issued)), ("Situação do documento", _esc(PRELIMINARY_TEXT))])
                  + "</section>")
     # Sumário.
@@ -472,7 +481,7 @@ def render_html(report: dict, evidences: dict[int, bytes]) -> str:
                  f'Voos realizados: {_esc(_or_blank(details["flight_description"]))}. Data da inspeção: {_esc(_or_blank(details["inspection_date"]))}. '
                  "A operação da aeronave não tripulada observa a regulamentação da ANAC (RBAC-E nº 94) e do DECEA.</p>"
                  '<h3 id="s4-2">4.2 Processamento assistido por IA</h3><ol class="lista">'
-                 f"<li>Registro das fotografias com hash SHA-256 (revisão {_esc(header['registry_version'])}, {summary['images']} fotografias).</li>"
+                 f"<li>Registro das fotografias com hash SHA-256 (inspeção {_esc(registry_label(header))}, {summary['images']} fotografias).</li>"
                  f"<li>{_esc(detector_step(header))}</li>"
                  "<li>Revisão humana de cada fotografia na plataforma: aceite, correção ou descarte das demarcações e classificação "
                  "da fotografia (positiva, negativa, ambígua ou excluída). Apenas demarcações em fotografias positivas constituem constatações.</li>"
@@ -608,7 +617,7 @@ def render_html(report: dict, evidences: dict[int, bytes]) -> str:
                            f"<td>{_esc((item['model_reference'] or {}).get('recomendacao') or '—')}</td><td>{_esc(item['criterion'] or '—')}</td></tr>"
                            for item in report["items"])
                  + "</table>"
-                 + _rows([("Versão da revisão", _esc(header["registry_version"])),
+                 + _rows([("Inspeção", _esc(registry_label(header))),
                           ("SHA-256 do registro", f'<span class="mono">{_esc(header["registry_sha256"])}</span>'),
                           ("Taxonomia", f'{_esc(header["taxonomy_version"] or "—")} · <span class="mono">{_esc(header["taxonomy_sha256"])}</span>'),
                           ("Modelo das sugestões automáticas", _esc(model_text)),
@@ -716,7 +725,7 @@ def write_pdf(path: Path, report: dict, evidences: dict[int, bytes]) -> None:
     story += [p(details["responsible_name"] or "", center), Spacer(1, 40 * mm), p(header["title"].upper(), cover_title), p(header["site"] or "", center),
               Spacer(1, 12 * mm), Table([["", p(nature, ParagraphStyle("nat", parent=cell, fontSize=9.5, leading=12, alignment=TA_JUSTIFY))]],
                                        colWidths=[width * 0.5, width * 0.5]), Spacer(1, 12 * mm),
-              pairs([("Número do laudo", _or_blank(details["report_number"])), ("Versão da revisão", header["registry_version"]),
+              pairs([("Número do laudo", _or_blank(details["report_number"])), ("Inspeção", registry_label(header)),
                      ("Data de emissão", issued), ("Situação do documento", PRELIMINARY_TEXT)]), PageBreak()]
     # Sumário.
     toc = TableOfContents()
@@ -752,7 +761,7 @@ def write_pdf(path: Path, report: dict, evidences: dict[int, bytes]) -> None:
                 f"Data da inspeção: {_or_blank(details['inspection_date'])}. A operação da aeronave não tripulada observa a regulamentação "
                 "da ANAC (RBAC-E nº 94) e do DECEA."),
               heading("4.2 Processamento assistido por IA", 1),
-              p(f"1. Registro das fotografias com hash SHA-256 (revisão {header['registry_version']}, {summary['images']} fotografias)."),
+              p(f"1. Registro das fotografias com hash SHA-256 (inspeção {registry_label(header)}, {summary['images']} fotografias)."),
               p(f"2. {detector_step(header)}"),
               p("3. Revisão humana de cada fotografia: aceite, correção ou descarte das demarcações e classificação da fotografia. "
                 "Apenas demarcações em fotografias positivas constituem constatações."),
@@ -858,7 +867,7 @@ def write_pdf(path: Path, report: dict, evidences: dict[int, bytes]) -> None:
                     + [[f"6.{item['number']} {item['label']}", item["reference_severity"] or "—", (item["model_reference"] or {}).get("conformidade") or "—",
                         (item["model_reference"] or {}).get("recomendacao") or "—"] for item in report["items"]],
                     [width * 0.25, width * 0.2, width * 0.2, width * 0.35]), Spacer(1, 6),
-              pairs([("Versão da revisão", header["registry_version"]), ("SHA-256 do registro", header["registry_sha256"]),
+              pairs([("Inspeção", registry_label(header)), ("SHA-256 do registro", header["registry_sha256"]),
                      ("Taxonomia", f"{header['taxonomy_version'] or '—'} · {header['taxonomy_sha256']}"), ("Modelo das sugestões", model_text),
                      ("Gerador", report["provenance"]["generator"]), ("Gerado em", report["provenance"]["generated_at"])]),
               p("Edições das normas sem ano na seção 3: confirmar a edição vigente no Catálogo ABNT antes da emissão.", cell)]

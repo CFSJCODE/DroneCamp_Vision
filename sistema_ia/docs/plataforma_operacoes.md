@@ -64,15 +64,27 @@ Cada foto é congelada por SHA-256 em `originals/` (girada pelo EXIF antes, quan
 - **Laudo técnico (ABNT)**: capa, folha de rosto, sumário, seções numeradas (identificação, objetivo, normas aplicáveis, metodologia, descrição do imóvel, registro fotográfico e análise de conformidades por categoria no estilo do laudo CEASA, quadro-resumo, recomendações gerais, considerações finais, responsabilidade técnica), referências e anexos (fotos sem ocorrência, sugestões pendentes, subsídios de IA, demarcações por foto, apoio ao responsável técnico). Conformidade, risco, diagnóstico, recomendação e prioridade saem como "pendente de validação técnica". Os dados do imóvel, do voo e do responsável técnico vêm do bloco opcional "Dados técnicos do laudo"; o que ficar vazio sai como "não informado". Detalhes em [laudo_abnt.md](laudo_abnt.md). O PDF usa `reportlab` (`pip install -e .[reports]`); sem ele, HTML e JSON saem normalmente.
 - **CSV de ocorrências** e **arquivo de revisão (JSON)**: montados no navegador com o estado atual (rascunho local sobre o registro), também offline.
 
-## Nomes dos treinos
+## Nomes legíveis
 
-Cada execução de `runs/` aparece com um nome legível no lugar do id (`pilot_train_<data>_<hash>`): por padrão "Treino piloto N", numerado em ordem cronológica dentro da etapa, seguido de um resumo (modelo base, épocas feitas, treino em janelas e melhor mAP50 na validação). Para dar o nome que a equipe usa, crie `runs/nomes.json` com o id completo ou só o sufixo de 8 caracteres como chave:
+Tudo o que a plataforma mostra tem um nome em português seguido de um código curto (os 8 primeiros caracteres do hash, em maiúsculas); o id cru fica na dica (`title`) do elemento e nos comandos, porque é ele que nomeia pastas e arquivos. Os nomes são derivados dos ids por `naming.py` (e pelo bloco "Nomes legíveis" de `platform.js`, que `tests/test_naming.py` mantém idêntico); nada é renomeado no disco.
+
+| Em disco | Na plataforma |
+|---|---|
+| `runs/pilot_train_20261007T010057Z_f5e5ba8b` | Treino Piloto F5E5BA8B · 07/10/2026 01:00 |
+| `runs/.../fit/weights/best.pt`, `models/yolo26l.pt` | Treino Piloto F5E5BA8B · melhor época, Modelo Base YOLO26l |
+| `data/reviews/ceasa_v8_revisao002_ff34e226416c` | CEASA Pavilhão A v8 · Revisão 002 FF34E226 |
+| `data/reviews/ceasa_lado_a_v1`, `internet_v3_busca_aberta` | CEASA Lado A v1, Fotos da Internet v3 · Busca Aberta |
+| `data/pilot/ceasa_v8_piloto_s42` | Dataset Piloto CEASA Pavilhão A v8 · Semente 42 |
+| `runs/compare_v9_f5e5ba8b_vs_56038eb9_20261007.json` | Comparação F5E5BA8B × 56038EB9 · 07/10/2026 |
+| `laudos/20261011T140301Z_laudo_<inspeção>/laudo.pdf` | Laudo em PDF · Gerado em 11/10/2026 11:03 |
+
+Datas aparecem como `dd/mm/aaaa hh:mm` no fuso do navegador. Uma inspeção enviada pela plataforma guarda o nome digitado (`display_name` no `registry.json`, com acentos) e ele vence o nome derivado; as derivações (`import-review`, `migrate-review`) não herdam esse nome. Para dar a um treino o nome que a equipe usa, crie `runs/nomes.json` com o id completo ou só o sufixo de 8 caracteres como chave:
 
 ```json
 { "56038eb9": "v7.4 referência", "f5e5ba8b": "v9 Lado A parcial" }
 ```
 
-O id continua visível em letra pequena, porque é ele que aparece nos comandos e nas pastas.
+O laudo escreve "Inspeção: <nome legível> (<pasta>)" e grava `registry_display_name` ao lado de `registry_version`.
 
 Atalhos na revisão: `←`/`→` fotos, `B` desenhar, `A` aceitar a primeira sugestão, `X` descartar a primeira sugestão, `Del` excluir a caixa selecionada.
 
