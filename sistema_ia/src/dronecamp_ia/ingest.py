@@ -41,6 +41,7 @@ from PIL import Image, ImageOps
 from .config import ProjectConfig, load_taxonomy
 from .dataset import IMAGE_EXTENSIONS
 from .io import file_hash, write_json
+from .naming import review_name
 from .review_data import REVIEW_SCHEMA, review_image_size
 from .review_render import render_review_package
 
@@ -432,7 +433,7 @@ class _Importer:
 
 def ingest_media(config: ProjectConfig, inputs: list[Path], output: Path, building_group: str, *,
                  every_seconds: float = 2.0, max_frames: int = 200, uploaded_by: str | None = None,
-                 campaign_notes: str = "", keep_sources: bool = False) -> dict:
+                 campaign_notes: str = "", keep_sources: bool = False, display_name: str | None = None) -> dict:
     """Fotos e vídeos enviados viram uma revisão nova em ``output`` (registro + página).
 
     ``inputs``: arquivos ou pastas (pastas são varridas recursivamente; só
@@ -447,6 +448,10 @@ def ingest_media(config: ProjectConfig, inputs: list[Path], output: Path, buildi
     ``sources[].path`` e ``original_path`` continuem válidos depois que a área
     temporária do lote for apagada e para que o vídeo inteiro fique guardado.
     Com arquivos do próprio usuário (``import-media``), deixe ``False``.
+
+    ``display_name``: nome digitado no envio ("Galpão B · outubro"), guardado no
+    registro para a plataforma mostrar no lugar do nome da pasta. Ignorado
+    quando igual à pasta.
     """
     every, limit = _validate_sampling(every_seconds, max_frames)
     if not isinstance(building_group, str) or not building_group.strip() or len(building_group) > 100:
@@ -517,6 +522,7 @@ def ingest_media(config: ProjectConfig, inputs: list[Path], output: Path, buildi
         registry_path = output / "registry.json"
         write_json(registry_path, {
             "schema_version": REVIEW_SCHEMA, "version": output.name,
+            **({"display_name": display_name.strip()[:80]} if display_name and display_name.strip() and display_name.strip() != output.name else {}),
             "taxonomy_sha256": file_hash(config.taxonomy_path), "taxonomy_version": taxonomy["version"],
             "created_at": datetime.now(timezone.utc).isoformat(), "scope": INGEST_SCOPE,
             "sources": sources,
@@ -529,7 +535,8 @@ def ingest_media(config: ProjectConfig, inputs: list[Path], output: Path, buildi
         # Uma pasta pela metade não pode ser confundida com uma revisão válida.
         (output / "INCOMPLETO.txt").write_text("Importação interrompida; não utilize esta pasta.\n", encoding="utf-8")
         raise
-    return {"review": output.name, "registry": str(registry_path), "images": len(importer.images),
+    return {"review": output.name, "display_name": review_name(output.name, display_name if display_name and display_name.strip() else None),
+            "registry": str(registry_path), "images": len(importer.images),
             "photos": importer.counts["photo"], "video_frames": importer.counts["video_frame"],
             "videos": sum(item["kind"] == "video" for item in sources), "skipped": importer.skipped,
             "page": str(page)}

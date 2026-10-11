@@ -50,6 +50,7 @@ from .io import file_hash, resolve_local_path, write_json
 from . import laudo_abnt
 # Texto dos campos do responsável técnico e limitações do método: fonte única em laudo_abnt.
 from .laudo_abnt import LIMITATIONS as METHODOLOGY, PENDING_TEXT, PRELIMINARY_TEXT
+from .naming import review_name
 from .review_data import IMAGE_STATUSES, REVIEW_SCHEMA, review_image_size, validate_boxes
 
 # Decisão exportada pela página pode estar "pending" (rascunho sem status escolhido).
@@ -460,7 +461,7 @@ def _counts(entries: list[dict], labels: dict[int, str]) -> dict:
 def _readme(context: _Context, generated_at: str, parameters: dict) -> str:
     return "\n".join([
         "PACOTE DE EVIDÊNCIAS — DroneCamp Vision", "",
-        f"Revisão: {context.version}", f"Registro: {context.registry_path.name} (SHA-256 {context.registry_sha256})",
+        f"Inspeção: {review_name(context.version, context.registry.get('display_name'))} ({context.version})", f"Registro: {context.registry_path.name} (SHA-256 {context.registry_sha256})",
         f"Gerado em: {generated_at}", f"Parâmetros: {json.dumps(parameters, ensure_ascii=False)}", "",
         "AVISO",
         "As caixas desenhadas nas fotos são evidências visuais revisáveis. Este pacote NÃO é laudo técnico.",
@@ -739,7 +740,7 @@ def _build_report_files(config: ProjectConfig, context: _Context, directory: Pat
     # Revisada = decisão humana nesta exportação (não rascunho) ou aprovação humana gravada no registro.
     reviewed = sum((entry["source"] == "revisao_humana" and entry["status"] != "pending")
                    or (entry["source"] == "registro" and entry["image"].get("human_approved") is True) for entry in entries)
-    facts = (f"O registro {context.version} reúne {counts['images']} fotografias, das quais {reviewed} têm decisão humana "
+    facts = (f"A inspeção {review_name(context.version, context.registry.get('display_name'))} (registro {context.version}) reúne {counts['images']} fotografias, das quais {reviewed} têm decisão humana "
              f"registrada" + (f" e {counts['images'] - reviewed} ainda não foram revisadas" if reviewed < counts["images"] else "")
              + f". Situação das fotografias: {positive_photos} com ocorrências "
              f"confirmadas, {counts['by_status']['negative']} sem ocorrências, {counts['by_status']['ambiguous']} ambíguas, "
@@ -751,7 +752,8 @@ def _build_report_files(config: ProjectConfig, context: _Context, directory: Pat
         "schema_version": 2, "document": "laudo_tecnico_inspecao_cobertura_drone", "status": PRELIMINARY_TEXT,
         "header": {"title": title or laudo_abnt.DEFAULT_TITLE, "client": client, "site": site,
                    "buildings": buildings, "issued_at": generated_at, "reviewers": reviewers, "inspector": inspector, "notes": notes,
-                   "registry_version": context.version, "registry_sha256": context.registry_sha256,
+                   "registry_version": context.version, "registry_display_name": review_name(context.version, context.registry.get("display_name")),
+                   "registry_sha256": context.registry_sha256,
                    "taxonomy_version": context.registry.get("taxonomy_version"), "taxonomy_sha256": context.taxonomy_sha256,
                    "suggestion_model": context.suggestion_model},
         "details": details,

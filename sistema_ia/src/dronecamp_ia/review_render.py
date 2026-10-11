@@ -27,6 +27,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 from .config import ProjectConfig, detection_names, load_taxonomy
 from .io import file_hash, resolve_local_path, write_json
+from .naming import review_name
 from .operations import collect_operations
 from .review_data import boxes_to_yolo, review_image_size, validate_boxes, write_review_summary
 
@@ -191,7 +192,9 @@ def render_review_package(config: ProjectConfig, registry_path: Path) -> Path:
         if item.get("taxonomy_recheck_pending"):
             pending_class_ids.update(set(labels) - set(item.get("classes_reviewed_before_migration", [])))
     # 4. Dados embutidos na página (a página funciona aberta direto do disco, sem servidor).
-    payload = {"registry_sha256": file_hash(registry_path), "version": registry["version"], "images": browser_images,
+    payload = {"registry_sha256": file_hash(registry_path), "version": registry["version"],
+               # Nome legível da inspeção (naming.review_name); a pasta continua em "version".
+               "display_name": review_name(registry["version"], registry.get("display_name")), "images": browser_images,
                "taxonomy_recheck_pending": any(item.get("taxonomy_recheck_pending") for item in registry["images"]),
                "classes_requiring_review": [labels[key] for key in sorted(pending_class_ids)],
                "classes": [{"id": key, "label": value, "color": COLORS[key]} for key,value in labels.items()],

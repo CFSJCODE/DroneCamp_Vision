@@ -39,7 +39,100 @@ let active = HAS_IMAGES ? draft() : { boxes: [], status: 'pending', notes: '', c
 const classOf = id => DATA.classes.find(value => value.id === id) || { id, label: `classe ${id}`, color: '#64748B' };
 const pct = value => value == null ? '—' : `${(value * 100).toFixed(1)}%`;
 const fmtBytes = n => n == null ? '—' : n >= 1e9 ? `${(n / 1e9).toFixed(2)} GB` : n >= 1e6 ? `${(n / 1e6).toFixed(1)} MB` : n >= 1e3 ? `${Math.round(n / 1e3)} kB` : `${n} B`;
-const fmtDate = value => value ? new Date(value).toLocaleString('pt-BR') : '—';
+// Data legível dd/mm/aaaa hh:mm no fuso do navegador (nunca o carimbo ISO cru).
+const fmtDate = value => { if (!value) return '—'; const date = new Date(value); return isNaN(date) ? String(value) : date.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '') };
+/* ======================= Nomes legíveis ======================= */
+// Mesmo algoritmo de naming.py (tests/test_naming.py roda os dois e exige resultados iguais).
+// Ids e pastas em disco nunca mudam; aqui só se deriva o nome mostrado.
+const NAMING = (() => {
+  const STAGES = { pilot_train: 'Treino Piloto', train: 'Treino de Produção', tune: 'Ajuste de Hiperparâmetros', export: 'Exportação', export_demo: 'Exportação de Demonstração', predict_demo: 'Predição de Demonstração', autolabel_eval: 'Avaliação da Marcação Automática', calibrator: 'Calibrador', feedback_validation: 'Validação de Revisão', review_validation: 'Validação de Revisão', review_opening_fix: 'Correção de Abertura' };
+  const RUN_ID = /^([a-z0-9_]+?)_(\d{8}T\d{6}Z)_([0-9a-f]{8})$/;
+  const PLACES = { ceasa: 'CEASA Pavilhão A', ceasa_lado_a: 'CEASA Lado A', ceasa_ladoa: 'CEASA Lado A', internet: 'Fotos da Internet' };
+  const WORDS = { revisao: 'Revisão', rev: 'Revisão', prerevisao: 'Pré-revisão', sugestoes: 'Sugestões', humana: 'Humana', corrigida: 'Corrigida', taxonomia: 'Taxonomia', parcial: 'Parcial', piloto: 'Piloto', propostas: 'Propostas', busca: 'Busca', aberta: 'Aberta', modelo: 'Modelo', ladoa: 'Lado A', galpao: 'Galpão', pavilhao: 'Pavilhão', inspecao: 'Inspeção', ceasa: 'CEASA', claude: 'Claude', base: 'Base', demo: 'Demonstração', evidencias: 'Evidências', laudo: 'Laudo' };
+  const PHRASES = { humana: 'Revisão Humana', corrigida: 'Revisão Corrigida', sugestoes_modelo: 'Sugestões do Modelo' };
+  const CONNECTORS = new Set(['de', 'da', 'do', 'das', 'dos', 'e', 'a', 'o', 'em']);
+  const has = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
+  const shortHash = value => String(value).slice(0, 8).toUpperCase();
+  const isHash = token => token.length >= 8 && /^[0-9a-f]+$/.test(token) && /\d/.test(token);
+  const isVersion = token => /^v\d+[a-z]?$/.test(token);
+  const word = (token, first) => {
+    if (has(WORDS, token)) return WORDS[token];
+    if (isVersion(token)) return token;
+    if (/^s\d+$/.test(token)) return `Semente ${token.slice(1)}`;
+    if (/^\d+$/.test(token)) return token;
+    const match = /^([a-z]+?)(\d+)$/.exec(token);
+    if (match && has(WORDS, match[1])) return `${WORDS[match[1]]} ${match[2]}`;
+    if (CONNECTORS.has(token) && !first) return token;
+    if (token.length <= 2 && /^[a-z]+$/.test(token)) return token.toUpperCase();
+    return token.slice(0, 1).toUpperCase() + token.slice(1)
+  };
+  const humanize = slug => String(slug || '').trim().toLowerCase().split(/[_\-\s]+/).filter(Boolean).map((token, index) => isHash(token) ? shortHash(token) : word(token, index === 0)).join(' ');
+  const splitReview = name => {
+    const tokens = String(name).toLowerCase().split('_').filter(Boolean);
+    const position = tokens.findIndex(isVersion);
+    if (position <= 0) return [null, null, tokens, null];
+    const key = tokens.slice(0, position).join('_');
+    const rest = tokens.slice(position + 1);
+    const digest = rest.length && isHash(rest[rest.length - 1]) ? rest.pop() : null;
+    return [has(PLACES, key) ? PLACES[key] : humanize(key), tokens[position], rest, digest]
+  };
+  const review = (name, display) => {
+    if (display && String(display).trim()) return String(display).trim();
+    if (!name) return '';
+    const [place, version, rest, digest] = splitReview(name);
+    if (version == null) return humanize(name);
+    const qualifier = PHRASES[rest.join('_')] || rest.map((token, index) => word(token, index === 0)).join(' ');
+    const tail = [qualifier, digest ? shortHash(digest) : ''].filter(Boolean).join(' ');
+    return tail ? `${place} ${version} · ${tail}` : `${place} ${version}`
+  };
+  const run = (id, custom) => {
+    if (custom && String(custom).trim()) return String(custom).trim();
+    const match = RUN_ID.exec(String(id || ''));
+    if (!match) return humanize(id || '');
+    return `${STAGES[match[1]] || humanize(match[1])} ${shortHash(match[3])}`
+  };
+  const weights = path => {
+    const parts = String(path || '').replace(/\\/g, '/').split('/');
+    const owner = parts.find(part => RUN_ID.test(part));
+    const file = parts[parts.length - 1] || '';
+    const stem = file.replace(/\.[^.]*$/, '');
+    if (owner) return `${run(owner)} · ${{ best: 'melhor época', last: 'última época' }[stem] || file}`;
+    const family = /^yolo(v?\d+)([nsmlx]?)$/i.exec(stem);
+    if (family) return `Modelo Base YOLO${family[1].toUpperCase()}${family[2].toLowerCase()}`;
+    return stem ? humanize(stem) : ''
+  };
+  const day = stamp => /^\d{8}$/.test(stamp) ? `${stamp.slice(6, 8)}/${stamp.slice(4, 6)}/${stamp.slice(0, 4)}` : null;
+  const comparison = file => {
+    let stem = String(file || '').split('/').pop();
+    if (stem.endsWith('.json')) stem = stem.slice(0, -5);
+    let tokens = stem.split('_').filter(Boolean);
+    if (!tokens.length || !['compare', 'eval'].includes(tokens[0])) return humanize(stem);
+    const kind = tokens[0] === 'compare' ? 'Comparação' : 'Avaliação por Classe';
+    tokens = tokens[0] === 'compare' ? tokens.slice(1) : tokens[1] === 'por' && tokens[2] === 'classe' ? tokens.slice(3) : tokens.slice(1);
+    const date = tokens.length && day(tokens[tokens.length - 1]) ? day(tokens.pop()) : null;
+    const hashes = tokens.filter(isHash).map(shortHash);
+    const subject = hashes.length ? hashes.join(' × ') : (tokens.includes('vs') ? [] : tokens).map((token, index) => word(token, index === 0)).join(' ');
+    return [`${kind} ${subject}`.trim(), date].filter(Boolean).join(' · ')
+  };
+  const dataset = name => {
+    const [place, version, rest, digest] = splitReview(name);
+    if (version == null) return `Dataset ${humanize(name)}`;
+    const seed = rest.find(token => /^s\d+$/.test(token)) || null;
+    const words = rest.filter(token => token !== 'piloto' && token !== seed);
+    const kind = rest.includes('piloto') ? 'Dataset Piloto' : 'Dataset';
+    const qualifier = words.map((token, index) => word(token, index === 0)).join(' ');
+    return [`${kind} ${place} ${version}`, qualifier, seed ? `Semente ${seed.slice(1)}` : '', digest ? shortHash(digest) : ''].filter(Boolean).join(' · ')
+  };
+  const generated = file => {
+    const match = /^(\d{8}T\d{6}Z)_(laudo|evidencias)_/.exec(String(file || ''));
+    if (!match) return [humanize(String(file).replace(/\.[^.]*$/, '')), null];
+    const s = match[1];
+    const iso = `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}T${s.slice(9, 11)}:${s.slice(11, 13)}:${s.slice(13, 15)}+00:00`;
+    return [match[2] === 'laudo' ? 'Laudo Técnico' : 'Pacote de Evidências', iso]
+  };
+  return { shortHash, humanize, review, run, weights, comparison, dataset, generated }
+})();
+/* ======================= fim dos nomes legíveis ======================= */
 const el = (tag, props = {}, ...children) => {
   const node = document.createElement(tag);
   Object.entries(props).forEach(([key, value]) => {
@@ -85,7 +178,8 @@ function showView(view) {
   document.querySelectorAll('.view').forEach(section => section.classList.toggle('active', section.id === 'view-' + view));
   document.querySelectorAll('.nav-item[data-view]').forEach(button => button.setAttribute('aria-current', button.dataset.view === view ? 'page' : 'false'));
   $('viewTitle').textContent = VIEWS[view][0];
-  $('viewSubtitle').textContent = DATA.version ? `${VIEWS[view][1]} · inspeção ${DATA.version}` : VIEWS[view][1];
+  $('viewSubtitle').textContent = DATA.version ? `${VIEWS[view][1]} · ${reviewLabel(DATA.version, DATA.display_name)}` : VIEWS[view][1];
+  document.title = [VIEWS[view][0], DATA.version ? reviewLabel(DATA.version, DATA.display_name) : '', 'DroneCamp Vision'].filter(Boolean).join(' · ');
   try { sessionStorage.setItem('dronecamp-view', view) } catch {}
   if (location.hash !== '#' + view) history.replaceState(null, '', '#' + view);
   closeMenu();
@@ -456,18 +550,19 @@ $('reviewer').oninput = persist;
 
 // Seletor de inspeções: cada revisão abre na sua própria página (/r/<pasta>/), com fotos,
 // decisões salvas e arquivo exportado separados; trocar não mistura registros.
-const reviewLabel = name => /^internet/i.test(name) ? `Fotos da internet (${name})` : /^ceasa_lado_a/i.test(name) ? `CEASA — Lado A (${name})` : /^ceasa/i.test(name) ? `CEASA — Pavilhão A (${name})` : name;
+// Nome legível (NAMING.review); a pasta crua fica na dica (title) para rastreabilidade.
+function reviewLabel(name, display) { return NAMING.review(name, display) }
 function fillReviewPicker(items, current) {
   const picker = $('reviewPicker');
   picker.replaceChildren();
   (items || []).forEach(value => {
     const count = value.images == null ? '' : ` · ${value.images} fotos`;
-    const option = el('option', { value: value.href }, `${reviewLabel(value.name)}${count}`);
+    const option = el('option', { value: value.href }, `${reviewLabel(value.name, value.display_name)}${count}`);
     option.title = value.name;
     if (value.name === current) option.selected = true;
     picker.append(option)
   });
-  if (!picker.options.length) picker.append(el('option', { value: '' }, DATA.version ? reviewLabel(DATA.version) : 'Nenhuma inspeção'));
+  if (!picker.options.length) picker.append(el('option', { value: '' }, DATA.version ? reviewLabel(DATA.version, DATA.display_name) : 'Nenhuma inspeção'));
   picker.disabled = picker.options.length < 2;
   picker.onchange = event => { if (event.target.value) location.href = event.target.value + location.hash }
 }
@@ -527,7 +622,8 @@ function renderHome() {
   $('kpiSuggestions').textContent = pendingAi;
   $('kpiSuggestionsHint').textContent = DATA.suggestions ? `limite do modelo ${Math.round(DATA.suggestions.conf * 100)}%` : 'nenhum modelo aplicado';
   $('kpiSparse').textContent = sparse.length;
-  $('homeContext').textContent = DATA.version ? `Inspeção aberta: ${DATA.version}` : '';
+  $('homeContext').textContent = DATA.version ? `Inspeção aberta: ${reviewLabel(DATA.version, DATA.display_name)}` : '';
+  $('homeContext').title = DATA.version || '';
   $('qaReview').textContent = HAS_IMAGES ? `${DATA.images.length - decided} fotos sem decisão · ${pendingAi} sugestões` : 'Nenhuma inspeção aberta';
   const max = Math.max(1, ...Object.values(totals).map(value => value.boxes + value.ai));
   $('classBars').replaceChildren(...DATA.classes.map(category => {
@@ -550,7 +646,8 @@ function renderHome() {
     $('modelChip').replaceChildren(el('span', { class: 'chip ai' }, meta.pilot ? 'piloto · não validado' : 'não validado'));
     $('modelSummary').replaceChildren(
       el('p', {}, `${meta.model_label}. Confiança mínima ${Math.round(meta.conf * 100)}%.`),
-      el('p', { class: 'mono muted' }, `pesos ${String(meta.weights_sha256 || '').slice(0, 12)}…` + (run ? ` · ${runName(run)} (${run.id})` : '')),
+      run ? el('p', { title: run.id }, el('b', {}, runName(run)), ` · iniciado em ${fmtDate(run.started_at)}`) : null,
+      el('p', { class: 'mono muted small-text', title: meta.weights_sha256 || '' }, `SHA-256 dos pesos ${String(meta.weights_sha256 || '').slice(0, 12)}…`),
       run && run.best_epoch ? el('p', {}, `Melhor mAP50 de validação dessa execução: ${pct(run.best_epoch.map50)} (época ${run.best_epoch.epoch}).`) : null)
   }
   const last = OPS.runs.find(run => run.curves.length);
@@ -558,7 +655,7 @@ function renderHome() {
   else {
     const chart = el('div', { class: 'chart' });
     $('lastRunSummary').replaceChildren(
-      el('p', {}, el('span', { class: 'chip ' + stateClass(last.state) }, stateLabel(last.state)), ' ', el('b', {}, runName(last)), ' ', el('span', { class: 'mono muted small-text' }, last.id)),
+      el('p', {}, el('span', { class: 'chip ' + stateClass(last.state) }, stateLabel(last.state)), ' ', el('b', { title: last.id }, runName(last)), ' ', el('span', { class: 'muted small-text' }, fmtDate(last.started_at))),
       el('p', { class: 'muted' }, `${last.epochs_done}/${last.epochs_planned || '?'} épocas · melhor mAP50 ${pct(last.best_epoch && last.best_epoch.map50)}`), chart);
     lineChart(chart, last.curves, [{ key: 'map50', label: 'mAP50', color: '#16A34A' }, { key: 'recall', label: 'Recall', color: '#2457F5' }], { height: 120, percent: true })
   }
@@ -571,7 +668,7 @@ function inspectionItems() {
   if (WORKSPACE && Array.isArray(WORKSPACE.reviews) && WORKSPACE.reviews.length) return WORKSPACE.reviews;
   if (!DATA.version) return [];
   const { decided, pendingAi, boxes } = reviewTotals();
-  const mine = { name: DATA.version, version: DATA.version, images: DATA.images.length, decided, boxes, suggestions_pending: pendingAi, current: true, href: '', buildings: [...new Set(DATA.images.map(photo => photo.building_group).filter(Boolean))], page_ready: true, offline: true };
+  const mine = { name: DATA.version, display_name: DATA.display_name, version: DATA.version, images: DATA.images.length, decided, boxes, suggestions_pending: pendingAi, current: true, href: '', buildings: [...new Set(DATA.images.map(photo => photo.building_group).filter(Boolean))], page_ready: true, offline: true };
   // Servidor antigo (sem /api/workspace) com várias revisões: a lista vem da meta dronecamp-reviews.
   if (REVIEWS && Array.isArray(REVIEWS.items) && REVIEWS.items.length) {
     return REVIEWS.items.map(item => item.name === REVIEWS.current ? { ...item, ...mine, href: item.href } : { ...item, current: false, page_ready: item.images != null })
@@ -587,7 +684,7 @@ function inspectionCards(compact) {
     const progress = review.images ? Math.round((review.decided || 0) / review.images * 100) : 0;
     const card = el('div', { class: 'inspection' + (review.current ? ' current' : '') });
     card.append(
-      el('div', { class: 'head' }, el('b', {}, reviewLabel(review.name)), el('span', { class: 'chip ' + (review.current ? 'primary' : review.page_ready === false ? 'warn' : 'neutral') }, review.current ? 'aberta' : review.page_ready === false ? 'página não gerada' : review.scope_label || 'revisão')),
+      el('div', { class: 'head' }, el('b', { title: review.name }, reviewLabel(review.name, review.display_name)), el('span', { class: 'chip ' + (review.current ? 'primary' : review.page_ready === false ? 'warn' : 'neutral') }, review.current ? 'aberta' : review.page_ready === false ? 'página não gerada' : review.scope_label || 'revisão')),
       el('div', { class: 'meta' }, el('span', {}, (review.buildings || []).join(', ') || 'edificação não informada'), review.updated_at ? el('span', {}, `atualizada ${fmtDate(review.updated_at)}`) : null),
       el('div', { class: 'nums' }, el('div', {}, el('b', {}, review.images ?? '—'), 'fotos'), el('div', {}, el('b', {}, `${progress}%`), 'decididas'), el('div', {}, el('b', { class: review.suggestions_pending ? 'cell-ai' : '' }, review.suggestions_pending ?? 0), 'sugestões IA')),
       el('div', { class: 'progress ok' }, el('i', { style: `width:${progress}%` })));
@@ -634,7 +731,7 @@ function renderUpload() {
   $('uploadOffline').classList.toggle('hidden', SERVER);
   const weights = OPS.weights.filter(path => path.startsWith('runs/') || path.startsWith('models/'));
   fillSelect($('uploadWeights'), [['', 'Não gerar agora (revisar sem modelo)'], ...weights.map(path => [path, weightLabel(path)])], (OPS.runs.find(value => value.weights && value.weights.best) || { weights: {} }).weights.best || '');
-  if (!$('uploadName').value) $('uploadName').value = `inspecao_${new Date().toISOString().slice(0, 10).replaceAll('-', '_')}`;
+  if (!$('uploadName').value) $('uploadName').value = `Inspeção ${new Date().toLocaleDateString('pt-BR')}`;
   renderFiles()
 }
 $('dropzone').onclick = () => $('fileInput').click();
@@ -643,7 +740,7 @@ $('fileInput').onchange = () => { addFiles($('fileInput').files); $('fileInput')
 ['dragenter', 'dragover'].forEach(type => $('dropzone').addEventListener(type, event => { event.preventDefault(); $('dropzone').classList.add('over') }));
 ['dragleave', 'drop'].forEach(type => $('dropzone').addEventListener(type, event => { event.preventDefault(); $('dropzone').classList.remove('over') }));
 $('dropzone').addEventListener('drop', event => addFiles(event.dataTransfer.files));
-$('uploadName').oninput = () => { $('uploadName').value = $('uploadName').value.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9_]+/g, '_').slice(0, 60) };
+// Nome livre ("Galpão B · outubro"): o servidor deriva a pasta (sem acentos) e guarda o nome digitado no registro.
 
 function putFile(url, file, onProgress) {
   // XMLHttpRequest para ter progresso do envio; o corpo vai cru (sem multipart) direto para o disco.
@@ -693,7 +790,7 @@ $('startUpload').onclick = async () => {
     $('uploadStatus').textContent = '';
     $('uploadResult').classList.remove('hidden');
     $('uploadResult').replaceChildren(el('div', { class: 'verdict ok' },
-      el('b', {}, `Inspeção “${result.review}” criada com ${result.images} fotos`),
+      el('b', { title: result.review }, `Inspeção “${reviewLabel(result.review, result.display_name)}” criada com ${result.images} fotos`),
       el('p', { class: 'small-text', style: 'margin:4px 0 8px' }, `${result.photos} fotos enviadas · ${result.video_frames} quadros de ${result.videos} vídeo(s)` + (result.skipped && result.skipped.length ? ` · ${result.skipped.length} repetidas ignoradas` : '') + (result.suggest_job ? ' · gerando sugestões da IA (veja Monitoramento)' : '')),
       el('div', { class: 'row-actions', style: 'margin:0' }, el('a', { class: 'btn primary small', href: result.href + '#review' }, 'Abrir revisão'), el('a', { class: 'btn small', href: result.href + '#monitor' }, 'Acompanhar sugestões'))));
     toast('Inspeção criada', `${result.images} fotos prontas para revisão.`);
@@ -721,8 +818,10 @@ function renderReports() {
 function fileRow(file) {
   const kinds = { pdf: ['i-report', 'Laudo em PDF'], html: ['i-report', 'Laudo em HTML'], zip: ['i-zip', 'Pacote de evidências'], json: ['i-save', 'Dados do laudo'], csv: ['i-report', 'Planilha'] };
   const [ico, label] = kinds[file.kind] || ['i-download', file.kind];
+  // Pastas e ZIPs são <carimbo UTC>_laudo_<inspeção>: a data vira texto legível, o caminho fica na dica.
+  const generatedOn = NAMING.generated(String(file.name || '').split('/')[1] || file.name)[1];
   return el('div', { class: 'download' }, el('div', { class: 'ico' }, icon(ico)),
-    el('div', {}, el('b', {}, label + (file.label ? ` · ${file.label}` : '')), el('small', {}, `${file.name} · ${fmtBytes(file.bytes)} · ${fmtDate(file.modified)}`)),
+    el('div', {}, el('b', { title: file.name }, label), el('small', {}, `${generatedOn ? 'Gerado em ' + fmtDate(generatedOn) : fmtDate(file.modified)} · ${fmtBytes(file.bytes)}`)),
     el('a', { class: 'btn small', href: file.href, target: '_blank', rel: 'noopener', download: file.kind === 'zip' || file.kind === 'pdf' ? '' : null }, 'Baixar'))
 }
 
@@ -841,10 +940,16 @@ function lineChart(container, points, series, options = {}) {
   container.append(svg, tip, el('div', { class: 'legend' }, ...usable.map(serie => { const node = el('span', {}, el('i'), serie.label); node.firstChild.style.setProperty('--c', serie.color); return node })))
 }
 /* Nome legível da execução (operations.py grava display_name/display_detail; runs/nomes.json personaliza). */
-const runName = run => run ? (run.display_name || run.id) : '';
+const runName = run => run ? (run.display_name || NAMING.run(run.id)) : '';
 const runById = id => OPS.runs.find(run => run.id === id) || { id };
 const runLabel = id => runName(runById(id));
-const weightLabel = path => { const run = OPS.runs.find(value => Object.values(value.weights || {}).includes(path)); return run ? `${runName(run)} · ${path.split('/').pop()} (${run.id.slice(-8)})` : path };
+// Pesos: "Treino Piloto 56038EB9 · melhor época" (nome personalizado da execução, se houver) ou "Modelo Base YOLO26l".
+const weightLabel = path => {
+  const run = OPS.runs.find(value => Object.values(value.weights || {}).includes(path));
+  if (!run) return NAMING.weights(path);
+  const stem = path.split('/').pop().replace(/\.pt$/, '');
+  return `${runName(run)} · ${{ best: 'melhor época', last: 'última época' }[stem] || stem}`
+};
 const SPLIT_LABELS = { train: 'Treino', val: 'Validação', test: 'Teste' };
 const splitLabel = split => { const base = String(split || ''); const seen = base.includes('visto'); const key = base.split(' ')[0].split('(')[0]; return (SPLIT_LABELS[key] || key) + (seen ? ' ⚠ fotos vistas no treino' : '') };
 const LOSS_SERIES = [
@@ -940,8 +1045,8 @@ function updateTrainCommand() {
 function renderTraining() {
   renderCycle();
   $('deviceChip').textContent = `dispositivo: ${OPS.device || 'cpu'}`;
-  fillSelect($('trainData'), OPS.datasets.map(dataset => [dataset.path, `${dataset.name} · ${Object.entries(dataset.splits || {}).map(([k, v]) => `${k} ${v}`).join(' / ')}`]), (OPS.datasets[OPS.datasets.length - 1] || {}).path);
-  fillSelect($('trainWeights'), [['', `Padrão do projeto (${OPS.base_model || 'yolo26l.pt'})`], ...OPS.weights.map(path => [path, weightLabel(path)])], '');
+  fillSelect($('trainData'), OPS.datasets.map(dataset => [dataset.path, `${NAMING.dataset(dataset.name)} · ${Object.entries(dataset.splits || {}).map(([k, v]) => `${k} ${v}`).join(' / ')}`]), (OPS.datasets[OPS.datasets.length - 1] || {}).path);
+  fillSelect($('trainWeights'), [['', `Padrão do projeto (${NAMING.weights(OPS.base_model || 'yolo26l.pt')})`], ...OPS.weights.map(path => [path, weightLabel(path)])], '');
   const defaults = OPS.pilot_defaults || {};
   ['epochs', 'imgsz', 'batch'].forEach(key => { const input = $('train' + key[0].toUpperCase() + key.slice(1)); if (input.value === '' && defaults[key] != null) input.value = defaults[key] });
   updateTrainCommand();
@@ -951,11 +1056,11 @@ function renderTraining() {
     : 'Aberta direto do disco, a página não inicia processos: copie o comando no terminal da pasta sistema_ia ou use o atalho Abrir plataforma DroneCamp.cmd.';
   const body = $('runsTable');
   body.replaceChildren();
-  $('runsHint').textContent = `${OPS.runs.length} execuções · atualizado ${new Date(OPS.generated_at || Date.now()).toLocaleString('pt-BR')}`;
+  $('runsHint').textContent = `${OPS.runs.length} execuções · atualizado ${fmtDate(OPS.generated_at || Date.now())}`;
   if (!OPS.runs.length) body.append(el('tr', {}, el('td', { colspan: 5, class: 'empty' }, 'Nenhum treino encontrado em runs/.')));
   OPS.runs.forEach(run => {
     const row = el('tr', { class: 'clickable', tabindex: 0, 'aria-selected': String(state.run === run.id) },
-      el('td', {}, el('div', {}, el('b', {}, runName(run))), el('div', { class: 'mono small-text muted' }, run.id), el('small', { class: 'muted' }, `${new Date(run.started_at).toLocaleString('pt-BR')} · ${run.display_detail || run.checkpoint || ''}`)),
+      el('td', { title: run.id }, el('div', {}, el('b', {}, runName(run))), el('small', { class: 'muted' }, `${fmtDate(run.started_at)} · ${run.display_detail || run.checkpoint || ''}`)),
       el('td', {}, el('span', { class: 'chip ' + stateClass(run.state) }, el('span', { class: 'dot' }), stateLabel(run.state))),
       el('td', { class: 'num' }, `${run.epochs_done}/${run.epochs_planned || '?'}`),
       el('td', { class: 'num' }, run.best_epoch ? `${pct(run.best_epoch.map50)} (ép. ${run.best_epoch.epoch})` : '—'),
@@ -993,7 +1098,8 @@ function renderMonitor() {
     $('monitorTitle').textContent = 'Nenhum treino encontrado';
     $('monitorState').replaceChildren(); $('monitorFacts').replaceChildren(); $('monitorTiles').replaceChildren()
   } else {
-    $('monitorTitle').textContent = `${runName(run)} · ${run.id}`;
+    $('monitorTitle').textContent = `${runName(run)} · iniciado em ${fmtDate(run.started_at)}`;
+    $('monitorTitle').title = run.id;
     $('monitorState').replaceChildren(el('span', { class: 'chip ' + stateClass(run.state) }, el('span', { class: 'dot' }), stateLabel(run.state)));
     const planned = run.epochs_planned || run.epochs_done || 1;
     const fraction = Math.min(1, run.epochs_done / planned);
@@ -1021,7 +1127,7 @@ function renderJob() {
   $('jobState').textContent = labels[job.state] || job.state;
   $('jobState').className = 'chip ' + ({ running: 'live ok', finished: 'ok', failed: 'bad' }[job.state] || 'neutral');
   $('jobHint').textContent = SERVER
-    ? (job.kind ? `${job.kind} ${(job.arguments || []).join(' ')} · log em ${job.log}` + (job.kind === 'suggest' && job.state === 'finished' ? ' · recarregue a página para ver as novas sugestões.' : '') : 'Uma tarefa por vez. Pesos novos não são adotados automaticamente.')
+    ? (job.kind ? `${{ 'train-pilot': 'Treino piloto', suggest: 'Geração de sugestões' }[job.kind] || job.kind} · log em ${job.log}` + (job.kind === 'suggest' && job.state === 'finished' ? ' · recarregue a página para ver as novas sugestões.' : '') : 'Uma tarefa por vez. Pesos novos não são adotados automaticamente.')
     : 'Disponível quando a plataforma é aberta pelo servidor local (Abrir plataforma DroneCamp.cmd).';
   $('jobLog').textContent = (job.log_tail || []).join('\n') || '—';
   $('jobLog').scrollTop = $('jobLog').scrollHeight;
@@ -1045,21 +1151,21 @@ function renderModels() {
     el('div', {}, el('b', {}, ok ? 'Critérios básicos atendidos; falta a análise por classe.' : 'Nenhuma versão pode ser adotada como modelo de produção.'),
       el('ul', {}, ...reasons.map(reason => el('li', {}, reason))),
       el('p', { class: 'muted small-text' }, `${pilots.length} treinos piloto registrados. O modelo atual das sugestões continua só como apoio à revisão.`))));
-  fillSelect($('compareSelect'), OPS.comparisons.map((comparison, index) => [String(index), comparison.file]), String(OPS.comparisons.length - 1));
+  fillSelect($('compareSelect'), OPS.comparisons.map((comparison, index) => [String(index), NAMING.comparison(comparison.file)]), String(OPS.comparisons.length - 1));
   renderCompare();
   const withCounts = OPS.runs.filter(run => Object.keys(run.class_counts || {}).length);
-  fillSelect($('coverageRun'), withCounts.map(run => [run.id, `${runName(run)} (${run.id})`]), (withCounts[0] || {}).id);
+  fillSelect($('coverageRun'), withCounts.map(run => [run.id, `${runName(run)} · ${fmtDate(run.started_at)}`]), (withCounts[0] || {}).id);
   renderCoverage();
   const ranked = OPS.runs.filter(run => run.best_epoch).sort((a, b) => b.best_epoch.map50 - a.best_epoch.map50);
   const max = Math.max(0.01, ...ranked.map(run => run.best_epoch.map50));
-  $('leaderboard').replaceChildren(...(ranked.length ? ranked.map(run => barRow('var(--ok)', `${runName(run)} · ${run.display_detail || run.id}`, run.best_epoch.map50, 0, max, pct(run.best_epoch.map50))) : [el('div', { class: 'empty' }, 'Sem métricas.')]))
+  $('leaderboard').replaceChildren(...(ranked.length ? ranked.map(run => barRow('var(--ok)', run.display_detail ? `${runName(run)} · ${run.display_detail}` : runName(run), run.best_epoch.map50, 0, max, pct(run.best_epoch.map50))) : [el('div', { class: 'empty' }, 'Sem métricas.')]))
 }
 function renderCompare() {
   const comparison = OPS.comparisons[Number($('compareSelect').value)];
   if (!comparison) { $('compareTable').replaceChildren(el('div', { class: 'empty' }, 'Nenhuma comparação salva. Etapa 5 do ciclo de fine-tuning.')); return }
   const splits = [...new Set(comparison.models.flatMap(model => Object.keys(model.splits)))];
   const head = el('tr', {}, el('th', {}, 'Modelo'), ...splits.map(split => el('th', { class: 'num' }, splitLabel(split))));
-  const rows = comparison.models.map(model => el('tr', {}, el('td', {}, el('div', {}, el('b', {}, model.run_id ? runLabel(model.run_id) : model.file)), el('div', { class: 'mono small-text muted' }, model.run_id || model.weights), el('small', { class: 'muted' }, `${model.run_id && runById(model.run_id).display_detail ? runById(model.run_id).display_detail + ' · ' : ''}${model.file} · ${String(model.weights_sha256 || '').slice(0, 10)}…`)),
+  const rows = comparison.models.map(model => el('tr', {}, el('td', { title: model.weights }, el('div', {}, el('b', {}, model.run_id ? runLabel(model.run_id) : NAMING.weights(model.weights))), el('small', { class: 'muted' }, `${model.run_id && runById(model.run_id).display_detail ? runById(model.run_id).display_detail + ' · ' : ''}${model.file} · ${String(model.weights_sha256 || '').slice(0, 10)}…`)),
     ...splits.map(split => {
       const value = model.splits[split];
       if (!value) return el('td', { class: 'num muted' }, '—');
@@ -1067,7 +1173,7 @@ function renderCompare() {
       return el('td', { class: 'num' }, el('div', {}, `Recall ${pct(recall)}`, el('small', { class: 'muted' }, ` · ${value.found} de ${value.truth} caixas encontradas`)), el('div', {}, `Precisão ${pct(precision)}`, el('small', { class: 'muted' }, ` · ${value.correct} de ${value.suggestions} sugestões certas`)))
     })));
   $('compareTable').replaceChildren(el('table', {}, el('thead', {}, head), el('tbody', {}, ...rows)),
-    el('p', { class: 'muted small-text', style: 'padding:8px 12px' }, `Dataset ${comparison.dataset || '—'} · confiança mínima ${pct(comparison.conf)} · uma sugestão conta como certa com sobreposição (IoU) ≥ ${comparison.iou_match}.`))
+    el('p', { class: 'muted small-text', style: 'padding:8px 12px' }, `${comparison.dataset ? NAMING.dataset(String(comparison.dataset).replace(/\\/g, '/').split('/').filter(part => part && !part.endsWith('.yaml')).pop()) : 'Dataset —'} · confiança mínima ${pct(comparison.conf)} · uma sugestão conta como certa com sobreposição (IoU) ≥ ${comparison.iou_match}.`))
 }
 function renderCoverage() {
   const run = OPS.runs.find(value => value.id === $('coverageRun').value);
@@ -1187,7 +1293,7 @@ async function refreshWorkspace() {
   if (!SERVER) return;
   try {
     WORKSPACE = await api('/api/workspace' + (DATA.version ? '?review=' + encodeURIComponent(DATA.version) : ''));
-    fillReviewPicker(WORKSPACE.reviews.filter(review => review.page_ready !== false).map(review => ({ name: review.name, href: review.href, images: review.images })), DATA.version);
+    fillReviewPicker(WORKSPACE.reviews.filter(review => review.page_ready !== false).map(review => ({ name: review.name, display_name: review.display_name, href: review.href, images: review.images })), DATA.version);
     $('navInspections').textContent = WORKSPACE.reviews.length || '';
     if (state.view === 'home' || state.view === 'inspections') showView(state.view)
   } catch {}
@@ -1234,7 +1340,8 @@ function applyTheme(theme) {
 $('themeToggle').onclick = () => applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
 (() => { let theme = 'light'; try { theme = localStorage.getItem('dronecamp-theme') || 'light' } catch {} document.documentElement.dataset.theme = theme; $('themeToggle').replaceChildren(icon(theme === 'dark' ? 'i-sun' : 'i-moon'), el('span', {}, theme === 'dark' ? 'Claro' : 'Escuro')) })();
 
-$('versionLabel').textContent = DATA.version || '';
+$('versionLabel').textContent = DATA.version ? reviewLabel(DATA.version, DATA.display_name) : '';
+$('versionLabel').title = DATA.version || '';
 // Inativas continuam na lista (desabilitadas) para que uma caixa existente dessa classe mostre e preserve a categoria.
 DATA.classes.forEach(category => $('classId').append(el('option', category.active === false ? { value: category.id, disabled: 'disabled' } : { value: category.id }, category.active === false ? `${category.label} (inativa)` : category.label)));
 if (DATA.suggestions) {

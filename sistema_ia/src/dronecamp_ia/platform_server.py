@@ -56,6 +56,7 @@ from . import class_catalog
 from .config import ProjectConfig, detection_names, load_taxonomy
 from .io import file_hash
 from .operations import collect_operations, collect_review_files
+from .naming import review_name
 from .review_render import build_page, empty_page_payload, load_page_payload
 
 MAX_BODY_BYTES = 16 * 1024 * 1024
@@ -304,6 +305,7 @@ class Workspace:
                 pending = 0
         updated = max([path.stat().st_mtime] + [file.stat().st_mtime for file in inbox])
         summary = {"name": name, "version": registry.get("version") or name, "href": f"/r/{name}/", "images": len(images),
+                   "display_name": review_name(name, registry.get("display_name")),
                    "decided": decided, "suggestions_pending": pending,
                    "buildings": sorted({item.get("building_group") for item in images if item.get("building_group")}),
                    "updated_at": datetime.fromtimestamp(updated, timezone.utc).isoformat(timespec="seconds"),
@@ -329,7 +331,7 @@ class Workspace:
             try:
                 summary = self._summary(name, path)
             except (OSError, ValueError) as error:
-                summary = {"name": name, "href": f"/r/{name}/", "images": None, "page_ready": False, "error": str(error)}
+                summary = {"name": name, "display_name": review_name(name), "href": f"/r/{name}/", "images": None, "page_ready": False, "error": str(error)}
             reviews.append({**summary, "current": name == current})
         reviews.sort(key=lambda item: (item.get("current", False), item.get("updated_at") or ""), reverse=True)
         return {"mode": "fixed" if self.fixed is not None else "workspace", "default": self.default(),
@@ -415,6 +417,8 @@ class UploadManager:
         if isinstance(frames, float) and frames.is_integer():
             frames = int(frames)
         parameters = {"building_group": group.strip(), "every_seconds": every, "max_frames": frames,
+                      # Nome como a pessoa digitou (com acentos); a pasta usa a forma normalizada.
+                      "display_name": _text(options, "name", 80).strip() or None,
                       "uploaded_by": _text(options, "uploaded_by", 100) or None, "campaign_notes": _text(options, "notes", 5000)}
         weights = options.get("weights") or None
         if weights:
@@ -465,10 +469,11 @@ def _reviews_meta(reviews: dict[str, Path], current: str | None) -> str:
     items = []
     for name, path in reviews.items():
         try:
-            images = len(load_page_payload(path).get("images") or [])
+            payload = load_page_payload(path)
+            images, display = len(payload.get("images") or []), payload.get("display_name")
         except (OSError, ValueError):
-            images = None
-        items.append({"name": name, "href": f"/r/{name}/", "images": images})
+            images, display = None, None
+        items.append({"name": name, "display_name": display or review_name(name), "href": f"/r/{name}/", "images": images})
     return html.escape(json.dumps({"current": current, "items": items}, ensure_ascii=False), quote=True)
 
 

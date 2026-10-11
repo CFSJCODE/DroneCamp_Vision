@@ -107,16 +107,16 @@ class OperationsTests(PlatformFixture):
         self.assertEqual(later["pilot_train_20261004T200000Z_aaaaaaaa"]["state"], "interrupted")
         self.assertEqual(list(runs)[0], "pilot_train_20261004T200000Z_aaaaaaaa", "Mais recente primeiro.")
 
-    def test_runs_get_readable_names_numbered_by_stage_and_customizable(self) -> None:
+    def test_runs_get_readable_names_from_type_and_short_hash_and_customizable(self) -> None:
         first, second = "pilot_train_20261004T170212Z_dd284411", "pilot_train_20261004T200000Z_aaaaaaaa"
         self.make_run(first, 3, {"state": "completed", "complete": True})
         self.make_run(second, 2, None)
         self.make_run("train_20261005T100000Z_bbbbbbbb", 1, None)
         runs = {run["id"]: run for run in collect_runs(self.root)}
-        # Numeração cronológica dentro de cada etapa; o resumo traz modelo, épocas e mAP50.
-        self.assertEqual(runs[first]["display_name"], "Treino piloto 1")
-        self.assertEqual(runs[second]["display_name"], "Treino piloto 2")
-        self.assertEqual(runs["train_20261005T100000Z_bbbbbbbb"]["display_name"], "Treino de produção 1")
+        # Tipo da execução + código curto do id; o resumo traz modelo, épocas e mAP50.
+        self.assertEqual(runs[first]["display_name"], "Treino Piloto DD284411")
+        self.assertEqual(runs[second]["display_name"], "Treino Piloto AAAAAAAA")
+        self.assertEqual(runs["train_20261005T100000Z_bbbbbbbb"]["display_name"], "Treino de Produção BBBBBBBB")
         self.assertEqual(runs[first]["display_detail"], "yolo26l · 3/3 épocas · mAP50 val 30,0% (época 3)")
         write_json(self.root / "runs" / "nomes.json", {"dd284411": "v7 base", second: "v7.1"})
         renamed = {run["id"]: run["display_name"] for run in collect_runs(self.root)}

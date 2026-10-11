@@ -289,6 +289,7 @@ def import_human_feedback(config: ProjectConfig, registry_path: Path, feedback_p
     registry["human_feedback"] = {"sha256": file_hash(feedback_path), "reviewer_id": reviewer,
                                   "reviewed_images": len(seen), "source_registry_sha256": file_hash(registry_path)}
     registry["parent_registry_version"] = registry.get("version")
+    registry.pop("display_name", None)  # nome digitado no envio vale só para a versão de origem
     registry["version"] = output.parent.name if output.parent.resolve() != registry_path.parent.resolve() else output.stem
     write_json(output, registry)
     return registry
@@ -357,6 +358,7 @@ def apply_ai_proposals(config: ProjectConfig, registry_path: Path, proposals_pat
                                 "proposed_new_classes": sorted({box["proposed_new_class"] for item in registry["images"]
                                                                 for box in item["boxes"] if box.get("proposed_new_class")})}
     registry["parent_registry_version"] = registry.get("version")
+    registry.pop("display_name", None)  # nome digitado no envio vale só para a versão de origem
     registry["version"] = output.parent.name
     write_json(output, registry)
     write_review_summary(output.parent, registry)
@@ -468,6 +470,7 @@ def migrate_review_taxonomy(config: ProjectConfig, registry_path: Path, previous
     registry["taxonomy_sha256"] = file_hash(config.taxonomy_path)
     registry["taxonomy_version"] = new_taxonomy["version"]
     registry["parent_registry_version"] = registry.get("version")
+    registry.pop("display_name", None)  # nome digitado no envio vale só para a versão de origem
     registry["version"] = output.parent.name
     registry["scope"] = "propostas_preservadas_expansao_de_taxonomia_pendente_de_revisao"
     write_json(output, registry)
