@@ -358,7 +358,8 @@ class UploadManager:
         directory = self.staging / batch
         directory.mkdir(parents=True)
         with self.lock:
-            self.batches[batch] = {"name": slug, "directory": directory, "files": [], "bytes": 0, "state": "open",
+            # display_name: o nome como foi digitado, para o registro; a pasta usa o slug.
+            self.batches[batch] = {"name": slug, "display_name": str(name).strip()[:80], "directory": directory, "files": [], "bytes": 0, "state": "open",
                                    "message": "Aguardando arquivos.", "result": None, "error": None}
         return {"batch": batch, "name": slug}
 
@@ -418,7 +419,7 @@ class UploadManager:
             frames = int(frames)
         parameters = {"building_group": group.strip(), "every_seconds": every, "max_frames": frames,
                       # Nome como a pessoa digitou (com acentos); a pasta usa a forma normalizada.
-                      "display_name": _text(options, "name", 80).strip() or None,
+                      "display_name": _text(options, "name", 80).strip() or entry.get("display_name") or None,
                       "uploaded_by": _text(options, "uploaded_by", 100) or None, "campaign_notes": _text(options, "notes", 5000)}
         weights = options.get("weights") or None
         if weights:

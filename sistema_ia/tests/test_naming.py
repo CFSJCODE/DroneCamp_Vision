@@ -19,7 +19,7 @@ TEMPLATE = Path(__file__).resolve().parents[1] / "src" / "dronecamp_ia" / "revie
 REVIEWS = ["ceasa_v8_revisao002_ff34e226416c", "ceasa_lado_a_v1", "ceasa_v10_taxonomia_v6", "ceasa_lado_a_v2_prerevisao1",
            "ceasa_v3_humana_a36ea7f67d08", "ceasa_v6_corrigida_a36ea7f67d08", "ceasa_v9_rev001", "ceasa_v4",
            "internet_v1_sugestoes_modelo", "internet_v2_propostas_claude", "internet_v3_busca_aberta", "galpao_norte_2026",
-           "inspecao_11_10_2026", "r_2026_lote"]
+           "inspecao_11_10_2026", "r_2026_lote", "galpao_v2_deadbeef"]
 RUNS = ["pilot_train_20261007T010057Z_f5e5ba8b", "train_20261003T232842Z_7a2f3d12", "tune_20261008T120000Z_0a1b2c3d",
         "autolabel_eval_20261005T151719Z_a99aebbb", "review_validation_v5_20261004T020100Z_61a9423b", "detect"]
 WEIGHTS = ["runs/pilot_train_20261007T010057Z_56038eb9/fit/weights/best.pt", "runs/pilot_train_20261007T010057Z_56038eb9/fit/weights/last.pt",
@@ -44,6 +44,7 @@ class NamingTests(unittest.TestCase):
         self.assertEqual(naming.review_name("ceasa_v3_humana_a36ea7f67d08"), "CEASA Pavilhão A v3 · Revisão Humana A36EA7F6")
         self.assertEqual(naming.review_name("internet_v1_sugestoes_modelo"), "Fotos da Internet v1 · Sugestões do Modelo")
         self.assertEqual(naming.review_name("galpao_norte_2026"), "Galpão Norte 2026")
+        self.assertEqual(naming.review_name("galpao_v2_deadbeef"), "Galpão v2 · DEADBEEF", "Hash só com letras a–f também é hash.")
         # Nome digitado no envio pela plataforma vence o nome derivado.
         self.assertEqual(naming.review_name("galpao_b_outubro", "Galpão B · outubro"), "Galpão B · outubro")
 

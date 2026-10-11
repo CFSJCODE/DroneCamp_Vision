@@ -415,6 +415,8 @@ class WorkspaceServerTests(PlatformFixture):
         directory = self.root / "data" / "reviews" / "galpao_norte_2026"
         registry = json.loads((directory / "registry.json").read_text(encoding="utf-8"))
         self.assertEqual(registry["ingest"]["uploaded_by"], "rev01")
+        # O nome digitado na criação do lote (com acentos) vale mesmo quando o ingest não o repete.
+        self.assertEqual((registry["display_name"], result["display_name"]), ("Galpão Norte 2026", "Galpão Norte 2026"))
         self.assertEqual({item["building_group"] for item in registry["images"]}, {"galpao_norte"})
         self.assertTrue((directory / "index.html").is_file())
         kept = directory / "midia_enviada"
@@ -423,6 +425,7 @@ class WorkspaceServerTests(PlatformFixture):
         self.assertFalse((self.root / ".runtime" / "uploads" / batch).exists(), "Os arquivos do lote saem da área temporária.")
         workspace = json.loads(self.request("/api/workspace")[1])
         created = next(item for item in workspace["reviews"] if item["name"] == "galpao_norte_2026")
+        self.assertEqual(created["display_name"], "Galpão Norte 2026")
         self.assertEqual((created["images"], created["page_ready"], created["scope_label"]), (2, True, "importada pela plataforma"))
         status, page = self.request("/r/galpao_norte_2026/")
         self.assertEqual(status, 200)

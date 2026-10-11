@@ -53,7 +53,7 @@ const NAMING = (() => {
   const CONNECTORS = new Set(['de', 'da', 'do', 'das', 'dos', 'e', 'a', 'o', 'em']);
   const has = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
   const shortHash = value => String(value).slice(0, 8).toUpperCase();
-  const isHash = token => token.length >= 8 && /^[0-9a-f]+$/.test(token) && /\d/.test(token);
+  const isHash = token => token.length >= 8 && /^[0-9a-f]+$/.test(token);
   const isVersion = token => /^v\d+[a-z]?$/.test(token);
   const word = (token, first) => {
     if (has(WORDS, token)) return WORDS[token];
@@ -941,6 +941,8 @@ function lineChart(container, points, series, options = {}) {
 }
 /* Nome legível da execução (operations.py grava display_name/display_detail; runs/nomes.json personaliza). */
 const runName = run => run ? (run.display_name || NAMING.run(run.id)) : '';
+// Pasta do dataset de uma comparação ("data/pilot/ceasa_v8_piloto_s42/dataset.yaml" → "ceasa_v8_piloto_s42"); sem pasta, o nome do arquivo.
+const datasetFolder = path => { const parts = String(path).replace(/\\/g, '/').split('/').filter(Boolean); const folder = parts.length > 1 ? parts[parts.length - 2] : (parts[0] || '').replace(/\.ya?ml$/, ''); return folder || String(path) };
 const runById = id => OPS.runs.find(run => run.id === id) || { id };
 const runLabel = id => runName(runById(id));
 // Pesos: "Treino Piloto 56038EB9 · melhor época" (nome personalizado da execução, se houver) ou "Modelo Base YOLO26l".
@@ -1173,7 +1175,7 @@ function renderCompare() {
       return el('td', { class: 'num' }, el('div', {}, `Recall ${pct(recall)}`, el('small', { class: 'muted' }, ` · ${value.found} de ${value.truth} caixas encontradas`)), el('div', {}, `Precisão ${pct(precision)}`, el('small', { class: 'muted' }, ` · ${value.correct} de ${value.suggestions} sugestões certas`)))
     })));
   $('compareTable').replaceChildren(el('table', {}, el('thead', {}, head), el('tbody', {}, ...rows)),
-    el('p', { class: 'muted small-text', style: 'padding:8px 12px' }, `${comparison.dataset ? NAMING.dataset(String(comparison.dataset).replace(/\\/g, '/').split('/').filter(part => part && !part.endsWith('.yaml')).pop()) : 'Dataset —'} · confiança mínima ${pct(comparison.conf)} · uma sugestão conta como certa com sobreposição (IoU) ≥ ${comparison.iou_match}.`))
+    el('p', { class: 'muted small-text', style: 'padding:8px 12px' }, `${comparison.dataset ? NAMING.dataset(datasetFolder(comparison.dataset)) : 'Dataset —'} · confiança mínima ${pct(comparison.conf)} · uma sugestão conta como certa com sobreposição (IoU) ≥ ${comparison.iou_match}.`))
 }
 function renderCoverage() {
   const run = OPS.runs.find(value => value.id === $('coverageRun').value);

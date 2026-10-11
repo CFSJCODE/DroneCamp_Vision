@@ -52,8 +52,8 @@ def short_hash(value: str) -> str:
 
 
 def _is_hash(token: str) -> bool:
-    """Trecho hexadecimal de 8+ caracteres com pelo menos um dígito (``ff34e226416c``)."""
-    return len(token) >= 8 and re.fullmatch(r"[0-9a-f]+", token) is not None and re.search(r"\d", token) is not None
+    """Trecho hexadecimal de 8+ caracteres (``ff34e226416c``, ``deadbeef``); palavras reais raramente são só a–f."""
+    return len(token) >= 8 and re.fullmatch(r"[0-9a-f]+", token) is not None
 
 
 def _word(token: str, first: bool) -> str:
