@@ -1,0 +1,31 @@
+{
+  "valid": true,
+  "errors": [],
+  "warnings": [],
+  "counts": {
+    "train": {
+      "images": 30,
+      "labels": 30,
+      "objects": 233,
+      "negative_images": 1
+    },
+    "val": {
+      "images": 7,
+      "labels": 7,
+      "objects": 40,
+      "negative_images": 1
+    },
+    "test": {
+      "images": 9,
+      "labels": 9,
+      "objects": 33,
+      "negative_images": 0
+    },
+    "total": {
+      "images": 46,
+      "labels": 46,
+      "objects": 306,
+      "negative_images": 2
+    }
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "_comment": "Apoio de um modelo de visão e linguagem (VLM) gratuito pelo OpenRouter (vlm_assist.py). A chave NUNCA fica aqui: variável de ambiente OPENROUTER_API_KEY ou arquivo .env ao lado deste configs/ (ignorado pelo git). 'model' pode ser o roteador openrouter/free (sorteia um modelo gratuito com suporte a imagem) ou um slug fixo listado por `list-free-models`. O VLM só descreve o que está visível no recorte; classe, gravidade e recomendações continuam pendentes de revisão humana.",
+  "schema_version": 1,
+  "provider": "openrouter",
+  "base_url": "https://openrouter.ai/api/v1",
+  "model": "openrouter/free",
+  "timeout_seconds": 90,
+  "pause_seconds": 1.0,
+  "max_output_tokens": 400,
+  "temperature": 0.0,
+  "crop_margin": 0.3,
+  "max_crop_side": 768,
+  "min_crop_side": 96,
+  "max_boxes_per_image": 20,
+  "app_title": "DroneCamp Vision"
+}

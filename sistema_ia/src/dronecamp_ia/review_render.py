@@ -66,11 +66,38 @@ def build_page(payload: dict, operations: dict | None) -> str:
     disco, a página mostra o estado do momento em que foi gerada; pelo servidor
     local (``platform``) ela consulta o estado atual a cada poucos segundos.
     """
-    template = (Path(__file__).parent / "review_templates/index.html").read_text(encoding="utf-8")
+    templates = Path(__file__).parent / "review_templates"
+    template = (templates / "index.html").read_text(encoding="utf-8")
     data = {**payload, "operations": operations}
     # JSON embutido evita fetch de arquivos locais e fecha a possibilidade de </script> nos textos.
     serialized = json.dumps(data, ensure_ascii=False, allow_nan=False).replace("<", "\\u003c")
-    return template.replace("__REVIEW_DATA__", serialized)
+    # Tema e lógica ficam em arquivos próprios (platform.css/platform.js) e são embutidos
+    # aqui, então a página continua sendo um único HTML que abre do disco. O JS não pode
+    # conter "</script>" (fecharia a tag); o CSS, "</style>".
+    css = (templates / "platform.css").read_text(encoding="utf-8")
+    script = (templates / "platform.js").read_text(encoding="utf-8")
+    if "</style" in css.lower() or "</script" in script.lower():
+        raise ValueError("platform.css/platform.js não podem conter a tag de fechamento que os embute.")
+    head, marker, tail = template.partition("__PLATFORM_JS__")
+    if not marker or script.count("__REVIEW_DATA__") != 1:
+        raise ValueError("Template sem __PLATFORM_JS__ ou platform.js sem um único __REVIEW_DATA__.")
+    page = head + script + tail
+    # Os dados entram por último: o marcador fica dentro do JS (``const DATA = __REVIEW_DATA__``).
+    return page.replace("__PLATFORM_CSS__", css).replace("__REVIEW_DATA__", serialized)
+
+
+def empty_page_payload(config: ProjectConfig) -> dict:
+    """Dados de uma página sem inspeção aberta (espaço de trabalho vazio no servidor local).
+
+    Mesmas chaves de ``browser_data.json``, com a lista de fotos vazia: a página
+    mostra as classes, o painel de operações e a importação de mídia.
+    """
+    taxonomy = load_taxonomy(config.taxonomy_path)
+    detection_names(taxonomy)  # valida os IDs consecutivos como no render
+    labels = {item["id"]: item["label"] for item in taxonomy["classes"] if item["phase"] == 1}
+    return {"registry_sha256": "", "version": "", "images": [], "taxonomy_recheck_pending": False, "classes_requiring_review": [],
+            "classes": [{"id": key, "label": value, "color": COLORS[key % len(COLORS)]} for key, value in labels.items()],
+            "duplicate_iou": config.pilot.get("duplicate_iou"), "suggestions": None}
 
 
 def load_page_payload(registry_path: Path) -> dict:

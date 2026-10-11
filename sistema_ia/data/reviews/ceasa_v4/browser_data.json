@@ -2772,62 +2772,62 @@
     {
       "id": 0,
       "label": "Telha quebrada",
-      "color": "#c73838"
+      "color": "#FF5C70"
     },
     {
       "id": 1,
       "label": "Telha ausente",
-      "color": "#a23490"
+      "color": "#E63950"
     },
     {
       "id": 2,
       "label": "Resíduos sobre telhas",
-      "color": "#b36c00"
+      "color": "#FF9F43"
     },
     {
       "id": 3,
       "label": "Reparo em telha",
-      "color": "#265bc4"
+      "color": "#42B8E8"
     },
     {
       "id": 4,
       "label": "Rufo ausente",
-      "color": "#7646bb"
+      "color": "#9B6DF2"
     },
     {
       "id": 5,
       "label": "Rufo quebrado",
-      "color": "#c34c18"
+      "color": "#EC5DAA"
     },
     {
       "id": 6,
       "label": "Resíduos em calha",
-      "color": "#087d78"
+      "color": "#52C79A"
     },
     {
       "id": 7,
       "label": "Vegetação em calha",
-      "color": "#397821"
+      "color": "#2BBE72"
     },
     {
       "id": 8,
       "label": "Pedaço de telha",
-      "color": "#5b4b99"
+      "color": "#F4C542"
     },
     {
       "id": 9,
       "label": "Rufo deslocado/desalinhado",
-      "color": "#166d91"
+      "color": "#56D1E8"
     },
     {
       "id": 10,
       "label": "Pedaço de telha sobreposto à telha",
-      "color": "#8b5018"
+      "color": "#FF7A1A"
     },
     {
       "id": 11,
       "label": "Elemento de fixação de telha solto/frouxo",
-      "color": "#405ac0"
+      "color": "#F5D547"
     }
   ]
 }
