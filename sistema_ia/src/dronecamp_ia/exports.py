@@ -15,7 +15,8 @@ O que faz:
   ``fotos.csv``, ``manifesto.json`` (hashes) e ``LEIA-ME.txt``.
 - ``build_report``: pasta com ``laudo.html`` (autossuficiente, pronto para
   imprimir em A4), ``laudo.json``, ``laudo.pdf`` (se ``reportlab`` estiver
-  instalado: extra ``reports``) e ``manifesto.json``.
+  instalado: extra ``reports``) e ``manifesto.json``. Estrutura ABNT, normas e
+  texto fixo do laudo ficam em ``laudo_abnt.py``; aqui só os dados.
 - ``occurrences_csv``: o texto do ``ocorrencias.csv`` sem gerar o ZIP.
 
 Toda saída é nova, dentro de ``output_dir``; registros, fotos e revisões não
@@ -23,8 +24,8 @@ são tocados. Fotos são conferidas pelo SHA-256 antes de qualquer desenho.
 Gravidade, diagnóstico e recomendação ficam explicitamente em branco
 ("pendente de validação técnica") para o responsável técnico preencher.
 
-Quando mexer: colunas dos CSV, texto fixo do laudo (metodologia, avisos),
-aparência das evidências ou campos do ``laudo.json``.
+Quando mexer: colunas dos CSV, aparência das evidências ou campos do
+``laudo.json`` (texto e formatação do laudo: ``laudo_abnt.py``).
 """
 
 from __future__ import annotations
@@ -34,9 +35,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from hashlib import sha256
 from pathlib import Path
-import base64
 import csv
-import html
 import io
 import json
 import math
@@ -48,13 +47,13 @@ from PIL import Image, ImageDraw, ImageFont
 
 from .config import ProjectConfig, detection_names, load_taxonomy
 from .io import file_hash, resolve_local_path, write_json
+from . import laudo_abnt
+# Texto dos campos do responsável técnico e limitações do método: fonte única em laudo_abnt.
+from .laudo_abnt import LIMITATIONS as METHODOLOGY, PENDING_TEXT, PRELIMINARY_TEXT
 from .review_data import IMAGE_STATUSES, REVIEW_SCHEMA, review_image_size, validate_boxes
 
 # Decisão exportada pela página pode estar "pending" (rascunho sem status escolhido).
 DECISION_STATUSES = IMAGE_STATUSES | {"pending"}
-# Texto fixo dos campos que só o responsável técnico pode preencher.
-PENDING_TEXT = "pendente de validação técnica"
-PRELIMINARY_TEXT = "preliminar, sujeito a validação por responsável técnico"
 # Cor do texto nas placas das caixas (contraste ≥ 4,5:1 com todas as cores de classe).
 PLATE_TEXT = "#08111F"
 # Colunas do ocorrencias.csv (uma linha por caixa) e do fotos.csv (uma linha por foto).
@@ -66,23 +65,6 @@ STATUS_LABELS = {"positive": "positiva", "negative": "negativa", "ambiguous": "a
                  "pending": "pendente (rascunho sem decisão)"}
 SOURCE_LABELS = {"revisao_humana": "revisão humana", "registro": "registro (sem decisão humana nesta exportação)"}
 ONLY_CHOICES = ("all", "decided", "positive")
-
-# Texto fixo de metodologia e limitações (laudo e LEIA-ME). Nada aqui é inferido dos dados.
-METHODOLOGY = [
-    "As fotografias foram congeladas por hash SHA-256 no registro de revisão; cada evidência deste documento foi "
-    "gerada a partir do arquivo original conferido contra esse hash.",
-    "As caixas resultam da revisão humana na plataforma local (origem \"revisão humana\") ou do registro de propostas "
-    "(origem \"registro\"). Caixas de origem \"registro\" não contam com decisão humana nesta exportação.",
-    "As sugestões automáticas vêm de um modelo piloto não validado. Não constituem ocorrências: aparecem somente no "
-    "Anexo B e aguardam decisão humana.",
-    "Não houve medição física, avaliação hidráulica, estrutural ou de estanqueidade. Nenhuma gravidade, causa, área, "
-    "extensão em metros ou diagnóstico foi inferida automaticamente; esses campos ficam em branco para o responsável "
-    "técnico.",
-    "Caixas em fotografias semelhantes (mesma cena, recortes ou ângulos próximos) podem registrar o mesmo defeito mais "
-    "de uma vez. As contagens referem-se a caixas por foto, não a defeitos físicos únicos.",
-    "Este documento é preliminar e não substitui laudo técnico assinado por profissional habilitado.",
-]
-
 
 # ---------------------------------------------------------------------------
 # Desenho das evidências (mesmo estilo de review_render e da página).
@@ -597,274 +579,38 @@ def occurrences_csv(config: ProjectConfig, registry_path: Path, decisions: dict 
 # Laudo técnico preliminar (HTML / JSON / PDF).
 # ---------------------------------------------------------------------------
 
-def _esc(value) -> str:
-    return html.escape("" if value is None else str(value), quote=True)
-
-
-def _box_rows_html(boxes: list[dict], labels: dict[int, str]) -> str:
-    rows = []
-    for number, box in enumerate(boxes, start=1):
-        x1, y1, x2, y2 = (_number(value) for value in box["bbox_xyxy"])
-        rows.append(f"<tr><td>{number}</td><td>{_esc(labels.get(box['class_id']))}</td>"
-                    f"<td>{x1}, {y1} – {x2}, {y2}</td><td>{_esc(box.get('note', ''))}</td></tr>")
-    return "".join(rows)
-
-
-def _report_html(report: dict, evidences: dict[int, bytes], labels: dict[int, str]) -> str:
-    header, summary = report["header"], report["summary"]
-    style = """
-:root { color-scheme: light; }
-@page { size: A4; margin: 16mm 14mm; }
-body { margin: 0; background: #fff; color: #111827; font: 11pt/1.45 "Segoe UI", Arial, Helvetica, sans-serif; }
-main { max-width: 190mm; margin: 0 auto; padding: 10mm 8mm; }
-h1 { font-size: 20pt; margin: 0 0 4px; }
-h2 { font-size: 14pt; margin: 28px 0 10px; border-bottom: 2px solid #CBD5E1; padding-bottom: 4px; break-before: page; page-break-before: always; }
-h2.primeira { break-before: auto; page-break-before: auto; margin-top: 18px; }
-h3 { font-size: 11.5pt; margin: 0 0 6px; }
-.banner { border: 2px solid #B45309; background: #FFF7ED; color: #7C2D12; padding: 8px 12px; font-weight: 600; margin: 10px 0 16px; }
-table { border-collapse: collapse; width: 100%; font-size: 9.5pt; margin: 6px 0 12px; }
-th, td { border: 1px solid #CBD5E1; padding: 4px 6px; text-align: left; vertical-align: top; }
-th { background: #F1F5F9; font-weight: 600; }
-td.pendente, span.pendente { color: #92400E; font-style: italic; }
-.foto { border: 1px solid #E2E8F0; border-radius: 6px; padding: 10px 12px; margin: 0 0 16px; break-inside: avoid; page-break-inside: avoid; }
-figure { margin: 6px 0 8px; }
-img.evidencia { display: block; max-width: 100%; height: auto; border: 1px solid #CBD5E1; }
-figcaption { font-size: 9pt; color: #475569; margin-top: 4px; }
-.mono { font-family: Consolas, "Courier New", monospace; font-size: 8.5pt; word-break: break-all; }
-ol.metodologia li { margin-bottom: 6px; }
-footer { margin-top: 24px; font-size: 8.5pt; color: #64748B; border-top: 1px solid #E2E8F0; padding-top: 6px; }
-"""
-    model = header.get("suggestion_model") or {}
-    if model:
-        model_text = f"{model.get('model_label') or 'modelo'} · pesos SHA-256 {model.get('weights_sha256') or '—'}"
-        if model.get("conf") is not None:
-            model_text += f" · confiança mínima {model['conf']}"
-    else:
-        model_text = "nenhum arquivo de sugestões nesta revisão"
-    # Pares (rótulo, HTML já escapado) da tabela de identificação.
-    identification = [("Cliente", _esc(header["client"] or "—")), ("Local / edificação", _esc(header["site"] or "—")),
-                      ("Grupos de edificação no registro", _esc(", ".join(header["buildings"]) or "—")),
-                      ("Data de emissão", _esc(header["issued_at"])), ("Revisor(es)", _esc(", ".join(header["reviewers"]) or "—")),
-                      ("Inspetor / responsável em campo", _esc(header["inspector"] or "—")),
-                      ("Versão da revisão", _esc(header["registry_version"])),
-                      ("SHA-256 do registro", f'<span class="mono">{_esc(header["registry_sha256"])}</span>'),
-                      ("Taxonomia", f'{_esc(header["taxonomy_version"] or "—")} · <span class="mono">{_esc(header["taxonomy_sha256"])}</span>'),
-                      ("Modelo das sugestões automáticas", _esc(model_text)), ("Situação do documento", _esc(PRELIMINARY_TEXT))]
-    if header["notes"]:
-        identification.append(("Observações", _esc(header["notes"])))
-    parts = [f'<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">'
-             f"<title>{_esc(header['title'])}</title><style>{style}</style></head><body><main>",
-             f'<section id="capa"><h1>{_esc(header["title"])}</h1>',
-             f'<div class="banner">Documento {_esc(PRELIMINARY_TEXT)}. As caixas são evidências visuais revisáveis; '
-             f"gravidade, diagnóstico e recomendação não foram inferidos e ficam em branco.</div><table>",
-             "".join(f'<tr><th style="width:34%">{_esc(key)}</th><td>{value}</td></tr>' for key, value in identification),
-             "</table></section>",
-             '<section id="resumo"><h2>1. Resumo</h2><table><tr><th>Fotos no registro</th><th>Com ocorrências confirmadas (positivas)</th>'
-             "<th>Negativas</th><th>Ambíguas</th><th>Excluídas</th><th>Pendentes (rascunho)</th><th>Com decisão humana</th></tr>",
-             f"<tr><td>{summary['images']}</td><td>{summary['positive']}</td><td>{summary['negative']}</td><td>{summary['ambiguous']}</td>"
-             f"<td>{summary['excluded']}</td><td>{summary['pending']}</td><td>{summary['decided_by_human']}</td></tr></table>",
-             "<h3>Ocorrências confirmadas por classe</h3><table><tr><th>Classe</th><th>Ocorrências (caixas)</th><th>Fotos</th>"
-             "<th>Critério de identificação</th><th>Gravidade de referência da taxonomia (não aplicada automaticamente)</th></tr>"]
-    for row in summary["by_class"]:
-        parts.append(f"<tr><td>{_esc(row['label'])}</td><td>{row['boxes']}</td><td>{row['images']}</td><td>{_esc(row['criterion'] or '—')}</td>"
-                     f"<td>{_esc(row['reference_severity'] or '—')}</td></tr>")
-    parts.append(f"<tr><th>Total</th><th>{summary['confirmed_boxes']}</th><th>{summary['positive']}</th><th colspan=\"2\">"
-                 "Contagem de caixas por foto; fotos semelhantes podem repetir o mesmo defeito.</th></tr></table></section>")
-    parts.append('<section id="ocorrencias"><h2>2. Ocorrências por foto</h2>'
-                 f'<p>Cada foto traz a evidência demarcada e três campos reservados ao responsável técnico, preenchidos como "{_esc(PENDING_TEXT)}".</p>')
-    shown = [image for image in report["images"] if image["included_in_report"]]
-    if not shown:
-        parts.append("<p>Nenhuma foto com ocorrências confirmadas nesta revisão.</p>")
-    for image in shown:
-        number = image["numero_foto"]
-        encoded = base64.b64encode(evidences[number]).decode("ascii")
-        boxes = [box for box in report["occurrences"] + report["draft_boxes"] if box["numero_foto"] == number]
-        box_rows = _box_rows_html([{"class_id": box["class_id"], "bbox_xyxy": box["bbox_xyxy"], "note": box["nota"]} for box in boxes], labels)
-        parts.append(f'<article class="foto" id="foto-{number:03d}"><h3>Foto {number:03d} — {_esc(image["filename"])}</h3>'
-                     f'<figure><img class="evidencia" src="data:image/jpeg;base64,{encoded}" alt="Evidência da foto {number:03d} com {len(boxes)} caixa(s)">'
-                     f'<figcaption>{_esc(image["filename"])} · {image["width"]} × {image["height"]} px · SHA-256 <span class="mono">{_esc(image["image_sha256"])}</span></figcaption></figure>'
-                     f'<table><tr><th style="width:26%">Grupo / cena</th><td>{_esc(image["building_group"] or "—")} / {_esc(image["scene_group"] or "—")}</td></tr>'
-                     f'<tr><th>Páginas de origem</th><td>{_esc(", ".join(map(str, image["pages"])) or "—")}</td></tr>'
-                     f'<tr><th>Status</th><td>{_esc(image["status_label"])}{" · revisão integral confirmada" if image["confirmed_complete"] else ""}</td></tr>'
-                     f'<tr><th>Origem das caixas</th><td>{_esc(image["source_label"])}</td></tr>'
-                     f'<tr><th>Notas da revisão</th><td>{_esc(image["notes"] or "—")}</td></tr></table>'
-                     f'<table><tr><th>Nº</th><th>Classe</th><th>Coordenadas (x1, y1 – x2, y2)</th><th>Nota</th></tr>'
-                     f'{box_rows or "<tr><td colspan=4>Sem caixas.</td></tr>"}</table>'
-                     f'<table class="avaliacao"><tr><th style="width:26%">Gravidade</th><td class="pendente">{_esc(PENDING_TEXT)}</td></tr>'
-                     f'<tr><th>Diagnóstico</th><td class="pendente">{_esc(PENDING_TEXT)}</td></tr>'
-                     f'<tr><th>Recomendação</th><td class="pendente">{_esc(PENDING_TEXT)}</td></tr></table></article>')
-    parts.append("</section>")
-    others = [image for image in report["images"] if image["status"] != "positive"]
-    parts.append('<section id="anexo-a"><h2>Anexo A — Fotos sem ocorrências confirmadas, ambíguas, excluídas ou pendentes</h2>')
-    if others:
-        parts.append("<table><tr><th>Nº</th><th>Arquivo</th><th>Status</th><th>Origem</th><th>Caixas não confirmadas</th><th>Notas</th></tr>")
-        parts.extend(f"<tr><td>{image['numero_foto']:03d}</td><td>{_esc(image['filename'])}</td><td>{_esc(image['status_label'])}</td>"
-                     f"<td>{_esc(image['source_label'])}</td><td>{image['boxes']}</td><td>{_esc(image['notes'] or '—')}</td></tr>" for image in others)
-        parts.append("</table>")
-    else:
-        parts.append("<p>Todas as fotos do registro têm ocorrências confirmadas.</p>")
-    parts.append("</section>")
-    pending = report["pending_suggestions"]
-    parts.append('<section id="anexo-b"><h2>Anexo B — Sugestões automáticas pendentes</h2>'
-                 f"<p>{_esc(pending['note'])}</p>")
-    if pending["by_class"]:
-        parts.append("<table><tr><th>Classe</th><th>Sugestões pendentes</th><th>Fotos</th></tr>")
-        parts.extend(f"<tr><td>{_esc(row['label'])}</td><td>{row['count']}</td><td>{row['images']}</td></tr>" for row in pending["by_class"])
-        parts.append(f"<tr><th>Total</th><th>{pending['total']}</th><th></th></tr></table>")
-    else:
-        parts.append("<p>Nenhuma sugestão automática pendente nesta revisão.</p>")
-    parts.append("</section>")
-    parts.append('<section id="metodologia"><h2>Metodologia e limitações</h2><ol class="metodologia">'
-                 + "".join(f"<li>{_esc(text)}</li>" for text in METHODOLOGY) + "</ol></section>")
-    parts.append(f"<footer>Gerado em {_esc(report['provenance']['generated_at'])} por DroneCamp Vision "
-                 f"({_esc(report['provenance']['generator'])}). Documento {_esc(PRELIMINARY_TEXT)}.</footer></main></body></html>")
-    return "".join(parts)
-
-
-def _write_pdf(path: Path, report: dict, evidences: dict[int, bytes], labels: dict[int, str]) -> None:
-    """PDF com reportlab (platypus): capa, resumo, ocorrências por foto, anexos e metodologia.
-
-    Fontes padrão (Helvetica, codificação WinAnsi): acentos do pt-BR funcionam.
-    """
-    from reportlab.lib import colors as rl_colors
-    from reportlab.lib.pagesizes import A4
-    from reportlab.lib.styles import ParagraphStyle
-    from reportlab.lib.units import mm
-    from reportlab.lib.utils import ImageReader
-    from reportlab.platypus import Image as RLImage, KeepTogether, PageBreak, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
-
-    base = ParagraphStyle("base", fontName="Helvetica", fontSize=9.5, leading=12.5)
-    cell = ParagraphStyle("cell", parent=base, fontSize=8, leading=10)
-    cell_bold = ParagraphStyle("cell_bold", parent=cell, fontName="Helvetica-Bold")
-    pending_style = ParagraphStyle("pending", parent=cell, fontName="Helvetica-Oblique", textColor=rl_colors.HexColor("#92400E"))
-    title_style = ParagraphStyle("title", parent=base, fontName="Helvetica-Bold", fontSize=18, leading=22, spaceAfter=6)
-    h2 = ParagraphStyle("h2", parent=base, fontName="Helvetica-Bold", fontSize=13, leading=16, spaceBefore=10, spaceAfter=6)
-    h3 = ParagraphStyle("h3", parent=base, fontName="Helvetica-Bold", fontSize=10.5, leading=13, spaceBefore=6, spaceAfter=4)
-    banner = ParagraphStyle("banner", parent=base, fontName="Helvetica-Bold", textColor=rl_colors.HexColor("#7C2D12"),
-                            backColor=rl_colors.HexColor("#FFF7ED"), borderColor=rl_colors.HexColor("#B45309"), borderWidth=1,
-                            borderPadding=6, spaceBefore=8, spaceAfter=14)
-
-    def p(text, style=base):
-        return Paragraph(html.escape("" if text is None else str(text)), style)
-
-    grid = TableStyle([("GRID", (0, 0), (-1, -1), 0.5, rl_colors.HexColor("#CBD5E1")), ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                       ("BACKGROUND", (0, 0), (-1, 0), rl_colors.HexColor("#F1F5F9"))])
-    key_grid = TableStyle([("GRID", (0, 0), (-1, -1), 0.5, rl_colors.HexColor("#CBD5E1")), ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                           ("BACKGROUND", (0, 0), (0, -1), rl_colors.HexColor("#F1F5F9"))])
-
-    def table(rows, widths, style=grid, header=True):
-        data = [[p(value, cell_bold if header and index == 0 else cell) if not isinstance(value, Paragraph) else value
-                 for value in row] for index, row in enumerate(rows)]
-        return Table(data, colWidths=widths, repeatRows=1 if header else 0, style=style)
-
-    doc = SimpleDocTemplate(str(path), pagesize=A4, leftMargin=15 * mm, rightMargin=15 * mm, topMargin=16 * mm, bottomMargin=16 * mm,
-                            title=report["header"]["title"], author="DroneCamp Vision", subject=PRELIMINARY_TEXT)
-    width = doc.width
-    header, summary = report["header"], report["summary"]
-    model = header.get("suggestion_model") or {}
-    model_text = (f"{model.get('model_label') or 'modelo'} · pesos SHA-256 {model.get('weights_sha256') or '—'}") if model else "nenhum arquivo de sugestões nesta revisão"
-    story = [p(header["title"], title_style),
-             p(f"Documento {PRELIMINARY_TEXT}. As caixas são evidências visuais revisáveis; gravidade, diagnóstico e recomendação "
-               "não foram inferidos e ficam em branco.", banner)]
-    identification = [("Cliente", header["client"] or "—"), ("Local / edificação", header["site"] or "—"),
-                      ("Grupos de edificação no registro", ", ".join(header["buildings"]) or "—"), ("Data de emissão", header["issued_at"]),
-                      ("Revisor(es)", ", ".join(header["reviewers"]) or "—"), ("Inspetor / responsável em campo", header["inspector"] or "—"),
-                      ("Versão da revisão", header["registry_version"]), ("SHA-256 do registro", header["registry_sha256"]),
-                      ("Taxonomia", f"{header['taxonomy_version'] or '—'} · {header['taxonomy_sha256']}"),
-                      ("Modelo das sugestões automáticas", model_text), ("Situação do documento", PRELIMINARY_TEXT)]
-    if header["notes"]:
-        identification.append(("Observações", header["notes"]))
-    story.append(table([[p(key, cell_bold), p(value, cell)] for key, value in identification], [width * 0.32, width * 0.68], key_grid, header=False))
-    story += [PageBreak(), p("1. Resumo", h2),
-              table([["Fotos", "Positivas", "Negativas", "Ambíguas", "Excluídas", "Pendentes", "Com decisão humana"],
-                     [summary["images"], summary["positive"], summary["negative"], summary["ambiguous"], summary["excluded"], summary["pending"], summary["decided_by_human"]]],
-                    [width / 7] * 7),
-              Spacer(1, 6), p("Ocorrências confirmadas por classe", h3)]
-    class_rows = [["Classe", "Caixas", "Fotos", "Critério de identificação", "Gravidade de referência da taxonomia (não aplicada automaticamente)"]]
-    class_rows += [[row["label"], row["boxes"], row["images"], row["criterion"] or "—", row["reference_severity"] or "—"] for row in summary["by_class"]]
-    class_rows.append(["Total", summary["confirmed_boxes"], summary["positive"], "Contagem de caixas por foto; fotos semelhantes podem repetir o mesmo defeito.", ""])
-    story.append(table(class_rows, [width * 0.2, width * 0.08, width * 0.08, width * 0.38, width * 0.26]))
-    story += [PageBreak(), p("2. Ocorrências por foto", h2),
-              p(f'Cada foto traz a evidência demarcada e três campos reservados ao responsável técnico, preenchidos como "{PENDING_TEXT}".')]
-    shown = [image for image in report["images"] if image["included_in_report"]]
-    if not shown:
-        story.append(p("Nenhuma foto com ocorrências confirmadas nesta revisão."))
-    for image in shown:
-        number = image["numero_foto"]
-        data = evidences[number]
-        image_width, image_height = ImageReader(io.BytesIO(data)).getSize()
-        ratio = min(width / image_width, (110 * mm) / image_height, 1.0)
-        boxes = [box for box in report["occurrences"] + report["draft_boxes"] if box["numero_foto"] == number]
-        box_rows = [["Nº", "Classe", "Coordenadas (x1, y1 – x2, y2)", "Nota"]]
-        for index, box in enumerate(boxes, start=1):
-            x1, y1, x2, y2 = (_number(value) for value in box["bbox_xyxy"])
-            box_rows.append([index, labels.get(box["class_id"], ""), f"{x1}, {y1} – {x2}, {y2}", box["nota"]])
-        block = [p(f"Foto {number:03d} — {image['filename']}", h3),
-                 RLImage(io.BytesIO(data), width=image_width * ratio, height=image_height * ratio),
-                 p(f"{image['filename']} · {image['width']} × {image['height']} px · SHA-256 {image['image_sha256']}", cell), Spacer(1, 4),
-                 table([[p("Grupo / cena", cell_bold), p(f"{image['building_group'] or '—'} / {image['scene_group'] or '—'}", cell)],
-                        [p("Páginas de origem", cell_bold), p(", ".join(map(str, image["pages"])) or "—", cell)],
-                        [p("Status", cell_bold), p(image["status_label"] + (" · revisão integral confirmada" if image["confirmed_complete"] else ""), cell)],
-                        [p("Origem das caixas", cell_bold), p(image["source_label"], cell)],
-                        [p("Notas da revisão", cell_bold), p(image["notes"] or "—", cell)]], [width * 0.26, width * 0.74], key_grid, header=False),
-                 Spacer(1, 4),
-                 table(box_rows if len(box_rows) > 1 else box_rows + [["", "Sem caixas.", "", ""]], [width * 0.07, width * 0.3, width * 0.3, width * 0.33]),
-                 Spacer(1, 4),
-                 table([[p("Gravidade", cell_bold), p(PENDING_TEXT, pending_style)], [p("Diagnóstico", cell_bold), p(PENDING_TEXT, pending_style)],
-                        [p("Recomendação", cell_bold), p(PENDING_TEXT, pending_style)]], [width * 0.26, width * 0.74], key_grid, header=False),
-                 Spacer(1, 10)]
-        story.append(KeepTogether(block[:3]))
-        story.extend(block[3:])
-    story += [PageBreak(), p("Anexo A — Fotos sem ocorrências confirmadas, ambíguas, excluídas ou pendentes", h2)]
-    others = [image for image in report["images"] if image["status"] != "positive"]
-    if others:
-        rows = [["Nº", "Arquivo", "Status", "Origem", "Caixas não confirmadas", "Notas"]]
-        rows += [[f"{image['numero_foto']:03d}", image["filename"], image["status_label"], image["source_label"], image["boxes"], image["notes"] or "—"] for image in others]
-        story.append(table(rows, [width * 0.06, width * 0.2, width * 0.14, width * 0.2, width * 0.1, width * 0.3]))
-    else:
-        story.append(p("Todas as fotos do registro têm ocorrências confirmadas."))
-    pending = report["pending_suggestions"]
-    story += [Spacer(1, 10), p("Anexo B — Sugestões automáticas pendentes", h2), p(pending["note"])]
-    if pending["by_class"]:
-        rows = [["Classe", "Sugestões pendentes", "Fotos"]] + [[row["label"], row["count"], row["images"]] for row in pending["by_class"]]
-        rows.append(["Total", pending["total"], ""])
-        story.append(table(rows, [width * 0.5, width * 0.25, width * 0.25]))
-    else:
-        story.append(p("Nenhuma sugestão automática pendente nesta revisão."))
-    story += [Spacer(1, 10), p("Metodologia e limitações", h2)]
-    story += [p(f"{index}. {text}") for index, text in enumerate(METHODOLOGY, start=1)]
-    story.append(Spacer(1, 8))
-    story.append(p(f"Gerado em {report['provenance']['generated_at']} por DroneCamp Vision ({report['provenance']['generator']}).", cell))
-
-    def footer(canvas, document):
-        canvas.saveState()
-        canvas.setFont("Helvetica", 7.5)
-        canvas.drawString(document.leftMargin, 9 * mm, f"{header['title']} — {PRELIMINARY_TEXT}")
-        canvas.drawRightString(A4[0] - document.rightMargin, 9 * mm, f"Página {document.page}")
-        canvas.restoreState()
-
-    doc.build(story, onFirstPage=footer, onLaterPages=footer)
-
-
 def build_report(config: ProjectConfig, registry_path: Path, output_dir: Path, *, decisions: dict | None = None,
                  suggestions: dict | None = None, reviewer: str = "", title: str | None = None, client: str = "",
-                 site: str = "", inspector: str = "", notes: str = "", pdf: bool = True, max_side: int = 1400,
-                 only_positive_images: bool = True) -> dict:
+                 site: str = "", inspector: str = "", notes: str = "", details: dict | None = None, pdf: bool = True,
+                 max_side: int = 1400, only_positive_images: bool = True) -> dict:
     """Pasta ``<stamp UTC>_laudo_<versão>/`` com ``laudo.html``, ``laudo.json``, ``laudo.pdf`` e ``manifesto.json``.
+
+    O laudo segue a estrutura ABNT de ``laudo_abnt`` (capa, folha de rosto,
+    sumário, seções numeradas, referências e anexos) e a lista de verificação do
+    laudo CEASA: um item por categoria com ocorrência confirmada, com figuras
+    numeradas e Conformidade / Risco / Diagnóstico / Recomendação / Prioridade
+    sempre "pendente de validação técnica".
+
+    ``details`` (opcional): dados do imóvel e da inspeção informados pelo
+    usuário (chaves em ``laudo_abnt.DETAIL_FIELDS``: data da inspeção, tipo de
+    cobertura, área, equipamento, responsável técnico, ART...). O que não for
+    informado sai como "não informado"; nada é estimado. ``client`` vira o
+    solicitante e ``inspector`` o responsável técnico quando ``details`` não os traz.
 
     O HTML é autossuficiente (CSS inline, evidências em base64 reduzidas a
     ``max_side``, pronto para imprimir em A4). O PDF só é gerado com
     ``pdf=True`` e ``reportlab`` instalado (``pip install dronecamp-ia[reports]``);
     caso contrário ``pdf`` volta None e ``pdf_reason`` explica.
-    ``only_positive_images=False`` inclui evidência de todas as fotos no corpo.
+    ``only_positive_images=False`` inclui as figuras das demais fotos no Anexo A.
 
-    Nada de gravidade, causa, medida ou diagnóstico é inferido: esses campos
-    saem como "pendente de validação técnica". Devolve ``{"directory", "html",
-    "pdf", "pdf_reason", "json", "manifest", "images" (fotos com evidência no
-    corpo), "occurrences" (caixas confirmadas), "pending_suggestions"}``.
+    Descrições do VLM (``ai_notes.json`` ao lado do registro, desta versão)
+    entram como subsídio pendente. Devolve ``{"directory", "html", "pdf",
+    "pdf_reason", "json", "manifest", "images" (fotos com figura), "occurrences"
+    (caixas confirmadas), "pending_suggestions"}``.
     """
     if type(max_side) is not int or max_side < 16:
         raise ValueError("max_side deve ser um inteiro ≥ 16.")
+    details = laudo_abnt.normalize_details(details, client=client, inspector=inspector)
     context = _load_context(config, registry_path, decisions, suggestions)
     generated = _utc_now()
     generated_at = generated.isoformat(timespec="seconds")
@@ -874,32 +620,96 @@ def build_report(config: ProjectConfig, registry_path: Path, output_dir: Path, *
     directory.mkdir()
     try:
         return _build_report_files(config, context, directory, generated_at, reviewer=reviewer, title=title, client=client,
-                                   site=site, inspector=inspector, notes=notes, pdf=pdf, max_side=max_side,
+                                   site=site, inspector=inspector, notes=notes, details=details, pdf=pdf, max_side=max_side,
                                    only_positive_images=only_positive_images)
     except BaseException:
         shutil.rmtree(directory, ignore_errors=True)  # Nada de laudo pela metade.
         raise
 
 
+def _report_items(context: _Context, occurrences: list[dict], entries: list[dict], ai_notes: dict | None,
+                  included: set[int]) -> tuple[list[dict], list[dict], list[dict]]:
+    """Itens da seção 6 (um por categoria com ocorrência), categorias sem ocorrência e figuras numeradas.
+
+    Cada foto positiva vira uma figura, colocada no primeiro item (ordem da taxonomia) em que aparece; os
+    itens seguintes só a citam ("figure_refs"). Fotos incluídas sem ocorrência confirmada ficam no Anexo A.
+    """
+    figures: list[dict] = []
+    figure_of: dict[int, int] = {}
+    by_position = {entry["position"]: entry for entry in entries}
+    items, without = [], []
+
+    def add_figure(position: int, item_number: int | None) -> int:
+        entry = by_position[position]
+        image = entry["image"]
+        present = sorted({box["class_id"] for box in entry["boxes"]})
+        names = ", ".join(context.labels.get(class_id, f"classe {class_id}") for class_id in present) if entry["status"] == "positive" else ""
+        caption = f"{names} (fotografia {position:03d})" if names else f"Fotografia {position:03d} — {STATUS_LABELS[entry['status']]}"
+        # Origem neutra: o registro não guarda como a foto foi obtida (há revisões com imagens de referência).
+        source = (f"registro de revisão {context.version}; arquivo {image['filename']}, {image['width']} × {image['height']} px, "
+                  f"SHA-256 {image['image_sha256']}; demarcações: {SOURCE_LABELS[entry['source']]}")
+        figures.append({"number": len(figures) + 1, "numero_foto": position, "caption": caption, "source": source, "item": item_number})
+        figure_of[position] = len(figures)
+        return len(figures)
+
+    for category in context.classes:
+        confirmed = [box for box in occurrences if box["class_id"] == category["id"]]
+        question, model_item, conformity, recommendation = laudo_abnt.CHECKLIST.get(
+            category["slug"], (f"Há ocorrências de {category['label'].lower()}?", None, None, None))
+        if not confirmed:
+            without.append({"class_id": category["id"], "slug": category["slug"], "label": category["label"], "question": question})
+            continue
+        number = len(items) + 1
+        positions = sorted({box["numero_foto"] for box in confirmed})
+        new_figures = [add_figure(position, number) for position in positions if position not in figure_of and position in included]
+        refs = sorted(figure_of[position] for position in positions if position in figure_of)
+        figure_text = (f" (Figura {refs[0]})" if len(refs) == 1 else f" (Figuras {', '.join(map(str, refs))})") if refs else ""
+        statement = (f"Na revisão das fotografias foram confirmadas {len(confirmed)} demarcação(ões) de “{category['label']}” em "
+                     f"{len(positions)} fotografia(s){figure_text}. Critério de identificação adotado: "
+                     f"{category.get('criterion') or 'conforme taxonomia'}. Estes pontos podem vir a ser quantificados em campo; a "
+                     "contagem por fotografia pode repetir o mesmo elemento em imagens sobrepostas.")
+        # Notas da fotografia (acesso, observações da cena) antes das notas de cada caixa.
+        photo_notes = [f"fotografia {position:03d}: {by_position[position]['notes']}" for position in positions
+                       if by_position[position]["notes"]]
+        notes = list(dict.fromkeys(photo_notes + [box["nota"] for box in confirmed if box["nota"]]))[:8]
+        ai_rows = []
+        for box in confirmed:
+            note = laudo_abnt.match_ai_note(ai_notes, box["image_sha256"], {"class_id": box["class_id"], "bbox_xyxy": box["bbox_xyxy"]})
+            if note and len(ai_rows) < 6:
+                ai_rows.append({"figure": figure_of.get(box["numero_foto"]), "foto": box["numero_foto"], "box": box["caixa"],
+                                "text": str(note["description"])[:600], "model": note.get("model_used"),
+                                "class_guess": note.get("class_guess"), "status": "pendente"})
+        items.append({"number": number, "class_id": category["id"], "slug": category["slug"], "label": category["label"],
+                      "question": question, "boxes": len(confirmed), "images": len(positions), "figures": new_figures,
+                      "figure_refs": refs, "statement": statement, "notes": notes, "ai_support": ai_rows,
+                      "criterion": category.get("criterion", ""), "reference_severity": category.get("reference_severity"),
+                      "model_reference": {"item": model_item, "conformidade": conformity, "recomendacao": recommendation} if model_item else None,
+                      "conformidade": PENDING_TEXT, "risco": PENDING_TEXT, "diagnostico": PENDING_TEXT,
+                      "recomendacao": PENDING_TEXT, "prioridade": PENDING_TEXT})
+    for position in sorted(included - set(figure_of)):  # Fotos sem ocorrência confirmada pedidas no corpo → Anexo A.
+        add_figure(position, None)
+    return items, without, figures
+
+
 def _build_report_files(config: ProjectConfig, context: _Context, directory: Path, generated_at: str, *, reviewer: str,
-                        title: str | None, client: str, site: str, inspector: str, notes: str, pdf: bool, max_side: int,
-                        only_positive_images: bool) -> dict:
+                        title: str | None, client: str, site: str, inspector: str, notes: str, details: dict, pdf: bool,
+                        max_side: int, only_positive_images: bool) -> dict:
     entries, labels = context.entries, context.labels
     reviewers = [value for value in [reviewer.strip()] + context.reviewers if value]
     reviewers = list(dict.fromkeys(reviewers))
     buildings = sorted({str(entry["image"].get("building_group") or "") for entry in entries} - {""})
     # 1. Dados estruturados (laudo.json) — a mesma fonte alimenta HTML e PDF.
+    included = {entry["position"] for entry in entries if entry["status"] == "positive" or not only_positive_images}
     images, occurrences, drafts = [], [], []
     for entry in entries:
         item = entry["image"]
-        included = entry["status"] == "positive" or not only_positive_images
         images.append({"numero_foto": entry["position"], "image_sha256": item["image_sha256"], "filename": item["filename"],
                        "width": item["width"], "height": item["height"], "pages": list(item.get("pages", [])),
                        "building_group": item.get("building_group"), "scene_group": item.get("scene_group"),
                        "status": entry["status"], "status_label": STATUS_LABELS[entry["status"]], "source": entry["source"],
                        "source_label": SOURCE_LABELS[entry["source"]], "confirmed_complete": entry["confirmed_complete"],
                        "boxes": len(entry["boxes"]), "pending_suggestions": entry["pending_suggestions"], "notes": entry["notes"],
-                       "included_in_report": included})
+                       "included_in_report": entry["position"] in included})
         for number, box in enumerate(entry["boxes"], start=1):
             record = {"numero_foto": entry["position"], "image_sha256": item["image_sha256"], "filename": item["filename"],
                       "caixa": number, "class_id": box["class_id"], "classe": labels.get(box["class_id"]),
@@ -920,31 +730,58 @@ def _build_report_files(config: ProjectConfig, context: _Context, directory: Pat
         if matching:
             pending_by_class.append({"class_id": category["id"], "label": category["label"], "count": len(matching),
                                      "images": len({position for position, _ in matching})})
+    ai_notes, ai_note = laudo_abnt.load_ai_notes(context.registry_path, context.registry_sha256)
+    items, without, figures = _report_items(context, occurrences, entries, ai_notes, included)
+    figure_by_photo = {figure["numero_foto"]: figure["number"] for figure in figures}
+    for record in occurrences + drafts:
+        record["figura"] = figure_by_photo.get(record["numero_foto"])
+    positive_photos = counts["by_status"]["positive"]
+    # Revisada = decisão humana nesta exportação (não rascunho) ou aprovação humana gravada no registro.
+    reviewed = sum((entry["source"] == "revisao_humana" and entry["status"] != "pending")
+                   or (entry["source"] == "registro" and entry["image"].get("human_approved") is True) for entry in entries)
+    facts = (f"O registro {context.version} reúne {counts['images']} fotografias, das quais {reviewed} têm decisão humana "
+             f"registrada" + (f" e {counts['images'] - reviewed} ainda não foram revisadas" if reviewed < counts["images"] else "")
+             + f". Situação das fotografias: {positive_photos} com ocorrências "
+             f"confirmadas, {counts['by_status']['negative']} sem ocorrências, {counts['by_status']['ambiguous']} ambíguas, "
+             f"{counts['by_status']['excluded']} excluídas e {counts['by_status']['pending']} pendentes. Foram confirmadas "
+             f"{counts['confirmed_boxes']} demarcações em {len(items)} categoria(s) da lista de verificação"
+             + (f" ({', '.join(item['label'] for item in items)})" if items else "")
+             + f". Permanecem {counts['pending_suggestions']} sugestões automáticas sem decisão humana (Anexo B), que não integram as constatações.")
     report = {
-        "schema_version": 1, "document": "laudo_preliminar_inspecao_assistida", "status": PRELIMINARY_TEXT,
-        "header": {"title": title or f"Laudo preliminar de inspeção assistida — {context.version}", "client": client, "site": site,
+        "schema_version": 2, "document": "laudo_tecnico_inspecao_cobertura_drone", "status": PRELIMINARY_TEXT,
+        "header": {"title": title or laudo_abnt.DEFAULT_TITLE, "client": client, "site": site,
                    "buildings": buildings, "issued_at": generated_at, "reviewers": reviewers, "inspector": inspector, "notes": notes,
                    "registry_version": context.version, "registry_sha256": context.registry_sha256,
                    "taxonomy_version": context.registry.get("taxonomy_version"), "taxonomy_sha256": context.taxonomy_sha256,
                    "suggestion_model": context.suggestion_model},
+        "details": details,
+        "normative_references": laudo_abnt.NORMATIVE_REFERENCES,
         "summary": {"images": counts["images"], **counts["by_status"], "decided_by_human": counts["decided_by_human"],
                     "confirmed_boxes": counts["confirmed_boxes"], "draft_boxes": len(drafts), "by_class": by_class,
                     "pending_suggestions": counts["pending_suggestions"]},
-        "images": images, "occurrences": occurrences, "draft_boxes": drafts,
+        "items": items, "items_without_occurrence": without, "manual_checklist": laudo_abnt.MANUAL_CHECKLIST,
+        "figures": figures, "images": images, "occurrences": occurrences, "draft_boxes": drafts,
         "pending_suggestions": {"total": counts["pending_suggestions"], "by_class": pending_by_class,
                                 "note": "Sugestões automáticas pendentes não constituem ocorrências; aguardam decisão humana na plataforma de revisão."},
+        "ai_support": laudo_abnt.ai_summary(ai_notes, ai_note, {category["slug"]: category["label"] for category in context.classes}),
+        "conclusion": {"facts": facts, "reviewed_images": reviewed, "technical_conclusion": PENDING_TEXT},
+        "technical_responsibility": {"name": details["responsible_name"], "title": details["responsible_title"],
+                                     "registry": details["responsible_registry"], "art": details["art_number"],
+                                     "statement": "Este laudo foi elaborado com base em inspeção visual aérea, não substituindo "
+                                                  "inspeções presenciais in loco. Sua validade depende da revisão, complementação e "
+                                                  "assinatura do responsável técnico habilitado, com a respectiva ART."},
         "provenance": {"generated_at": generated_at, "generator": "dronecamp_ia.exports.build_report",
                        "registry_file": context.registry_path.name, "review_directory": context.registry_path.parent.name,
                        "registry_sha256": context.registry_sha256, "taxonomy_sha256": context.taxonomy_sha256,
                        "decisions_provided": context.decisions_count, "suggestion_model": context.suggestion_model,
-                       "suggestion_note": context.suggestion_note,
+                       "suggestion_note": context.suggestion_note, "ai_notes_note": ai_note,
                        "parameters": {"max_side": max_side, "only_positive_images": only_positive_images, "pdf_requested": pdf}},
-        "methodology": METHODOLOGY,
+        "methodology": METHODOLOGY, "limitations": METHODOLOGY,
     }
-    # 2. Evidências reduzidas (JPEG qualidade 82), uma foto por vez, só das fotos que entram no corpo.
+    # 2. Evidências reduzidas (JPEG qualidade 82), uma foto por vez, só das fotos com figura.
     evidences: dict[int, bytes] = {}
     for entry in entries:
-        if not (entry["status"] == "positive" or not only_positive_images):
+        if entry["position"] not in included:
             continue
         source = _checked_source(config, entry["image"])
         evidence = _render_evidence(source, entry, context, max_side, include_suggestions=False)
@@ -954,7 +791,7 @@ def _build_report_files(config: ProjectConfig, context: _Context, directory: Pat
         evidences[entry["position"]] = buffer.getvalue()
     # 3. Arquivos.
     html_path, json_path, pdf_path, manifest_path = (directory / name for name in ("laudo.html", "laudo.json", "laudo.pdf", "manifesto.json"))
-    html_path.write_text(_report_html(report, evidences, labels), encoding="utf-8")
+    html_path.write_text(laudo_abnt.render_html(report, evidences), encoding="utf-8")
     write_json(json_path, report)
     pdf_reason = None
     if not pdf:
@@ -966,7 +803,7 @@ def _build_report_files(config: ProjectConfig, context: _Context, directory: Pat
             pdf_reason = "reportlab não instalado: pip install dronecamp-ia[reports] (ou pip install reportlab)."
         else:
             try:
-                _write_pdf(pdf_path, report, evidences, labels)
+                laudo_abnt.write_pdf(pdf_path, report, evidences)
             except Exception as error:  # HTML e JSON continuam válidos; o motivo vai na resposta.
                 pdf_path.unlink(missing_ok=True)
                 pdf_reason = f"falha ao gerar o PDF: {type(error).__name__}: {error}"

@@ -178,6 +178,19 @@ def _text(options: dict, key: str, limit: int, default: str = "") -> str:
     return value
 
 
+def _report_details(value) -> dict | None:
+    """Dados técnicos opcionais do laudo (data da inspeção, cobertura, responsável, ART...): só texto curto."""
+    from .laudo_abnt import DETAIL_FIELDS
+    if value in (None, {}):
+        return None
+    if not isinstance(value, dict):
+        raise ValueError("details deve ser um objeto.")
+    unknown = set(value) - set(DETAIL_FIELDS)
+    if unknown:  # Campo com nome errado não pode sumir em silêncio do laudo (ex.: ART).
+        raise ValueError(f"Campo desconhecido nos dados do laudo: {sorted(unknown)[0]}.")
+    return {key: _text(value, key, 500) for key in DETAIL_FIELDS if key in value}
+
+
 def _decisions_map(value) -> dict | None:
     """Decisões como a página exporta (lista com ``image_sha256``) viram o mapa que ``exports`` lê."""
     if value in (None, [], {}):
@@ -675,11 +688,12 @@ def _export_evidence(config: ProjectConfig, root: Path, registry_path: Path, bod
 
 
 def _build_report(config: ProjectConfig, root: Path, registry_path: Path, body: dict) -> dict:
-    """Laudo preliminar em ``laudos/`` da revisão (``exports.build_report``); PDF só com reportlab."""
+    """Laudo técnico (estrutura ABNT, ``laudo_abnt``) em ``laudos/`` da revisão (``exports.build_report``); PDF só com reportlab."""
     from .exports import build_report
     result = build_report(config, registry_path, registry_path.parent / "laudos", decisions=_decisions_map(body.get("decisions")),
                           reviewer=_text(body, "reviewer", 100), title=_text(body, "title", 200) or None, client=_text(body, "client", 200),
                           site=_text(body, "site", 200), inspector=_text(body, "inspector", 200), notes=_text(body, "notes", 5000),
+                          details=_report_details(body.get("details")),
                           pdf=body.get("pdf") is not False, only_positive_images=body.get("all_images") is not True)
     directory = registry_path.parent
 

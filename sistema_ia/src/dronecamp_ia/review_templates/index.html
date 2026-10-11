@@ -102,7 +102,7 @@ __PLATFORM_CSS__
     <div class="quick-actions">
       <button type="button" data-goto="upload"><svg><use href="#i-upload"/></svg><span><b>Nova inspeção</b><span class="d">Enviar fotos ou vídeos do voo</span></span></button>
       <button type="button" data-goto="review"><svg><use href="#i-review"/></svg><span><b>Continuar revisão</b><span class="d" id="qaReview">Conferir caixas e sugestões</span></span></button>
-      <button type="button" data-goto="reports"><svg><use href="#i-report"/></svg><span><b>Gerar laudo preliminar</b><span class="d">PDF/HTML com evidências</span></span></button>
+      <button type="button" data-goto="reports"><svg><use href="#i-report"/></svg><span><b>Gerar laudo técnico</b><span class="d">PDF/HTML no formato ABNT</span></span></button>
       <button type="button" data-goto="monitor"><svg><use href="#i-spark"/></svg><span><b>Sugestões da IA</b><span class="d">Rodar o modelo nesta inspeção</span></span></button>
     </div>
   </div>
@@ -246,17 +246,37 @@ __PLATFORM_CSS__
   <p class="notice info hidden" id="reportsOffline">Gerar laudos e pacotes de evidências exige o servidor local (<b>Abrir plataforma DroneCamp.cmd</b>). Aqui você ainda pode baixar o arquivo de revisão e o CSV das ocorrências.</p>
   <div class="grid two">
     <div class="card">
-      <div class="card-head"><div><h2>Laudo preliminar de inspeção</h2><p>PDF e HTML com as evidências, as ocorrências decididas e os campos de validação técnica em branco.</p></div></div>
+      <div class="card-head"><div><h2>Laudo técnico de inspeção</h2><p>PDF e HTML no formato ABNT (NBR 10719 e NBR 16747), no estilo do laudo CEASA: figuras numeradas, normas aplicáveis e campos de validação técnica pendentes.</p></div></div>
       <div class="form-grid">
-        <div class="wide"><label for="reportTitle">Título</label><input id="reportTitle" placeholder="Laudo preliminar de inspeção assistida"></div>
-        <div><label for="reportClient">Cliente</label><input id="reportClient" placeholder="ex.: CEASA Minas"></div>
+        <div class="wide"><label for="reportTitle">Título</label><input id="reportTitle" placeholder="Laudo técnico de inspeção de cobertura com uso de drone"></div>
+        <div><label for="reportClient">Cliente / solicitante</label><input id="reportClient" placeholder="ex.: CEASA Minas"></div>
         <div><label for="reportSite">Local / edificação</label><input id="reportSite" placeholder="ex.: Pavilhão A"></div>
         <div class="wide"><label for="reportInspector">Responsável técnico (validação)</label><input id="reportInspector" placeholder="Nome e registro profissional, se houver"></div>
         <div class="wide"><label for="reportNotes">Observações</label><textarea id="reportNotes" placeholder="Condições do voo, limitações, pendências."></textarea></div>
       </div>
+      <details id="reportDetails"><summary>Dados técnicos do laudo (opcional): imóvel, voo e responsável técnico</summary>
+        <div class="form-grid">
+          <div><label for="reportD_inspection_date">Data da inspeção</label><input id="reportD_inspection_date" data-detail="inspection_date" placeholder="ex.: 06/08/2025"></div>
+          <div><label for="reportD_report_number">Número do laudo</label><input id="reportD_report_number" data-detail="report_number" placeholder="ex.: 001/2026"></div>
+          <div class="wide"><label for="reportD_address">Endereço</label><input id="reportD_address" data-detail="address" placeholder="Rua, número, cidade/UF"></div>
+          <div><label for="reportD_roof_type">Tipo de cobertura</label><input id="reportD_roof_type" data-detail="roof_type" placeholder="ex.: fibrocimento tipo canaleta"></div>
+          <div><label for="reportD_slope">Inclinação média</label><input id="reportD_slope" data-detail="slope" placeholder="ex.: 11,76%"></div>
+          <div><label for="reportD_support_structure">Estrutura de apoio</label><input id="reportD_support_structure" data-detail="support_structure" placeholder="ex.: vigas calha pré-moldadas"></div>
+          <div><label for="reportD_gutter_type">Tipo de calha</label><input id="reportD_gutter_type" data-detail="gutter_type" placeholder="ex.: viga calha de concreto"></div>
+          <div><label for="reportD_area">Área total</label><input id="reportD_area" data-detail="area" placeholder="ex.: 6040 m²"></div>
+          <div><label for="reportD_equipment">Equipamento</label><input id="reportD_equipment" data-detail="equipment" placeholder="ex.: DJI Air 3"></div>
+          <div class="wide"><label for="reportD_flight_description">Descrição dos voos</label><input id="reportD_flight_description" data-detail="flight_description" placeholder="Voos de contexto e de detalhamento"></div>
+          <div class="wide"><label for="reportD_company">Empresa responsável</label><input id="reportD_company" data-detail="company" placeholder="ex.: DroneCamp — PUC TEC"></div>
+          <div><label for="reportD_responsible_name">Responsável técnico</label><input id="reportD_responsible_name" data-detail="responsible_name" placeholder="Nome completo"></div>
+          <div><label for="reportD_responsible_title">Título profissional</label><input id="reportD_responsible_title" data-detail="responsible_title" placeholder="ex.: Engenheiro civil"></div>
+          <div><label for="reportD_responsible_registry">Registro (CREA/CAU)</label><input id="reportD_responsible_registry" data-detail="responsible_registry" placeholder="ex.: CREA-MG 000000"></div>
+          <div><label for="reportD_art_number">ART nº</label><input id="reportD_art_number" data-detail="art_number" placeholder="Número da ART"></div>
+        </div>
+        <p class="small-text">Campos vazios saem como "não informado"; o sistema não estima área, inclinação nem extensões.</p>
+      </details>
       <div class="checks"><input id="reportAllImages" type="checkbox"><label for="reportAllImages">Incluir evidências de todas as fotos (por padrão, só as fotos com ocorrências).</label></div>
       <div class="checks"><input id="reportPdf" type="checkbox" checked><label for="reportPdf">Gerar PDF (requer <code>reportlab</code>; o HTML é gerado sempre).</label></div>
-      <div class="row-actions"><button type="button" class="primary" id="makeReport" disabled><svg><use href="#i-report"/></svg>Gerar laudo preliminar</button></div>
+      <div class="row-actions"><button type="button" class="primary" id="makeReport" disabled><svg><use href="#i-report"/></svg>Gerar laudo técnico</button></div>
       <p class="small-text" id="reportStatus" role="status" aria-live="polite"></p>
       <div class="disclaimer" style="margin-top:12px">O laudo reúne evidências e decisões de revisão. Gravidade, diagnóstico e recomendações ficam explicitamente pendentes de validação por responsável técnico; nada é preenchido por inferência.</div>
     </div>
