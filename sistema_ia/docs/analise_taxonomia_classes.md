@@ -78,7 +78,9 @@ Decisões de projeto:
 
 - **`taxonomy.json` nunca é reescrito pela plataforma.** Revisões, datasets piloto, calibradores, pesos e laudos guardam o SHA-256 desse arquivo; mudar uma cor dentro dele invalidaria tudo de uma vez. As edições ficam em `configs/taxonomy_overrides.json` (`classes` por ID, `proposed`, `history` com autor e data) e são aplicadas por cima ao servir a página.
 - IDs são atribuídos uma vez e nunca reaproveitados; o slug das classes da taxonomia não é editável (é o nome que `check_domain_names` confere nos pesos).
-- "Inativa" só tira a classe das opções de caixa nova na página servida; caixas existentes, `browser_data.json` em disco e os pesos não mudam.
+- As edições das classes da taxonomia ficam guardadas **pelo slug**, não pelo ID: uma migração desloca IDs do catálogo (o antigo 13 virou 23 na v6) e a edição precisa seguir a classe. As propostas são conciliadas com a taxonomia a cada leitura: proposta cujo slug entrou na taxonomia é dada como absorvida e sai da lista; proposta cujo ID uma expansão da taxonomia ocupou recebe o próximo ID livre (tudo registrado no `history`).
+- `in_detector` só é verdadeiro para classe ativa **sem** `requires_training`: o ID 13 da v6 é ativo e aparece como "ativa · exige treino" enquanto os pesos piloto tiverem 13 classes.
+- "Inativa" só tira a classe das opções de caixa nova na página servida (a opção fica desabilitada); caixas existentes dessa classe mantêm a categoria ao serem editadas, e `browser_data.json` em disco e os pesos não mudam.
 - Aberta direto do disco, a seção lista as classes embutidas e desativa a edição (mesmo padrão das seções Importar e Laudos).
 - Testes: `tests/test_class_catalog.py` (regras do cadastro e as quatro rotas, com token).
 

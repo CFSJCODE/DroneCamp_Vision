@@ -51,7 +51,49 @@ class ClassCatalogTests(PlatformFixture):
         # Voltar ao nome original e cor vazia limpa a edição em vez de guardá-la.
         restored = class_catalog.update_class(self.config, 0, {"display_name": "Telha quebrada", "color": None})
         self.assertEqual(restored["color"], class_catalog.default_color(0))
-        self.assertNotIn("display_name", class_catalog.load_overrides(self.config)["classes"]["0"])
+        self.assertNotIn("display_name", class_catalog.load_overrides(self.config)["classes"]["telha_quebrada"])
+
+    def test_active_class_that_requires_training_is_not_in_detector(self) -> None:
+        # Ex.: ID 13 da v6: ativo na taxonomia, mas os pesos piloto têm 13 classes.
+        render_review_package(self.config, self.registry_path)  # página gerada antes da mudança (como no PC)
+        taxonomy = json.loads(self.taxonomy_path.read_text(encoding="utf-8"))
+        taxonomy["classes"][1]["requires_training"] = True
+        self.taxonomy_path.write_text(json.dumps(taxonomy), encoding="utf-8")
+        listing = class_catalog.list_classes(self.config)
+        self.assertEqual([(item["in_detector"], item["requires_training"]) for item in listing["classes"]], [(True, False), (False, True)])
+        self.assertEqual((listing["summary"]["in_detector"], listing["summary"]["requires_training"]), (1, 1))
+        payload = json.loads((self.directory / "browser_data.json").read_text(encoding="utf-8"))
+        classes = class_catalog.apply_to_page_classes(self.config, payload["classes"])
+        self.assertEqual([item["requires_training"] for item in classes], [False, True])
+
+    def test_overrides_follow_the_slug_when_a_migration_moves_ids(self) -> None:
+        class_catalog.update_class(self.config, 1, {"display_name": "Detritos na calha", "active": False})
+        taxonomy = json.loads(self.taxonomy_path.read_text(encoding="utf-8"))
+        # Nova versão: uma classe nova ocupa o ID 1 e residuos_calha vai para o 2 (como o antigo 13 → 23 na v6).
+        taxonomy["classes"] = [taxonomy["classes"][0], {"id": 1, "slug": "nova_ativa", "label": "Nova ativa", "phase": 1},
+                               {**taxonomy["classes"][1], "id": 2}]
+        self.taxonomy_path.write_text(json.dumps(taxonomy), encoding="utf-8")
+        listing = {item["name"]: item for item in class_catalog.list_classes(self.config)["classes"]}
+        self.assertEqual((listing["nova_ativa"]["display_name"], listing["nova_ativa"]["active"]), ("Nova ativa", True))
+        self.assertEqual((listing["residuos_calha"]["id"], listing["residuos_calha"]["display_name"], listing["residuos_calha"]["active"]), (2, "Detritos na calha", False))
+
+    def test_proposals_are_reconciled_when_the_taxonomy_grows(self) -> None:
+        class_catalog.create_class(self.config, {"name": "calha_danificada", "display_name": "Calha danificada"})
+        class_catalog.create_class(self.config, {"name": "ralo_obstruido", "display_name": "Ralo obstruído"})
+        taxonomy = json.loads(self.taxonomy_path.read_text(encoding="utf-8"))
+        # A taxonomia cresce até o ID 2 com outra classe e promove calha_danificada como ID 3.
+        taxonomy["classes"] += [{"id": 2, "slug": "outra", "label": "Outra", "phase": 2},
+                                {"id": 3, "slug": "calha_danificada", "label": "Calha danificada", "phase": 1}]
+        self.taxonomy_path.write_text(json.dumps(taxonomy), encoding="utf-8")
+        listing = class_catalog.list_classes(self.config)
+        self.assertEqual([(item["id"], item["name"], item["source"]) for item in listing["classes"]],
+                         [(0, "telha_quebrada", "taxonomia"), (1, "residuos_calha", "taxonomia"), (2, "outra", "taxonomia"),
+                          (3, "calha_danificada", "taxonomia"), (4, "ralo_obstruido", "proposta")])
+        overrides = class_catalog.load_overrides(self.config)
+        self.assertEqual([item["slug"] for item in overrides["proposed"]], ["ralo_obstruido"])
+        self.assertEqual([entry["action"] for entry in overrides["history"][-2:]], ["absorbed", "renumbered"])
+        updated = class_catalog.update_class(self.config, 4, {"display_name": "Ralo entupido"})
+        self.assertEqual(updated["source"], "proposta")
 
     def test_deactivate_is_soft_delete_and_reversible(self) -> None:
         gone = class_catalog.deactivate_class(self.config, 1)

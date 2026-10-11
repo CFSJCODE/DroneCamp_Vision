@@ -350,7 +350,11 @@ function validBox(coordinates) {
 function commitBox(coordinates) {
   coordinates = coordinates.map(Math.round);
   if (!validBox(coordinates)) { message('A caixa precisa ter área e ficar dentro da foto.', true); return }
-  const box = { class_id: Number($('classId').value), bbox_xyxy: coordinates, note: 'Caixa conferida/editada na revisão local.' };
+  const classId = $('classId').value === '' ? NaN : Number($('classId').value);
+  if (!Number.isInteger(classId)) { message('Escolha a categoria da caixa.', true); return }
+  // Classe inativa (seção Classes): caixas já existentes mantêm a categoria; caixas novas não a recebem.
+  if (state.selected < 0 && classOf(classId).active === false) { message('Categoria inativa: reative-a na seção Classes para usá-la em caixas novas.', true); return }
+  const box = { class_id: classId, bbox_xyxy: coordinates, note: 'Caixa conferida/editada na revisão local.' };
   if (state.selected < 0) active.boxes.push(box); else active.boxes[state.selected] = box;
   active.confirmed_complete = false; active.status = 'pending';
   $('confirmed').checked = false; $('decision').value = 'pending';
@@ -1085,12 +1089,14 @@ let CLASSES = null;
 let editingClass = null;
 function classRows() {
   if (CLASSES) return CLASSES.classes;
-  return DATA.classes.map(category => ({ id: category.id, name: category.slug || '', display_name: category.label, color: category.color, active: category.active !== false, in_detector: true, requires_training: false, source: 'taxonomia', name_editable: false }))
+  return DATA.classes.map(category => ({ id: category.id, name: category.slug || '', display_name: category.label, color: category.color, active: category.active !== false, phase: 1, in_detector: !category.requires_training, requires_training: Boolean(category.requires_training), source: 'taxonomia', name_editable: false }))
 }
 function classSituation(entry) {
   if (!entry.active) return el('span', { class: 'chip neutral' }, 'inativa');
   if (entry.in_detector) return el('span', { class: 'chip ok' }, 'no detector');
-  return el('span', { class: 'chip warn', title: 'Só passa a ser detectada depois de dados aprovados e novo treino.' }, entry.source === 'proposta' ? 'proposta · exige treino' : 'catálogo · exige treino')
+  const title = 'Só passa a ser detectada depois de dados aprovados e novo treino.';
+  if (entry.source === 'proposta') return el('span', { class: 'chip warn', title }, 'proposta · exige treino');
+  return el('span', { class: 'chip warn', title }, entry.phase === 1 ? 'ativa · exige treino' : 'catálogo · exige treino')
 }
 async function classRequest(method, path, body) {
   const response = await fetch(path, { method, headers: { 'Content-Type': 'application/json', 'X-DroneCamp-Token': TOKEN }, body: body === undefined ? undefined : JSON.stringify(body) });
@@ -1229,7 +1235,8 @@ $('themeToggle').onclick = () => applyTheme(document.documentElement.dataset.the
 (() => { let theme = 'light'; try { theme = localStorage.getItem('dronecamp-theme') || 'light' } catch {} document.documentElement.dataset.theme = theme; $('themeToggle').replaceChildren(icon(theme === 'dark' ? 'i-sun' : 'i-moon'), el('span', {}, theme === 'dark' ? 'Claro' : 'Escuro')) })();
 
 $('versionLabel').textContent = DATA.version || '';
-DATA.classes.filter(category => category.active !== false).forEach(category => $('classId').append(el('option', { value: category.id }, category.label)));
+// Inativas continuam na lista (desabilitadas) para que uma caixa existente dessa classe mostre e preserve a categoria.
+DATA.classes.forEach(category => $('classId').append(el('option', category.active === false ? { value: category.id, disabled: 'disabled' } : { value: category.id }, category.active === false ? `${category.label} (inativa)` : category.label)));
 if (DATA.suggestions) {
   $('confFilter').value = Math.round(DATA.suggestions.conf * 100);
   $('confFilter').min = Math.round(DATA.suggestions.conf * 100);

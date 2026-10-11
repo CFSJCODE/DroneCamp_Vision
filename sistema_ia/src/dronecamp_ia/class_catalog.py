@@ -8,8 +8,9 @@ uma classe dentro dele invalidaria todos esses arquivos de uma vez.
 
 O que cada operação faz:
 - ``list_classes``: taxonomia + edições + classes propostas, com o que cada uma
-  exige (``in_detector``: o modelo atual detecta; ``requires_training``: só passa
-  a ser detectada depois de dados aprovados e novo treino).
+  exige (``in_detector``: classe ativa que os pesos atuais já aprenderam;
+  ``requires_training``: só passa a ser detectada depois de dados aprovados e
+  novo treino, mesmo quando já é ativa na taxonomia, como o ID 13 na v6).
 - ``create_class``: classe proposta com ID depois do maior da taxonomia, sempre
   ``requires_training``. Ela não entra no detector nem nas caixas da revisão:
   isso exige uma nova versão da taxonomia (como v5 → v6) e ``migrate-review``.
@@ -20,9 +21,18 @@ O que cada operação faz:
   histórico registra cada mudança.
 
 Inativa não muda o modelo nem as caixas já feitas: a página só deixa de
-oferecer a classe para caixas novas. Quando mexer: para levar uma proposta à
-detecção, crie a nova versão da taxonomia com snapshot e migração (ver
-``docs/analise_taxonomia_classes.md``); não edite IDs existentes.
+oferecer a classe para caixas novas.
+
+As edições das classes da taxonomia ficam guardadas **pelo slug**, não pelo ID:
+uma migração desloca IDs do catálogo (na v6 o antigo ID 13 virou 23) e o slug é
+o que não muda. As propostas são conferidas contra a taxonomia a cada leitura
+(``_reconcile``): proposta cujo slug entrou na taxonomia é dada como absorvida e
+sai da lista; proposta cujo ID uma expansão da taxonomia ocupou recebe o
+próximo ID livre. Tudo fica no ``history``.
+
+Quando mexer: para levar uma proposta à detecção, crie a nova versão da
+taxonomia com snapshot e migração (ver ``docs/analise_taxonomia_classes.md``);
+não edite IDs existentes.
 """
 
 from __future__ import annotations
@@ -45,7 +55,7 @@ COLOR = re.compile(r"^#[0-9A-Fa-f]{6}$")
 MAX_NAME = 80
 MAX_CRITERION = 1000
 MAX_HISTORY = 500
-_LOCK = threading.Lock()
+_LOCK = threading.RLock()
 
 
 class ClassNotFound(LookupError):
@@ -57,19 +67,48 @@ def overrides_path(config: ProjectConfig) -> Path:
 
 
 def _empty() -> dict:
-    return {"schema_version": 1, "note": "Edições feitas pela plataforma; taxonomy.json não é alterado.",
+    return {"schema_version": 1, "note": "Edições feitas pela plataforma; taxonomy.json não é alterado. Chaves de classes = slug.",
             "classes": {}, "proposed": [], "history": []}
 
 
-def load_overrides(config: ProjectConfig) -> dict:
+def _reconcile(taxonomy: dict, overrides: dict) -> bool:
+    """Confere as propostas contra a taxonomia atual; devolve True se algo mudou (e precisa gravar)."""
+    slugs = {item["slug"]: item["id"] for item in taxonomy["classes"]}
+    ids = {item["id"] for item in taxonomy["classes"]}
+    changed = False
+    kept = []
+    for item in overrides["proposed"]:
+        if item["slug"] in slugs:
+            # Entrou na taxonomia (promovida numa nova versão): a proposta cumpriu o papel.
+            overrides["history"].append({"at": _now(), "action": "absorbed", "id": item["id"], "by": None,
+                                         "changes": {"name": item["slug"], "taxonomy_id": slugs[item["slug"]]}})
+            changed = True
+            continue
+        if item["id"] in ids:
+            # A taxonomia cresceu até este ID com outra classe: a proposta recebe o próximo livre.
+            new_id = max(ids | {value["id"] for value in kept}) + 1
+            overrides["history"].append({"at": _now(), "action": "renumbered", "id": new_id, "by": None,
+                                         "changes": {"name": item["slug"], "previous_id": item["id"]}})
+            item["id"] = new_id
+            changed = True
+        kept.append(item)
+    overrides["proposed"] = kept
+    return changed
+
+
+def load_overrides(config: ProjectConfig, taxonomy: dict | None = None) -> dict:
+    """Lê as edições e as concilia com a taxonomia; grava se a conciliação mudou algo."""
     path = overrides_path(config)
     if not path.is_file():
         return _empty()
-    value = json.loads(path.read_text(encoding="utf-8"))
-    if (not isinstance(value, dict) or value.get("schema_version") != 1 or not isinstance(value.get("classes"), dict)
-            or not isinstance(value.get("proposed"), list)):
-        raise ValueError(f"{path.name} fora do formato esperado (schema_version 1).")
-    value.setdefault("history", [])
+    with _LOCK:
+        value = json.loads(path.read_text(encoding="utf-8"))
+        if (not isinstance(value, dict) or value.get("schema_version") != 1 or not isinstance(value.get("classes"), dict)
+                or not isinstance(value.get("proposed"), list)):
+            raise ValueError(f"{path.name} fora do formato esperado (schema_version 1).")
+        value.setdefault("history", [])
+        if _reconcile(taxonomy or load_taxonomy(config.taxonomy_path), value):
+            _save(config, value)
     return value
 
 
@@ -122,22 +161,25 @@ def _slug(body: dict) -> str:
 def _entry(item: dict, edits: dict, proposed: bool) -> dict:
     class_id = item["id"]
     phase = item.get("phase")
+    # Ativa na taxonomia (entra em detection_names) não é o mesmo que já aprendida pelos pesos:
+    # o ID 13 da v6 é ativo e ainda exige treino (os pesos piloto têm 13 classes).
+    requires_training = True if proposed else bool(item.get("requires_training", phase != 1))
     return {"id": class_id, "name": item["slug"],
             "display_name": edits.get("display_name") or item["label"], "original_display_name": item["label"],
             "color": edits.get("color") or item.get("color") or default_color(class_id),
             "active": edits.get("active", item.get("active", True)) is not False,
             "phase": "proposta" if proposed else phase, "source": "proposta" if proposed else "taxonomia",
-            "in_detector": not proposed and phase == 1,
-            "requires_training": True if proposed else bool(item.get("requires_training", phase != 1)),
+            "in_detector": not proposed and phase == 1 and not requires_training,
+            "requires_training": requires_training,
             "criterion": item.get("criterion"), "name_editable": proposed,
             "created_at": item.get("created_at"), "updated_at": edits.get("updated_at") or item.get("updated_at")}
 
 
 def list_classes(config: ProjectConfig) -> dict:
     taxonomy = load_taxonomy(config.taxonomy_path)
-    overrides = load_overrides(config)
-    edits = overrides["classes"]
-    classes = [_entry(item, edits.get(str(item["id"]), {}), False) for item in taxonomy["classes"]]
+    overrides = load_overrides(config, taxonomy)
+    edits = overrides["classes"]  # chave = slug: sobrevive ao deslocamento de IDs nas migrações
+    classes = [_entry(item, edits.get(item["slug"], {}), False) for item in taxonomy["classes"]]
     classes += [_entry(item, {}, True) for item in overrides["proposed"]]
     return {"taxonomy_version": taxonomy.get("version"), "taxonomy_sha256": file_hash(config.taxonomy_path),
             "overrides_file": overrides_path(config).relative_to(config.root).as_posix() if overrides_path(config).is_relative_to(config.root) else OVERRIDES_FILE,
@@ -169,7 +211,7 @@ def create_class(config: ProjectConfig, body: dict, author: str | None = None) -
     criterion = _text(body, "criterion", MAX_CRITERION)
     with _LOCK:
         taxonomy = load_taxonomy(config.taxonomy_path)
-        overrides = load_overrides(config)
+        overrides = load_overrides(config, taxonomy)
         existing = taxonomy["classes"] + overrides["proposed"]
         if any(item["slug"] == slug for item in existing):
             raise ValueError(f"Já existe uma classe com o nome técnico {slug}.")
@@ -220,7 +262,7 @@ def update_class(config: ProjectConfig, class_id: int, body: dict, author: str |
                 item[mapping.get(key, key)] = value if not (key == "color" and value is None) else default_color(class_id)
             item["updated_at"] = stamp
         else:
-            edits = overrides["classes"].setdefault(str(class_id), {})
+            edits = overrides["classes"].setdefault(item["slug"], {})
             for key, value in changes.items():
                 if value is None or (key == "display_name" and value == item["label"]):
                     edits.pop(key, None)  # cor vazia ou nome igual ao original = volta ao padrão da taxonomia
@@ -240,11 +282,11 @@ def deactivate_class(config: ProjectConfig, class_id: int, author: str | None = 
 def apply_to_page_classes(config: ProjectConfig, classes: list[dict]) -> list[dict]:
     """Nome de exibição, cor e ativo/inativo nas classes embutidas na página servida.
 
-    Só as classes do detector entram (as caixas da revisão usam esses IDs); um
-    arquivo de edições inválido deixa a página com os dados originais.
+    Só as classes ativas da taxonomia entram (as caixas da revisão usam esses
+    IDs); um arquivo de edições inválido deixa a página com os dados originais.
     """
     try:
-        current = {item["id"]: item for item in list_classes(config)["classes"] if item["in_detector"]}
+        current = {item["id"]: item for item in list_classes(config)["classes"] if item["source"] == "taxonomia" and item["phase"] == 1}
     except (OSError, ValueError, KeyError):
         return classes
     result = []
@@ -253,5 +295,6 @@ def apply_to_page_classes(config: ProjectConfig, classes: list[dict]) -> list[di
         if entry is None or entry["name"] != (category.get("slug") or entry["name"]):
             result.append(category)
             continue
-        result.append({**category, "label": entry["display_name"], "color": entry["color"], "active": entry["active"]})
+        result.append({**category, "label": entry["display_name"], "color": entry["color"], "active": entry["active"],
+                       "requires_training": entry["requires_training"]})
     return result
