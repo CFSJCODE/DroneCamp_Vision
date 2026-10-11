@@ -1,1231 +1,110 @@
 <!doctype html>
-<html lang="pt-BR" data-theme="dark">
+<html lang="pt-BR" data-theme="light">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<!-- Preenchido só quando a página vem do servidor local (comando platform); vazio no arquivo em disco. -->
+<!-- Preenchidos só quando a página vem do servidor local (comando platform); vazios no arquivo em disco. -->
 <meta name="dronecamp-server" content="">
 <meta name="dronecamp-reviews" content="">
-<link rel="icon" href="data:,">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232457F5'/%3E%3Cpath d='M8 22 16 8l8 14H8Z' fill='none' stroke='%23fff' stroke-width='2.5' stroke-linejoin='round'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-<title>DroneCamp Vision · Operações YOLO</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+<title>DroneCamp Vision · Inspeção assistida de telhados</title>
 <style>
-/* -------------------------------------------------------------------------
-   Plataforma de operações DroneCamp Vision — Fluent 2 + Liquid Glass (Moonlight).
-
-   Uma única linguagem visual consistente:
-   - Fluent 2: Segoe UI Variable, rampa modular de tipo 1.25 (11 · 12 · 14 · 16 · 20 · 28),
-     cantos de 6px nos controles e 12px nos cartões, elevação por sombras suaves
-     (2 · 8 · 16 · 28), foco com anel duplo e transições ágeis (100–250ms);
-   - Liquid Glass (Glassmorphism & Acrílico Fluent): superfícies translúcidas com
-     alto desfoque ótico (blur 28px saturate 180%), refração de luz e borda especular
-     delicada de 1px com realce no topo (inset 0 1px 1px).
-   - Paleta Deep Navy & Aqua Cyan: base escura Deep Navy (#08111F) / Midnight Slate (#0D1726),
-     acento primário Aqua Cyan (--primary: #19D3C5), secundário Sky Blue (#4EA8FF),
-     sugestões da IA em âmbar estrito (--ai: #F7B32B) e decisões confirmadas em verde (--ok: #22C77A).
-   data-theme = dark | light troca apenas os tokens sem perder a linguagem visual.
-   Os nomes --primary, --ai, --ok, --warn, --bad, --muted, --line-strong e
-   --chart-grid também são lidos pelo JS (gráficos e barras); mantidos intactos.
-   ------------------------------------------------------------------------- */
-:root {
-  color-scheme: dark;
-  --rail: 68px;
-  --font-body: "Poppins", "Roboto", "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
-  --font-display: "Poppins", "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, sans-serif;
-  --font-mono: "Cascadia Code", "Cascadia Mono", Consolas, ui-monospace, monospace;
-
-  /* Fluent & Apple: cantos e movimento */
-  --radius-ctl: 7px;
-  --radius-card: 14px;
-  --radius-pill: 999px;
-  --ease: cubic-bezier(.33, 0, .67, 1);
-  --ease-out: cubic-bezier(0, 0, 0, 1);
-  --fast: .12s;
-  --normal: .22s;
-
-  /* Hierarquia de Superfícies & Fundo */
-  --bg: #08111F;               /* Fundo absoluto */
-  --bg-secondary: #0D1726;     /* Sidebar, regiões estruturais */
-  --surface-1: #111D2E;        /* Card padrão */
-  --surface-2: #17263A;        /* Card elevado, hover ou área selecionável */
-  --surface-3: #1D3047;        /* Elemento realmente ativo */
-  --surface-strong: #111D2E;
-
-  /* Bordas */
-  --line: #26384F;             /* Borda suave / Divisórias */
-  --line-strong: #35506B;      /* Borda forte / Componentes destacados */
-  --stroke-accessible: #35506B;
-
-  /* Tipografia */
-  --ink: #F4F8FC;              /* Texto principal (Ice White) */
-  --ink-2: #A9B8C9;            /* Texto secundário (Cool Gray) */
-  --muted: #74869B;            /* Texto discreto (Muted Slate) */
-  --disabled-ink: #526174;     /* Texto desabilitado (Disabled) */
-  --subtle-hover: rgba(244, 248, 252, .06);   /* Fundo de hover discreto (filas, linhas, botões ghost) */
-  --subtle-pressed: rgba(244, 248, 252, .03); /* Fundo de pressionado/desabilitado */
-
-  /* Primária & Secundária */
-  --primary: #19D3C5;          /* Aqua Cyan: CTA, foco, item ativo */
-  --primary-hover: #2BE5D5;    /* Bright Aqua: Hover */
-  --primary-bg: #0E948C;       /* Deep Teal: Elementos preenchidos */
-  --primary-pressed: #096B65;
-  --primary-ink: #041716;
-  --primary-soft: rgba(25, 211, 197, .14);
-  --primary-glow: 0 0 24px rgba(25, 211, 197, .40);
-
-  --secondary: #4EA8FF;        /* Sky Blue: Informações e gráficos */
-  --secondary-hover: #70BAFF;  /* Light Sky: Hover */
-  --secondary-soft: rgba(78, 168, 255, .14);
-  --secondary-glow: 0 0 20px rgba(78, 168, 255, .35);
-
-  /* Estados do Sistema & Avisos */
-  --ok: #22C77A;               /* Sucesso */
-  --ok-bg: #0D2F27;
-  --ok-soft: rgba(34, 199, 122, .15);
-  --ok-glow: 0 0 24px rgba(34, 199, 122, .45);
-
-  --info: #38BDF8;             /* Informação */
-  --info-bg: #0C2940;
-  --info-soft: rgba(56, 189, 248, .15);
-
-  --warn: #F5A524;             /* Atenção */
-  --warn-bg: #33240A;
-  --warn-soft: rgba(245, 165, 36, .15);
-
-  --bad: #F05263;              /* Erro */
-  --bad-bg: #35151C;
-  --bad-soft: rgba(240, 82, 99, .15);
-
-  --ai: #F7B32B;               /* IA / sugestão não validada */
-  --ai-bg: #332609;
-  --ai-hover: #FFC043;
-  --ai-soft: rgba(247, 179, 43, .16);
-  --ai-glow: 0 0 22px rgba(247, 179, 43, .35);
-
-  --select: #19D3C5;           /* Seleção */
-  --select-bg: #0C3538;
-
-  --neutral-state: #94A3B8;    /* Neutro */
-  --neutral-bg: #202B39;
-
-  --focus-outer: #19D3C5;
-  --focus-inner: #08111F;
-
-  /* Controles & Terminais */
-  --control: rgba(23, 38, 58, .70);
-  --control-hover: rgba(29, 48, 71, .90);
-  --control-pressed: #111D2E;
-  --control-border: #26384F;
-  --control-border-bottom: #35506B;
-  --field: rgba(13, 23, 38, .75);
-  --viewer: #050B14;
-  --terminal: #070D18;
-  --terminal-ink: #A9B8C9;
-  --chart-grid: rgba(38, 56, 79, .45);
-
-  /* Sombras Difusas Apple */
-  --shadow-2: 0 1px 3px rgba(0, 0, 0, .3), 0 1px 2px rgba(0, 0, 0, .24);
-  --shadow-8: 0 4px 16px rgba(0, 0, 0, .35), 0 2px 4px rgba(0, 0, 0, .2);
-  --shadow-16: 0 8px 30px rgba(0, 0, 0, .45), 0 4px 10px rgba(0, 0, 0, .3);
-  --shadow-28: 0 16px 48px rgba(0, 0, 0, .55), 0 6px 16px rgba(0, 0, 0, .35);
-
-  /* Apple Liquid Glass & Glassmorphism */
-  --glass: rgba(17, 29, 46, .72);
-  --glass-strong: rgba(17, 29, 46, .90);
-  --glass-elevated: rgba(23, 38, 58, .82);
-  --glass-border: #26384F;
-  --glass-highlight: rgba(244, 248, 252, .14);
-  --glass-blur: blur(28px) saturate(190%);
-  --inset: rgba(5, 11, 20, .45);
-
-  /* Fundo Mica Apple atmosférico com refração cósmica suave */
-  --mica: radial-gradient(1200px 700px at 15% -10%, rgba(14, 148, 140, .18), transparent 65%),
-          radial-gradient(900px 600px at 95% 5%, rgba(78, 168, 255, .15), transparent 60%),
-          radial-gradient(1000px 800px at 50% 115%, rgba(29, 48, 71, .30), transparent 65%),
-          linear-gradient(180deg, #08111F 0%, #050B14 100%);
-}
-
-:root[data-theme="light"] {
-  color-scheme: light;
-  --bg: #F4F8FC;
-  --bg-secondary: #E9F1F8;
-  --surface-1: #FFFFFF;
-  --surface-2: #F1F6FB;
-  --surface-3: #E2ECF7;
-  --surface-strong: #FFFFFF;
-
-  --line: #D0DEEC;
-  --line-strong: #A9B8C9;
-  --stroke-accessible: #74869B;
-
-  --ink: #08111F;
-  --ink-2: #17263A;
-  --muted: #526174;
-  --disabled-ink: #8A9BAE;
-  --subtle-hover: rgba(8, 17, 31, .05);
-  --subtle-pressed: rgba(8, 17, 31, .08);
-
-  --primary: #0E948C;
-  --primary-hover: #0B7A73;
-  --primary-bg: #0E948C;
-  --primary-pressed: #075E59;
-  --primary-ink: #FFFFFF;
-  --primary-soft: rgba(14, 148, 140, .12);
-  --primary-glow: 0 0 20px rgba(14, 148, 140, .25);
-
-  --secondary: #2563EB;
-  --secondary-hover: #1D4ED8;
-  --secondary-soft: rgba(37, 99, 235, .10);
-
-  --ok: #15803D;
-  --ok-bg: #DCFCE7;
-  --ok-soft: rgba(21, 128, 61, .12);
-  --ok-glow: 0 0 20px rgba(21, 128, 61, .25);
-
-  --info: #0284C7;
-  --info-bg: #E0F2FE;
-  --info-soft: rgba(2, 132, 199, .12);
-
-  --warn: #B45309;
-  --warn-bg: #FEF3C7;
-  --warn-soft: rgba(180, 83, 9, .12);
-
-  --bad: #BE123C;
-  --bad-bg: #FFE4E6;
-  --bad-soft: rgba(190, 18, 60, .12);
-
-  --ai: #C2410C;
-  --ai-bg: #FFEDD5;
-  --ai-hover: #9A3412;
-  --ai-soft: rgba(194, 65, 12, .12);
-  --ai-glow: 0 0 16px rgba(194, 65, 12, .25);
-
-  --select: #0E948C;
-  --select-bg: #CCFBF1;
-
-  --neutral-state: #64748B;
-  --neutral-bg: #F1F5F9;
-
-  --focus-outer: #0E948C;
-  --focus-inner: #FFFFFF;
-
-  --control: rgba(255, 255, 255, .85);
-  --control-hover: rgba(255, 255, 255, .98);
-  --control-pressed: #E2ECF7;
-  --control-border: #D0DEEC;
-  --control-border-bottom: #A9B8C9;
-  --field: rgba(255, 255, 255, .90);
-  --viewer: #E2ECF7;
-  --terminal: #0D1726;
-  --terminal-ink: #F4F8FC;
-  --chart-grid: rgba(208, 222, 236, .6);
-
-  --shadow-2: 0 1px 3px rgba(8, 17, 31, .06), 0 1px 2px rgba(8, 17, 31, .04);
-  --shadow-8: 0 4px 16px rgba(8, 17, 31, .08), 0 2px 4px rgba(8, 17, 31, .05);
-  --shadow-16: 0 8px 24px rgba(8, 17, 31, .10), 0 3px 8px rgba(8, 17, 31, .06);
-  --shadow-28: 0 16px 40px rgba(8, 17, 31, .12), 0 4px 12px rgba(8, 17, 31, .07);
-
-  --glass: rgba(255, 255, 255, .75);
-  --glass-strong: rgba(255, 255, 255, .92);
-  --glass-elevated: rgba(255, 255, 255, .90);
-  --glass-border: rgba(208, 222, 236, .85);
-  --glass-highlight: rgba(255, 255, 255, .95);
-  --inset: rgba(8, 17, 31, .04);
-
-  --mica: radial-gradient(1200px 700px at 15% -10%, rgba(204, 251, 241, .45), transparent 65%),
-          radial-gradient(900px 600px at 95% 5%, rgba(224, 242, 254, .45), transparent 60%),
-          linear-gradient(180deg, #F4F8FC 0%, #E8F0F8 100%);
-}
-
-
-* { box-sizing: border-box }
-
-html, body { min-height: 100% }
-
-body {
-  margin: 0;
-  color: var(--ink);
-  background: var(--mica);
-  background-color: var(--bg);
-  background-attachment: fixed;
-  font: 400 14px/20px var(--font-body);
-  -webkit-font-smoothing: antialiased;
-}
-
-button, input, select, textarea { font: inherit; color: inherit }
-
-/* ---------- Botões (Fluent Button) ---------- */
-button {
-  cursor: pointer;
-  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-  min-height: 32px;
-  padding: 5px 12px;
-  border: 1px solid var(--control-border);
-  border-bottom-color: var(--control-border-bottom);
-  border-radius: var(--radius-ctl);
-  background: var(--control);
-  font-weight: 600;
-  transition: background var(--fast) var(--ease), border-color var(--fast) var(--ease), color var(--fast) var(--ease);
-}
-button:hover:not(:disabled) { background: var(--control-hover) }
-button:active:not(:disabled) { background: var(--control-pressed); border-bottom-color: var(--control-border) }
-button:disabled { cursor: default; color: var(--disabled-ink); background: var(--subtle-pressed); border-color: var(--line) }
-
-button.primary {
-  background: linear-gradient(180deg, var(--primary-hover) 0%, var(--primary-bg) 100%);
-  color: var(--primary-ink);
-  border: 1px solid rgba(255, 255, 255, .15);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .25), 0 2px 8px rgba(2, 132, 199, .35);
-}
-button.primary:hover:not(:disabled) {
-  background: linear-gradient(180deg, var(--primary) 0%, var(--primary-hover) 100%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .35), 0 4px 14px rgba(56, 189, 248, .45);
-}
-button.primary:active:not(:disabled) {
-  background: var(--primary-pressed);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, .4);
-}
-button.primary:disabled {
-  background: var(--subtle-pressed);
-  color: var(--disabled-ink);
-  border-color: var(--line);
-  box-shadow: none;
-}
-button.ai {
-  color: var(--ai);
-  border-color: color-mix(in srgb, var(--ai) 55%, transparent);
-  box-shadow: 0 0 10px rgba(251, 146, 60, .15);
-}
-button.ai:hover:not(:disabled) {
-  background: var(--ai-soft);
-  box-shadow: 0 0 16px rgba(251, 146, 60, .3);
-}
-button.ghost { background: transparent; border-color: transparent }
-button.ghost:hover:not(:disabled) { background: var(--subtle-hover) }
-button.small { min-height: 26px; padding: 2px 10px; font-size: 12px; line-height: 16px }
-
-/* ---------- Botões Especiais Liquid Glass da Apple & Iridescente ---------- */
-
-/* 1. Botão Apple Tactile Capsule CTA */
-.btn-apple-capsule {
-  position: relative;
-  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
-  min-height: 38px;
-  padding: 6px 16px;
-  border-radius: var(--radius-pill);
-  background: rgba(25, 211, 197, 0.12);
-  border: 1px double rgba(25, 211, 197, 0.35);
-  backdrop-filter: blur(16px) saturate(190%);
-  -webkit-backdrop-filter: blur(16px) saturate(190%);
-  color: var(--ink);
-  font-family: var(--font-display);
-  font-size: 13px; font-weight: 600;
-  text-decoration: none; cursor: pointer; user-select: none;
-  box-shadow:
-    inset 2px -2px 1px -1px rgba(255, 255, 255, 0.6),
-    inset -2px 2px 1px -1px rgba(255, 255, 255, 0.4),
-    inset 0 0 2px rgba(0, 0, 0, 0.4),
-    0 4px 14px rgba(0, 0, 0, 0.3);
-  transition: transform 0.2s var(--ease), box-shadow 0.25s var(--ease), background 0.25s ease;
-}
-.btn-apple-capsule:hover:not(:disabled) {
-  transform: translateY(-2px);
-  background: rgba(25, 211, 197, 0.22);
-  box-shadow:
-    inset 2px -2px 1px -1px rgba(255, 255, 255, 0.8),
-    inset -2px 2px 1px -1px rgba(255, 255, 255, 0.6),
-    0 8px 24px rgba(25, 211, 197, 0.35);
-}
-.btn-apple-capsule:active:not(:disabled) {
-  transform: scale(0.95);
-}
-.btn-apple-capsule .btn-icon-circle {
-  width: 22px; height: 22px; border-radius: 50%;
-  display: grid; place-items: center;
-  background: var(--primary); color: #08111F;
-  box-shadow: 0 0 10px rgba(25, 211, 197, 0.5);
-  transition: transform 0.2s ease;
-}
-.btn-apple-capsule:hover:not(:disabled) .btn-icon-circle {
-  transform: scale(1.12);
-}
-
-/* 2. Botões Neon/LED Liquid Glass com Raio de Luz Inclinado */
-.btn-neon-glass {
-  position: relative;
-  display: inline-flex; align-items: center; justify-content: center;
-  min-height: 34px; padding: 6px 16px;
-  border-radius: var(--radius-pill);
-  background: rgba(17, 29, 46, 0.65);
-  border-top: 1px solid rgba(255, 255, 255, 0.25);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  border-left: 1px solid rgba(255, 255, 255, 0.12);
-  border-right: 1px solid rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-  color: #FFFFFF; font-family: var(--font-body);
-  font-size: 12px; font-weight: 600; letter-spacing: 0.3px;
-  cursor: pointer; overflow: hidden;
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35);
-  transition: letter-spacing 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
-}
-.btn-neon-glass:hover:not(:disabled) {
-  letter-spacing: 0.8px;
-  transform: translateY(-2px);
-}
-.btn-neon-glass:active:not(:disabled) {
-  transform: scale(0.97);
-}
-.btn-neon-glass::before {
-  content: ""; position: absolute; top: 0; left: 0; width: 50%; height: 100%;
-  background: linear-gradient(to left, rgba(255, 255, 255, 0.2), transparent);
-  transform: skewX(45deg) translate(-150%);
-  transition: transform 0.6s ease; pointer-events: none;
-}
-.btn-neon-glass:hover:not(:disabled)::before {
-  transform: skewX(45deg) translate(280%);
-}
-.btn-neon-glass::after {
-  content: ""; position: absolute; left: 50%; transform: translateX(-50%);
-  bottom: -4px; width: 22px; height: 5px; border-radius: 8px;
-  background: var(--btn-glow, var(--primary));
-  box-shadow: 0 0 10px var(--btn-glow, var(--primary)), 0 0 20px var(--btn-glow, var(--primary));
-  transition: width 0.35s ease, height 0.35s ease, bottom 0.35s ease;
-}
-.btn-neon-glass:hover:not(:disabled)::after {
-  bottom: 0; width: 75%; height: 3px; border-radius: var(--radius-pill);
-}
-.btn-neon-glass.ok { --btn-glow: var(--ok); color: #FFFFFF }
-.btn-neon-glass.action { --btn-glow: var(--primary); color: #FFFFFF }
-.btn-neon-glass.bad { --btn-glow: var(--bad); color: #FFFFFF }
-/* O hover/pressionado genérico de button clareia o fundo e apagava o texto branco no tema claro. */
-.btn-neon-glass:hover:not(:disabled) { background: rgba(17, 29, 46, .82) }
-.btn-neon-glass:active:not(:disabled) { background: rgba(17, 29, 46, .92) }
-/* Desabilitado: sem brilho e com texto apagado, para não parecer clicável. */
-button.btn-neon-glass:disabled { color: var(--disabled-ink); background: var(--subtle-pressed); border-color: var(--line); box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none }
-button.btn-neon-glass:disabled::after { display: none }
-button:disabled .btn-icon-circle { background: var(--disabled-ink); box-shadow: none }
-
-/* 3. Botão Iridescente Refrativo com Espectro Cáustico */
-.btn-iridescent {
-  position: relative;
-  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  min-height: 38px; padding: 6px 20px;
-  border-radius: var(--radius-pill);
-  font-family: var(--font-display); font-size: 13px; font-weight: 600;
-  color: var(--ink); cursor: pointer;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background:
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04) 50%, rgba(255, 255, 255, 0.08)) padding-box,
-    linear-gradient(135deg, rgba(25, 211, 197, 0.5) 0%, rgba(78, 168, 255, 0.3) 50%, rgba(167, 139, 250, 0.5) 100%) border-box;
-  backdrop-filter: blur(20px) saturate(190%);
-  -webkit-backdrop-filter: blur(20px) saturate(190%);
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.4),
-    inset 0 -1px 1px rgba(0, 0, 0, 0.3),
-    0 8px 24px rgba(0, 0, 0, 0.35);
-  transition: transform 0.2s var(--ease), box-shadow 0.3s ease, border-color 0.3s ease;
-  overflow: hidden;
-}
-.btn-iridescent:hover:not(:disabled), .btn-iridescent.shine {
-  transform: translateY(-2px);
-  box-shadow:
-    inset 0 1px 2px rgba(255, 255, 255, 0.6),
-    0 12px 32px rgba(25, 211, 197, 0.35);
-}
-.btn-iridescent::before {
-  content: ""; position: absolute; inset: 0; border-radius: inherit;
-  background: linear-gradient(
-    105deg,
-    transparent 0%,
-    rgba(25, 211, 197, 0.25) 30%,
-    rgba(255, 255, 255, 0.45) 50%,
-    rgba(167, 139, 250, 0.25) 70%,
-    transparent 100%
-  );
-  opacity: 0; transform: translateX(-100%);
-  transition: opacity 0.3s ease, transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-  pointer-events: none;
-}
-.btn-iridescent:hover:not(:disabled)::before, .btn-iridescent.shine::before {
-  opacity: 1; transform: translateX(100%);
-}
-.btn-iridescent:active:not(:disabled) {
-  transform: scale(0.96);
-}
-
-/* 4. Dock de Navegação com Lupa de Vidro Deslizante (Liquid Glass Magnifier) */
-.nav-magnifier {
-  --pos1: 0px; --pos2: 0px; --pos3: 0px; --pos4: 0px; --pos5: 0px;
-  display: none;
-  position: fixed;
-  bottom: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: calc(100% - 32px);
-  max-width: 440px;
-  height: 58px;
-  border-radius: 999px;
-  background: rgba(13, 23, 38, 0.82);
-  backdrop-filter: blur(32px) saturate(190%);
-  -webkit-backdrop-filter: blur(32px) saturate(190%);
-  border: 1px solid var(--glass-border);
-  box-shadow:
-    inset 0 1px 1px var(--glass-highlight),
-    0 16px 36px rgba(0, 0, 0, 0.45);
-  z-index: 100;
-  padding: 0 8px;
-}
-
-.nav-magnifier .nav__items {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  list-style: none;
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  padding: 0;
-}
-
-.nav-magnifier .nav__item {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.nav-magnifier .nav__item-link {
-  color: var(--muted);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  text-decoration: none;
-  transition: color 0.3s ease, transform 0.2s ease;
-}
-
-.nav-magnifier .nav__item-icon {
-  width: 20px;
-  height: 20px;
-  display: block;
-}
-
-.nav-magnifier .nav__fake-icons,
-.nav-magnifier .nav__glass {
-  pointer-events: none;
-}
-
-.nav-magnifier .nav__fake-icons {
-  background: rgba(13, 23, 38, 0.95);
-  clip-path: circle(22px at 22px 50%);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 8px;
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  border-radius: 999px;
-  transition: clip-path 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.nav-magnifier .nav__fake-icon-box {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  transform: scale(1.3);
-}
-
-.nav-magnifier .nav__fake-icon {
-  width: 20px;
-  height: 20px;
-  display: block;
-  transition: color 0.3s ease;
-}
-
-.nav-magnifier .nav__glass {
-  position: absolute;
-  top: 5px; left: 0;
-  width: 48px; height: 48px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(8px) saturate(200%);
-  -webkit-backdrop-filter: blur(8px) saturate(200%);
-  box-shadow:
-    inset 0 0 0 1px rgba(255, 255, 255, 0.28),
-    inset 0 0 0 2px rgba(25, 211, 197, 0.2),
-    0 8px 20px rgba(0, 0, 0, 0.45);
-  transition: left 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-  overflow: hidden;
-}
-
-.nav-magnifier .nav__glass::before,
-.nav-magnifier .nav__glass::after {
-  content: ""; display: block; position: absolute; border-radius: 50%;
-}
-.nav-magnifier .nav__glass::before {
-  top: 3px; left: 3px; width: 40px; height: 40px;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.35);
-}
-.nav-magnifier .nav__glass::after {
-  top: 6px; left: 6px; width: 34px; height: 34px;
-  border: 2px solid transparent;
-  border-right: 2px solid rgba(255, 255, 255, 0.6);
-  border-left: 2px solid rgba(25, 211, 197, 0.5);
-  transform: rotate(-45deg);
-}
-
-.nav-magnifier .nav__item-link--cyan, .nav-magnifier .nav__fake-icon--cyan { color: var(--primary); }
-.nav-magnifier .nav__item-link--blue, .nav-magnifier .nav__fake-icon--blue { color: var(--info); }
-.nav-magnifier .nav__item-link--amber, .nav-magnifier .nav__fake-icon--amber { color: var(--warn); }
-.nav-magnifier .nav__item-link--green, .nav-magnifier .nav__fake-icon--green { color: var(--ok); }
-.nav-magnifier .nav__item-link--purple, .nav-magnifier .nav__fake-icon--purple { color: #A78BFA; }
-
-.nav-magnifier.nav--on-page1 .nav__fake-icons { clip-path: circle(24px at calc(24px + var(--pos1)) 50%); }
-.nav-magnifier.nav--on-page1 .nav__glass { left: var(--pos1); }
-
-.nav-magnifier.nav--on-page2 .nav__fake-icons { clip-path: circle(24px at calc(24px + var(--pos2)) 50%); }
-.nav-magnifier.nav--on-page2 .nav__glass { left: var(--pos2); }
-
-.nav-magnifier.nav--on-page3 .nav__fake-icons { clip-path: circle(24px at calc(24px + var(--pos3)) 50%); }
-.nav-magnifier.nav--on-page3 .nav__glass { left: var(--pos3); }
-
-.nav-magnifier.nav--on-page4 .nav__fake-icons { clip-path: circle(24px at calc(24px + var(--pos4)) 50%); }
-.nav-magnifier.nav--on-page4 .nav__glass { left: var(--pos4); }
-
-.nav-magnifier.nav--on-page5 .nav__fake-icons { clip-path: circle(24px at calc(24px + var(--pos5)) 50%); }
-.nav-magnifier.nav--on-page5 .nav__glass { left: var(--pos5); }
-
-.nav-magnifier .nav__item-sr {
-  position: absolute; width: 1px; height: 1px;
-  padding: 0; margin: -1px; overflow: hidden;
-  clip: rect(0, 0, 0, 0); border: 0;
-}
-
-/* Foco Fluent: anel duplo (externo contrastante, interno separador). */
-:focus-visible { outline: 2px solid var(--focus-outer); outline-offset: 1px; box-shadow: 0 0 0 1px var(--focus-inner) }
-
-a { color: var(--primary); text-underline-offset: 2px }
-a:hover { text-decoration-thickness: 2px }
-
-/* Rampa de tipo Fluent 2 (DESIGN.md - Escala Modular 1.25 Major Third) */
-h1, h2, h3 { margin: 0 }
-h1 { font: 600 28px/36px var(--font-display); letter-spacing: -0.02em }
-h2 { font: 600 20px/26px var(--font-display); letter-spacing: -0.015em }
-h3 { font: 600 16px/22px var(--font-body); letter-spacing: -0.01em; margin: 16px 0 8px }
-p { margin: 4px 0 12px; font-size: 14px; line-height: 20px }
-
-label { display: block; margin: 12px 0 4px; font-size: 12px; line-height: 16px; font-weight: 500; color: var(--muted); letter-spacing: +0.01em }
-
-/* ---------- Campos (Fluent Input/Select): sublinhado de destaque no foco ---------- */
-input, select, textarea {
-  width: 100%;
-  min-height: 32px;
-  padding: 6px 12px;
-  border: 1px solid var(--control-border);
-  border-bottom-color: var(--stroke-accessible);
-  border-radius: var(--radius-ctl);
-  background: var(--field);
-  transition: border-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
-}
-input:hover, select:hover, textarea:hover { border-color: var(--line-strong); border-bottom-color: var(--ink-2) }
-input:focus, select:focus, textarea:focus { outline: none; border-bottom-color: var(--primary); box-shadow: inset 0 -1px 0 var(--primary) }
-input:focus-visible, select:focus-visible, textarea:focus-visible { outline: none }
-input[type="checkbox"], input[type="range"] { border: 0; background: transparent; box-shadow: none }
-input[type="checkbox"]:focus-visible, input[type="range"]:focus-visible { outline: 2px solid var(--focus-outer); outline-offset: 2px; box-shadow: 0 0 0 1px var(--focus-inner) }
-select option { background: var(--surface-strong); color: var(--ink) }
-
-textarea { min-height: 88px; resize: vertical }
-
-.muted { color: var(--muted) }
-.small-text { font-size: 12px; line-height: 16px; letter-spacing: +0.01em }
-.hidden { display: none !important }
-.mono { font-family: var(--font-mono); font-size: 12px }
-
-/* ---------- Estrutura: navegação (NavigationView compacta) + conteúdo ---------- */
-.app { position: relative; display: grid; grid-template-columns: var(--rail) minmax(0, 1fr); min-height: 100vh }
-
-.rail {
-  position: sticky; top: 0; z-index: 5;
-  height: 100vh;
-  display: flex; flex-direction: column; align-items: center; gap: 6px;
-  padding: 16px 0;
-  background: color-mix(in srgb, var(--bg-secondary) 78%, transparent);
-  -webkit-backdrop-filter: blur(32px) saturate(190%); backdrop-filter: blur(32px) saturate(190%);
-  border-right: 1px solid var(--line);
-  box-shadow: var(--shadow-16);
-}
-
-.brand {
-  width: 42px; height: 42px; margin-bottom: 16px;
-  display: grid; place-items: center;
-  border-radius: var(--radius-ctl);
-  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-bg) 100%);
-  color: var(--primary-ink);
-  font: 700 16px/1 var(--font-display);
-  box-shadow: 0 0 20px rgba(25, 211, 197, .45), inset 0 1px 1px rgba(255, 255, 255, .5);
-}
-
-.rail button {
-  position: relative;
-  width: 48px; height: 42px; min-height: 42px; padding: 0;
-  border: 0; border-radius: var(--radius-ctl);
-  background: transparent;
-  color: var(--ink-2);
-  box-shadow: none;
-  transition: background var(--fast) var(--ease), color var(--fast) var(--ease), transform var(--fast) var(--ease);
-}
-.rail button svg { width: 20px; height: 20px }
-.rail button:hover:not(:disabled) { background: var(--surface-2); color: var(--ink) }
-.rail button:active:not(:disabled) { background: var(--surface-1); transform: scale(.95) }
-.rail button[aria-current="page"] {
-  background: var(--select-bg);
-  color: var(--primary);
-  box-shadow: 0 0 16px rgba(25, 211, 197, .25), inset 0 1px 0 rgba(25, 211, 197, .2);
-}
-/* Indicador de seleção Fluent: traço vertical de 3×18px na cor de destaque com brilho */
-.rail button[aria-current="page"]::before {
-  content: ""; position: absolute; left: 0; top: 50%; width: 3px; height: 18px; margin-top: -9px;
-  border-radius: var(--radius-pill); background: var(--primary);
-  box-shadow: 0 0 12px var(--primary);
-}
-.rail button .tip {
-  position: absolute; left: 56px; top: 50%; transform: translateY(-50%);
-  white-space: nowrap; pointer-events: none; opacity: 0;
-  padding: 4px 8px; border-radius: var(--radius-ctl);
-  background: var(--surface-strong); color: var(--ink); border: 1px solid var(--line);
-  box-shadow: var(--shadow-8); font-size: 12px; font-weight: 400; line-height: 16px;
-  transition: opacity var(--fast) var(--ease);
-}
-.rail button:hover .tip, .rail button:focus-visible .tip { opacity: 1 }
-.rail .spacer { flex: 1 }
-.rail .badge-dot { position: absolute; top: 6px; right: 8px; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); border: 1px solid var(--bg); box-shadow: 0 0 8px var(--ok) }
-
-.shell { min-width: 0; display: flex; flex-direction: column }
-
-.topbar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; padding: 20px 32px 12px }
-.topbar .sub { margin: 4px 0 0; color: var(--muted); font-size: 12px; line-height: 16px }
-.top-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap }
-.top-actions input { width: 200px }
-
-/* Badge Fluent / Apple (aparência tint com transparência suave). */
-.chip {
-  display: inline-flex; align-items: center; gap: 4px;
-  min-height: 22px; padding: 0 10px;
-  border-radius: var(--radius-pill); border: 1px solid color-mix(in srgb, currentColor 30%, transparent);
-  background: var(--primary-soft); color: var(--primary);
-  font-size: 12px; font-weight: 600; line-height: 18px; white-space: nowrap;
-  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, .2);
-}
-.chip.ok { background: var(--ok-soft); color: var(--ok) }
-.chip.warn { background: var(--warn-soft); color: var(--warn) }
-.chip.bad { background: var(--bad-soft); color: var(--bad) }
-.chip.ai { background: var(--ai-soft); color: var(--ai); box-shadow: 0 0 10px rgba(247, 179, 43, .25) }
-.chip.neutral { background: rgba(148, 163, 184, .14); color: var(--muted) }
-.chip .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor }
-.chip.live .dot { animation: pulse 1.6s var(--ease) infinite }
-@keyframes pulse { 50% { opacity: .35 } }
-
-/* MessageBar Fluent / Apple (aviso informativo) em Liquid Glass. */
-.notice-strip { padding: 0 32px }
-.notice {
-  margin: 0 0 12px; padding: 12px 16px;
-  border: 1px solid rgba(56, 189, 248, .30);
-  border-left: 4px solid var(--info);
-  border-radius: var(--radius-ctl);
-  background: linear-gradient(135deg, rgba(56, 189, 248, .10) 0%, color-mix(in srgb, var(--info-bg) 88%, transparent) 100%);
-  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
-  box-shadow: inset 0 1px 1px var(--glass-highlight), 0 4px 20px rgba(0, 0, 0, .25);
-  font-size: 13px; line-height: 19px;
-  color: var(--ink);
-}
-
-
-main { padding: 4px 32px 32px; min-width: 0 }
-.view { display: none; animation: enter var(--normal) var(--ease-out) }
-.view.active { display: block }
-@keyframes enter { from { opacity: 0; transform: translateY(4px) } to { opacity: 1; transform: none } }
-
-/* ---------- Cartão em Vidro Líquido (Liquid Glass & Glassmorphism) ---------- */
-.card {
-  position: relative;
-  min-width: 0;
-  padding: 18px;
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-card);
-  background: var(--glass);
-  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
-  /* Liquid Glass: realce especular de 1px no topo + elevação difusa */
-  box-shadow: inset 0 1px 1px var(--glass-highlight), inset 0 -1px 1px rgba(0, 0, 0, .25), var(--shadow-8);
-  transition: border-color var(--normal) var(--ease), box-shadow var(--normal) var(--ease), background var(--normal) var(--ease);
-}
-.card:hover {
-  border-color: var(--line-strong);
-  background: var(--glass-elevated);
-  box-shadow: inset 0 1px 1px rgba(244, 248, 252, .22), 0 8px 32px rgba(0, 0, 0, .45), 0 0 16px rgba(25, 211, 197, .08);
-}
-.card-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 14px }
-.card-head h2 { font-size: 18px; line-height: 24px; font-weight: 600; min-width: 0; overflow-wrap: anywhere }
-.card-head select { max-width: 100%; min-width: 0 }
-
-.grid { display: grid; gap: 16px }
-.kpis { grid-template-columns: repeat(5, minmax(0, 1fr)) }
-.two { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) }
-.halves { grid-template-columns: repeat(2, minmax(0, 1fr)) }
-
-.kpi .label { font-size: 12px; line-height: 16px; color: var(--muted); font-weight: 500 }
-.kpi .value { font: 600 28px/36px var(--font-display); margin: 6px 0; font-variant-numeric: tabular-nums; letter-spacing: -0.02em }
-.kpi .hint { font-size: 12px; line-height: 16px; color: var(--muted) }
-
-/* Cartão de destaque: vidro tingido em ciano com reflexo especular */
-.kpi.accent {
-  background: linear-gradient(135deg, rgba(14, 148, 140, .45) 0%, rgba(78, 168, 255, .25) 100%), var(--glass);
-  color: var(--ink);
-  border-color: rgba(25, 211, 197, .45);
-  box-shadow: inset 0 1px 2px rgba(244, 248, 252, .35), 0 0 24px rgba(25, 211, 197, .25), var(--shadow-8);
-}
-.kpi.accent .label, .kpi.accent .hint { color: var(--ink-2) }
-
-.bar-row { display: grid; grid-template-columns: minmax(120px, 1.2fr) minmax(0, 2fr) 64px; gap: 12px; align-items: center; margin: 8px 0; font-size: 13px }
-.bar-row .name { display: flex; align-items: center; gap: 8px; min-width: 0 }
-.bar-row .name span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
-.swatch { width: 12px; height: 12px; border-radius: 3px; flex: 0 0 auto; background: var(--c); box-shadow: 0 0 8px color-mix(in srgb, var(--c) 50%, transparent); border: 1px solid rgba(255, 255, 255, .15) }
-.bar { height: 8px; border-radius: var(--radius-pill); background: var(--inset); overflow: hidden; display: flex }
-.bar i { display: block; height: 100% }
-.bar i.human { background: var(--c); box-shadow: 0 0 6px color-mix(in srgb, var(--c) 40%, transparent) }
-.bar i.ai { background: repeating-linear-gradient(45deg, var(--ai), var(--ai) 4px, transparent 4px, transparent 7px) }
-.bar-row .count { text-align: right; font-variant-numeric: tabular-nums; color: var(--muted) }
-
-/* ProgressBar Fluent / Apple. */
-.progress { height: 4px; border-radius: var(--radius-pill); background: var(--inset); overflow: hidden }
-.progress i { display: block; height: 100%; border-radius: inherit; background: var(--primary); transition: width var(--normal) var(--ease) }
-.kpi.accent .progress i { background: #ffffff }
-
-/* ---------- Revisão ---------- */
-.review-grid { display: grid; grid-template-columns: 272px minmax(0, 1fr) 340px; gap: 16px; align-items: start }
-.queue-card { position: sticky; top: 12px }
-.queue { max-height: calc(100vh - 300px); overflow: auto; margin: 8px -8px 0; padding: 0 8px }
-.queue button {
-  display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 12px; align-items: center;
-  width: 100%; margin: 0 0 4px; padding: 6px 8px; min-height: 52px;
-  text-align: left; font-weight: 400;
-  border-color: transparent; background: transparent;
-}
-.queue button:hover:not(:disabled), .boxes button:hover:not(:disabled) { background: var(--subtle-hover) }
-.queue button[aria-current="true"] {
-  position: relative;
-  background: var(--select-bg);
-  box-shadow: 0 0 12px rgba(25, 211, 197, .2);
-}
-.queue button[aria-current="true"]::before { content: ""; position: absolute; left: 0; top: 50%; width: 3px; height: 16px; margin-top: -8px; border-radius: var(--radius-pill); background: var(--primary) }
-.queue img { width: 56px; height: 40px; object-fit: cover; border-radius: var(--radius-ctl); background: var(--viewer) }
-.queue .q-title { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
-.queue small { display: block; color: var(--muted); font-size: 12px; line-height: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
-.q-state { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--line-strong); transition: box-shadow var(--fast) var(--ease), transform var(--fast) var(--ease) }
-.q-state.positive { background: var(--ok); border-color: var(--ok); box-shadow: 0 0 8px var(--ok) }
-.q-state.negative { background: var(--primary); border-color: var(--primary); box-shadow: 0 0 6px var(--primary) }
-.q-state.ambiguous { background: var(--warn); border-color: var(--warn); box-shadow: 0 0 6px var(--warn) }
-.q-state.excluded { background: var(--muted); border-color: var(--muted) }
-
-.stage-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap }
-.stage-title { min-width: 0; flex: 1 }
-.stage-title h2 { font-size: 16px }
-.stage-title p { margin: 0; font-size: 12px; line-height: 16px; color: var(--muted) }
-/* Toolbar Fluent / Apple: superfície sutil, divisores verticais. */
-.toolbar {
-  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-  margin: 12px 0; padding: 4px 8px; min-height: 40px;
-  border: 1px solid var(--line); border-radius: var(--radius-ctl);
-  background: var(--inset);
-}
-.toolbar .sep { width: 1px; height: 20px; background: var(--line-strong) }
-.toggle { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-size: 13px; color: var(--ink); cursor: pointer }
-.toggle input { width: 16px; min-height: 16px; height: 16px; margin: 0; accent-color: var(--primary-bg) }
-.range { display: inline-flex; align-items: center; gap: 8px; margin: 0; font-size: 13px; color: var(--ink) }
-.range input { width: 110px; min-height: 0; padding: 0; accent-color: var(--ai) }
-#drawToggle[aria-pressed="true"] { background: var(--primary-bg); color: var(--primary-ink); border-color: transparent }
-
-.viewer { position: relative; display: grid; place-items: center; overflow: hidden; background: var(--viewer); border: 1px solid var(--line); border-radius: var(--radius-card) }
-.viewer canvas { display: block; max-width: 100%; max-height: calc(100vh - 300px); width: auto; height: auto }
-.viewer.drawing canvas { touch-action: none; cursor: crosshair }
-.viewer canvas:focus-visible { outline-offset: -3px }
-
-#message {
-  min-height: 36px; margin: 12px 0 0; padding: 10px 14px;
-  border-radius: var(--radius-ctl);
-  border: 1px solid rgba(25, 211, 197, .30);
-  border-left: 4px solid var(--primary);
-  background: linear-gradient(135deg, rgba(25, 211, 197, .10) 0%, color-mix(in srgb, var(--select-bg) 85%, transparent) 100%);
-  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
-  box-shadow: inset 0 1px 1px var(--glass-highlight), 0 4px 16px rgba(0, 0, 0, .2);
-  font-size: 13px; line-height: 18px;
-  color: var(--ink);
-}
-#message.error {
-  border-color: rgba(240, 82, 99, .35);
-  border-left-color: var(--bad);
-  background: linear-gradient(135deg, rgba(240, 82, 99, .12) 0%, color-mix(in srgb, var(--bad-bg) 90%, transparent) 100%);
-  color: #FFB3BC;
-}
-:root[data-theme="light"] #message.error { color: var(--bad) }
-
-details { margin-top: 12px; font-size: 13px }
-details summary { cursor: pointer; color: var(--muted) }
-details summary:hover { color: var(--ink) }
-details p { white-space: pre-line }
-
-.inspector { display: grid; gap: 16px }
-.section-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px }
-.section-title h2 { font-size: 16px; line-height: 22px }
-.boxes { max-height: 260px; overflow: auto; font-size: 13px }
-.boxes button {
-  display: block; width: 100%; margin: 4px 0; padding: 8px 12px;
-  text-align: left; font-weight: 400;
-  border: 1px solid var(--line); border-left: 4px solid var(--box-color); border-radius: var(--radius-ctl); background: var(--inset);
-  transition: background var(--fast) var(--ease), border-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
-}
-.boxes button:hover:not(:disabled) { background: var(--subtle-hover); border-color: var(--line-strong); box-shadow: 0 0 10px color-mix(in srgb, var(--box-color) 25%, transparent) }
-.boxes button.selected {
-  background: var(--select-bg);
-  border-color: var(--primary);
-  border-left-color: var(--box-color);
-  box-shadow: 0 0 14px color-mix(in srgb, var(--box-color) 40%, transparent), 0 0 10px rgba(25, 211, 197, .25);
-}
-.box-caption { font-size: 12px; line-height: 16px; color: var(--muted) }
-
-/* Sugestões da IA: Amarelo/Âmbar luminoso com borda tracejada e fundo de estado IA */
-/* Card empilhado: cabeçalho (nº + classe), linha de confiança, barra e ações em largura total.
-   Os botões ficam fora da regra genérica ".boxes button" (bloco 100%), que espremia o texto. */
-.suggestion {
-  display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px;
-  margin: 8px 0; padding: 12px;
-  border: 1px dashed var(--box-color); border-left: 4px solid var(--ai); border-radius: var(--radius-ctl);
-  background: linear-gradient(135deg, rgba(247, 179, 43, .12) 0%, color-mix(in srgb, var(--ai-bg) 88%, transparent) 100%);
-  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
-  box-shadow: 0 0 14px rgba(247, 179, 43, .18), inset 0 1px 0 rgba(247, 179, 43, .15);
-  font-size: 13px;
-  transition: box-shadow var(--fast) var(--ease), border-color var(--fast) var(--ease);
-}
-.suggestion:hover {
-  box-shadow: 0 0 22px rgba(247, 179, 43, .35), inset 0 1px 0 rgba(247, 179, 43, .25);
-}
-.suggestion .s-head { display: flex; align-items: center; gap: 8px; min-width: 0 }
-.suggestion .s-index {
-  flex: none; padding: 0 8px; border-radius: var(--radius-pill);
-  background: var(--ai-soft); color: var(--ai); font-size: 12px; font-weight: 700; line-height: 20px;
-}
-.suggestion .s-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--box-color); box-shadow: 0 0 6px var(--box-color) }
-.suggestion .s-class { min-width: 0; font-size: 14px; font-weight: 600; line-height: 20px; color: var(--ink); overflow-wrap: anywhere }
-.suggestion .s-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 12px; line-height: 16px; color: var(--muted) }
-.suggestion .s-meta strong { color: var(--ai); font-variant-numeric: tabular-nums }
-.suggestion .s-overlap { padding: 0 8px; border-radius: var(--radius-pill); background: var(--inset); color: var(--ink); line-height: 20px }
-.suggestion .conf { height: 4px; border-radius: var(--radius-pill); background: var(--inset); overflow: hidden }
-.suggestion .conf i { display: block; height: 100%; background: var(--ai); box-shadow: 0 0 8px var(--ai) }
-.suggestion .actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px }
-.boxes .suggestion .actions button {
-  width: auto; margin: 0; padding: 4px 8px; min-height: 32px;
-  text-align: center; font-weight: 600; white-space: normal;
-  border: 1px solid var(--line); border-left-width: 1px; border-radius: var(--radius-ctl);
-}
-.boxes .suggestion .actions button.ai { border-color: var(--ai); background: var(--ai-soft); color: var(--ai) }
-:root[data-theme="light"] .suggestion button.ai { color: #9A3412 }
-
-
-.coordinates { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px }
-.coordinates input { min-width: 0 }
-.row-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px }
-.checks { display: flex; gap: 8px; align-items: flex-start; margin-top: 12px }
-.checks input { width: 16px; min-height: 16px; height: 16px; margin-top: 2px; accent-color: var(--primary-bg) }
-.checks label { margin: 0; font-size: 13px; line-height: 18px; color: var(--ink) }
-.shortcuts { margin-top: 12px; font-size: 12px; line-height: 20px; color: var(--muted) }
-kbd { font: 11px/16px var(--font-mono); padding: 0 5px; border: 1px solid var(--control-border); border-bottom-width: 2px; border-radius: var(--radius-ctl); background: var(--control); color: var(--ink) }
-
-/* ---------- Treino, monitoramento, modelos ---------- */
-.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; counter-reset: step }
-.step { min-width: 0; padding: 14px; border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--inset); transition: border-color var(--fast) var(--ease) }
-.step:hover { border-color: var(--line-strong) }
-.step::before { counter-increment: step; content: counter(step); display: inline-grid; place-items: center; width: 24px; height: 24px; margin-bottom: 8px; border-radius: 50%; background: var(--primary-soft); color: var(--primary); font-size: 12px; font-weight: 600 }
-.step.done::before { content: "✓"; background: var(--ok); color: #ffffff; box-shadow: 0 0 10px var(--ok) }
-.step h3 { margin: 0 0 4px }
-.step p { margin: 0 0 8px; font-size: 12px; line-height: 16px; color: var(--muted) }
-
-.command {
-  position: relative; margin: 8px 0 0; padding: 10px 76px 10px 12px;
-  border: 1px solid var(--line); border-radius: var(--radius-ctl);
-  background: var(--terminal); color: var(--terminal-ink);
-  font: 12px/18px var(--font-mono); white-space: pre-wrap; word-break: break-all;
-}
-.command button { position: absolute; top: 6px; right: 6px; min-height: 24px; padding: 2px 8px; font-size: 12px; background: rgba(255, 255, 255, .08); color: var(--terminal-ink); border-color: rgba(255, 255, 255, .16) }
-.command button:hover:not(:disabled) { background: rgba(255, 255, 255, .16) }
-
-.form-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 12px }
-.form-grid .wide { grid-column: 1 / -1 }
-
-/* DataGrid Fluent. */
-table { width: 100%; border-collapse: collapse; font-size: 13px }
-th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top }
-th { font-size: 12px; line-height: 16px; color: var(--muted); font-weight: 600 }
-td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap }
-td.num small, th.num, #compareTable td.num { white-space: normal }
-#compareTable td:first-child { overflow-wrap: anywhere }
-tbody tr { transition: background var(--fast) var(--ease) }
-tbody tr.clickable { cursor: pointer }
-tbody tr.clickable:hover, tbody tr[aria-selected="true"] { background: var(--subtle-hover) }
-tbody tr[aria-selected="true"] td:first-child { box-shadow: inset 3px 0 0 var(--primary) }
-.table-wrap { overflow-x: auto }
-.cell-bad { color: var(--bad); font-weight: 600 }
-.cell-warn { color: var(--warn); font-weight: 600 }
-
-.chart { width: 100%; min-height: 220px; position: relative }
-.chart svg { width: 100%; height: 220px; display: block }
-.chart .legend { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; font-size: 12px; color: var(--muted) }
-.chart .legend span { display: inline-flex; align-items: center; gap: 6px }
-.chart .legend i { width: 14px; height: 3px; border-radius: 2px; background: var(--c); box-shadow: 0 0 6px var(--c) }
-.chart .tooltip { position: absolute; pointer-events: none; white-space: normal; max-width: calc(100% - 4px); padding: 6px 10px; border: 1px solid var(--line); border-radius: var(--radius-ctl); background: var(--glass-strong); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); box-shadow: var(--shadow-16); font-size: 12px }
-.empty { padding: 24px; text-align: center; color: var(--muted); font-size: 13px }
-
-.plots { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-top: 12px }
-.plots a { display: block; overflow: hidden; border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--viewer); transition: box-shadow var(--fast) var(--ease) }
-.plots a:hover { box-shadow: var(--shadow-8) }
-.plots img { display: block; width: 100%; height: 150px; object-fit: contain }
-.plots span { display: block; padding: 6px 8px; font-size: 12px; color: var(--muted); background: var(--glass-strong) }
-
-/* ProgressRing do treino: traço na cor de destaque sobre trilho neutro. */
-.ring-wrap { display: flex; gap: 24px; align-items: center; flex-wrap: wrap }
-.ring { width: 132px; height: 132px; flex: 0 0 auto }
-.ring circle { fill: none; stroke-width: 8 }
-.ring .track { stroke: var(--inset) }
-.ring .value { stroke: var(--primary); stroke-linecap: round; transform: rotate(-90deg); transform-origin: 50% 50%; filter: drop-shadow(0 0 6px var(--primary)); transition: stroke-dashoffset var(--normal) var(--ease) }
-.ring text { fill: var(--ink); font: 600 20px var(--font-display) }
-.ring .ring-sub { fill: var(--muted); font-size: 11px; font-weight: 400 }
-.facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px 24px; font-size: 13px }
-.facts dt { color: var(--muted); font-size: 12px; line-height: 16px }
-.facts dd { margin: 0; font-weight: 600 }
-.metric-tiles { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px }
-.metric-tiles .tile { padding: 12px; border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--inset) }
-.metric-tiles .tile b { display: block; font: 600 20px/28px var(--font-display); font-variant-numeric: tabular-nums }
-.metric-tiles .tile span { font-size: 12px; line-height: 16px; color: var(--muted) }
-.delta.up { color: var(--ok) } .delta.down { color: var(--bad) }
-pre.log { max-height: 260px; overflow: auto; margin: 8px 0 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: var(--radius-ctl); background: var(--terminal); color: var(--terminal-ink); font: 12px/18px var(--font-mono); white-space: pre-wrap }
-
-.verdict { display: flex; gap: 12px; align-items: flex-start; padding: 12px; border: 1px solid color-mix(in srgb, var(--bad) 30%, transparent); border-left: 3px solid var(--bad); border-radius: var(--radius-ctl); background: var(--bad-soft) }
-.verdict.ok { border-color: color-mix(in srgb, var(--ok) 30%, transparent); border-left-color: var(--ok); background: var(--ok-soft) }
-.verdict ul { margin: 6px 0 0; padding-left: 18px; font-size: 13px }
-
-/* Toast Fluent em Liquid Glass com brilho verde Moonlight */
-#toast {
-  position: fixed; right: 24px; bottom: 24px; z-index: 20;
-  display: flex; gap: 12px; align-items: center;
-  max-width: 400px; padding: 14px 18px;
-  border: 1px solid rgba(34, 199, 122, .4); border-left: 4px solid var(--ok); border-radius: var(--radius-card);
-  background: var(--glass-strong);
-  -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur);
-  box-shadow: 0 0 28px rgba(34, 199, 122, .35), inset 0 1px 1px var(--glass-highlight), var(--shadow-28);
-  opacity: 0; transform: translateY(12px); pointer-events: none;
-  transition: opacity var(--normal) var(--ease-out), transform var(--normal) var(--ease-out);
-}
-#toast.show { opacity: 1; transform: none }
-#toast .check { width: 28px; height: 28px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 50%; background: var(--ok); color: #ffffff; font-weight: 700; box-shadow: 0 0 12px rgba(34, 199, 122, .6) }
-#toast b { display: block; font-weight: 600 }
-#toast span { font-size: 12px; line-height: 16px; color: var(--muted) }
-
-/* Brilho verde quando uma decisão é registrada */
-@keyframes decisionPulse {
-  0% {
-    box-shadow: 0 0 0 0 rgba(34, 199, 122, 0.75), inset 0 0 15px rgba(34, 199, 122, 0.35);
-    border-color: var(--ok);
-  }
-  40% {
-    box-shadow: 0 0 32px 6px rgba(34, 199, 122, 0.55), inset 0 0 25px rgba(34, 199, 122, 0.25);
-    border-color: var(--ok);
-  }
-  100% {
-    box-shadow: inset 0 1px 1px var(--glass-highlight), var(--shadow-8);
-    border-color: var(--glass-border);
-  }
-}
-.glow-decision {
-  animation: decisionPulse 1.2s cubic-bezier(0, 0, 0.2, 1) !important;
-}
-
-.footer { padding: 0 32px 24px; font-size: 12px; line-height: 16px; color: var(--muted) }
-
-@media (max-width: 1350px) {
-  .review-grid { grid-template-columns: 240px minmax(0, 1fr) }
-  .inspector { grid-column: 1 / -1; grid-template-columns: repeat(2, minmax(0, 1fr)) }
-  .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)) }
-  .steps { grid-template-columns: repeat(2, minmax(0, 1fr)) }
-}
-
-@media (max-width: 1000px) {
-  .app { grid-template-columns: 1fr }
-  .rail { position: fixed; top: auto; bottom: 0; left: 0; right: 0; height: auto; flex-direction: row; justify-content: space-around; padding: 4px; border-right: 0; border-top: 1px solid var(--glass-border); box-shadow: var(--shadow-16) }
-  .rail button[aria-current="page"]::before { left: 50%; top: auto; bottom: 0; width: 16px; height: 3px; margin: 0 0 0 -8px }
-  .rail .brand, .rail .spacer, .rail button .tip { display: none }
-  .topbar, .notice-strip, main, .footer { padding-left: 16px; padding-right: 16px }
-  h1 { font-size: 24px; line-height: 32px }
-  .review-grid, .two, .halves, .inspector { grid-template-columns: 1fr }
-  .queue-card { position: static }
-  .queue { max-height: 260px }
-  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)) }
-  .steps { grid-template-columns: 1fr }
-  .form-grid { grid-template-columns: 1fr 1fr }
-  .metric-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)) }
-  .viewer canvas { max-height: 60vh }
-  #toast { left: 16px; right: 16px; bottom: 90px; max-width: none }
-  /* Dock com lupa de vidro no lugar da barra inferior; o trilho fica só com o botão de tema, flutuando no topo. */
-  .nav-magnifier { display: block; background: color-mix(in srgb, var(--bg-secondary) 82%, transparent) }
-  .nav-magnifier .nav__fake-icons { background: color-mix(in srgb, var(--bg-secondary) 95%, transparent) }
-  /* Sem desfoque na lente: ele borrava o ícone ampliado que fica embaixo dela. */
-  .nav-magnifier .nav__glass { -webkit-backdrop-filter: none; backdrop-filter: none }
-  .rail button[data-view] { display: none }
-  .rail { top: 12px; right: 12px; bottom: auto; left: auto; padding: 0; border: 0; border-radius: var(--radius-ctl) }
-  .topbar { padding-right: 72px }
-  .shell { padding-bottom: 90px }
-}
-.nav-magnifier .nav__item-link { position: relative }
-.nav-magnifier .nav__item-link:focus-visible { z-index: 2 }
-.nav-magnifier .badge-dot { position: absolute; top: 4px; right: 4px; z-index: 3; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); border: 1px solid var(--bg); box-shadow: 0 0 8px var(--ok) }
-:root[data-theme="light"] .nav-magnifier .nav__item-link--purple,
-:root[data-theme="light"] .nav-magnifier .nav__fake-icon--purple { color: #7C3AED }
-
-@media (max-width: 480px) {
-  .kpis, .steps, .form-grid { grid-template-columns: 1fr }
-  .coordinates { grid-template-columns: repeat(2, 1fr) }
-  .top-actions, .top-actions input { width: 100% }
-  .top-actions button { flex: 1 }
-  .bar-row { grid-template-columns: minmax(0, 1fr) 54px }
-  .bar-row .bar { grid-column: 1 / -1; grid-row: 2 }
-  .stage-title { flex-basis: 100%; order: -1 }
-}
-
-/* Sem suporte a backdrop-filter: vidro vira superfície opaca legível. */
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .card, .rail, #toast, .notice, .chart .tooltip, .nav-magnifier { background: var(--surface-strong) }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important }
-  .glow-decision { animation: none !important }
-}
-
-@media (prefers-reduced-transparency: reduce) {
-  .card, .rail, #toast, .chart .tooltip, .nav-magnifier { background: var(--surface-strong); -webkit-backdrop-filter: none; backdrop-filter: none }
-}
+__PLATFORM_CSS__
 </style>
 </head>
 <body>
 <svg display="none" aria-hidden="true">
-  <symbol id="dc-nav-overview" viewBox="0 0 24 24">
-    <rect x="3" y="3" width="7" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/>
-    <rect x="14" y="3" width="7" height="5" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/>
-    <rect x="14" y="12" width="7" height="9" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/>
-    <rect x="3" y="16" width="7" height="5" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/>
-  </symbol>
-  <symbol id="dc-nav-review" viewBox="0 0 24 24">
-    <path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-    <rect x="8" y="8" width="8" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/>
-  </symbol>
-  <symbol id="dc-nav-training" viewBox="0 0 24 24">
-    <path d="M12 3v3M12 18v3M4.2 7.5l2.6 1.5M17.2 15l2.6 1.5M4.2 16.5 6.8 15M17.2 9l2.6-1.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
-    <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/>
-  </symbol>
-  <symbol id="dc-nav-monitor" viewBox="0 0 24 24">
-    <path d="M3 12h4l3-7 4 14 3-7h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-  </symbol>
-  <symbol id="dc-nav-models" viewBox="0 0 24 24">
-    <path d="M12 3 3 8l9 5 9-5-9-5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-    <path d="m3 13 9 5 9-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
-  </symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5M5.5 10v10h13V10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+  <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V5m0 0-4 4m4-4 4 4M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-review" viewBox="0 0 24 24"><path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><rect x="8" y="8" width="8" height="8" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
+  <symbol id="i-report" viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7V3Zm7 0v4h4M10 12h5M10 16h5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-training" viewBox="0 0 24 24"><path d="M12 3v3M12 18v3M4.2 7.5l2.6 1.5M17.2 15l2.6 1.5M4.2 16.5 6.8 15M17.2 9l2.6-1.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
+  <symbol id="i-monitor" viewBox="0 0 24 24"><path d="M3 12h4l3-7 4 14 3-7h4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-models" viewBox="0 0 24 24"><path d="M12 3 3 8l9 5 9-5-9-5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m3 13 9 5 9-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11m0 0 4-4m-4 4-4-4M4 17v1a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m5 17 4.5-5 3.5 4 2.5-3L19 17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><circle cx="9" cy="9" r="1.5" fill="currentColor"/></symbol>
+  <symbol id="i-video" viewBox="0 0 24 24"><rect x="3" y="6" width="13" height="12" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m16 10 5-3v10l-5-3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+  <symbol id="i-zip" viewBox="0 0 24 24"><path d="M7 3h7l4 4v14H7V3Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 7h2M10 10h2M10 13h2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  <symbol id="i-save" viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5V4Zm3 0v5h7V4M8 20v-6h8v6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7L8 5Z" fill="currentColor"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3ZM5 17l.9 2.1L8 20l-2.1.9L5 23l-.9-2.1L2 20l2.1-.9L5 17Z" fill="currentColor"/></symbol>
 </svg>
+
 <div class="app">
-<nav class="rail" aria-label="Seções da plataforma">
-  <div class="brand" aria-hidden="true">DC</div>
-  <button type="button" data-view="overview" aria-label="Visão geral"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg><span class="tip">Visão geral</span></button>
-  <button type="button" data-view="review" aria-label="Revisão e classificação"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7V5a1 1 0 0 1 1-1h2M17 4h2a1 1 0 0 1 1 1v2M20 17v2a1 1 0 0 1-1 1h-2M7 20H5a1 1 0 0 1-1-1v-2"/><rect x="8" y="8" width="8" height="8" rx="1.5"/></svg><span class="tip">Revisão e classificação</span></button>
-  <button type="button" data-view="training" aria-label="Treinamento e fine-tuning"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v3M12 18v3M4.2 7.5l2.6 1.5M17.2 15l2.6 1.5M4.2 16.5 6.8 15M17.2 9l2.6-1.5"/><circle cx="12" cy="12" r="4"/></svg><span class="tip">Treinamento e fine-tuning</span></button>
-  <button type="button" data-view="monitor" aria-label="Monitoramento"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg><span class="tip">Monitoramento</span><span class="badge-dot hidden" id="liveDot"></span></button>
-  <button type="button" data-view="models" aria-label="Modelos e comparação"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="m3 13 9 5 9-5"/></svg><span class="tip">Modelos e comparação</span></button>
-  <div class="spacer"></div>
-  <button type="button" id="themeToggle" aria-label="Alternar tema claro/escuro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/></svg><span class="tip">Tema claro/escuro</span></button>
-</nav>
-
-<nav class="nav-magnifier nav--on-page1" id="navMagnifier" aria-label="Navegação móvel com lente de vidro">
-  <ul class="nav__items">
-    <li class="nav__item">
-      <a class="nav__item-link nav__item-link--cyan" href="#overview" data-nav-item="1" data-view="overview" aria-label="Visão geral">
-        <svg class="nav__item-icon" aria-hidden="true"><use xlink:href="#dc-nav-overview"/></svg>
-        <span class="nav__item-sr">Visão geral</span>
-      </a>
-    </li>
-    <li class="nav__item">
-      <a class="nav__item-link nav__item-link--blue" href="#review" data-nav-item="2" data-view="review" aria-label="Revisão e classificação">
-        <svg class="nav__item-icon" aria-hidden="true"><use xlink:href="#dc-nav-review"/></svg>
-        <span class="nav__item-sr">Revisão</span>
-      </a>
-    </li>
-    <li class="nav__item">
-      <a class="nav__item-link nav__item-link--amber" href="#training" data-nav-item="3" data-view="training" aria-label="Treinamento e fine-tuning">
-        <svg class="nav__item-icon" aria-hidden="true"><use xlink:href="#dc-nav-training"/></svg>
-        <span class="nav__item-sr">Treinamento</span>
-      </a>
-    </li>
-    <li class="nav__item">
-      <a class="nav__item-link nav__item-link--green" href="#monitor" data-nav-item="4" data-view="monitor" aria-label="Monitoramento">
-        <svg class="nav__item-icon" aria-hidden="true"><use xlink:href="#dc-nav-monitor"/></svg>
-        <span class="nav__item-sr">Monitoramento</span>
-        <span class="badge-dot hidden" id="liveDotDock"></span>
-      </a>
-    </li>
-    <li class="nav__item">
-      <a class="nav__item-link nav__item-link--purple" href="#models" data-nav-item="5" data-view="models" aria-label="Modelos e comparação">
-        <svg class="nav__item-icon" aria-hidden="true"><use xlink:href="#dc-nav-models"/></svg>
-        <span class="nav__item-sr">Modelos</span>
-      </a>
-    </li>
-  </ul>
-  <div class="nav__fake-icons" aria-hidden="true">
-    <div class="nav__fake-icon-box" data-glass-item="1"><svg class="nav__fake-icon nav__fake-icon--cyan"><use xlink:href="#dc-nav-overview"/></svg></div>
-    <div class="nav__fake-icon-box" data-glass-item="2"><svg class="nav__fake-icon nav__fake-icon--blue"><use xlink:href="#dc-nav-review"/></svg></div>
-    <div class="nav__fake-icon-box" data-glass-item="3"><svg class="nav__fake-icon nav__fake-icon--amber"><use xlink:href="#dc-nav-training"/></svg></div>
-    <div class="nav__fake-icon-box" data-glass-item="4"><svg class="nav__fake-icon nav__fake-icon--green"><use xlink:href="#dc-nav-monitor"/></svg></div>
-    <div class="nav__fake-icon-box" data-glass-item="5"><svg class="nav__fake-icon nav__fake-icon--purple"><use xlink:href="#dc-nav-models"/></svg></div>
+<nav class="sidebar" id="sidebar" aria-label="Seções da plataforma">
+  <a class="brand" href="#home" data-view="home"><span class="mark" aria-hidden="true">DV</span><span><b>DroneCamp Vision</b><small>Inspeção assistida de telhados</small></span></a>
+  <div class="nav-group">
+    <div class="nav-title">Operação</div>
+    <button type="button" class="nav-item" data-view="home"><svg><use href="#i-home"/></svg>Início</button>
+    <button type="button" class="nav-item" data-view="inspections"><svg><use href="#i-folder"/></svg>Inspeções<span class="count" id="navInspections"></span></button>
+    <button type="button" class="nav-item" data-view="upload"><svg><use href="#i-upload"/></svg>Importar mídia</button>
+    <button type="button" class="nav-item" data-view="review"><svg><use href="#i-review"/></svg>Revisão<span class="count ai hidden" id="navSuggestions" title="Sugestões da IA pendentes"></span></button>
+    <button type="button" class="nav-item" data-view="reports"><svg><use href="#i-report"/></svg>Laudos e downloads</button>
   </div>
-  <div class="nav__glass" data-glass aria-hidden="true"></div>
+  <div class="nav-group">
+    <div class="nav-title">Inteligência artificial</div>
+    <button type="button" class="nav-item" data-view="training"><svg><use href="#i-training"/></svg>Treinamento</button>
+    <button type="button" class="nav-item" data-view="monitor"><svg><use href="#i-monitor"/></svg>Monitoramento<span class="live-dot hidden" id="liveDot" title="Treino em andamento"></span></button>
+    <button type="button" class="nav-item" data-view="models"><svg><use href="#i-models"/></svg>Modelos</button>
+  </div>
+  <div class="spacer"></div>
+  <div class="sidebar-foot">
+    <div class="status" id="modeChip"><span class="dot"></span><span>Instantâneo offline</span></div>
+    <div class="row">
+      <span class="version" id="versionLabel"></span>
+      <button type="button" class="theme-btn" id="themeToggle" aria-label="Alternar tema claro/escuro"><svg><use href="#i-moon"/></svg><span>Tema</span></button>
+    </div>
+  </div>
 </nav>
+<div class="scrim hidden" id="scrim"></div>
 
-<div class="shell">
+<div class="main">
+<div class="mobile-bar">
+  <a class="brand" href="#home" data-view="home"><span class="mark" aria-hidden="true">DV</span><span><b>DroneCamp Vision</b></span></a>
+  <button type="button" class="icon" id="menuToggle" aria-label="Abrir menu" aria-controls="sidebar" aria-expanded="false"><svg><use href="#i-menu"/></svg></button>
+</div>
 <header class="topbar">
-  <div>
-    <h1 id="viewTitle">Visão geral</h1>
-    <p class="sub">DroneCamp Vision · inspeção assistida de telhados · registro <span id="versionLabel"></span></p>
+  <div class="titles">
+    <h1 id="viewTitle">Início</h1>
+    <p class="sub" id="viewSubtitle">Inspeção assistida de telhados industriais</p>
   </div>
   <div class="top-actions">
-    <span class="chip neutral" id="modeChip"><span class="dot"></span>Instantâneo offline</span>
-    <label for="reviewer" class="hidden">Seu identificador de revisão</label>
-    <input id="reviewer" maxlength="100" placeholder="Identificador de revisão" autocomplete="off" aria-label="Seu identificador de revisão">
-    <button class="primary btn-apple-capsule" id="export" type="button"><span class="btn-icon-circle">↓</span><span>Salvar arquivo de revisão</span></button>
+    <label for="reviewPicker" class="sr-only">Inspeção aberta</label>
+    <select id="reviewPicker" aria-label="Inspeção aberta" title="Inspeção aberta"></select>
+    <label for="reviewer" class="sr-only">Seu identificador de revisão</label>
+    <input id="reviewer" maxlength="100" placeholder="Identificador do revisor" autocomplete="off" aria-label="Seu identificador de revisão">
+    <button class="primary" id="export" type="button"><svg><use href="#i-save"/></svg><span>Salvar revisão</span></button>
   </div>
 </header>
 <div class="notice-strip">
-  <div class="notice"><strong>Propostas visuais por IA, aguardando sua revisão.</strong> Esta plataforma não certifica a condição do telhado. Correções registradas poderão compor um próximo conjunto de treinamento depois de validadas; treinar ou gerar pesos não comprova melhoria.</div>
+  <div class="notice ai" id="aiNotice"><strong>Sugestões da IA aguardam decisão humana.</strong> A plataforma não certifica a condição do telhado: gravidade, diagnóstico e recomendações dependem de validação técnica. Treinar ou gerar pesos não comprova melhoria.</div>
   <p class="notice hidden" id="taxonomyNotice"></p>
 </div>
 
 <main>
-<!-- ======================= VISÃO GERAL ======================= -->
-<section class="view" id="view-overview" aria-labelledby="viewTitle">
+<!-- ======================= INÍCIO ======================= -->
+<section class="view" id="view-home">
   <div class="grid kpis">
-    <div class="card kpi accent"><div class="label">Fotos na revisão</div><div class="value" id="kpiPhotos">0</div><div class="hint" id="kpiPhotosHint"></div></div>
-    <div class="card kpi"><div class="label">Decisões registradas</div><div class="value" id="kpiDecisions">0</div><div class="progress" aria-hidden="true"><i id="kpiDecisionsBar" style="width:0"></i></div></div>
-    <div class="card kpi"><div class="label">Caixas atuais</div><div class="value" id="kpiBoxes">0</div><div class="hint">incluindo suas correções locais</div></div>
-    <div class="card kpi"><div class="label">Sugestões da IA pendentes</div><div class="value" id="kpiSuggestions">0</div><div class="hint" id="kpiSuggestionsHint"></div></div>
-    <div class="card kpi"><div class="label">Classes com poucos exemplos</div><div class="value" id="kpiSparse">0</div><div class="hint">menos de 5 caixas nesta revisão</div></div>
+    <div class="card kpi accent"><div class="label">Fotos na inspeção</div><div class="value" id="kpiPhotos">0</div><div class="hint" id="kpiPhotosHint"></div></div>
+    <div class="card kpi"><div class="label">Decisões registradas</div><div class="value" id="kpiDecisions">0</div><div class="progress ok" aria-hidden="true"><i id="kpiDecisionsBar" style="width:0"></i></div></div>
+    <div class="card kpi"><div class="label">Ocorrências marcadas</div><div class="value" id="kpiBoxes">0</div><div class="hint">caixas, incluindo suas correções locais</div></div>
+    <div class="card kpi ai"><div class="label">Sugestões da IA pendentes</div><div class="value" id="kpiSuggestions">0</div><div class="hint" id="kpiSuggestionsHint"></div></div>
+    <div class="card kpi"><div class="label">Classes com poucos exemplos</div><div class="value" id="kpiSparse">0</div><div class="hint">menos de 5 caixas nesta inspeção</div></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <div class="card-head"><h2>Ações rápidas</h2><span class="muted small-text" id="homeContext"></span></div>
+    <div class="quick-actions">
+      <button type="button" data-goto="upload"><svg><use href="#i-upload"/></svg><span><b>Nova inspeção</b><span class="d">Enviar fotos ou vídeos do voo</span></span></button>
+      <button type="button" data-goto="review"><svg><use href="#i-review"/></svg><span><b>Continuar revisão</b><span class="d" id="qaReview">Conferir caixas e sugestões</span></span></button>
+      <button type="button" data-goto="reports"><svg><use href="#i-report"/></svg><span><b>Gerar laudo preliminar</b><span class="d">PDF/HTML com evidências</span></span></button>
+      <button type="button" data-goto="monitor"><svg><use href="#i-spark"/></svg><span><b>Sugestões da IA</b><span class="d">Rodar o modelo nesta inspeção</span></span></button>
+    </div>
   </div>
   <div class="grid two" style="margin-top:16px">
     <div class="card">
@@ -1247,35 +126,85 @@ pre.log { max-height: 260px; overflow: auto; margin: 8px 0 0; padding: 10px 12px
       </div>
     </div>
   </div>
+  <div class="card" style="margin-top:16px" id="homeInspectionsCard">
+    <div class="card-head"><h2>Inspeções recentes</h2><button class="small" type="button" data-goto="inspections">Ver todas</button></div>
+    <div id="homeInspections"></div>
+  </div>
+</section>
+
+<!-- ======================= INSPEÇÕES ======================= -->
+<section class="view" id="view-inspections">
+  <div class="card">
+    <div class="card-head">
+      <div><h2>Inspeções e campanhas</h2><p id="inspectionsHint">Cada inspeção guarda as fotos originais congeladas por hash, o registro de revisão e o histórico das decisões.</p></div>
+      <div class="row-actions" style="margin:0"><button type="button" class="primary" data-goto="upload"><svg><use href="#i-upload"/></svg>Nova inspeção</button></div>
+    </div>
+    <div class="inspection-list" id="inspectionList"></div>
+  </div>
+</section>
+
+<!-- ======================= IMPORTAR MÍDIA ======================= -->
+<section class="view" id="view-upload">
+  <p class="notice info hidden" id="uploadOffline">Para enviar fotos e vídeos pela interface, abra a plataforma pelo servidor local (<b>Abrir plataforma DroneCamp.cmd</b>). Aberta direto do disco, use o comando <code>import-media</code> no terminal.</p>
+  <div class="grid two">
+    <div class="card">
+      <div class="card-head"><div><h2>Enviar fotos e vídeos</h2><p>Fotos (JPG, PNG, WEBP, TIFF, BMP) e vídeos (MP4, MOV, AVI, MKV). TIFF e BMP são regravadas como JPEG; vídeos viram quadros amostrados no intervalo escolhido. Os arquivos enviados ficam guardados na pasta da inspeção.</p></div></div>
+      <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Selecionar ou arrastar arquivos">
+        <svg><use href="#i-upload"/></svg>
+        <b>Arraste os arquivos aqui ou clique para escolher</b>
+        <p>Os originais são preservados; nada é alterado ou apagado.</p>
+        <input type="file" id="fileInput" class="hidden" multiple accept="image/*,video/*,.jpg,.jpeg,.png,.webp,.tif,.tiff,.bmp,.mp4,.mov,.avi,.mkv,.m4v,.webm">
+      </div>
+      <div class="file-list" id="fileList"></div>
+      <p class="muted small-text" id="fileSummary"></p>
+    </div>
+    <div class="card">
+      <div class="card-head"><h2>Dados da inspeção</h2></div>
+      <label for="uploadName">Nome da inspeção</label><input id="uploadName" maxlength="60" placeholder="ex.: galpao_b_2026_10">
+      <p class="field-help">Vira a pasta da revisão (letras minúsculas, números e _).</p>
+      <label for="uploadGroup">Edificação / campanha</label><input id="uploadGroup" maxlength="100" placeholder="ex.: Galpão B — CEASA">
+      <p class="field-help">Cenas da mesma edificação ficam no mesmo grupo de avaliação.</p>
+      <div class="form-grid">
+        <div><label for="uploadEvery">Intervalo entre quadros (s)</label><input id="uploadEvery" type="number" min="0.2" max="600" step="0.1" value="2"></div>
+        <div><label for="uploadMaxFrames">Máximo de quadros por vídeo</label><input id="uploadMaxFrames" type="number" min="1" max="2000" value="200"></div>
+      </div>
+      <label for="uploadNotes">Observações da campanha</label><textarea id="uploadNotes" placeholder="Data do voo, equipamento, condições, responsável."></textarea>
+      <label for="uploadWeights">Gerar sugestões da IA após importar</label><select id="uploadWeights"></select>
+      <p class="field-help">As sugestões ficam pendentes até a sua decisão. Escolha “não gerar” para revisar sem modelo.</p>
+      <div class="row-actions"><button type="button" class="primary" id="startUpload" disabled><svg><use href="#i-upload"/></svg>Enviar e criar inspeção</button><button type="button" id="cancelUpload" class="hidden">Cancelar</button></div>
+      <div class="progress hidden" id="uploadProgress" aria-hidden="true"><i style="width:0"></i></div>
+      <p class="small-text" id="uploadStatus" role="status" aria-live="polite"></p>
+      <div class="hidden" id="uploadResult"></div>
+    </div>
+  </div>
 </section>
 
 <!-- ======================= REVISÃO ======================= -->
 <section class="view" id="view-review">
-  <div class="review-grid">
+  <div class="empty hidden" id="reviewEmpty">Nenhuma inspeção aberta. Importe fotos ou escolha uma inspeção na lista.</div>
+  <div class="review-grid" id="reviewGrid">
     <aside class="card queue-card" aria-label="Fila de revisão">
       <div class="card-head"><h2>Fotos para revisão</h2></div>
       <div class="muted small-text" id="stats"></div>
-      <div class="progress" style="margin:8px 0 4px" aria-hidden="true"><i id="queueProgress" style="width:0"></i></div>
-      <!-- Só aparece quando o servidor abre mais de uma revisão (ex.: CEASA e fotos da internet). -->
-      <div class="hidden" id="reviewPickerWrap"><label for="reviewPicker">Revisão</label><select id="reviewPicker"></select></div>
+      <div class="progress ok" style="margin:8px 0 4px" aria-hidden="true"><i id="queueProgress" style="width:0"></i></div>
       <label for="filter">Filtrar fila</label>
-      <select id="filter"><option value="all">Todas as fotos</option><option value="positive">Com ocorrências propostas</option><option value="negative">Negativas propostas</option><option value="ambiguous">Ambíguas</option><option value="excluded">Excluídas</option><option value="pending">Sem sua decisão</option><option value="suggested">Com sugestões da IA pendentes</option></select>
+      <select id="filter"><option value="all">Todas as fotos</option><option value="positive">Com ocorrências propostas</option><option value="negative">Negativas propostas</option><option value="ambiguous">Ambíguas</option><option value="excluded">Excluídas</option><option value="pending">Sem a minha decisão</option><option value="suggested">Com sugestões da IA pendentes</option></select>
       <div class="queue" id="queue"></div>
     </aside>
 
     <section class="card" aria-labelledby="photoTitle">
       <div class="stage-bar">
-        <button id="previous" type="button" aria-label="Foto anterior">←</button>
+        <button id="previous" type="button" class="icon" aria-label="Foto anterior">←</button>
         <div class="stage-title"><h2 id="photoTitle"></h2><p id="photoMeta"></p></div>
         <span class="chip" id="proposalStatus"></span>
-        <button id="next" type="button" aria-label="Próxima foto">→</button>
+        <button id="next" type="button" class="icon" aria-label="Próxima foto">→</button>
       </div>
       <div class="toolbar" role="toolbar" aria-label="Camadas e ferramentas">
         <label class="toggle"><input type="checkbox" id="showBoxes" checked>Caixas</label>
         <label class="toggle hidden" id="showSuggestionsLabel"><input type="checkbox" id="showSuggestions" checked>Sugestões IA</label>
         <label class="range hidden" id="confFilterLabel" for="confFilter">Confiança ≥ <b id="confValue"></b><input type="range" id="confFilter" min="0" max="100" step="5"></label>
         <span class="sep" aria-hidden="true"></span>
-        <button id="drawToggle" type="button" aria-pressed="false" class="small btn-neon-glass action">Desenhar caixa (B)</button>
+        <button id="drawToggle" type="button" aria-pressed="false" class="small">Desenhar caixa (B)</button>
         <a id="originalLink" target="_blank" rel="noopener" class="small-text">Abrir foto original</a>
       </div>
       <p id="historyNotice" class="notice hidden"></p>
@@ -1298,17 +227,57 @@ pre.log { max-height: 260px; overflow: auto; margin: 8px 0 0; padding: 10px 12px
         <div class="boxes" id="boxes"></div>
         <label for="classId">Categoria da caixa</label><select id="classId"></select>
         <div class="coordinates"><div><label for="x1">X inicial</label><input id="x1" type="number" min="0" step="1"></div><div><label for="y1">Y inicial</label><input id="y1" type="number" min="0" step="1"></div><div><label for="x2">X final</label><input id="x2" type="number" min="0" step="1"></div><div><label for="y2">Y final</label><input id="y2" type="number" min="0" step="1"></div></div>
-        <div class="row-actions"><button id="applyBox" class="btn-neon-glass action" type="button">Adicionar caixa</button><button id="newBox" class="btn-neon-glass" type="button">Nova caixa</button><button id="deleteBox" class="btn-neon-glass bad" type="button" disabled>Excluir selecionada</button></div>
+        <div class="row-actions"><button id="applyBox" class="primary small" type="button">Adicionar caixa</button><button id="newBox" class="small" type="button">Nova caixa</button><button id="deleteBox" class="small bad" type="button" disabled>Excluir selecionada</button></div>
       </section>
       <section class="card">
         <h2>Sua decisão sobre a foto</h2>
         <label for="decision">Situação da revisão</label><select id="decision"><option value="pending">Pendente</option><option value="positive">Revisei: há ocorrências</option><option value="negative">Revisei: nenhuma das classes ativas</option><option value="ambiguous">Há dúvida: precisa de análise técnica</option><option value="excluded">Excluir do treinamento</option></select>
         <label for="notes">Correções, dúvidas ou motivo da decisão</label><textarea id="notes" placeholder="Descreva o que você conferiu ou o que ainda precisa esclarecer."></textarea>
         <div class="checks"><input id="confirmed" type="checkbox"><label for="confirmed">Conferi a foto inteira e confirmei as classes e caixas registradas.</label></div>
-        <button class="primary btn-apple-capsule" id="saveDecision" type="button" style="margin-top:12px;width:100%"><span class="btn-icon-circle">✓</span><span>Registrar minha decisão</span></button>
-        <p class="muted small-text">Imagem negativa exige nenhuma caixa e revisão completa. Severidade permanece pendente de avaliação técnica.</p>
+        <button class="primary" id="saveDecision" type="button" style="margin-top:12px;width:100%">Registrar minha decisão</button>
+        <p class="muted small-text">Imagem negativa exige nenhuma caixa e revisão completa. Gravidade permanece pendente de avaliação técnica.</p>
       </section>
     </aside>
+  </div>
+</section>
+
+<!-- ======================= LAUDOS E DOWNLOADS ======================= -->
+<section class="view" id="view-reports">
+  <p class="notice info hidden" id="reportsOffline">Gerar laudos e pacotes de evidências exige o servidor local (<b>Abrir plataforma DroneCamp.cmd</b>). Aqui você ainda pode baixar o arquivo de revisão e o CSV das ocorrências.</p>
+  <div class="grid two">
+    <div class="card">
+      <div class="card-head"><div><h2>Laudo preliminar de inspeção</h2><p>PDF e HTML com as evidências, as ocorrências decididas e os campos de validação técnica em branco.</p></div></div>
+      <div class="form-grid">
+        <div class="wide"><label for="reportTitle">Título</label><input id="reportTitle" placeholder="Laudo preliminar de inspeção assistida"></div>
+        <div><label for="reportClient">Cliente</label><input id="reportClient" placeholder="ex.: CEASA Minas"></div>
+        <div><label for="reportSite">Local / edificação</label><input id="reportSite" placeholder="ex.: Pavilhão A"></div>
+        <div class="wide"><label for="reportInspector">Responsável técnico (validação)</label><input id="reportInspector" placeholder="Nome e registro profissional, se houver"></div>
+        <div class="wide"><label for="reportNotes">Observações</label><textarea id="reportNotes" placeholder="Condições do voo, limitações, pendências."></textarea></div>
+      </div>
+      <div class="checks"><input id="reportAllImages" type="checkbox"><label for="reportAllImages">Incluir evidências de todas as fotos (por padrão, só as fotos com ocorrências).</label></div>
+      <div class="checks"><input id="reportPdf" type="checkbox" checked><label for="reportPdf">Gerar PDF (requer <code>reportlab</code>; o HTML é gerado sempre).</label></div>
+      <div class="row-actions"><button type="button" class="primary" id="makeReport" disabled><svg><use href="#i-report"/></svg>Gerar laudo preliminar</button></div>
+      <p class="small-text" id="reportStatus" role="status" aria-live="polite"></p>
+      <div class="disclaimer" style="margin-top:12px">O laudo reúne evidências e decisões de revisão. Gravidade, diagnóstico e recomendações ficam explicitamente pendentes de validação por responsável técnico; nada é preenchido por inferência.</div>
+    </div>
+    <div class="card">
+      <div class="card-head"><div><h2>Downloads da inspeção</h2><p>As caixas das suas decisões locais entram nos pacotes gerados pelo servidor.</p></div></div>
+      <div class="form-grid">
+        <div><label for="evidenceOnly">Fotos incluídas</label><select id="evidenceOnly"><option value="all">Todas</option><option value="decided">Só com decisão registrada</option><option value="positive">Só com ocorrências</option></select></div>
+        <div><label for="evidenceSize">Resolução</label><select id="evidenceSize"><option value="2048">Reduzida (até 2048 px)</option><option value="4096">Média (até 4096 px)</option><option value="">Original</option></select></div>
+      </div>
+      <div class="checks"><input id="evidenceSuggestions" type="checkbox"><label for="evidenceSuggestions">Desenhar também as sugestões da IA pendentes (tracejadas).</label></div>
+      <div class="download-list" style="margin-top:12px">
+        <div class="download"><div class="ico"><svg><use href="#i-zip"/></svg></div><div><b>Imagens pós-processadas (ZIP)</b><small>Fotos com as caixas desenhadas, CSV das ocorrências e manifesto com hashes.</small></div><button type="button" id="makeEvidence" class="small" disabled>Gerar ZIP</button></div>
+        <div class="download"><div class="ico"><svg><use href="#i-report"/></svg></div><div><b>Ocorrências (CSV)</b><small>Uma linha por caixa, com classe, coordenadas e origem (revisão humana ou registro).</small></div><button type="button" id="downloadCsv" class="small">Baixar CSV</button></div>
+        <div class="download"><div class="ico"><svg><use href="#i-save"/></svg></div><div><b>Arquivo de revisão (JSON)</b><small>Suas decisões, vinculadas ao registro pelo SHA-256; é o que o <code>import-review</code> lê.</small></div><button type="button" id="downloadReview" class="small">Baixar JSON</button></div>
+      </div>
+      <p class="small-text" id="evidenceStatus" role="status" aria-live="polite"></p>
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <div class="card-head"><h2>Laudos e pacotes já gerados</h2><button type="button" class="small" id="refreshFiles">Atualizar</button></div>
+    <div class="download-list" id="fileHistory"></div>
   </div>
 </section>
 
@@ -1332,9 +301,11 @@ pre.log { max-height: 260px; overflow: auto; margin: 8px 0 0; padding: 10px 12px
         <div><label for="trainImgsz">imgsz</label><input id="trainImgsz" type="number" min="64" max="2048" step="32"></div>
         <div><label for="trainBatch">batch</label><input id="trainBatch" type="number" min="1" max="64"></div>
       </div>
+      <div class="checks"><input id="trainTile" type="checkbox"><label for="trainTile">Treinar em janelas (fotos de drone em alta resolução).</label></div>
+      <div class="checks"><input id="trainGpuEval" type="checkbox"><label for="trainGpuEval">Avaliar na GPU durante o treino (CPU + GPU juntos).</label></div>
       <p class="muted small-text" id="trainEstimate"></p>
       <div class="command" id="trainCommand"></div>
-      <div class="row-actions"><button class="primary btn-apple-capsule" type="button" id="startTrain" disabled><span class="btn-icon-circle">⚡</span><span>Iniciar treino no servidor local</span></button></div>
+      <div class="row-actions"><button class="primary" type="button" id="startTrain" disabled><svg><use href="#i-play"/></svg>Iniciar treino no servidor local</button></div>
       <p class="muted small-text" id="trainServerHint"></p>
     </div>
   </div>
@@ -1350,7 +321,7 @@ pre.log { max-height: 260px; overflow: auto; margin: 8px 0 0; padding: 10px 12px
 
 <!-- ======================= MONITORAMENTO ======================= -->
 <section class="view" id="view-monitor">
-  <p class="notice" id="monitorOffline">Instantâneo gerado quando a página foi criada. Para acompanhar um treino ao vivo, abra a plataforma pelo atalho <b>Abrir plataforma DroneCamp.cmd</b> (servidor local).</p>
+  <p class="notice info" id="monitorOffline">Instantâneo gerado quando a página foi criada. Para acompanhar um treino ao vivo, abra a plataforma pelo <b>Abrir plataforma DroneCamp.cmd</b> (servidor local).</p>
   <div class="grid two">
     <div class="card">
       <div class="card-head"><h2 id="monitorTitle">Treino</h2><span id="monitorState"></span></div>
@@ -1358,17 +329,17 @@ pre.log { max-height: 260px; overflow: auto; margin: 8px 0 0; padding: 10px 12px
         <svg class="ring" viewBox="0 0 132 132" role="img" aria-labelledby="ringLabel"><title id="ringLabel">Progresso do treino</title><circle class="track" cx="66" cy="66" r="54"/><circle class="value" id="ringValue" cx="66" cy="66" r="54" stroke-dasharray="339.3" stroke-dashoffset="339.3"/><text x="66" y="66" text-anchor="middle" id="ringText">0%</text><text x="66" y="86" text-anchor="middle" class="ring-sub" id="ringSub"></text></svg>
         <dl class="facts" id="monitorFacts"></dl>
       </div>
-      <h3>Última época</h3>
+      <h3 style="margin-top:14px">Última época</h3>
       <div class="metric-tiles" id="monitorTiles"></div>
     </div>
     <div class="card">
       <div class="card-head"><h2>Tarefa no servidor local</h2><span id="jobState" class="chip neutral">sem tarefa</span></div>
       <p class="muted small-text" id="jobHint">Disponível quando a plataforma é aberta pelo servidor local.</p>
       <div class="form-grid">
-        <div class="wide"><label for="suggestWeights">Gerar sugestões nesta revisão com os pesos</label><select id="suggestWeights"></select></div>
+        <div class="wide"><label for="suggestWeights">Gerar sugestões nesta inspeção com os pesos</label><select id="suggestWeights"></select></div>
         <div><label for="suggestConf">Confiança mínima</label><input id="suggestConf" type="number" min="0.01" max="1" step="0.01"></div>
       </div>
-      <div class="row-actions"><button type="button" class="btn-iridescent" id="startSuggest" disabled><span>✨</span> Gerar sugestões</button><button type="button" id="stopJob" disabled>Interromper tarefa</button></div>
+      <div class="row-actions"><button type="button" class="ai" id="startSuggest" disabled><svg><use href="#i-spark"/></svg>Gerar sugestões</button><button type="button" id="stopJob" disabled>Interromper tarefa</button></div>
       <pre class="log" id="jobLog" aria-live="polite">—</pre>
     </div>
   </div>
@@ -1386,7 +357,7 @@ pre.log { max-height: 260px; overflow: auto; margin: 8px 0 0; padding: 10px 12px
   </div>
   <div class="card" style="margin-top:16px">
     <div class="card-head"><h2>Comparação entre modelos</h2><select id="compareSelect" aria-label="Arquivo de comparação" style="width:auto"></select></div>
-    <p class="muted small-text">Encontradas = caixas verdadeiras recuperadas (recall). Corretas/sugeridas = acertos entre as caixas sugeridas (precisão). Divisões marcadas como “visto no treino” não medem generalização.</p>
+    <p class="muted small-text">Encontradas = caixas verdadeiras recuperadas (recall). Corretas/sugeridas = acertos entre as caixas sugeridas (precisão). Divisões marcadas como “vistas no treino” não medem generalização.</p>
     <div class="table-wrap" id="compareTable"></div>
   </div>
   <div class="grid halves" style="margin-top:16px">
@@ -1408,1189 +379,7 @@ pre.log { max-height: 260px; overflow: auto; margin: 8px 0 0; padding: 10px 12px
 <div id="toast" role="status" aria-live="polite"><div class="check" aria-hidden="true">✓</div><div><b id="toastTitle"></b><span id="toastText"></span></div></div>
 
 <script>
-// Caixas podem incluir correções humanas históricas; aprovação atual começa pendente.
-const DATA = __REVIEW_DATA__;
-const $ = id => document.getElementById(id);
-const OPS_EMPTY = { runs: [], comparisons: [], datasets: [], weights: [], pilot_defaults: {} };
-let OPS = DATA.operations || OPS_EMPTY;
-// Token presente = página servida pelo comando platform (monitoramento ao vivo e tarefas).
-const TOKEN = (document.querySelector('meta[name="dronecamp-server"]') || {}).content || '';
-const SERVER = Boolean(TOKEN) && location.protocol.startsWith('http');
-// Revisões abertas pelo servidor (platform --registry A --registry B); null com uma só.
-const REVIEWS = (() => {
-  try { return JSON.parse((document.querySelector('meta[name="dronecamp-reviews"]') || {}).content || 'null') } catch { return null }
-})();
-const names = {
-  positive: 'Positiva proposta',
-  negative: 'Negativa proposta',
-  ambiguous: 'Ambígua',
-  excluded: 'Excluída'
-};
-const decisionNames = {
-  positive: 'Há ocorrências',
-  negative: 'Negativa',
-  ambiguous: 'Ambígua',
-  excluded: 'Excluída'
-};
-const storageKey = 'dronecamp-review-' + DATA.registry_sha256;
-let saved = {};
-try {
-  saved = JSON.parse(localStorage.getItem(storageKey) || '{}')
-} catch {}
-let state = {
-  index: 0,
-  selected: -1,
-  drawing: false,
-  start: null,
-  img: new Image(),
-  drafts: saved.images || {},
-  reviewer: saved.reviewer || '',
-  view: 'overview',
-  run: null
-};
-const clone = value => JSON.parse(JSON.stringify(value));
-const item = () => DATA.images[state.index];
-const draft = () => state.drafts[item().image_sha256] || {
-  boxes: clone(item().boxes),
-  status: 'pending',
-  notes: item().human_notes || '',
-  confirmed_complete: false
-};
-let active = draft();
-const classOf = id => DATA.classes.find(value => value.id === id);
-const pct = value => value == null ? '—' : `${(value * 100).toFixed(1)}%`;
-const el = (tag, props = {}, ...children) => {
-  const node = document.createElement(tag);
-  Object.entries(props).forEach(([key, value]) => {
-    if (key === 'class') node.className = value;
-    else if (key === 'style') node.setAttribute('style', value);
-    else if (key.startsWith('on')) node[key] = value;
-    else node.setAttribute(key, value)
-  });
-  children.flat().forEach(child => child != null && node.append(child));
-  return node
-};
-
-function message(text, error = false) {
-  $('message').textContent = text;
-  $('message').classList.toggle('error', error)
-}
-
-function toast(title, text) {
-  $('toastTitle').textContent = title;
-  $('toastText').textContent = text;
-  $('toast').classList.add('show');
-  clearTimeout(toast.timer);
-  toast.timer = setTimeout(() => $('toast').classList.remove('show'), 3200)
-}
-
-// Guardar o rascunho no navegador não aprova dados nem atualiza pesos do modelo.
-function persist() {
-  state.drafts[item().image_sha256] = clone(active);
-  state.reviewer = $('reviewer').value;
-  try {
-    localStorage.setItem(storageKey, JSON.stringify({
-      images: state.drafts,
-      reviewer: state.reviewer
-    }))
-  } catch {
-    message('O navegador não conseguiu guardar o rascunho. Salve um arquivo de revisão.', true)
-  }
-}
-
-/* ======================= Navegação entre seções ======================= */
-const viewTitles = {
-  overview: 'Visão geral',
-  review: 'Revisão e classificação',
-  training: 'Treinamento e fine-tuning',
-  monitor: 'Monitoramento',
-  models: 'Modelos e comparação'
-};
-class Magnifier {
-  constructor(qs) {
-    this.el = document.querySelector(qs);
-    if (!this.el) return;
-    this.page = 1;
-    this.pages = 5;
-    this.init();
-  }
-  init() {
-    this.updateGlassPos();
-    window.addEventListener("resize", () => this.updateGlassPos());
-    this.el.addEventListener("click", (e) => {
-      const target = e.target.closest("[data-view]");
-      if (target && target.dataset.view) {
-        e.preventDefault();
-        showView(target.dataset.view);
-      }
-    });
-  }
-  setPage(number) {
-    if (!this.el) return;
-    this.el.classList.remove(`nav--on-page${this.page}`);
-    this.page = number;
-    this.el.classList.add(`nav--on-page${this.page}`);
-    this.updateGlassPos();
-  }
-  updateGlassPos() {
-    if (!this.el) return;
-    const glass = this.el.querySelector("[data-glass]");
-    const glassRadius = (glass?.offsetWidth || 48) / 2;
-    for (let p = 1; p <= this.pages; ++p) {
-      const glassItem = this.el.querySelector(`[data-glass-item="${p}"]`);
-      if (glassItem) {
-        const left = glassItem.offsetLeft + glassItem.offsetWidth / 2;
-        this.el.style.setProperty(`--pos${p}`, `${left - glassRadius}px`);
-      }
-    }
-  }
-}
-let magnifier = null;
-
-function showView(view) {
-  if (!viewTitles[view]) view = 'overview';
-  state.view = view;
-  document.querySelectorAll('.view').forEach(section => section.classList.toggle('active', section.id === 'view-' + view));
-  document.querySelectorAll('.rail button[data-view], #navMagnifier a[data-view]').forEach(button => button.setAttribute('aria-current', button.dataset.view === view ? 'page' : 'false'));
-  const pageMap = { overview: 1, review: 2, training: 3, monitor: 4, models: 5 };
-  if (magnifier && pageMap[view]) {
-    magnifier.setPage(pageMap[view]);
-  }
-  $('viewTitle').textContent = viewTitles[view];
-  try { sessionStorage.setItem('dronecamp-view', view) } catch {}
-  if (location.hash !== '#' + view) history.replaceState(null, '', '#' + view);
-  if (view === 'overview') renderOverview();
-  if (view === 'review') paint();
-  if (view === 'training') renderTraining();
-  if (view === 'monitor') renderMonitor();
-  if (view === 'models') renderModels()
-}
-document.querySelectorAll('[data-view]').forEach(button => button.onclick = () => showView(button.dataset.view));
-document.querySelectorAll('[data-goto]').forEach(button => button.onclick = () => showView(button.dataset.goto));
-
-/* ======================= Revisão (lógica preservada) ======================= */
-function decidedStatus(photo) {
-  const decision = state.drafts[photo.image_sha256];
-  return decision && decision.status !== 'pending' ? decision.status : null
-}
-
-function queue() {
-  const filter = $('filter').value;
-  $('queue').replaceChildren();
-  let decided = 0;
-  DATA.images.forEach((photo, index) => {
-    const decision = state.drafts[photo.image_sha256];
-    if (decision && decision.status !== 'pending') decided++;
-    if (filter === 'suggested') {
-      if (!pendingSuggestionsFor(photo, decision || { boxes: photo.boxes }).length) return
-    } else if (filter !== 'all' && (
-      filter === 'pending'
-        ? decision && decision.status !== 'pending'
-        : photo.status !== filter
-    )) return;
-    const button = el('button', { type: 'button', 'aria-current': String(index === state.index) });
-    const thumb = el('img', { src: photo.image_url, alt: '', loading: 'lazy' });
-    const title = el('div', { class: 'q-title' }, photo.pages && photo.pages.length
-      ? `${index+1}. Páginas ${photo.pages.join(', ')}`
-      : `${index+1}. ${photo.filename}`);
-    const pendingAi = pendingSuggestionsFor(photo, decision || { boxes: photo.boxes }).length;
-    const small = el('small', {}, decision && decision.status !== 'pending'
-      ? `Sua decisão: ${decisionNames[decision.status]}`
-      : photo.previous_human_approved
-        ? 'Correções anteriores preservadas · conferir novas categorias'
-        : names[photo.status] + (pendingAi ? ` · ${pendingAi} sugest${pendingAi > 1 ? 'ões' : 'ão'} IA` : ''));
-    const dot = el('span', { class: 'q-state ' + (decision && decision.status !== 'pending' ? decision.status : ''), 'aria-hidden': 'true' });
-    button.append(thumb, el('div', {}, title, small), dot);
-    button.onclick = () => openPhoto(index);
-    $('queue').append(button)
-  });
-  $('stats').textContent = `${DATA.images.length} fotos · ${decided} decisões`;
-  $('queueProgress').style.width = `${DATA.images.length ? decided / DATA.images.length * 100 : 0}%`
-}
-
-function resetSelection() {
-  state.selected = -1;
-  ['x1', 'y1', 'x2', 'y2'].forEach(id => $(id).value = '');
-  $('applyBox').textContent = 'Adicionar caixa';
-  $('deleteBox').disabled = true
-}
-
-function selectBox(index) {
-  const box = active.boxes[index];
-  state.selected = index;
-  $('classId').value = box.class_id;
-  ['x1', 'y1', 'x2', 'y2'].forEach((id, position) => $(id).value = box.bbox_xyxy[position]);
-  $('applyBox').textContent = 'Atualizar caixa';
-  $('deleteBox').disabled = false;
-  renderBoxes()
-}
-
-function renderBoxes() {
-  const list = $('boxes');
-  list.replaceChildren();
-  active.boxes.forEach((box, index) => {
-    const category = classOf(box.class_id);
-    const button = el('button', { type: 'button', class: index === state.selected ? 'selected' : '' });
-    button.style.setProperty('--box-color', category.color);
-    button.textContent = `${index+1}. ${category.label}` + (box.proposed_new_class ? ` · nova classe sugerida: ${box.proposed_new_class}` : '');
-    button.append(el('div', { class: 'box-caption' }, box.bbox_xyxy.map(Math.round).join(', ') + ' pixels'));
-    button.onclick = () => selectBox(index);
-    list.append(button)
-  });
-  if (!active.boxes.length) list.textContent = 'Nenhuma caixa registrada nesta foto.';
-  $('boxCount').textContent = `${active.boxes.length} caixa${active.boxes.length === 1 ? '' : 's'}`;
-  renderSuggestions();
-  paint()
-}
-
-// Sugestões do modelo são apenas candidatas: aceitar uma copia a caixa para
-// a revisão e exige nova confirmação da foto inteira.
-const sameBox = (a, b) => a.class_id === b.class_id && a.bbox_xyxy.every((value, i) => Math.round(value) === Math.round(b.bbox_xyxy[i]));
-function boxIou(a, b) {
-  const inter = Math.max(0, Math.min(a[2], b[2]) - Math.max(a[0], b[0])) * Math.max(0, Math.min(a[3], b[3]) - Math.max(a[1], b[1]));
-  const union = (a[2]-a[0])*(a[3]-a[1]) + (b[2]-b[0])*(b[3]-b[1]) - inter;
-  return union > 0 ? inter / union : 0
-}
-// Aceitar sobre uma caixa existente do mesmo objeto duplicaria o alvo de treino.
-const coveringBox = suggestion => DATA.duplicate_iou
-  ? active.boxes.findIndex(box => box.class_id === suggestion.class_id && boxIou(box.bbox_xyxy, suggestion.bbox_xyxy) >= DATA.duplicate_iou)
-  : -1;
-// Limite de exibição: esconder sugestões fracas não as descarta nem as aceita.
-const confThreshold = () => DATA.suggestions ? Number($('confFilter').value) / 100 : 0;
-function pendingSuggestionsFor(photo, decision) {
-  return (photo.model_suggestions || [])
-    .map((suggestion, index) => ({ suggestion, index }))
-    .filter(({ suggestion }) => !(decision.boxes || []).some(box => sameBox(box, suggestion)) && !(decision.dismissed_suggestions || []).includes(suggestion.id))
-}
-function pendingSuggestions() {
-  return pendingSuggestionsFor(item(), active).filter(({ suggestion }) => suggestion.confidence >= confThreshold() - 1e-9)
-}
-
-function acceptSuggestion(suggestion) {
-  const covered = coveringBox(suggestion);
-  const box = {
-    class_id: suggestion.class_id,
-    bbox_xyxy: suggestion.bbox_xyxy.map(Math.round),
-    note: `Sugestão do modelo aceita (confiança ${Math.round(suggestion.confidence*100)}%); conferida na revisão local.`
-  };
-  // Substituir troca só a geometria e a nota; campos como proposed_new_class ficam.
-  if (covered >= 0) active.boxes[covered] = { ...active.boxes[covered], ...box }; else active.boxes.push(box);
-  invalidateDecision(covered >= 0
-    ? `Caixa ${covered+1} substituída pela geometria da sugestão; nenhuma duplicata criada. Confira a foto inteira antes de confirmar.`
-    : 'Sugestão aceita como caixa. Ajuste se necessário e confira a foto inteira antes de confirmar.')
-}
-
-function dismissSuggestion(suggestion) {
-  active.dismissed_suggestions = [...(active.dismissed_suggestions || []), suggestion.id];
-  persist();
-  renderBoxes();
-  queue();
-  message('Sugestão descartada nesta revisão.')
-}
-
-function renderSuggestions() {
-  const meta = DATA.suggestions;
-  $('suggestionPanel').classList.toggle('hidden', !meta);
-  $('showSuggestionsLabel').classList.toggle('hidden', !meta);
-  $('confFilterLabel').classList.toggle('hidden', !meta);
-  if (!meta) return;
-  $('suggestionMeta').textContent = `${meta.model_label} · confiança mínima ${Math.round(meta.conf*100)}%. ${meta.warning}`;
-  const list = $('suggestions');
-  list.replaceChildren();
-  const pending = pendingSuggestions();
-  const hidden = pendingSuggestionsFor(item(), active).length - pending.length;
-  $('suggestionCount').textContent = `${pending.length} pendente${pending.length === 1 ? '' : 's'}`;
-  pending.forEach(({ suggestion, index }) => {
-    const category = classOf(suggestion.class_id);
-    const covered = coveringBox(suggestion);
-    const row = el('div', { class: 'suggestion' });
-    row.style.setProperty('--box-color', category.color);
-    const percent = Math.round(suggestion.confidence*100);
-    // Cabeçalho: número da sugestão + cor e nome da classe; abaixo, confiança e sobreposição.
-    const head = el('div', { class: 's-head' },
-      el('span', { class: 's-index' }, `IA ${index+1}`),
-      el('span', { class: 's-dot', 'aria-hidden': 'true' }),
-      el('span', { class: 's-class' }, category.label));
-    const meta = el('div', { class: 's-meta' }, el('span', {}, 'Confiança ', el('strong', {}, `${percent}%`)));
-    if (covered >= 0) meta.append(el('span', { class: 's-overlap' }, `Mesmo objeto da caixa ${covered+1}`));
-    // acceptance_probability vem do calibrador; source/prompt vêm de suggest --zero-shot (busca aberta, YOLOE).
-    if (suggestion.acceptance_probability != null) meta.append(el('span', {}, `Aceitação estimada ${Math.round(suggestion.acceptance_probability*100)}%`));
-    if (suggestion.prompt) meta.append(el('span', {}, `Busca aberta: “${suggestion.prompt}”`));
-    const accept = el('button', { type: 'button', class: 'small ai' }, covered >= 0 ? `Substituir caixa ${covered+1}` : 'Aceitar');
-    accept.onclick = () => acceptSuggestion(suggestion);
-    const dismiss = el('button', { type: 'button', class: 'small' }, 'Descartar');
-    dismiss.onclick = () => dismissSuggestion(suggestion);
-    const bar = el('div', { class: 'conf', 'aria-hidden': 'true' }, el('i', { style: `width:${percent}%` }));
-    row.append(head, meta, bar, el('div', { class: 'actions' }, accept, dismiss));
-    list.append(row)
-  });
-  if (!pending.length) list.textContent = (item().model_suggestions || []).length
-    ? (hidden > 0
-      ? `${hidden} sugest${hidden > 1 ? 'ões abaixo' : 'ão abaixo'} do limite de confiança escolhido.`
-      : 'Todas as sugestões desta foto foram aceitas ou descartadas.')
-    : 'O modelo não sugeriu caixas nesta foto acima da confiança mínima.';
-  else if (hidden > 0) list.append(el('p', { class: 'muted small-text' }, `${hidden} oculta${hidden > 1 ? 's' : ''} abaixo de ${Math.round(confThreshold()*100)}%.`))
-}
-
-function invalidateDecision(text) {
-  active.status = 'pending';
-  active.confirmed_complete = false;
-  $('decision').value = 'pending';
-  $('confirmed').checked = false;
-  persist();
-  resetSelection();
-  renderBoxes();
-  queue();
-  message(text)
-}
-
-function paint(preview) {
-  const canvas = $('canvas'), ctx = canvas.getContext('2d');
-  if (!state.img.complete || !state.img.naturalWidth) return;
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(state.img, 0, 0);
-  if ($('showBoxes').checked) {
-    active.boxes.forEach((box, index) => {
-      const [x1, y1, x2, y2] = box.bbox_xyxy;
-      const category = classOf(box.class_id);
-      ctx.strokeStyle = category.color;
-      ctx.lineWidth = index === state.selected ? 5 : 3;
-      ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
-      ctx.font = `600 ${Math.max(14,Math.round(canvas.width/70))}px system-ui, sans-serif`;
-      const text = `${index+1}: ${category.label}`;
-      const top = Math.max(0, y1 - 24);
-      ctx.fillStyle = category.color;
-      ctx.fillRect(x1, top, ctx.measureText(text).width + 12, 24);
-      // Texto escuro: com a paleta atual passa de 4,5:1 nas 13 cores de classe (branco ficava abaixo de 3:1 em 10).
-      ctx.fillStyle = '#08111F';
-      ctx.fillText(text, x1 + 5, top + 18)
-    })
-  }
-  if (DATA.suggestions && $('showSuggestions').checked) {
-    pendingSuggestions().forEach(({ suggestion, index }) => {
-      const [x1, y1, x2, y2] = suggestion.bbox_xyxy;
-      const category = classOf(suggestion.class_id);
-      ctx.setLineDash([10, 6]);
-      ctx.strokeStyle = category.color;
-      ctx.lineWidth = 3;
-      ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
-      ctx.setLineDash([]);
-      ctx.font = `${Math.max(13,Math.round(canvas.width/80))}px system-ui, sans-serif`;
-      const text = `IA ${index+1}: ${category.label} ${Math.round(suggestion.confidence*100)}%`;
-      const bottom = Math.min(canvas.height - 22, y2);
-      // Placa escura opaca com texto na cor da classe: as 13 cores passam de 4,5:1 e o rótulo difere do sólido das caixas.
-      ctx.fillStyle = '#08111F';
-      ctx.fillRect(x1, bottom, ctx.measureText(text).width + 12, 22);
-      ctx.fillStyle = category.color;
-      ctx.fillText(text, x1 + 5, bottom + 16)
-    })
-  }
-  if (preview) {
-    ctx.setLineDash([8, 5]);
-    ctx.strokeStyle = '#19D3C5';
-    ctx.lineWidth = 3;
-    ctx.strokeRect(preview[0], preview[1], preview[2] - preview[0], preview[3] - preview[1]);
-    ctx.setLineDash([])
-  }
-}
-
-function openPhoto(index) {
-  persist();
-  state.index = index;
-  active = clone(draft());
-  resetSelection();
-  state.drawing = false;
-  $('drawToggle').setAttribute('aria-pressed', 'false');
-  $('viewer').classList.remove('drawing');
-  const photo = item();
-  $('photoTitle').textContent = `Foto ${index+1} de ${DATA.images.length}`;
-  $('photoMeta').textContent = [photo.filename, photo.pages && photo.pages.length ? `páginas ${photo.pages.join(', ')}` : null, `${photo.width} × ${photo.height}`, photo.building_group].filter(Boolean).join(' · ');
-  $('proposalStatus').textContent = names[photo.status];
-  $('proposalStatus').className = 'chip ' + ({ positive: 'bad', negative: '', ambiguous: 'warn', excluded: 'neutral' }[photo.status] || '');
-  $('proposalNotes').textContent = photo.notes;
-  $('auditNotes').textContent = [photo.human_notes, photo.second_review_notes, photo.additional_candidate_note, photo.review_focus_note].filter(Boolean).join('\n\n') || 'Segunda leitura ainda não registrada.';
-  // A migração conserva a correção antiga e exige apenas a conferência faltante.
-  const reviewedClasses = photo.classes_reviewed_before_migration || [];
-  const pendingClasses = DATA.classes.filter(category => !reviewedClasses.includes(category.id)).map(category => category.label);
-  $('historyNotice').classList.toggle('hidden', !photo.previous_human_approved);
-  $('historyNotice').textContent = photo.previous_human_approved
-    ? `Suas caixas e categorias da revisão anterior foram preservadas. Confira a foto inteira para as categorias acrescentadas: ${pendingClasses.join('; ')}. Depois registre uma nova confirmação.`
-    : '';
-  $('taxonomyNotice').classList.toggle('hidden', !photo.taxonomy_recheck_pending);
-  $('taxonomyNotice').textContent = `Categorias que ainda precisam de conferência integral nesta foto: ${pendingClasses.join('; ')}.`;
-  $('originalLink').href = photo.image_url;
-  $('decision').value = active.status;
-  $('notes').value = active.notes;
-  $('confirmed').checked = active.confirmed_complete;
-  $('canvas').width = photo.width;
-  $('canvas').height = photo.height;
-  ['x1', 'x2'].forEach(id => $(id).max = photo.width);
-  ['y1', 'y2'].forEach(id => $(id).max = photo.height);
-  state.img = new Image();
-  state.img.onload = () => renderBoxes();
-  state.img.src = photo.image_url;
-  renderBoxes();
-  queue();
-  const current = $('queue').querySelector('[aria-current="true"]');
-  if (current) current.scrollIntoView({ block: 'nearest' });
-  message('Ajuste as propostas e registre sua decisão depois de conferir a foto inteira.')
-}
-
-function validBox(coordinates) {
-  return coordinates.every(Number.isFinite)
-    && coordinates[0] >= 0
-    && coordinates[1] >= 0
-    && coordinates[2] <= item().width
-    && coordinates[3] <= item().height
-    && coordinates[2] > coordinates[0]
-    && coordinates[3] > coordinates[1]
-}
-
-// Toda edição invalida a confirmação anterior: a foto deve ser revista novamente.
-function commitBox(coordinates) {
-  coordinates = coordinates.map(Math.round);
-  if (!validBox(coordinates)) {
-    message('A caixa precisa ter área e ficar dentro da foto.', true);
-    return
-  }
-  const box = {
-    class_id: Number($('classId').value),
-    bbox_xyxy: coordinates,
-    note: 'Caixa conferida/editada na revisão local.'
-  };
-  if (state.selected < 0) active.boxes.push(box);
-  else active.boxes[state.selected] = box;
-  active.confirmed_complete = false;
-  active.status = 'pending';
-  $('confirmed').checked = false;
-  $('decision').value = 'pending';
-  persist();
-  resetSelection();
-  renderBoxes();
-  queue();
-  message('Caixa registrada. Confira a foto inteira antes de confirmar a decisão.')
-}
-
-$('applyBox').onclick = () => commitBox(
-  ['x1', 'y1', 'x2', 'y2'].map(id => $(id).value === '' ? NaN : Number($(id).value))
-);
-
-$('newBox').onclick = () => { resetSelection(); renderBoxes() };
-
-$('notes').oninput = () => {
-  active.notes = $('notes').value;
-  persist()
-};
-
-// Excluir uma caixa também exige nova decisão humana sobre a foto inteira.
-function deleteSelected() {
-  if (state.selected < 0) return;
-  active.boxes.splice(state.selected, 1);
-  active.status = 'pending';
-  active.confirmed_complete = false;
-  $('decision').value = 'pending';
-  $('confirmed').checked = false;
-  persist();
-  resetSelection();
-  renderBoxes();
-  queue();
-  message('Caixa excluída. Confira a foto inteira antes de confirmar a decisão.')
-}
-$('deleteBox').onclick = deleteSelected;
-
-function toggleDrawing() {
-  state.drawing = !state.drawing;
-  resetSelection();
-  $('drawToggle').setAttribute('aria-pressed', state.drawing);
-  $('viewer').classList.toggle('drawing', state.drawing);
-  renderBoxes();
-  message(state.drawing
-    ? 'Arraste sobre a foto para criar uma caixa da categoria selecionada.'
-    : 'Desenho desativado.'
-  )
-}
-$('drawToggle').onclick = toggleDrawing;
-
-// Converta o toque/clique para pixels da foto original, sem depender do tamanho na tela.
-function point(event) {
-  const rect = $('canvas').getBoundingClientRect();
-  return [
-    Math.min(item().width, Math.max(0, (event.clientX - rect.left) * item().width / rect.width)),
-    Math.min(item().height, Math.max(0, (event.clientY - rect.top) * item().height / rect.height))
-  ]
-}
-
-$('canvas').onpointerdown = event => {
-  if (!state.drawing) return;
-  event.preventDefault();
-  state.start = point(event);
-  $('canvas').setPointerCapture(event.pointerId)
-};
-
-$('canvas').onpointermove = event => {
-  if (!state.start) return;
-  const end = point(event);
-  paint([
-    Math.min(state.start[0], end[0]),
-    Math.min(state.start[1], end[1]),
-    Math.max(state.start[0], end[0]),
-    Math.max(state.start[1], end[1])
-  ])
-};
-
-$('canvas').onpointerup = event => {
-  if (!state.start) return;
-  const end = point(event), start = state.start;
-  state.start = null;
-  commitBox([
-    Math.min(start[0], end[0]),
-    Math.min(start[1], end[1]),
-    Math.max(start[0], end[0]),
-    Math.max(start[1], end[1])
-  ])
-};
-
-$('canvas').onpointercancel = () => {
-  state.start = null;
-  paint()
-};
-
-$('showBoxes').onchange = () => paint();
-$('showSuggestions').onchange = () => paint();
-$('confFilter').oninput = () => {
-  $('confValue').textContent = `${$('confFilter').value}%`;
-  renderBoxes()
-};
-
-// A aprovação visual exige confirmação da revisão integral e caixas coerentes.
-$('saveDecision').onclick = () => {
-  const status = $('decision').value, confirmed = $('confirmed').checked;
-  if (['positive', 'negative'].includes(status) && !confirmed) {
-    message('Confirme que revisou a foto inteira antes de aprovar a anotação.', true);
-    return
-  }
-  if (status === 'positive' && !active.boxes.length) {
-    message('Uma foto com ocorrências precisa de pelo menos uma caixa.', true);
-    return
-  }
-  if (status === 'negative' && active.boxes.length) {
-    message('Uma foto negativa não pode ter caixas. Corrija a anotação ou escolha outra decisão.', true);
-    return
-  }
-  active.status = status;
-  active.notes = $('notes').value;
-  active.confirmed_complete = confirmed;
-  persist();
-  queue();
-  message(status === 'pending'
-    ? 'Rascunho guardado; decisão ainda pendente.'
-    : 'Sua decisão foi registrada no rascunho local. Salve o arquivo de revisão para importá-la.'
-  );
-  if (status !== 'pending') {
-    const card = $('saveDecision').closest('.card');
-    if (card) {
-      card.classList.remove('glow-decision');
-      void card.offsetWidth;
-      card.classList.add('glow-decision');
-    }
-    toast('Decisão registrada', `Foto ${state.index+1}: ${decisionNames[status]}. Fica no rascunho local até salvar o arquivo.`);
-  }
-};
-
-// O hash vincula o feedback ao registro exibido; exportar não executa treinamento.
-$('export').onclick = async () => {
-  const reviewer = $('reviewer').value.trim();
-  if (!reviewer) {
-    showView('review');
-    message('Preencha seu identificador de revisão para salvar o arquivo.', true);
-    $('reviewer').focus();
-    return
-  }
-  const decisions = Object.entries(state.drafts)
-    .filter(([, value]) => value.status !== 'pending')
-    .map(([id, value]) => ({
-      image_sha256: id,
-      ...value
-    }));
-  if (!decisions.length) {
-    showView('review');
-    message('Registre pelo menos uma decisão antes de salvar.', true);
-    return
-  }
-  const feedback = {
-    schema_version: 1,
-    registry_sha256: DATA.registry_sha256,
-    reviewer_id: reviewer,
-    exported_at: new Date().toISOString(),
-    images: decisions
-  };
-  const url = URL.createObjectURL(new Blob([JSON.stringify(feedback, null, 2)], {
-    type: 'application/json'
-  }));
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = 'dronecamp-revisao-' + DATA.version + '.json';
-  link.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-  let where = '';
-  // Pelo servidor local, uma cópia também fica na pasta da revisão (feedback_inbox/).
-  if (SERVER) {
-    try {
-      const result = await api('/api/feedback', feedback);
-      where = ` Cópia salva em ${result.saved}.`
-    } catch (error) {
-      where = ` Cópia no projeto não foi salva: ${error.message}`
-    }
-  }
-  message(`${decisions.length} decisões incluídas no arquivo de revisão.${where}`);
-  toast('Arquivo de revisão salvo', `${decisions.length} decisões. Importe com import-review (etapa 2 do ciclo).${where}`)
-};
-
-$('previous').onclick = () => openPhoto(Math.max(0, state.index - 1));
-$('next').onclick = () => openPhoto(Math.min(DATA.images.length - 1, state.index + 1));
-$('filter').onchange = queue;
-// Seletor de revisão: cada revisão abre na sua própria página (/r/<pasta>/), com fotos,
-// decisões salvas e arquivo exportado separados; trocar não mistura registros.
-if (REVIEWS && Array.isArray(REVIEWS.items) && REVIEWS.items.length > 1) {
-  const reviewLabel = name => /^internet/i.test(name) ? 'Fotos da internet' : /^ceasa/i.test(name) ? 'CEASA — Pavilhão A' : name;
-  REVIEWS.items.forEach(value => {
-    const count = value.images == null ? '' : ` · ${value.images} fotos`;
-    const option = el('option', { value: value.href }, `${reviewLabel(value.name)}${count}`);
-    option.title = value.name;
-    if (value.name === REVIEWS.current) option.selected = true;
-    $('reviewPicker').append(option)
-  });
-  $('reviewPickerWrap').classList.remove('hidden');
-  $('reviewPicker').onchange = event => { location.href = event.target.value + location.hash };
-}
-$('reviewer').value = state.reviewer;
-$('reviewer').oninput = persist;
-
-// Atalhos de teclado só na revisão e fora de campos de texto.
-document.addEventListener('keydown', event => {
-  if (state.view !== 'review' || event.ctrlKey || event.metaKey || event.altKey) return;
-  const tag = (event.target.tagName || '').toLowerCase();
-  if (['input', 'select', 'textarea'].includes(tag)) return;
-  const first = pendingSuggestions()[0];
-  if (event.key === 'ArrowLeft') openPhoto(Math.max(0, state.index - 1));
-  else if (event.key === 'ArrowRight') openPhoto(Math.min(DATA.images.length - 1, state.index + 1));
-  else if (event.key.toLowerCase() === 'b') toggleDrawing();
-  else if (event.key.toLowerCase() === 'a' && first) acceptSuggestion(first.suggestion);
-  else if (event.key.toLowerCase() === 'x' && first) dismissSuggestion(first.suggestion);
-  else if (event.key === 'Delete') deleteSelected();
-  else return;
-  event.preventDefault()
-});
-
-/* ======================= Visão geral ======================= */
-function currentBoxes(photo) {
-  const decision = state.drafts[photo.image_sha256];
-  return decision ? decision.boxes : photo.boxes
-}
-
-function barRow(color, label, human, ai, max, countText) {
-  const row = el('div', { class: 'bar-row' });
-  row.style.setProperty('--c', color);
-  const bar = el('div', { class: 'bar', role: 'img', 'aria-label': `${label}: ${countText}` },
-    el('i', { class: 'human', style: `width:${max ? human / max * 100 : 0}%` }),
-    el('i', { class: 'ai', style: `width:${max ? ai / max * 100 : 0}%` }));
-  row.append(el('div', { class: 'name' }, el('span', { class: 'swatch' }), el('span', { title: label }, label)), bar, el('div', { class: 'count' }, countText));
-  return row
-}
-
-function renderOverview() {
-  const totals = Object.fromEntries(DATA.classes.map(category => [category.id, { boxes: 0, ai: 0 }]));
-  let boxes = 0, pendingAi = 0, decided = 0;
-  const triage = { positive: 0, negative: 0, ambiguous: 0, excluded: 0, pending: 0 };
-  DATA.images.forEach(photo => {
-    const decision = state.drafts[photo.image_sha256];
-    const status = decision && decision.status !== 'pending' ? decision.status : 'pending';
-    triage[status]++;
-    if (status !== 'pending') decided++;
-    currentBoxes(photo).forEach(box => { totals[box.class_id].boxes++; boxes++ });
-    pendingSuggestionsFor(photo, decision || { boxes: photo.boxes }).forEach(({ suggestion }) => { totals[suggestion.class_id].ai++; pendingAi++ })
-  });
-  const sparse = DATA.classes.filter(category => totals[category.id].boxes < 5);
-  $('kpiPhotos').textContent = DATA.images.length;
-  const groups = [...new Set(DATA.images.map(photo => photo.building_group).filter(Boolean))];
-  $('kpiPhotosHint').textContent = groups.length ? `${groups.length} edificaç${groups.length > 1 ? 'ões' : 'ão'}: ${groups.join(', ')}` : 'edificação não informada';
-  $('kpiDecisions').textContent = `${decided}/${DATA.images.length}`;
-  $('kpiDecisionsBar').style.width = `${DATA.images.length ? decided / DATA.images.length * 100 : 0}%`;
-  $('kpiBoxes').textContent = boxes;
-  $('kpiSuggestions').textContent = pendingAi;
-  $('kpiSuggestionsHint').textContent = DATA.suggestions ? `limite do modelo ${Math.round(DATA.suggestions.conf * 100)}%` : 'nenhum modelo aplicado';
-  $('kpiSparse').textContent = sparse.length;
-  const max = Math.max(1, ...Object.values(totals).map(value => value.boxes + value.ai));
-  $('classBars').replaceChildren(...DATA.classes.map(category => {
-    const total = totals[category.id];
-    const row = barRow(category.color, category.label, total.boxes, total.ai, max, `${total.boxes}${total.ai ? ' +' + total.ai : ''}`);
-    if (total.boxes === 0) row.querySelector('.count').classList.add('cell-bad');
-    else if (total.boxes < 5) row.querySelector('.count').classList.add('cell-warn');
-    return row
-  }));
-  const triageColors = { positive: 'var(--ok)', negative: 'var(--primary)', ambiguous: 'var(--warn)', excluded: 'var(--muted)', pending: 'var(--line-strong)' };
-  const triageLabels = { ...decisionNames, pending: 'Sem decisão' };
-  $('triageBars').replaceChildren(...Object.keys(triage).map(key => barRow(triageColors[key], triageLabels[key], triage[key], 0, DATA.images.length, String(triage[key]))));
-  // Modelo das sugestões: liga o SHA dos pesos à execução que os gerou (via comparações).
-  const meta = DATA.suggestions;
-  if (!meta) {
-    $('modelChip').replaceChildren(el('span', { class: 'chip neutral' }, 'sem sugestões'));
-    $('modelSummary').textContent = 'Esta revisão não recebeu sugestões de um modelo treinado. Use “Gerar sugestões” no Monitoramento (servidor local) ou o comando suggest.'
-  } else {
-    const run = runForWeights(meta.weights_sha256);
-    $('modelChip').replaceChildren(el('span', { class: 'chip warn' }, meta.pilot ? 'piloto · não validado' : 'não validado'));
-    $('modelSummary').replaceChildren(
-      el('p', {}, `${meta.model_label}. Confiança mínima ${Math.round(meta.conf * 100)}%.`),
-      el('p', { class: 'mono muted' }, `pesos ${String(meta.weights_sha256 || '').slice(0, 12)}…` + (run ? ` · ${run.id}` : '')),
-      run && run.best_epoch ? el('p', {}, `Melhor mAP50 de validação dessa execução: ${pct(run.best_epoch.map50)} (época ${run.best_epoch.epoch}).`) : null)
-  }
-  const last = OPS.runs.find(run => run.curves.length);
-  if (!last) $('lastRunSummary').textContent = 'Nenhum treino encontrado em runs/.';
-  else {
-    const chart = el('div', { class: 'chart' });
-    $('lastRunSummary').replaceChildren(
-      el('p', {}, el('span', { class: 'chip ' + stateClass(last.state) }, stateLabel(last.state)), ' ', el('span', { class: 'mono' }, last.id)),
-      el('p', { class: 'muted' }, `${last.epochs_done}/${last.epochs_planned || '?'} épocas · melhor mAP50 ${pct(last.best_epoch && last.best_epoch.map50)}`),
-      chart);
-    lineChart(chart, last.curves, [{ key: 'map50', label: 'mAP50', color: '#34d17a' }, { key: 'recall', label: 'Recall', color: '#3aa0d0' }], { height: 120, percent: true })
-  }
-}
-
-/* ======================= Gráficos SVG (sem bibliotecas externas) ======================= */
-// Gráficos desenhados, para redesenhar com a nova largura quando a janela muda (rotação do celular, por exemplo).
-const drawnCharts = new Map();
-let chartViewport = innerWidth, chartTimer;
-addEventListener('resize', () => {
-  if (innerWidth === chartViewport) return;
-  chartViewport = innerWidth;
-  clearTimeout(chartTimer);
-  chartTimer = setTimeout(() => drawnCharts.forEach((args, node) => {
-    if (!node.isConnected) drawnCharts.delete(node);
-    else if (node.offsetParent) lineChart(node, ...args)
-  }), 150)
-});
-function lineChart(container, points, series, options = {}) {
-  drawnCharts.set(container, [points, series, options]);
-  container.replaceChildren();
-  // Largura real do contêiner (640 se ainda estiver oculto), para o texto não ficar achatado.
-  const height = options.height || 220, width = Math.max(280, Math.round(container.clientWidth) || 640), pad = { l: 44, r: 12, t: 10, b: 24 };
-  const usable = series.filter(serie => points.some(point => point[serie.key] != null));
-  if (!points.length || !usable.length) {
-    container.append(el('div', { class: 'empty' }, options.empty || 'Sem dados de épocas ainda.'));
-    return
-  }
-  const xs = points.map(point => point.epoch);
-  const xMin = Math.min(...xs), xMax = Math.max(...xs, xMin + 1);
-  const values = usable.flatMap(serie => points.map(point => point[serie.key]).filter(value => value != null));
-  let yMax = options.percent ? Math.max(0.05, ...values) : Math.max(...values);
-  let yMin = options.percent ? 0 : Math.min(...values);
-  if (yMax === yMin) yMax = yMin + 1;
-  yMax += (yMax - yMin) * .05;
-  const sx = x => pad.l + (x - xMin) / (xMax - xMin) * (width - pad.l - pad.r);
-  const sy = y => pad.t + (1 - (y - yMin) / (yMax - yMin)) * (height - pad.t - pad.b);
-  const ns = 'http://www.w3.org/2000/svg';
-  const svg = document.createElementNS(ns, 'svg');
-  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-  svg.setAttribute('preserveAspectRatio', 'none');
-  svg.style.height = height + 'px';
-  svg.setAttribute('role', 'img');
-  svg.setAttribute('aria-label', options.label || usable.map(serie => serie.label).join(', '));
-  const add = (tag, attrs) => { const node = document.createElementNS(ns, tag); Object.entries(attrs).forEach(([k, v]) => node.setAttribute(k, v)); svg.append(node); return node };
-  for (let i = 0; i <= 4; i++) {
-    const value = yMin + (yMax - yMin) * i / 4, y = sy(value);
-    add('line', { x1: pad.l, x2: width - pad.r, y1: y, y2: y, stroke: 'var(--chart-grid)', 'stroke-width': 1 });
-    const label = add('text', { x: pad.l - 6, y: y + 4, 'text-anchor': 'end', 'font-size': 11, fill: 'var(--muted)' });
-    label.textContent = options.percent ? `${Math.round(value * 100)}%` : value.toFixed(value >= 10 ? 0 : 2)
-  }
-  [xMin, Math.round((xMin + xMax) / 2), xMax].forEach(x => {
-    const anchor = x === xMax ? 'end' : x === xMin ? 'start' : 'middle';
-    const label = add('text', { x: sx(x), y: height - 6, 'text-anchor': anchor, 'font-size': 11, fill: 'var(--muted)' });
-    label.textContent = `ép. ${x}`
-  });
-  usable.forEach(serie => {
-    const path = points.filter(point => point[serie.key] != null).map((point, i) => `${i ? 'L' : 'M'}${sx(point.epoch).toFixed(1)},${sy(point[serie.key]).toFixed(1)}`).join('');
-    add('path', { d: path, fill: 'none', stroke: serie.color, 'stroke-width': 2, 'vector-effect': 'non-scaling-stroke', 'stroke-dasharray': serie.dashed ? '5 4' : '' })
-  });
-  if (options.marker != null) {
-    const x = sx(options.marker);
-    add('line', { x1: x, x2: x, y1: pad.t, y2: height - pad.b, stroke: 'var(--ai)', 'stroke-dasharray': '3 3', 'vector-effect': 'non-scaling-stroke' })
-  }
-  const cursor = add('line', { x1: 0, x2: 0, y1: pad.t, y2: height - pad.b, stroke: 'var(--line-strong)', visibility: 'hidden', 'vector-effect': 'non-scaling-stroke' });
-  const tip = el('div', { class: 'tooltip hidden' });
-  svg.addEventListener('pointermove', event => {
-    const rect = svg.getBoundingClientRect();
-    const vx = (event.clientX - rect.left) / rect.width * width;
-    const epoch = xMin + (vx - pad.l) / (width - pad.l - pad.r) * (xMax - xMin);
-    const nearest = points.reduce((best, point) => Math.abs(point.epoch - epoch) < Math.abs(best.epoch - epoch) ? point : best, points[0]);
-    const x = sx(nearest.epoch);
-    cursor.setAttribute('x1', x); cursor.setAttribute('x2', x); cursor.setAttribute('visibility', 'visible');
-    tip.textContent = `Época ${nearest.epoch} · ` + usable.map(serie => `${serie.label} ${nearest[serie.key] == null ? '—' : options.percent ? pct(nearest[serie.key]) : nearest[serie.key].toFixed(3)}`).join(' · ');
-    tip.classList.remove('hidden');
-    tip.style.left = '0px';
-    const left = Math.max(0, Math.min(rect.width - tip.offsetWidth - 4, x / width * rect.width + 8));
-    tip.style.left = left + 'px'; tip.style.top = '4px'
-  });
-  svg.addEventListener('pointerleave', () => { cursor.setAttribute('visibility', 'hidden'); tip.classList.add('hidden') });
-  container.append(svg, tip, el('div', { class: 'legend' }, ...usable.map(serie => {
-    const item = el('span', {}, el('i'), serie.label);
-    item.firstChild.style.setProperty('--c', serie.color);
-    return item
-  })))
-}
-const LOSS_SERIES = [
-  { key: 'train_box', label: 'box treino', color: '#22D3EE' },
-  { key: 'train_cls', label: 'cls treino', color: '#A78BFA' },
-  { key: 'val_box', label: 'box val.', color: '#22D3EE', dashed: true },
-  { key: 'val_cls', label: 'cls val.', color: '#A78BFA', dashed: true }
-];
-const METRIC_SERIES = [
-  { key: 'precision', label: 'Precisão', color: '#F59E0B' },
-  { key: 'recall', label: 'Recall', color: '#4EA8FF' },
-  { key: 'map50', label: 'mAP50', color: '#34D399' },
-  { key: 'map50_95', label: 'mAP50-95', color: '#818CF8' }
-];
-
-/* ======================= Treinamento ======================= */
-const stateLabel = value => ({ completed: 'concluído', running: 'em andamento', interrupted: 'interrompido', failed: 'falhou', prepared: 'preparado' }[value] || value);
-const stateClass = value => ({ completed: 'ok', running: 'live ok', interrupted: 'warn', failed: 'bad', prepared: 'neutral' }[value] || 'neutral');
-const winPath = path => String(path || '').replaceAll('/', '\\');
-const PY = '.\\.venv\\Scripts\\python.exe -m dronecamp_ia';
-function runForWeights(sha) {
-  if (!sha) return null;
-  for (const comparison of OPS.comparisons) {
-    const model = comparison.models.find(value => value.weights_sha256 === sha);
-    if (model && model.run_id) return OPS.runs.find(run => run.id === model.run_id) || { id: model.run_id }
-  }
-  return null
-}
-
-function commandBox(text) {
-  const box = el('div', { class: 'command' }, text);
-  const copy = el('button', { type: 'button' }, 'Copiar');
-  copy.onclick = async () => {
-    try { await navigator.clipboard.writeText(text); copy.textContent = 'Copiado' }
-    catch { copy.textContent = 'Selecione e copie' }
-    setTimeout(() => copy.textContent = 'Copiar', 1500)
-  };
-  box.append(copy);
-  return box
-}
-
-function nextVersionName() {
-  const match = String(DATA.version || '').match(/^([a-z]+)_v(\d+)/i);
-  return match ? `${match[1]}_v${Number(match[2]) + 1}_ID` : 'nova_versao_ID'
-}
-
-function renderCycle() {
-  const directory = winPath(OPS.review_directory || `data/reviews/${DATA.version}`);
-  const next = nextVersionName();
-  const decided = DATA.images.filter(photo => decidedStatus(photo)).length;
-  const latest = OPS.runs.find(run => run.weights && run.weights.best);
-  const previous = latest ? winPath(latest.weights.best) : 'runs\\PILOTO_ANTERIOR\\fit\\weights\\best.pt';
-  const steps = [
-    { title: 'Revisar e salvar', text: `${decided}/${DATA.images.length} fotos decididas nesta revisão. Salve o arquivo de revisão.`, done: decided > 0 && decided === DATA.images.length, action: () => showView('review') },
-    { title: 'Importar decisões', text: 'Cria um novo registro; o atual fica preservado.', command: `${PY} import-review --registry "${directory}\\registry.json" --feedback "SEU_ARQUIVO.json" --output "data\\reviews\\${next}\\registry.json"` },
-    { title: 'Montar dataset piloto', text: 'Só fotos com decisão humana completa; divisão por cena.', command: `${PY} build-pilot-data --registry "data\\reviews\\${next}\\registry.json" --output "data\\pilot\\${next}_piloto_s42"` },
-    { title: 'Treinar (fine-tuning)', text: 'Treino em CPU; acompanhe em Monitoramento.', command: `${PY} train-pilot --data "data\\pilot\\${next}_piloto_s42\\dataset.yaml"` },
-    { title: 'Comparar com o atual', text: 'Mesmo dataset, mesmas divisões; olhe classe por classe.', command: `.\\.venv\\Scripts\\python.exe scripts\\compare_pilot_models.py --data "data\\pilot\\${next}_piloto_s42\\dataset.yaml" --weights "${previous}" --weights "runs\\PILOTO_NOVO\\fit\\weights\\best.pt" --output "runs\\compare_${next}.json"` },
-    { title: 'Sugerir na revisão', text: 'Sugestões ficam pendentes até decisão humana.', command: `${PY} suggest --weights "runs\\PILOTO_NOVO\\fit\\weights\\best.pt" --registry "data\\reviews\\${next}\\registry.json"` }
-  ];
-  $('cycleSteps').replaceChildren(...steps.map(step => {
-    const node = el('div', { class: 'step' + (step.done ? ' done' : '') }, el('h3', {}, step.title), el('p', {}, step.text));
-    if (step.command) node.append(commandBox(step.command));
-    if (step.action) node.append(el('button', { type: 'button', class: 'small', onclick: step.action }, 'Abrir revisão'));
-    return node
-  }))
-}
-
-function fillSelect(select, options, selected) {
-  const previous = select.value;
-  select.replaceChildren(...options.map(([value, label]) => el('option', { value }, label)));
-  select.value = options.some(([value]) => value === previous) ? previous : (selected != null ? selected : (options[0] || [''])[0])
-}
-
-function estimateSeconds(imgsz) {
-  // Base: s/época das execuções concluídas no mesmo PC; escala ~ imgsz² quando muda o tamanho.
-  const done = OPS.runs.filter(run => run.seconds_per_epoch && run.parameters.imgsz && run.epochs_done > 3);
-  if (!done.length) return null;
-  const same = done.filter(run => run.parameters.imgsz === imgsz);
-  const base = same.length ? same : done;
-  const perEpoch = base.reduce((sum, run) => sum + run.seconds_per_epoch * (imgsz / run.parameters.imgsz) ** 2, 0) / base.length;
-  return { perEpoch, runs: base.length }
-}
-const duration = seconds => seconds == null ? '—' : seconds >= 3600 ? `${(seconds / 3600).toFixed(1)} h` : seconds >= 60 ? `${Math.round(seconds / 60)} min` : `${Math.round(seconds)} s`;
-
-function trainOptions() {
-  const integer = id => $(id).value === '' ? null : Number($(id).value);
-  return { data: $('trainData').value, weights: $('trainWeights').value, epochs: integer('trainEpochs'), imgsz: integer('trainImgsz'), batch: integer('trainBatch') }
-}
-
-function updateTrainCommand() {
-  const options = trainOptions();
-  let command = `${PY} train-pilot --data "${winPath(options.data || 'data/pilot/SEU_DATASET/dataset.yaml')}"`;
-  if (options.weights) command += ` --weights "${winPath(options.weights)}"`;
-  ['epochs', 'imgsz', 'batch'].forEach(key => { if (options[key] != null) command += ` --${key} ${options[key]}` });
-  $('trainCommand').replaceWith(Object.assign(commandBox(command), { id: 'trainCommand' }));
-  const estimate = estimateSeconds(options.imgsz || OPS.pilot_defaults.imgsz);
-  $('trainEstimate').textContent = estimate
-    ? `Estimativa em CPU: ≈ ${duration(estimate.perEpoch)} por época, ≈ ${duration(estimate.perEpoch * (options.epochs || OPS.pilot_defaults.epochs || 0))} no total (média de ${estimate.runs} execução(ões) anteriores).`
-    : 'Sem execuções anteriores para estimar a duração.'
-}
-
-function renderTraining() {
-  renderCycle();
-  $('deviceChip').textContent = `dispositivo: ${OPS.device || 'cpu'}`;
-  fillSelect($('trainData'), OPS.datasets.map(dataset => [dataset.path, `${dataset.name} · ${Object.entries(dataset.splits || {}).map(([k, v]) => `${k} ${v}`).join(' / ')}`]),
-    (OPS.datasets[OPS.datasets.length - 1] || {}).path);
-  fillSelect($('trainWeights'), [['', `Padrão do projeto (${OPS.base_model || 'yolo26l.pt'})`], ...OPS.weights.map(path => [path, path])], '');
-  const defaults = OPS.pilot_defaults || {};
-  ['epochs', 'imgsz', 'batch'].forEach(key => { const input = $('train' + key[0].toUpperCase() + key.slice(1)); if (input.value === '' && defaults[key] != null) input.value = defaults[key] });
-  updateTrainCommand();
-  $('startTrain').disabled = !SERVER || jobRunning();
-  $('trainServerHint').textContent = SERVER
-    ? 'O treino roda no servidor local deste PC; feche a página à vontade, o processo continua.'
-    : 'Aberta direto do disco, a página não inicia processos: copie o comando no terminal da pasta sistema_ia ou use o atalho Abrir plataforma DroneCamp.cmd.';
-  const body = $('runsTable');
-  body.replaceChildren();
-  $('runsHint').textContent = `${OPS.runs.length} execuções · atualizado ${new Date(OPS.generated_at || Date.now()).toLocaleString('pt-BR')}`;
-  if (!OPS.runs.length) body.append(el('tr', {}, el('td', { colspan: 5, class: 'empty' }, 'Nenhum treino encontrado em runs/.')));
-  OPS.runs.forEach(run => {
-    const row = el('tr', { class: 'clickable', tabindex: 0, 'aria-selected': String(state.run === run.id) },
-      el('td', {}, el('div', { class: 'mono' }, run.id), el('small', { class: 'muted' }, `${new Date(run.started_at).toLocaleString('pt-BR')} · ${run.checkpoint || ''}`)),
-      el('td', {}, el('span', { class: 'chip ' + stateClass(run.state) }, el('span', { class: 'dot' }), stateLabel(run.state))),
-      el('td', { class: 'num' }, `${run.epochs_done}/${run.epochs_planned || '?'}`),
-      el('td', { class: 'num' }, run.best_epoch ? `${pct(run.best_epoch.map50)} (ép. ${run.best_epoch.epoch})` : '—'),
-      el('td', { class: 'num' }, run.seconds_per_epoch ? Math.round(run.seconds_per_epoch) : '—'));
-    const select = () => { state.run = run.id; renderTraining() };
-    row.onclick = select;
-    row.onkeydown = event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); select() } };
-    body.append(row)
-  });
-  const run = OPS.runs.find(value => value.id === state.run) || OPS.runs.find(value => value.curves.length) || OPS.runs[0];
-  renderRunDetail(run)
-}
-
-function renderRunDetail(run) {
-  $('runDetailTitle').textContent = run ? `Detalhes · ${run.id}` : 'Detalhes da execução';
-  $('runDetailChips').replaceChildren(...(run ? Object.entries(run.parameters).map(([key, value]) => el('span', { class: 'chip neutral', style: 'margin:2px' }, `${key} ${value}`)) : []));
-  lineChart($('runLossChart'), run ? run.curves : [], LOSS_SERIES, { label: 'Perdas por época' });
-  lineChart($('runMetricChart'), run ? run.curves : [], METRIC_SERIES, { percent: true, marker: run && run.best_epoch ? run.best_epoch.epoch : null, label: 'Métricas de validação por época' });
-  const plotNames = { results: 'Curvas (Ultralytics)', confusion: 'Matriz de confusão normalizada', pr_curve: 'Curva precisão × recall', val_pred: 'Predições na validação', labels: 'Distribuição dos rótulos' };
-  // Caminhos relativos à pasta da revisão; pelo servidor, /runs/... é servido de sistema_ia/runs.
-  const plotUrl = path => SERVER ? '/' + path.replace(/^(\.\.\/)+/, '') : path;
-  $('runPlots').replaceChildren(...(run ? Object.entries(run.plots).map(([key, path]) =>
-    el('a', { href: plotUrl(path), target: '_blank', rel: 'noopener' }, el('img', { src: plotUrl(path), alt: plotNames[key] || key, loading: 'lazy' }), el('span', {}, plotNames[key] || key))) : []))
-}
-
-['trainData', 'trainWeights', 'trainEpochs', 'trainImgsz', 'trainBatch'].forEach(id => $(id).addEventListener('input', updateTrainCommand));
-
-/* ======================= Monitoramento ======================= */
-let job = { state: 'idle' };
-const jobRunning = () => job.state === 'running';
-
-function renderMonitor() {
-  $('monitorOffline').classList.toggle('hidden', SERVER);
-  // Treino recém-iniciado pela página ainda sem época gravada: mostra a execução mais nova.
-  const starting = jobRunning() && job.kind === 'train-pilot' ? OPS.runs[0] : null;
-  const run = OPS.runs.find(value => value.state === 'running') || starting || OPS.runs.find(value => value.curves.length) || OPS.runs[0];
-  document.querySelectorAll('#liveDot, #liveDotDock').forEach(dot => dot.classList.toggle('hidden', !OPS.runs.some(value => value.state === 'running') && !jobRunning()));
-  if (!run) {
-    $('monitorTitle').textContent = 'Nenhum treino encontrado';
-    $('monitorState').replaceChildren();
-    $('monitorFacts').replaceChildren();
-    $('monitorTiles').replaceChildren();
-  } else {
-    $('monitorTitle').textContent = run.id;
-    $('monitorState').replaceChildren(el('span', { class: 'chip ' + stateClass(run.state) }, el('span', { class: 'dot' }), stateLabel(run.state)));
-    const planned = run.epochs_planned || run.epochs_done || 1;
-    const fraction = Math.min(1, run.epochs_done / planned);
-    $('ringValue').setAttribute('stroke-dashoffset', (339.3 * (1 - fraction)).toFixed(1));
-    $('ringText').textContent = `${Math.round(fraction * 100)}%`;
-    $('ringSub').textContent = `época ${run.epochs_done}/${planned}`;
-    const elapsed = run.last && run.last.time;
-    const remaining = run.state === 'running' && run.seconds_per_epoch ? run.seconds_per_epoch * (planned - run.epochs_done) : null;
-    const facts = [
-      ['Tempo decorrido', duration(elapsed)],
-      ['Tempo restante', run.state === 'running' ? duration(remaining) : '—'],
-      ['Por época', duration(run.seconds_per_epoch)],
-      ['Dispositivo', run.device || OPS.device || '—'],
-      ['Pesos iniciais', run.checkpoint || '—'],
-      ['Última escrita', run.updated_at ? new Date(run.updated_at).toLocaleTimeString('pt-BR') : '—']
-    ];
-    $('monitorFacts').replaceChildren(...facts.flatMap(([key, value]) => [el('dt', {}, key), el('dd', {}, value)]));
-    const last = run.curves[run.curves.length - 1] || {}, before = run.curves[run.curves.length - 2] || {};
-    $('monitorTiles').replaceChildren(...METRIC_SERIES.map(serie => {
-      const value = last[serie.key], delta = value != null && before[serie.key] != null ? value - before[serie.key] : null;
-      return el('div', { class: 'tile' }, el('span', {}, serie.label), el('b', {}, pct(value)),
-        el('span', { class: 'delta ' + (delta > 0 ? 'up' : delta < 0 ? 'down' : '') }, delta == null ? '—' : `${delta >= 0 ? '+' : ''}${(delta * 100).toFixed(1)} p.p.`))
-    }))
-  }
-  lineChart($('liveLossChart'), run ? run.curves : [], LOSS_SERIES);
-  lineChart($('liveMetricChart'), run ? run.curves : [], METRIC_SERIES, { percent: true, marker: run && run.best_epoch ? run.best_epoch.epoch : null });
-  fillSelect($('suggestWeights'), OPS.weights.filter(path => path.startsWith('runs/')).map(path => [path, path]), (OPS.runs.find(value => value.weights.best) || { weights: {} }).weights.best);
-  if ($('suggestConf').value === '' && OPS.suggestion_conf) $('suggestConf').value = OPS.suggestion_conf;
-  renderJob()
-}
-
-function renderJob() {
-  const labels = { idle: 'sem tarefa', running: 'em andamento', finished: 'concluída', failed: 'falhou' };
-  $('jobState').textContent = labels[job.state] || job.state;
-  $('jobState').className = 'chip ' + ({ running: 'live ok', finished: 'ok', failed: 'bad' }[job.state] || 'neutral');
-  $('jobHint').textContent = SERVER
-    ? (job.kind ? `${job.kind} ${(job.arguments || []).join(' ')} · log em ${job.log}` + (job.kind === 'suggest' && job.state === 'finished' ? ' · recarregue a página para ver as novas sugestões.' : '') : 'Uma tarefa por vez. Pesos novos não são adotados automaticamente.')
-    : 'Disponível quando a plataforma é aberta pelo servidor local (Abrir plataforma DroneCamp.cmd).';
-  $('jobLog').textContent = (job.log_tail || []).join('\n') || '—';
-  $('jobLog').scrollTop = $('jobLog').scrollHeight;
-  $('startSuggest').disabled = !SERVER || jobRunning() || !$('suggestWeights').value;
-  $('stopJob').disabled = !SERVER || !jobRunning();
-  $('startTrain').disabled = !SERVER || jobRunning()
-}
-
-/* ======================= Modelos ======================= */
-function renderModels() {
-  const pilots = OPS.runs.filter(run => run.stage === 'pilot_train');
-  const independent = OPS.runs.some(run => run.independent_evaluation === true);
-  const buildings = [...new Set(DATA.images.map(photo => photo.building_group).filter(Boolean))];
-  const reasons = [];
-  if (!independent) reasons.push('Nenhuma execução tem avaliação em edificação independente (todas as divisões vêm do mesmo prédio).');
-  if (buildings.length < 3) reasons.push(`A revisão cobre ${buildings.length || 0} edificaç${buildings.length === 1 ? 'ão' : 'ões'}; o treino de produção exige 3 independentes.`);
-  if (!OPS.comparisons.length) reasons.push('Nenhuma comparação salva em runs/compare_*.json.');
-  reasons.push('Toda nova versão precisa de análise de regressões por classe e revisão técnica antes do uso em inspeções.');
-  const ok = independent && buildings.length >= 3 && OPS.comparisons.length;
-  $('adoptionVerdict').replaceChildren(el('div', { class: 'verdict' + (ok ? ' ok' : '') },
-    el('div', {}, el('b', {}, ok ? 'Critérios básicos atendidos; falta a análise por classe.' : 'Nenhuma versão pode ser adotada como modelo de produção.'),
-      el('ul', {}, ...reasons.map(reason => el('li', {}, reason))),
-      el('p', { class: 'muted small-text' }, `${pilots.length} treinos piloto registrados. O modelo atual das sugestões continua só como apoio à revisão.`))));
-  fillSelect($('compareSelect'), OPS.comparisons.map((comparison, index) => [String(index), comparison.file]), String(OPS.comparisons.length - 1));
-  renderCompare();
-  const withCounts = OPS.runs.filter(run => Object.keys(run.class_counts || {}).length);
-  fillSelect($('coverageRun'), withCounts.map(run => [run.id, run.id]), (withCounts[0] || {}).id);
-  renderCoverage();
-  const ranked = OPS.runs.filter(run => run.best_epoch).sort((a, b) => b.best_epoch.map50 - a.best_epoch.map50);
-  const max = Math.max(0.01, ...ranked.map(run => run.best_epoch.map50));
-  $('leaderboard').replaceChildren(...(ranked.length ? ranked.map(run => barRow('var(--ok)', run.id.replace('pilot_train_', ''), run.best_epoch.map50, 0, max, pct(run.best_epoch.map50))) : [el('div', { class: 'empty' }, 'Sem métricas.')]))
-}
-
-function renderCompare() {
-  const comparison = OPS.comparisons[Number($('compareSelect').value)];
-  if (!comparison) { $('compareTable').replaceChildren(el('div', { class: 'empty' }, 'Nenhuma comparação salva. Etapa 5 do ciclo de fine-tuning.')); return }
-  const splits = [...new Set(comparison.models.flatMap(model => Object.keys(model.splits)))];
-  const head = el('tr', {}, el('th', {}, 'Modelo'), ...splits.map(split => el('th', { class: 'num' }, split + (split.includes('visto') ? ' ⚠' : ''))));
-  const rows = comparison.models.map(model => el('tr', {}, el('td', {}, el('div', { class: 'mono' }, model.run_id || model.weights), el('small', { class: 'muted' }, `${model.file} · ${String(model.weights_sha256 || '').slice(0, 10)}…`)),
-    ...splits.map(split => {
-      const value = model.splits[split];
-      if (!value) return el('td', { class: 'num muted' }, '—');
-      const recall = value.truth ? value.found / value.truth : null, precision = value.suggestions ? value.correct / value.suggestions : null;
-      return el('td', { class: 'num' }, el('div', {}, `${value.found}/${value.truth} encontradas`), el('small', { class: 'muted' }, `${value.correct}/${value.suggestions} corretas · R\u00a0${pct(recall)} · P\u00a0${pct(precision)}`))
-    })));
-  $('compareTable').replaceChildren(el('table', {}, el('thead', {}, head), el('tbody', {}, ...rows)),
-    el('p', { class: 'muted small-text' }, `Dataset ${comparison.dataset || '—'} · confiança ${comparison.conf} · IoU de acerto ${comparison.iou_match}.`))
-}
-
-function renderCoverage() {
-  const run = OPS.runs.find(value => value.id === $('coverageRun').value);
-  if (!run) { $('coverageTable').replaceChildren(el('div', { class: 'empty' }, 'Sem contagens por classe registradas.')); return }
-  const splits = Object.keys(run.class_counts);
-  const classes = [...new Set(splits.flatMap(split => Object.keys(run.class_counts[split])))];
-  // class_counts segue a ordem dos IDs da taxonomia (mesma ordem de DATA.classes).
-  const label = slug => (DATA.classes[classes.indexOf(slug)] || {}).label || slug;
-  const rows = classes.map(slug => el('tr', {}, el('td', {}, label(slug)), ...splits.map(split => {
-    const value = run.class_counts[split][slug] || 0;
-    return el('td', { class: 'num ' + (value === 0 ? 'cell-bad' : value < 5 ? 'cell-warn' : '') }, String(value))
-  })));
-  $('coverageTable').replaceChildren(el('table', {}, el('thead', {}, el('tr', {}, el('th', {}, 'Classe'), ...splits.map(split => el('th', { class: 'num' }, split)))), el('tbody', {}, ...rows)),
-    el('p', { class: 'muted small-text' }, 'Vermelho: sem exemplos (a classe não é aprendida). Amarelo: menos de 5 caixas.'))
-}
-$('compareSelect').onchange = renderCompare;
-$('coverageRun').onchange = renderCoverage;
-
-/* ======================= Servidor local (opcional) ======================= */
-async function api(path, body) {
-  const response = await fetch(path, body === undefined ? {} : {
-    method: 'POST', headers: { 'Content-Type': 'application/json', 'X-DroneCamp-Token': TOKEN }, body: JSON.stringify(body)
-  });
-  const value = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(value.error || `HTTP ${response.status}`);
-  return value
-}
-
-async function refreshOperations() {
-  try {
-    OPS = await api('/api/operations');
-    job = await api('/api/jobs');
-    if (state.view === 'monitor') renderMonitor();
-    else if (state.view === 'training') renderTraining();
-    else if (state.view === 'models') renderModels();
-    else if (state.view === 'overview') renderOverview();
-    renderJob();
-    document.querySelectorAll('#liveDot, #liveDotDock').forEach(dot => dot.classList.toggle('hidden', !OPS.runs.some(value => value.state === 'running') && !jobRunning()));
-    $('modeChip').className = 'chip ok live';
-    $('modeChip').replaceChildren(el('span', { class: 'dot' }), 'Servidor local conectado')
-  } catch {
-    $('modeChip').className = 'chip bad';
-    $('modeChip').replaceChildren(el('span', { class: 'dot' }), 'Servidor local desconectado')
-  }
-}
-
-async function startJob(kind, options) {
-  try {
-    job = await api('/api/jobs', { kind, options });
-    renderJob();
-    showView('monitor');
-    toast('Tarefa iniciada', `${kind} rodando no servidor local. Acompanhe o log e as curvas.`)
-  } catch (error) {
-    message(error.message, true);
-    $('jobLog').textContent = error.message;
-    alert(error.message)
-  }
-}
-$('startTrain').onclick = () => {
-  const options = trainOptions();
-  if (!confirm(`Iniciar treino piloto com ${options.epochs || '?'} épocas em ${OPS.device || 'cpu'}? O processo usa o PC até terminar.`)) return;
-  startJob('train-pilot', options)
-};
-$('startSuggest').onclick = () => startJob('suggest', { review: REVIEWS ? REVIEWS.current : undefined, weights: $('suggestWeights').value, conf: $('suggestConf').value === '' ? null : Number($('suggestConf').value) });
-$('stopJob').onclick = async () => {
-  if (!confirm('Interromper a tarefa em andamento?')) return;
-  try { job = await api('/api/jobs/stop', {}); renderJob() } catch (error) { alert(error.message) }
-};
-$('suggestWeights').onchange = renderJob;
-
-/* ======================= Inicialização ======================= */
-function applyTheme(theme) {
-  document.documentElement.dataset.theme = theme;
-  try { localStorage.setItem('dronecamp-theme', theme) } catch {}
-  if (state.view !== 'review') showView(state.view); else paint()
-}
-$('themeToggle').onclick = () => applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
-try { const theme = localStorage.getItem('dronecamp-theme'); if (theme) document.documentElement.dataset.theme = theme } catch {}
-
-$('versionLabel').textContent = DATA.version;
-DATA.classes.forEach(category => {
-  const option = document.createElement('option');
-  option.value = category.id;
-  option.textContent = category.label;
-  $('classId').append(option)
-});
-if (DATA.suggestions) {
-  $('confFilter').value = Math.round(DATA.suggestions.conf * 100);
-  $('confFilter').min = Math.round(DATA.suggestions.conf * 100);
-  $('confValue').textContent = `${$('confFilter').value}%`
-}
-if (DATA.taxonomy_recheck_pending) {
-  // Os nomes vêm do catálogo e do histórico; não manter categorias antigas fixas no HTML.
-  const categories = (DATA.classes_requiring_review || DATA.classes.map(item => item.label)).join('; ');
-  $('taxonomyNotice').textContent = `Categorias que ainda precisam de conferência integral: ${categories}. Confira essas ocorrências em todas as fotos antes de registrar uma aprovação.`;
-  $('taxonomyNotice').classList.remove('hidden');
-}
-magnifier = new Magnifier('#navMagnifier');
-openPhoto(0);
-let initialView = location.hash.slice(1);
-if (!viewTitles[initialView]) { try { initialView = sessionStorage.getItem('dronecamp-view') || 'overview' } catch { initialView = 'overview' } }
-showView(initialView);
-if (SERVER) {
-  refreshOperations();
-  setInterval(refreshOperations, 5000)
-}
+__PLATFORM_JS__
 </script>
-</body></html>
+</body>
+</html>
