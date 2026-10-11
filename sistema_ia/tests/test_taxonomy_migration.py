@@ -56,7 +56,7 @@ class TaxonomyMigrationTests(unittest.TestCase):
             with self.subTest(class_id=class_id):
                 self.assertEqual(self.taxonomy["classes"][class_id]["slug"], slug)
                 self.assertEqual(self.taxonomy["classes"][class_id]["phase"], 1)
-        self.assertEqual([category["id"] for category in self.taxonomy["classes"]], list(range(24)))
+        self.assertEqual([category["id"] for category in self.taxonomy["classes"]], list(range(33)))
         corroded = self.taxonomy["classes"][21]
         self.assertEqual(corroded["slug"], "fixador_telha_corroido")
         self.assertEqual(corroded["phase"], 2)

@@ -188,6 +188,8 @@ main { padding: 20px 24px 40px; flex: 1 }
 .grid { display: grid; gap: 16px }
 .grid.two { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)) }
 .grid.halves { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) }
+.grid.wide-first { grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr) }
+@media (max-width: 1100px) { .grid.wide-first { grid-template-columns: 1fr } }
 .grid.kpis { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)) }
 .grid .card + .card { margin-top: 0 }
 .kpi .label { font-size: 12px; color: var(--muted); font-weight: 500 }
@@ -252,6 +254,7 @@ textarea { min-height: 76px; resize: vertical }
 input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--primary); margin: 0 }
 input[type="range"] { padding: 0; height: 24px; accent-color: var(--primary); border: 0; background: transparent }
 input[type="file"] { padding: 6px }
+input[type="color"] { width: 48px; height: 32px; padding: 2px 3px }
 .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0 12px }
 .form-grid .wide { grid-column: 1 / -1 }
 .checks { display: flex; align-items: flex-start; gap: 8px; margin-top: 10px; font-size: 12.5px }
@@ -308,7 +311,7 @@ td .empty { border: 0; padding: 14px }
 .viewer canvas { max-width: 100%; max-height: 72vh; display: block; touch-action: none }
 .viewer.drawing canvas { cursor: crosshair }
 #message { font-size: 12.5px; color: var(--ink-2); margin: 10px 0 6px; min-height: 18px }
-#message.error { color: var(--bad); font-weight: 600 }
+#message.error, #classesStatus.error { color: var(--bad); font-weight: 600 }
 details { font-size: 12.5px; margin-top: 6px } details summary { cursor: pointer; color: var(--muted); font-weight: 500 } details p { margin: 6px 0 0; white-space: pre-wrap; color: var(--ink-2) }
 .shortcuts { font-size: 11.5px; color: var(--muted); margin-top: 10px } kbd { font: 11px var(--font-mono); background: var(--surface-3); border: 1px solid var(--line-strong); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px }
 .inspector { display: grid; gap: 16px; position: sticky; top: 78px } .inspector .card + .card { margin-top: 0 }
@@ -366,6 +369,15 @@ details { font-size: 12.5px; margin-top: 6px } details summary { cursor: pointer
 .file svg { width: 18px; height: 18px; color: var(--muted) } .file .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap } .file small { color: var(--muted); display: block; font-size: 11px }
 .file .progress { margin: 4px 0 0; height: 4px } .file .state { font-size: 11px; font-weight: 600; color: var(--muted) } .file .state.ok { color: var(--ok) } .file .state.bad { color: var(--bad) }
 .download-list { display: grid; gap: 8px }
+/* Seção Classes: amostra de cor, edição em linha e linhas inativas. */
+.class-name { display: flex; align-items: center; gap: 8px; min-width: 0 }
+.class-name .swatch { width: 12px; height: 12px; border-radius: 3px; background: var(--c); flex: none; border: 1px solid color-mix(in srgb, var(--ink) 20%, transparent) }
+.class-name input[type=color] { width: 28px; height: 24px; padding: 0 2px; margin: 0; border-radius: var(--radius-ctl) }
+.class-name input[type=text] { margin: 0; padding: 4px 8px; font-size: 12.5px; max-width: 220px }
+tr.inactive td { color: var(--muted) } tr.inactive .class-name .swatch { opacity: .4 }
+.class-slug { margin-top: 3px; color: var(--muted) } .class-slug .mono { font-size: 11.5px } .class-slug input { margin: 0; padding: 3px 8px; font-size: 11.5px; max-width: 220px }
+.class-actions { display: flex; gap: 6px; justify-content: flex-end; white-space: nowrap }
+#classesTable td { vertical-align: middle }
 .download { display: grid; grid-template-columns: 36px 1fr auto; gap: 12px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface) }
 .download .ico { width: 36px; height: 36px; border-radius: 8px; display: grid; place-items: center; background: var(--primary-soft); color: var(--primary) } .download .ico svg { width: 18px; height: 18px } .download .ico.ai { background: var(--ai-soft); color: var(--ai) }
 .download b { display: block; font-size: 13px } .download small { color: var(--muted); font-size: 11.5px; overflow-wrap: anywhere }

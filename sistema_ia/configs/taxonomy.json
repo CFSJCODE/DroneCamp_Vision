@@ -184,7 +184,8 @@
       "origin": "categoria_adicionada_por_solicitacao_do_usuario_em_2026-10-11",
       "criterion": "Segmento solto de calha (perfil metálico ou de PVC, alongado, com bordas dobradas ou seção em U) apoiado sobre a superfície das telhas, fora da posição de instalação da calha. Diferenciar calha instalada, rufo, cumeeira, faixa de reparo aderida, fita, reflexo e sombra.",
       "annotation_policy": "Delimitar somente o segmento solto, sem incluir as telhas de apoio nem a calha instalada. Preferir esta classe a ID2 residuos_telha quando o objeto for reconhecível como pedaço de calha; não duplicar o mesmo objeto nas duas classes. Rufo solto ou deslocado permanece ID9 rufo_deslocado; fragmento de telha permanece ID8/ID10. Se a foto não distinguir calha de rufo ou de outro perfil metálico, manter ambíguo.",
-      "physical_diagnosis": "Não inferir origem, material, ausência de calha no trecho, falha de escoamento, risco de queda, causa ou severidade pela fotografia."
+      "physical_diagnosis": "Não inferir origem, material, ausência de calha no trecho, falha de escoamento, risco de queda, causa ou severidade pela fotografia.",
+      "requires_training": true
     },
     {
       "id": 14,
@@ -296,6 +297,123 @@
       ],
       "reference_severity": "media",
       "criterion": "Ponto de fixação de rufo esperado sem fixador."
+    },
+    {
+      "id": 24,
+      "slug": "calha_danificada",
+      "label": "Calha danificada",
+      "phase": 2,
+      "pages": [],
+      "reference_severity": null,
+      "requires_training": true,
+      "origin": "proposta_da_analise_de_taxonomia_em_2026-10-11",
+      "basis": "Item “As calhas estão danificadas?” da lista de verificação do laudo CEASA, sem categoria até a v6.",
+      "criterion": "Deformação, amassamento, ruptura, emenda separada ou desalinhamento visível do próprio perfil da calha instalada. Diferenciar resíduos (ID6), vegetação (ID7), pedaço de calha solto sobre as telhas (ID13), emenda regular e sombra.",
+      "physical_diagnosis": "Não inferir vazão, transbordamento, estanqueidade, causa ou severidade."
+    },
+    {
+      "id": 25,
+      "slug": "telha_trincada_ou_perfurada",
+      "label": "Telha trincada ou perfurada",
+      "phase": 2,
+      "pages": [],
+      "reference_severity": null,
+      "requires_training": true,
+      "origin": "proposta_da_analise_de_taxonomia_em_2026-10-11",
+      "basis": "Item “Existem trincas ou furos nas telhas?” do laudo CEASA e termo “hole in roof” da busca aberta.",
+      "criterion": "Fissura linear ou furo pontual no corpo da telha, sem separação de partes. Ruptura com perda de material permanece ID0 telha_quebrada; passagem prevista de tubulação ou fixação não é furo. Requer vista próxima e nítida.",
+      "physical_diagnosis": "Não inferir infiltração, estanqueidade, causa ou severidade."
+    },
+    {
+      "id": 26,
+      "slug": "corrosao_telha",
+      "label": "Corrosão em telha metálica",
+      "phase": 2,
+      "pages": [],
+      "reference_severity": null,
+      "requires_training": true,
+      "origin": "proposta_da_analise_de_taxonomia_em_2026-10-11",
+      "basis": "Termo “rust on roof sheet” da busca aberta, registrado como não catalogado.",
+      "criterion": "Oxidação visível (ferrugem, descamação, perda de revestimento) na superfície da telha metálica. Diferenciar sujeira, reflexo, resíduo alaranjado e envelhecimento uniforme. Corrosão em fixador permanece ID21 fixador_telha_corroido.",
+      "physical_diagnosis": "Não inferir perda de espessura, perfuração, vida útil ou severidade."
+    },
+    {
+      "id": 27,
+      "slug": "agua_empocada_cobertura",
+      "label": "Água empoçada sobre a cobertura",
+      "phase": 2,
+      "pages": [],
+      "reference_severity": null,
+      "requires_training": true,
+      "origin": "proposta_da_analise_de_taxonomia_em_2026-10-11",
+      "basis": "Item “Há sinais de acúmulo de água nas telhas ou nas calhas?” do laudo CEASA e termo “standing water on roof” da busca aberta.",
+      "criterion": "Lâmina de água diretamente visível (superfície líquida delimitada, reflexo especular) sobre telhas, calhas ou lajes. Mancha escura, umidade aparente ou marca de escorrimento não comprovam água. Difere da alegação excluída agua_acumulada_calha, que o laudo inferiu sem observação direta.",
+      "physical_diagnosis": "Não inferir caimento, entupimento, infiltração, causa ou severidade."
+    },
+    {
+      "id": 28,
+      "slug": "telha_translucida_danificada",
+      "label": "Telha translúcida danificada",
+      "phase": 2,
+      "pages": [],
+      "reference_severity": null,
+      "requires_training": true,
+      "origin": "proposta_da_analise_de_taxonomia_em_2026-10-11",
+      "basis": "Termo “damaged skylight” da busca aberta, registrado como não catalogado.",
+      "criterion": "Telha translúcida ou domo de iluminação com ruptura, furo, trinca ou trecho ausente visível. Diferenciar opacidade ou amarelamento, sujeira e reflexo.",
+      "physical_diagnosis": "Não inferir risco de queda, estanqueidade ou severidade."
+    },
+    {
+      "id": 29,
+      "slug": "ralo_obstruido",
+      "label": "Ralo ou bocal de descida obstruído",
+      "phase": 2,
+      "pages": [],
+      "reference_severity": null,
+      "requires_training": true,
+      "origin": "proposta_da_analise_de_taxonomia_em_2026-10-11",
+      "basis": "Saídas de água pluvial são ponto crítico de inspeção de coberturas industriais e não têm categoria própria.",
+      "criterion": "Obstrução visível na boca do ralo ou do bocal de descida da calha (detritos, vegetação ou objeto sobre a grelha). Resíduos espalhados no canal sem relação com a saída permanecem ID6 residuos_calha.",
+      "physical_diagnosis": "Não inferir vazão, entupimento interno do condutor, transbordamento ou severidade."
+    },
+    {
+      "id": 30,
+      "slug": "cumeeira_danificada",
+      "label": "Cumeeira danificada ou deslocada",
+      "phase": 2,
+      "pages": [],
+      "reference_severity": null,
+      "requires_training": true,
+      "origin": "proposta_da_analise_de_taxonomia_em_2026-10-11",
+      "basis": "Cumeeiras aparecem nas coberturas de fibrocimento e metálicas e hoje só caberiam por aproximação em classes de rufo.",
+      "criterion": "Peça de cumeeira com ruptura, trecho ausente ou deslocamento visível. Diferenciar rufo (IDs 4, 5, 9 e 12), sobreposição regular e sombra.",
+      "physical_diagnosis": "Não inferir fixação, estanqueidade, causa ou severidade."
+    },
+    {
+      "id": 31,
+      "slug": "residuo_tinta_argamassa",
+      "label": "Resíduo de tinta ou argamassa aderido",
+      "phase": 2,
+      "pages": [],
+      "reference_severity": null,
+      "requires_training": true,
+      "origin": "proposta_da_analise_de_taxonomia_em_2026-10-11",
+      "basis": "Proposta de 04/10 (docs/novas_classes_propostas.md) com evidência em fotos da internet; sem exemplo no CEASA.",
+      "criterion": "Tinta, argamassa, cimento ou selante derramado e solidificado sobre a telha, aderido e sem forma de intervenção intencional. Diferenciar reparo_telha (remendo delimitado), residuos_telha (material solto), mancha e envelhecimento.",
+      "physical_diagnosis": "Não inferir obstrução, estanqueidade, dano à telha ou severidade."
+    },
+    {
+      "id": 32,
+      "slug": "crescimento_biologico",
+      "label": "Musgo, líquen ou bolor",
+      "phase": 2,
+      "pages": [],
+      "reference_severity": null,
+      "requires_training": true,
+      "origin": "proposta_da_analise_de_taxonomia_em_2026-10-11",
+      "basis": "Proposta de 04/10 (docs/novas_classes_propostas.md); musgo não comprova umidade persistente nem infiltração.",
+      "criterion": "Cobertura biológica contínua (musgo, líquen, bolor) sobre telha ou calha. Diferenciar vegetacao_calha (plantas, galhos, folhas), sujeira e mancha de envelhecimento.",
+      "physical_diagnosis": "Não inferir umidade, infiltração, dano ao material ou severidade."
     }
   ],
   "excluded_positive_claims": [
@@ -350,6 +468,17 @@
       "10": 21,
       "12": 22
     },
-    "note": "IDs ativos 0–12 preservados. Nova classe 13 de pedaço de calha sobre telha; o antigo ID13 de fixador de rufo ausente, fase2, passa a23. Snapshot v5 preservado; pesos e revisões anteriores não aprendem a nova classe automaticamente."
+    "note": "IDs ativos 0–12 preservados. Nova classe 13 de pedaço de calha sobre telha; o antigo ID13 de fixador de rufo ausente, fase2, passa a23. Snapshot v5 preservado; pesos e revisões anteriores não aprendem a nova classe automaticamente. Catálogo ampliado com IDs 24–32 (fase 2, requires_training) pela análise de lacunas de 11/10; nenhum entra na detecção sem dados aprovados e novo treino.",
+    "new_catalog_class_ids": [
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32
+    ]
   }
 }

@@ -19,6 +19,7 @@ Base local de **detecção assistida** para inspeção de telhados industriais. 
 - [Elemento de fixação de telha solto/frouxo](docs/categoria_fixador_telha_frouxo.md): classe ativa ID 11, com evidência visual de soltura e limites da interpretação de aperto.
 - [Reparo em rufo](docs/categoria_reparo_rufo.md): classe ativa ID 12, com intervenção identificável no próprio rufo e distinção de reparo em telha.
 - [Pedaço de calha sobre telha](docs/categoria_pedaco_calha_sobre_telha.md): classe ativa ID 13, segmento solto de calha apoiado sobre as telhas, com distinção de resíduos e rufo deslocado.
+- [Análise da taxonomia e cadastro de classes](docs/analise_taxonomia_classes.md): redundâncias, lacunas, IDs 24–32 acrescentados ao catálogo (fase 2, exigem treino) e a seção Classes da plataforma (`/api/classes`).
 - [Pesquisa Ultralytics](docs/pesquisa_ultralytics.md): todas as páginas solicitadas, exemplos, API atual e boas práticas.
 - [Fine-tuning e preparação dos dados](docs/fine_tuning_e_anotacao.md): roteiro de anotações, splits e avaliação.
 - [Plano de revisão e melhoria contínua](docs/plano_revisao_e_melhoria_continua.md): correções humanas, diversidade de dados, comparação de versões e evolução dos relatórios.

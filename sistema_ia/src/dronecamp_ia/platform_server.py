@@ -19,10 +19,13 @@ Este servidor, só da biblioteca padrão e preso a 127.0.0.1, faz isso:
 - ``POST /api/export/evidence`` e ``POST /api/report``: pacote ZIP de fotos demarcadas e
   laudo preliminar (``exports.py``) gravados em ``exportacoes/`` e ``laudos/`` da inspeção;
 - ``GET /api/reviews/<pasta>/files``: laudos e pacotes já gerados para baixar;
-- ``POST /api/feedback``: grava o arquivo de revisão exportado na pasta da revisão.
+- ``POST /api/feedback``: grava o arquivo de revisão exportado na pasta da revisão;
+- ``GET/POST /api/classes``, ``PUT/DELETE /api/classes/<id>``: cadastro das classes
+  (``class_catalog``): nome de exibição, cor, ativo/inativo e classes propostas,
+  gravados em ``configs/taxonomy_overrides.json`` sem tocar em ``taxonomy.json``.
 
-O que não faz: aprovar dados, adotar modelos, apagar inspeções ou inferir
-gravidade. Toda requisição que altera algo exige o token sorteado na partida
+O que não faz: aprovar dados, adotar modelos, apagar inspeções ou classes,
+reescrever a taxonomia ou inferir gravidade. Toda requisição que altera algo exige o token sorteado na partida
 (impede que outro site aberto no navegador dispare treinos ou envie arquivos).
 
 Quando mexer: para liberar um comando novo na página, acrescente-o em
@@ -49,6 +52,7 @@ import threading
 from urllib.parse import parse_qs, unquote, urlsplit
 import webbrowser
 
+from . import class_catalog
 from .config import ProjectConfig, detection_names, load_taxonomy
 from .io import file_hash
 from .operations import collect_operations, collect_review_files
@@ -556,6 +560,8 @@ def make_handler(config: ProjectConfig, registry_path: Path | list[Path] | None,
                 _require_current_taxonomy(config, reviews[name])  # modo espaço de trabalho: recusa ao abrir
                 payload = load_page_payload(reviews[name])
                 operations = collect_operations(config, reviews[name].parent.resolve())
+            # Nome de exibição, cor e ativo/inativo da seção Classes valem na página servida.
+            payload = {**payload, "classes": class_catalog.apply_to_page_classes(config, payload.get("classes") or [])}
             page = build_page(payload, operations)
             # O token só existe na página servida; a cópia em disco nunca o contém.
             page = page.replace('<meta name="dronecamp-server" content="">', f'<meta name="dronecamp-server" content="{token}">', 1)
@@ -575,6 +581,11 @@ def make_handler(config: ProjectConfig, registry_path: Path | list[Path] | None,
                 return self._json(jobs.status())
             if full == "/api/workspace":
                 return self._json(workspace.describe(asked if asked in reviews else None))
+            if full == "/api/classes":
+                try:
+                    return self._json(class_catalog.list_classes(config))
+                except (OSError, ValueError) as error:
+                    return self._json({"error": str(error)}, HTTPStatus.INTERNAL_SERVER_ERROR)
             match = re.match(r"^/api/reviews/([^/]+)/files$", full)
             if match:
                 name = unquote(match[1])
@@ -618,9 +629,35 @@ def make_handler(config: ProjectConfig, registry_path: Path | list[Path] | None,
                 return self._not_found()
             return self._send_file(target, attachment=False)
 
+        def _class_change(self, method: str) -> None:
+            """PUT/DELETE em ``/api/classes/<id>``: edita ou desativa (exclusão lógica)."""
+            match = re.match(r"^/api/classes/(\d{1,6})$", self.path.split("?", 1)[0])
+            if not match:
+                return self._json({"error": "Rota desconhecida."}, HTTPStatus.NOT_FOUND)
+            try:
+                if method == "DELETE":
+                    query = parse_qs(urlsplit(self.path).query)  # DELETE sem corpo: autor opcional em ?author=
+                    author = _text({"author": (query.get("author") or [None])[0]}, "author", 100) or None
+                    return self._json(class_catalog.deactivate_class(config, int(match[1]), author))
+                body = self._body()
+                author = _text(body, "author", 100) or None
+                body.pop("author", None)
+                return self._json(class_catalog.update_class(config, int(match[1]), body, author))
+            except class_catalog.ClassNotFound as error:
+                return self._json({"error": str(error)}, HTTPStatus.NOT_FOUND)
+            except (ValueError, OSError) as error:
+                return self._json({"error": str(error)}, HTTPStatus.BAD_REQUEST)
+
+        def do_DELETE(self) -> None:  # noqa: N802
+            if not self._authorized():
+                return self._json({"error": "Token ausente ou inválido."}, HTTPStatus.FORBIDDEN)
+            return self._class_change("DELETE")
+
         def do_PUT(self) -> None:  # noqa: N802
             if not self._authorized():
                 return self._json({"error": "Token ausente ou inválido."}, HTTPStatus.FORBIDDEN)
+            if self.path.startswith("/api/classes/"):
+                return self._class_change("PUT")
             match = re.match(r"^/api/uploads/([^/]+)/files$", self.path.split("?", 1)[0])
             if not match:
                 return self._json({"error": "Rota desconhecida."}, HTTPStatus.NOT_FOUND)
@@ -655,6 +692,10 @@ def make_handler(config: ProjectConfig, registry_path: Path | list[Path] | None,
                     return self._json(_save_feedback(root, selected, body))
                 if path == "/api/uploads":
                     return self._json(uploads.create(body.get("name")))
+                if path == "/api/classes":
+                    author = _text(body, "author", 100) or None
+                    body.pop("author", None)
+                    return self._json(class_catalog.create_class(config, body, author), HTTPStatus.CREATED)
                 match = re.match(r"^/api/uploads/([^/]+)/ingest$", path)
                 if match:
                     return self._json(uploads.start_ingest(match[1], config, body, jobs))
