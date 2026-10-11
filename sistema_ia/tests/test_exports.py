@@ -27,6 +27,7 @@ from dronecamp_ia.exports import (
     OCCURRENCE_COLUMNS, PENDING_TEXT, build_evidence_package, build_report, draw_boxes, occurrences_csv, resolve_decisions,
 )
 from dronecamp_ia.io import file_hash
+from dronecamp_ia.laudo_abnt import DEFAULT_TITLE, table_of_contents
 from dronecamp_ia.review_render import COLORS
 
 HAS_REPORTLAB = importlib.util.find_spec("reportlab") is not None
@@ -297,48 +298,92 @@ class ReportTests(ExportsFixture):
         self.assertEqual(manifest["files"]["laudo.html"]["sha256"], file_hash(directory / "laudo.html"))
         self.assertEqual(manifest["registry_sha256"], file_hash(self.registry_path))
         self.assertEqual((result["images"], result["occurrences"], result["pending_suggestions"]), (1, 1, 0))
-        # Cabeçalho: título padrão, cliente, local, revisores, versão, hash, texto preliminar e critério da taxonomia.
-        self.assertIn("Laudo preliminar de inspeção assistida — fixture_v1", html)
+        # Cabeçalho: título padrão, solicitante (cliente), local, revisores, responsável, hash, texto preliminar e critério.
+        self.assertIn(DEFAULT_TITLE, html)
         for text in ("Cliente X", "Galpão B", "rev01", "Insp. Y", "Obs. &lt;teste&gt;", "galpao_b", file_hash(self.registry_path),
                      "preliminar, sujeito a validação por responsável técnico", "Ruptura visível do corpo da telha.",
-                     "não aplicada automaticamente", "@page", "data:image/jpeg;base64,", "Metodologia e limitações"):
+                     "não aplicada automaticamente", "@page", "data:image/jpeg;base64,", "4.4 Limitações"):
             self.assertIn(text, html, text)
         self.assertNotIn("<link", html, "HTML autossuficiente.")
         self.assertEqual(data["header"]["reviewers"], ["rev01"])
+        self.assertEqual((data["details"]["requester"], data["details"]["responsible_name"]), ("Cliente X", "Insp. Y"))
         self.assertEqual(data["summary"]["by_class"][0]["reference_severity"], "gravissima")
         self.assertEqual(data["summary"]["positive"], 1)
+
+    def test_abnt_structure_sections_norms_and_checklist_items(self) -> None:
+        _, html, data = self.build(decisions=self.decision, suggestions=self.suggestions)
+        # Elementos pré-textuais, seções numeradas, referências e anexos na ordem da NBR 10719.
+        anchors = ["capa", "folha-rosto", "sumario", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "referencias",
+                   "anexo-a", "anexo-b", "anexo-c", "anexo-d", "anexo-e"]
+        positions = [html.index(f'<section id="{anchor}"') for anchor in anchors]
+        self.assertEqual(positions, sorted(positions))
+        for anchor, _, _ in table_of_contents(data):
+            self.assertIn(f'href="#{anchor}"', html)
+            self.assertIn(f'id="{anchor}"', html)
+        for norm in ("NBR 16747", "NBR 5674", "NBR 7196", "NBR 10844", "NBR 10719", "RBAC-E nº 94"):
+            self.assertIn(norm, html.split('<section id="s3">')[1].split('<section id="s4">')[0], norm)
+        self.assertIn("ASSOCIAÇÃO BRASILEIRA DE NORMAS TÉCNICAS. NBR 16747: Inspeção predial", html)
+        # Um item por categoria confirmada, com a pergunta do laudo CEASA e figuras numeradas na ordem.
+        self.assertEqual([(item["label"], item["question"]) for item in data["items"]],
+                         [("Telha quebrada", "Existem telhas quebradas?"), ("Resíduos em calha", "Há acúmulo de resíduos nas calhas?")])
+        self.assertEqual([(figure["number"], figure["numero_foto"], figure["item"]) for figure in data["figures"]], [(1, 1, 1), (2, 2, 2)])
+        self.assertEqual(html.count('<figure id="figura-'), 2)
+        self.assertIn("Figura 1</b> – Telha quebrada (fotografia 001)", html)
+        self.assertEqual(data["items_without_occurrence"], [])
+        self.assertTrue(data["manual_checklist"])
+        self.assertIn("não avaliado pelo sistema", html)
+        self.assertEqual([record["figura"] for record in data["occurrences"]], [1, 2])
+        # Dados do imóvel não informados não são estimados.
+        self.assertIn("Área total estimada</th><td>não informado", html)
+
+    def test_details_are_shown_as_given_and_unknown_keys_are_rejected(self) -> None:
+        details = {"inspection_date": "06/08/2025", "roof_type": "Telhas de fibrocimento tipo canaleta", "area": "6040 m²",
+                   "responsible_name": "Eng. Fulano", "responsible_registry": "CREA-MG 123", "art_number": "MG2025000", "equipment": "DJI Air 3"}
+        _, html, data = self.build(details=details, inspector="ignorado")
+        for value in details.values():
+            self.assertIn(value, html)
+        self.assertEqual(data["technical_responsibility"]["name"], "Eng. Fulano")
+        self.assertNotIn("ignorado", html)
+        with self.assertRaises(ValueError):
+            build_report(self.config, self.registry_path, self.output, pdf=False, details={"area_calculada": "1"})
 
     def test_evaluation_fields_are_always_pending(self) -> None:
         result, html, data = self.build(decisions=self.decision, suggestions=self.suggestions)
         self.assertEqual(result["images"], 2)
-        self.assertEqual(html.count('<article class="foto"'), 2)
-        for field in ("Gravidade", "Diagnóstico", "Recomendação"):
-            values = re.findall(rf"<th>{field}</th><td class=\"pendente\">(.*?)</td>", html) \
-                or re.findall(rf'<th style="width:26%">{field}</th><td class="pendente">(.*?)</td>', html)
+        self.assertEqual(html.count('<article class="item"'), 2)
+        for field in ("Conformidade", "Risco (gravidade)", "Diagnóstico", "Recomendação", "Prioridade (NBR 16747)"):
+            values = re.findall(rf"<tr><th>{re.escape(field)}</th><td class=\"pendente\">(.*?)</td>", html)
             self.assertEqual(values, [PENDING_TEXT] * 2, field)
-        self.assertNotIn("gravissima</td></tr><tr><th>Diagn", html, "Gravidade de referência nunca vira avaliação da foto.")
+        self.assertNotIn("gravissima</td></tr><tr><th>Diagn", html, "Gravidade de referência nunca vira avaliação.")
+        for item in data["items"]:
+            self.assertEqual({item[key] for key in ("conformidade", "risco", "diagnostico", "recomendacao", "prioridade")}, {PENDING_TEXT})
         for occurrence in data["occurrences"]:
             self.assertEqual((occurrence["gravidade"], occurrence["diagnostico"], occurrence["recomendacao"]), (PENDING_TEXT,) * 3)
         self.assertEqual(len(data["occurrences"]), 2)
         self.assertEqual([occurrence["origem"] for occurrence in data["occurrences"]], ["registro", "revisao_humana"])
-        for forbidden in ("metros", "causa provável", "área afetada"):
-            self.assertNotIn(forbidden, html.split('<section id="metodologia">')[0])
+        body = html.split('<section id="s6">')[1].split('<section id="s7">')[0]
+        for forbidden in ("gravissima", "Não conformidade gravíssima", "Substituir as telhas"):
+            self.assertNotIn(forbidden, body, "Texto do laudo-modelo e gravidade de referência ficam só no Anexo E.")
+        annex = html.split('<section id="anexo-e">')[1]
+        self.assertIn("Não conformidade gravíssima", annex)
+        self.assertIn("não foram aplicadas", annex)
+        self.assertEqual(data["conclusion"]["technical_conclusion"], PENDING_TEXT)
 
     def test_pending_suggestions_only_in_annex_b(self) -> None:
         result, html, data = self.build(decisions=self.decision, suggestions=self.suggestions)
         self.assertEqual(result["pending_suggestions"], 1)
-        body = html.split('<section id="ocorrencias">')[1].split('<section id="anexo-a">')[0]
+        body = html.split('<section id="s6">')[1].split('<section id="s7">')[0]
         self.assertNotIn("sugestões", body.lower(), "Só a nota da caixa aceita cita sugestão; nada de pendências no corpo.")
         self.assertNotIn("IA 1", body)
-        # A evidência embutida da foto_b é exatamente o desenho das caixas da decisão, sem a sugestão pendente.
+        # A figura da foto_b é exatamente o desenho das caixas da decisão, sem a sugestão pendente.
         import base64
-        encoded = re.findall(r'id="foto-002".*?src="data:image/jpeg;base64,([^"]+)"', body, re.S)[0]
+        encoded = re.findall(r'data-foto="002".*?src="data:image/jpeg;base64,([^"]+)"', body, re.S)[0]
         with Image.open(self.photos[1]) as photo:
             expected = draw_boxes(photo, self.decision[self.sha[1]]["boxes"], {0: "Telha quebrada", 1: "Resíduos em calha"}, COLORS)
         buffer = io.BytesIO()
         expected.save(buffer, "JPEG", quality=82)
         self.assertEqual(base64.b64decode(encoded), buffer.getvalue())
-        annex = html.split('<section id="anexo-b">')[1].split('<section id="metodologia">')[0]
+        annex = html.split('<section id="anexo-b">')[1].split('<section id="anexo-c">')[0]
         self.assertIn("não constituem ocorrências", annex)
         self.assertIn("Resíduos em calha", annex)
         self.assertEqual(data["pending_suggestions"], {"total": 1, "by_class": [{"class_id": 1, "label": "Resíduos em calha", "count": 1, "images": 1}],
@@ -352,9 +397,39 @@ class ReportTests(ExportsFixture):
         self.assertIn("foto_c.png", annex)
         self.assertNotIn("foto_a.png", annex)
         self.assertEqual([image["included_in_report"] for image in data["images"]], [True, False, False])
+        self.assertEqual([row["label"] for row in data["items_without_occurrence"]], ["Resíduos em calha"])
         result, html, data = self.build(only_positive_images=False, max_side=60)
-        self.assertEqual((result["images"], html.count('<article class="foto"')), (3, 3))
+        self.assertEqual((result["images"], html.count('<figure id="figura-')), (3, 3))
+        annex = html.split('<section id="anexo-a">')[1].split('<section id="anexo-b">')[0]
+        self.assertEqual(annex.count('<figure id="figura-'), 2, "Fotos sem ocorrência confirmada vão ao Anexo A.")
         self.assertEqual(data["images"][1]["status_label"], "negativa")
+
+    def test_ai_notes_of_this_registry_become_pending_support(self) -> None:
+        notes_path = self.directory / "ai_notes.json"
+        write_json(notes_path, {"schema_version": 1, "kind": "vlm_notes", "registry_sha256": file_hash(self.registry_path),
+                                "created_at": "2026-10-11T00:00:00+00:00", "settings": {"model_requested": "openrouter/free"},
+                                "described": 1, "total_boxes": 1,
+                                "agreement": {"human_boxes_described": 1, "agree": 1, "agreement_rate": 1.0,
+                                              "per_class": {"telha_quebrada": {"boxes": 1, "agree": 1, "agreement_rate": 1.0}}},
+                                "images": {self.sha[0]: [{"source": "humana", "class_id": 0, "bbox_xyxy": [20.2, 10, 60, 49.8],
+                                                          "description": "Telha com fratura transversal visível.",
+                                                          "model_used": "vlm-x:free", "class_guess": "telha_quebrada",
+                                                          "severity": None, "status": "pendente"}]}})
+        _, html, data = self.build()
+        self.assertEqual(data["items"][0]["ai_support"][0]["text"], "Telha com fratura transversal visível.")
+        self.assertIn("Subsídio de IA", html)
+        self.assertIn("não constitui constatação técnica", html)
+        self.assertIn("100%", html.split('<section id="anexo-c">')[1])
+        self.assertTrue(data["ai_support"]["available"])
+        self.assertEqual(data["items"][0]["conformidade"], PENDING_TEXT, "Descrição da IA nunca preenche a avaliação.")
+        # Notas de outra versão do registro são ignoradas.
+        stale = json.loads(notes_path.read_text(encoding="utf-8"))
+        stale["registry_sha256"] = "0" * 64
+        write_json(notes_path, stale)
+        _, html, data = self.build()
+        self.assertFalse(data["ai_support"]["available"])
+        self.assertIn("outra versão", data["ai_support"]["note"])
+        self.assertEqual(data["items"][0]["ai_support"], [])
 
     def test_suggestion_file_next_to_registry_is_used_only_for_this_version(self) -> None:
         suggestions_path = self.directory / "suggestions.json"
@@ -387,6 +462,12 @@ class ReportTests(ExportsFixture):
         self.assertTrue(pdf.read_bytes().startswith(b"%PDF"))
         manifest = json.loads(Path(result["manifest"]).read_text(encoding="utf-8"))
         self.assertEqual(manifest["files"]["laudo.pdf"]["sha256"], file_hash(pdf))
+        if importlib.util.find_spec("pypdf") is not None:
+            from pypdf import PdfReader
+            reader = PdfReader(str(pdf))
+            text = "\n".join(page.extract_text() or "" for page in reader.pages)
+            for expected in ("SUMÁRIO", "1 IDENTIFICAÇÃO DO LAUDO", "NBR 16747", "6.1 Telha quebrada", "REFERÊNCIAS", PENDING_TEXT):
+                self.assertIn(expected, text, expected)
 
 
 if __name__ == "__main__":

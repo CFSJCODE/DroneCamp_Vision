@@ -73,7 +73,7 @@ const VIEWS = {
   inspections: ['Inspeções', 'Campanhas, edificações e revisões registradas'],
   upload: ['Importar mídia', 'Fotos e vídeos do voo viram uma nova inspeção'],
   review: ['Revisão', 'Confira, corrija e decida foto a foto'],
-  reports: ['Laudos e downloads', 'Laudo preliminar, evidências e arquivos da inspeção'],
+  reports: ['Laudos e downloads', 'Laudo técnico (ABNT), evidências e arquivos da inspeção'],
   training: ['Treinamento', 'Ciclo de fine-tuning com as correções humanas'],
   monitor: ['Monitoramento', 'Treino em andamento e tarefas do servidor local'],
   models: ['Modelos', 'Comparação, cobertura e critério de adoção']
@@ -708,7 +708,7 @@ function renderReports() {
   $('makeReport').disabled = !SERVER || !HAS_IMAGES;
   $('makeEvidence').disabled = !SERVER || !HAS_IMAGES;
   $('downloadCsv').disabled = !HAS_IMAGES;
-  if (!$('reportTitle').value && DATA.version) $('reportTitle').value = `Laudo preliminar de inspeção assistida — ${DATA.version}`;
+  if (!$('reportTitle').value && DATA.version) $('reportTitle').value = 'Laudo técnico de inspeção de cobertura com uso de drone';
   if (WORKSPACE && WORKSPACE.capabilities && WORKSPACE.capabilities.pdf === false) { $('reportPdf').checked = false; $('reportPdf').disabled = true; $('reportPdf').nextElementSibling.textContent = 'PDF indisponível neste PC: instale o extra "reports" (pip install -e .[reports]). O HTML é gerado sempre.' }
   renderFileHistory()
 }
@@ -719,6 +719,14 @@ function fileRow(file) {
     el('div', {}, el('b', {}, label + (file.label ? ` · ${file.label}` : '')), el('small', {}, `${file.name} · ${fmtBytes(file.bytes)} · ${fmtDate(file.modified)}`)),
     el('a', { class: 'btn small', href: file.href, target: '_blank', rel: 'noopener', download: file.kind === 'zip' || file.kind === 'pdf' ? '' : null }, 'Baixar'))
 }
+
+// Dados técnicos opcionais do laudo (seção "Dados técnicos"): só os campos preenchidos vão ao servidor.
+function reportDetails() {
+  const details = {};
+  document.querySelectorAll('[data-detail]').forEach((input) => { const value = input.value.trim(); if (value) details[input.dataset.detail] = value });
+  return details;
+}
+
 async function renderFileHistory() {
   const history = $('fileHistory');
   let files = (OPS.review_files || []);
@@ -730,9 +738,9 @@ $('makeReport').onclick = async () => {
   $('makeReport').disabled = true;
   $('reportStatus').textContent = 'Gerando o laudo (as evidências são desenhadas uma a uma)…';
   try {
-    const result = await api('/api/report', { review: DATA.version, decisions: allDrafts(), reviewer: $('reviewer').value.trim(), title: $('reportTitle').value.trim(), client: $('reportClient').value.trim(), site: $('reportSite').value.trim(), inspector: $('reportInspector').value.trim(), notes: $('reportNotes').value.trim(), pdf: $('reportPdf').checked, all_images: $('reportAllImages').checked });
+    const result = await api('/api/report', { review: DATA.version, decisions: allDrafts(), reviewer: $('reviewer').value.trim(), title: $('reportTitle').value.trim(), client: $('reportClient').value.trim(), site: $('reportSite').value.trim(), inspector: $('reportInspector').value.trim(), notes: $('reportNotes').value.trim(), details: reportDetails(), pdf: $('reportPdf').checked, all_images: $('reportAllImages').checked });
     $('reportStatus').replaceChildren(`Laudo gerado: ${result.images} fotos, ${result.occurrences} ocorrências. `, el('a', { href: result.html, target: '_blank', rel: 'noopener' }, 'Abrir HTML'), result.pdf ? ' · ' : '', result.pdf ? el('a', { href: result.pdf, target: '_blank', rel: 'noopener' }, 'Abrir PDF') : (result.pdf_reason ? ` · PDF não gerado: ${result.pdf_reason}` : ''));
-    toast('Laudo preliminar gerado', `${result.occurrences} ocorrências em ${result.images} fotos. Campos técnicos aguardam validação.`);
+    toast('Laudo técnico gerado', `${result.occurrences} ocorrências em ${result.images} fotos. Campos técnicos aguardam validação.`);
     renderFileHistory()
   } catch (error) { $('reportStatus').textContent = `Não concluído: ${error.message}` }
   finally { $('makeReport').disabled = !SERVER || !HAS_IMAGES }

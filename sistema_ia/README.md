@@ -11,6 +11,7 @@ Base local de **detecção assistida** para inspeção de telhados industriais. 
 ## Material entregue
 
 - [Plataforma DroneCamp Vision](docs/plataforma_operacoes.md): a página única do produto com início, inspeções, importação de fotos e vídeos, revisão, laudos e downloads (PDF/HTML, ZIP de evidências, CSV), treinamento, monitoramento ao vivo e comparação de modelos. Abra pelo [Abrir plataforma DroneCamp.cmd](../Abrir%20plataforma%20DroneCamp.cmd) (servidor local, `python -m dronecamp_ia platform`).
+- [Laudo técnico no formato ABNT](docs/laudo_abnt.md): estrutura do laudo gerado pela plataforma (NBR 10719 e NBR 16747, estilo do laudo CEASA), normas citadas, uso dos modelos de IA e campos que dependem do responsável técnico.
 - [Análise documental e categorias](docs/analise_documental.md): pesquisa inicial do laudo, planos e apresentação, com oito classes ativas de origem documental; a taxonomia atual está em `configs/taxonomy.json`.
 - [Pedaço de telha](docs/categoria_pedaco_telha.md): critério da nova classe ativa ID 8 e distinção entre fragmento, dano instalado e resíduos.
 - [Rufo deslocado/desalinhado](docs/categoria_rufo_deslocado.md): critério da classe ativa ID 9, contexto de alinhamento e incerteza sobre a identidade do elemento.

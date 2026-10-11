@@ -8,7 +8,7 @@ A página de revisão (`data/reviews/<inspeção>/index.html`) é a plataforma d
 | Inspeções | Todas as inspeções do espaço de trabalho com fotos, progresso das decisões, sugestões pendentes e atalhos para revisar, gerar laudo ou abrir | `data/reviews/*/registry.json` (servidor) ou só a inspeção da página (disco) |
 | Importar mídia | Arrastar fotos (JPG, PNG, WEBP, TIFF, BMP) e vídeos (MP4, MOV, AVI, MKV); vídeos viram quadros no intervalo escolhido; cria uma inspeção nova e, se pedido, gera as sugestões do modelo em seguida | `ingest.py` pelo servidor local |
 | Revisão | Fila com miniaturas e filtros, foto com caixas e sugestões tracejadas, limiar de confiança, editor de caixas (desenho ou coordenadas), decisão por foto e salvamento do arquivo de revisão | Registro + `suggestions.json` (mesma lógica de antes) |
-| Laudos e downloads | Laudo preliminar em HTML e PDF com as evidências, pacote ZIP das fotos demarcadas (com CSV e manifesto), CSV das ocorrências, arquivo de revisão e histórico do que já foi gerado | `exports.py` pelo servidor local; CSV e JSON também offline |
+| Laudos e downloads | Laudo técnico no formato ABNT em HTML e PDF com as evidências, pacote ZIP das fotos demarcadas (com CSV e manifesto), CSV das ocorrências, arquivo de revisão e histórico do que já foi gerado | `exports.py` pelo servidor local; CSV e JSON também offline |
 | Treinamento | Ciclo de fine-tuning com os comandos prontos, execuções de `runs/`, curvas por época e formulário de novo treino piloto com estimativa de duração | `runs/*/execution.json`, `summary.json`, `fit/results.csv`, `data/pilot/*` |
 | Monitoramento | Progresso do treino em andamento, métricas da última época, curvas ao vivo e a tarefa do servidor com o log | `fit/results.csv` relido a cada 5 s pelo servidor local |
 | Modelos | Critério de adoção, comparação entre modelos por divisão, caixas por classe no dataset de cada treino e melhor mAP50 por treino | `runs/compare_*.json`, `execution.json` |
@@ -37,7 +37,7 @@ O servidor não aprova dados, não adota modelos, não apaga inspeções e não 
 | `GET /api/jobs`, `POST /api/jobs`, `POST /api/jobs/stop` | Tarefa em andamento, iniciar e interromper |
 | `POST /api/uploads` → `PUT /api/uploads/<lote>/files` → `POST /api/uploads/<lote>/ingest` → `GET /api/uploads/<lote>` | Lote de envio, um arquivo por requisição (cabeçalho `X-File-Name`), importação em segundo plano e acompanhamento |
 | `POST /api/export/evidence` | ZIP das fotos demarcadas (`only`: all, decided, positive; `max_side`; `include_suggestions`) |
-| `POST /api/report` | Laudo preliminar (título, cliente, local, responsável técnico, observações, `pdf`, `all_images`) |
+| `POST /api/report` | Laudo técnico ABNT (título, cliente, local, responsável técnico, observações, `details` com os dados técnicos opcionais, `pdf`, `all_images`) |
 | `GET /api/reviews/<pasta>/files` | Laudos e pacotes já gerados |
 | `POST /api/feedback` | Cópia do arquivo de revisão exportado |
 
@@ -56,7 +56,7 @@ Cada foto é congelada por SHA-256 em `originals/` (girada pelo EXIF antes, quan
 ## Laudos e pacotes de evidências
 
 - **Pacote de evidências (ZIP)**: `evidencias/NNN_<nome>.jpg` (fotos com as caixas desenhadas; sugestões pendentes tracejadas só se marcado), `ocorrencias.csv` (uma linha por caixa, com classe, coordenadas e origem: revisão humana ou registro), `fotos.csv`, `LEIA-ME.txt` e `manifesto.json` com o SHA-256 de cada arquivo e do registro.
-- **Laudo preliminar**: identificação (cliente, local, responsável técnico, revisor), resumo por classe com o critério da taxonomia, uma seção por foto positiva com a evidência e a tabela de caixas, anexos com as demais fotos e as sugestões pendentes, metodologia e limitações. Gravidade, diagnóstico e recomendação saem como "pendente de validação técnica". O PDF usa `reportlab` (`pip install -e .[reports]`); sem ele, HTML e JSON saem normalmente.
+- **Laudo técnico (ABNT)**: capa, folha de rosto, sumário, seções numeradas (identificação, objetivo, normas aplicáveis, metodologia, descrição do imóvel, registro fotográfico e análise de conformidades por categoria no estilo do laudo CEASA, quadro-resumo, recomendações gerais, considerações finais, responsabilidade técnica), referências e anexos (fotos sem ocorrência, sugestões pendentes, subsídios de IA, demarcações por foto, apoio ao responsável técnico). Conformidade, risco, diagnóstico, recomendação e prioridade saem como "pendente de validação técnica". Os dados do imóvel, do voo e do responsável técnico vêm do bloco opcional "Dados técnicos do laudo"; o que ficar vazio sai como "não informado". Detalhes em [laudo_abnt.md](laudo_abnt.md). O PDF usa `reportlab` (`pip install -e .[reports]`); sem ele, HTML e JSON saem normalmente.
 - **CSV de ocorrências** e **arquivo de revisão (JSON)**: montados no navegador com o estado atual (rascunho local sobre o registro), também offline.
 
 ## Nomes dos treinos
@@ -109,7 +109,8 @@ Regrava só o `index.html` com o modelo atual e o instantâneo de `runs/`. Fotos
 
 - `src/dronecamp_ia/platform_server.py`: servidor local, espaço de trabalho, lotes de envio, laudos/pacotes e lista fechada de tarefas.
 - `src/dronecamp_ia/ingest.py`: importação de fotos e vídeos (hash, EXIF, quadros) para um registro novo; comando `import-media`.
-- `src/dronecamp_ia/exports.py`: pacote de evidências, laudo preliminar (HTML/JSON/PDF) e CSV de ocorrências.
+- `src/dronecamp_ia/exports.py`: pacote de evidências, dados do laudo (`laudo.json`) e CSV de ocorrências.
+- `src/dronecamp_ia/laudo_abnt.py`: estrutura ABNT, normas, lista de verificação e desenho do laudo em HTML/PDF ([laudo_abnt.md](laudo_abnt.md)).
 - `src/dronecamp_ia/operations.py`: coleta treinos, curvas, comparações, datasets e arquivos gerados (só leitura).
 - `src/dronecamp_ia/review_render.py`: `build_page`, `empty_page_payload` e `refresh_review_page`.
 - `src/dronecamp_ia/review_templates/`: `index.html`, `platform.css`, `platform.js`.
