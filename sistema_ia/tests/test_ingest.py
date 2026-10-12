@@ -4,6 +4,37 @@ Dados sintéticos: fotos PNG/JPG, uma foto com rotação EXIF, um vídeo curto
 (OpenCV ou ffmpeg; o teste é pulado sem nenhum dos dois). Confere que a revisão
 gerada tem os campos de ``create_review_for_new_images``, que quadros do mesmo
 vídeo ficam na mesma cena e que a página é gerada ao lado do registro.
+
+Módulo coberto: ``dronecamp_ia.ingest`` (``ingest_media``, ``canonicalize_photo``,
+``extract_video_frames``, ``_extract_with_ffmpeg``/``_extract_with_opencv``, ``media_kind``,
+``slugify_review_name``, ``IMAGE_EXTENSIONS``, ``VIDEO_EXTENSIONS``) e o comando
+``import-media`` da CLI (``cli.main``).
+
+Como rodar (na pasta ``sistema_ia``, com o venv do projeto):
+    python -m unittest tests.test_ingest
+    python -m unittest tests.test_ingest.VideoIngestTests
+    python -m unittest tests.test_ingest.PhotoIngestTests.test_duplicate_photo_enters_once_and_is_reported
+
+O que cada classe de teste prepara:
+    - ``IngestFixture`` (base, sem testes próprios) -> ``setUp`` cria uma pasta temporária
+      com acento, uma taxonomia mínima de 2 classes em ``configs/taxonomy.json``, um
+      ``ProjectConfig`` montado à mão, a pasta ``uploads`` (área de envio) e o caminho
+      ``data/reviews``. Helpers: ``photo`` (foto sintética com bloco branco no canto),
+      ``video`` (vídeo sintético; pula o teste sem OpenCV/ffmpeg) e ``registry`` (lê o
+      registry.json do resultado).
+    - ``SlugAndExtensionTests``: funções puras, sem pasta.
+    - ``PhotoIngestTests``, ``VideoIngestTests`` e ``CliTests`` herdam de ``IngestFixture``.
+
+ATENCAO: a importação nunca aprova nada (``human_approved`` False, status "ambiguous",
+``severity`` None) e nunca sobrescreve uma revisão existente.
+
+EXTENSAO: para testar uma função nova de ingest.py, crie o teste numa classe que herde de
+``IngestFixture`` (copie ``PhotoIngestTests.test_duplicate_photo_enters_once_and_is_reported``):
+gere a mídia com ``self.photo(...)``/``self.video()``, chame a função com ``self.config`` e
+saída em ``self.reviews / "<nome>"`` e leia o registro com ``self.registry(result)``.
+Se ``ingest_media`` ganhar um campo novo por foto, acrescente-o no dict ``expected`` de
+``test_photos_are_frozen_by_hash_with_review_fields_and_page``; um formato de arquivo novo
+entra em ``test_extensions_and_media_kind``.
 """
 
 from __future__ import annotations
@@ -19,6 +50,7 @@ import sys
 import tempfile
 import unittest
 
+# Permite rodar este arquivo direto (sem instalar o pacote): põe sistema_ia/src no caminho.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from PIL import Image
@@ -34,44 +66,85 @@ from dronecamp_ia.review_data import review_image_size
 
 
 def write_json(path: Path, value: dict) -> None:
+    """Grava ``value`` como JSON UTF-8, criando as pastas que faltarem.
+
+    Parâmetros:
+        path (Path): destino.
+        value (dict): conteúdo.
+    Retorna: None.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(value, ensure_ascii=False), encoding="utf-8")
 
 
 class IngestFixture(unittest.TestCase):
+    """Base comum dos testes de importação: pasta temporária, taxonomia, config e helpers.
+
+    Não tem testes próprios; as classes de teste herdam dela.
+    """
     def setUp(self) -> None:
+        """Cria a raiz temporária, a taxonomia de 2 classes, o ``ProjectConfig`` e a pasta de envio.
+
+        Atributos criados: ``root``, ``taxonomy_path``, ``config``, ``uploads`` e ``reviews``.
+        Retorna: None.
+        """
+        # 1. Pasta temporária com acento, apagada no fim do teste.
         temporary = tempfile.TemporaryDirectory(prefix="dronecamp importação á ")
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
+        # 2. Taxonomia mínima com 2 classes da fase 1.
         self.taxonomy_path = self.root / "configs" / "taxonomy.json"
         write_json(self.taxonomy_path, {"version": "fixture", "classes": [
             {"id": 0, "slug": "telha_quebrada", "label": "Telha quebrada", "phase": 1},
             {"id": 1, "slug": "residuos_calha", "label": "Resíduos em calha", "phase": 1}]})
+        # 3. Configuração montada à mão; nenhum modelo é carregado nestes testes.
         self.config = ProjectConfig(root=self.root, model="fixture.pt", requested_model="fixture.pt",
                                     taxonomy_path=self.taxonomy_path, dataset_path=self.root / "dataset.yaml",
                                     device="cpu", prediction={}, training={"epochs": 5, "imgsz": 640, "batch": 2},
                                     pilot={"suggestion_conf": 0.15})
+        # 4. Área de envio (onde os testes criam a mídia) e pasta das revisões.
         self.uploads = self.root / "uploads"
         self.uploads.mkdir()
         self.reviews = self.root / "data" / "reviews"
 
     def photo(self, name: str, size: tuple[int, int] = (24, 18), color=(90, 90, 90), **options) -> Path:
-        """Foto cinza com um bloco branco no canto (0..3, 0..3) para conferir rotações."""
+        """Foto cinza com um bloco branco no canto (0..3, 0..3) para conferir rotações.
+
+        Parâmetros:
+            name (str): nome relativo dentro de ``uploads`` (pode ter subpasta).
+            size (tuple): (largura, altura) em px.
+            color (tuple): cor RGB de fundo (mude para evitar fotos repetidas).
+            options: repassados a ``Image.save`` (ex.: ``quality=90``, ``exif=...``).
+        Retorna: Path da foto criada.
+        """
         path = self.uploads / name
         path.parent.mkdir(parents=True, exist_ok=True)
         image = Image.new("RGB", size, color)
+        # Bloco branco 4x4 no canto superior esquerdo: mostra para onde a foto foi girada.
         image.paste((255, 255, 255), (0, 0, 4, 4))
         image.save(path, **options)
         return path
 
     def video(self, name: str = "voo.mp4", seconds: int = 3, fps: int = 10, size: tuple[int, int] = (64, 48)) -> Path:
-        """Vídeo sintético com uma barra que anda a cada quadro (quadros distintos entre si)."""
+        """Vídeo sintético com uma barra que anda a cada quadro (quadros distintos entre si).
+
+        Tenta OpenCV (codec mp4v) e, se falhar, ffmpeg (fonte ``testsrc``); sem nenhum dos
+        dois, pula o teste com ``skipTest``.
+
+        Parâmetros:
+            name (str): nome do arquivo em ``uploads``.
+            seconds (int): duração em segundos.
+            fps (int): quadros por segundo.
+            size (tuple): (largura, altura) em px.
+        Retorna: Path do vídeo criado.
+        """
         path = self.uploads / name
         try:
             import cv2
             import numpy as np
         except ImportError:
             cv2 = None
+        # 1ª opção: OpenCV com codec mp4v; a barra verde anda 2 px por quadro.
         if cv2 is not None:
             writer = cv2.VideoWriter(str(path), cv2.VideoWriter_fourcc(*"mp4v"), fps, size)
             opened = writer.isOpened()
@@ -84,6 +157,7 @@ class IngestFixture(unittest.TestCase):
             writer.release()
             if opened and path.is_file() and path.stat().st_size:
                 return path
+        # 2ª opção: ffmpeg com a fonte de teste "testsrc".
         ffmpeg = shutil.which("ffmpeg")
         if ffmpeg:
             command = [ffmpeg, "-nostdin", "-hide_banner", "-loglevel", "error", "-y", "-f", "lavfi", "-i",
@@ -93,28 +167,42 @@ class IngestFixture(unittest.TestCase):
         self.skipTest("Vídeo sintético requer OpenCV com gravador mp4v ou ffmpeg no PATH.")
 
     def registry(self, result: dict) -> dict:
+        """Lê o registry.json apontado pelo resultado de ``ingest_media``.
+
+        Parâmetros:
+            result (dict): retorno de ``ingest_media`` (chave ``registry``).
+        Retorna: dict do registro.
+        """
         return json.loads(Path(result["registry"]).read_text(encoding="utf-8"))
 
 
 class SlugAndExtensionTests(unittest.TestCase):
+    """Testes das funções puras: nome da revisão (slug) e tipo de mídia por extensão."""
     def test_slug_removes_accents_symbols_and_case(self) -> None:
+        """O slug tira acentos, símbolos e maiúsculas e junta separadores repetidos."""
         self.assertEqual(slugify_review_name("Galpão B – Outubro/2026"), "galpao_b_outubro_2026")
         self.assertEqual(slugify_review_name("  Ção  "), "cao")
         self.assertEqual(slugify_review_name("x__--__y"), "x_y")
 
     def test_slug_starts_with_letter_and_is_bounded_to_60(self) -> None:
+        """O slug começa com letra (prefixo ``r_``), tem no máximo 60 caracteres e não termina em "_"."""
         self.assertEqual(slugify_review_name("2026 voo"), "r_2026_voo")
         self.assertEqual(len(slugify_review_name("a" * 80)), 60)
         long_name = slugify_review_name("b" * 59 + "_c")
         self.assertEqual(long_name, "b" * 59, "Corte não deixa '_' no fim.")
 
     def test_empty_slug_is_rejected(self) -> None:
+        """Nomes que viram slug vazio são recusados com ValueError."""
         for name in ("", "   ", "!!!", "ß"):
             with self.subTest(name=name):
                 with self.assertRaises(ValueError):
                     slugify_review_name(name)
 
     def test_extensions_and_media_kind(self) -> None:
+        """As extensões de vídeo são as esperadas e ``media_kind`` ignora maiúsculas.
+
+        EXTENSAO: novo formato aceito: atualize o conjunto esperado aqui junto com ingest.py.
+        """
         self.assertEqual(VIDEO_EXTENSIONS, {".mp4", ".mov", ".avi", ".mkv", ".m4v", ".webm"})
         self.assertIn(".jpg", IMAGE_EXTENSIONS)
         self.assertEqual((media_kind(Path("a.JPG")), media_kind(Path("b.MOV")), media_kind(Path("c.txt"))),
@@ -122,7 +210,13 @@ class SlugAndExtensionTests(unittest.TestCase):
 
 
 class PhotoIngestTests(IngestFixture):
+    """Testes da importação de fotos (congelamento por hash, campos, página, recusas)."""
     def test_photos_are_frozen_by_hash_with_review_fields_and_page(self) -> None:
+        """Fotos são copiadas para ``originals/<sha256>.<ext>`` com todos os campos de revisão e a página.
+
+        Este é o teste de referência do formato do registro gerado pela plataforma.
+        """
+        # Duas fotos na área de envio, importadas pela pasta inteira.
         png = self.photo("a.png")
         jpg = self.photo("b.JPG", quality=90)
         result = ingest_media(self.config, [self.uploads], self.reviews / "lote_v1", "galpao_b", uploaded_by="cliente@x")
@@ -146,6 +240,8 @@ class PhotoIngestTests(IngestFixture):
         self.assertEqual(frozen, self.reviews / "lote_v1" / "originals" / f"{digest}.png")
         self.assertTrue(frozen.is_file())
         self.assertEqual(item["original_path"], str(png))
+        # Campos que toda foto importada precisa ter, iguais aos de create_review_for_new_images.
+        # EXTENSAO: novo campo por foto em ingest.py: acrescente-o aqui com o valor esperado.
         expected = {"pages": [], "width": 24, "height": 18, "status": "ambiguous", "boxes": [],
                     "annotator": "sem_anotacao_humana", "visual_review_status": "pending_model_suggestions",
                     "technical_status": "pending_human_review", "human_approved": False, "building_group": "galpao_b",
@@ -171,6 +267,7 @@ class PhotoIngestTests(IngestFixture):
         self.assertTrue(all(image["image_url"].startswith("images/") for image in payload["images"]))
 
     def test_bmp_and_tiff_photos_are_rewritten_as_jpeg(self) -> None:
+        """BMP e TIFF são regravados como JPEG (o navegador não os exibe) e o hash original fica registrado."""
         bmp = self.photo("mapa.bmp")
         tif = self.photo("scan.TIF", color=(120, 60, 30))  # conteúdo distinto do BMP, senão vira foto repetida
         path, info = canonicalize_photo(bmp, self.root / "congeladas")
@@ -189,6 +286,7 @@ class PhotoIngestTests(IngestFixture):
         self.assertTrue(all(image["image_url"].endswith(".jpg") for image in payload["images"]))
 
     def test_keep_sources_moves_uploads_into_the_inspection(self) -> None:
+        """Com ``keep_sources``, os envios são MOVIDOS para ``midia_enviada`` da inspeção."""
         png = self.photo("a.png")
         jpg = self.photo("b.jpg", quality=90)
         result = ingest_media(self.config, [png, jpg], self.reviews / "lote_v2", "galpao_b", keep_sources=True)
@@ -201,7 +299,10 @@ class PhotoIngestTests(IngestFixture):
         self.assertTrue(all(Path(item["original_path"]).is_file() and Path(item["source_path"]).is_file() for item in registry["images"]))
 
     def test_registry_is_accepted_by_pilot_selection(self) -> None:
-        """Mesma leitura que build-pilot-data faz: schema, taxonomia e campos por foto."""
+        """Mesma leitura que build-pilot-data faz: schema, taxonomia e campos por foto.
+
+        Nada está aprovado, então a seleção do piloto devolve lista vazia sem erro.
+        """
         from dronecamp_ia.pilot import _approved
 
         self.photo("a.png")
@@ -210,6 +311,10 @@ class PhotoIngestTests(IngestFixture):
                          "Nada aprovado ainda; o registro passa pelas conferências sem erro.")
 
     def test_exif_rotated_photo_is_canonicalized_with_new_hash(self) -> None:
+        """Foto com rotação EXIF é girada de verdade, ganha hash novo e guarda o hash original.
+
+        Importa porque as caixas são desenhadas na imagem já girada.
+        """
         exif = Image.Exif()
         exif[274] = 6
         rotated = self.photo("girada.jpg", exif=exif)
@@ -230,6 +335,7 @@ class PhotoIngestTests(IngestFixture):
             self.assertLess(image.getpixel((1, 1))[0], 150)
 
     def test_canonicalize_photo_contract(self) -> None:
+        """Contrato de ``canonicalize_photo``: sem EXIF mantém o arquivo; com EXIF gira; repetir é idempotente."""
         plain = self.photo("plana.PNG")
         destination = self.root / "congeladas"
         path, info = canonicalize_photo(plain, destination)
@@ -245,6 +351,7 @@ class PhotoIngestTests(IngestFixture):
         self.assertEqual(canonicalize_photo(plain, destination)[0], destination / f"{file_hash(plain)}.png")
 
     def test_duplicate_photo_enters_once_and_is_reported(self) -> None:
+        """Foto repetida (mesmo hash) entra uma vez e aparece em ``skipped`` como "foto_repetida"."""
         first = self.photo("a.png")
         shutil.copyfile(first, self.uploads / "b.png")
         result = ingest_media(self.config, [self.uploads], self.reviews / "lote_v1", "galpao_b")
@@ -256,15 +363,21 @@ class PhotoIngestTests(IngestFixture):
         self.assertEqual(len(list((Path(result["registry"]).parent / "originals").iterdir())), 1)
 
     def test_existing_output_and_invalid_arguments_are_rejected(self) -> None:
+        """Saída existente, grupo inválido, intervalo/limite de quadros fora da faixa e arquivo inexistente são recusados.
+
+        EXTENSAO: novo argumento validado: acrescente o caso inválido no laço de ``options``.
+        """
         photo = self.photo("a.png")
         output = self.reviews / "lote_v1"
         output.mkdir(parents=True)
         with self.assertRaises(ValueError):
             ingest_media(self.config, [photo], output, "galpao_b")
+        # Grupo vazio, só espaços ou com mais de 100 caracteres.
         for group in ("", "   ", "x" * 101):
             with self.subTest(group=group):
                 with self.assertRaises(ValueError):
                     ingest_media(self.config, [photo], self.reviews / "lote_v2", group)
+        # Fora das faixas de ingest.py: EVERY_SECONDS_RANGE (0.2 a 600 s) e MAX_FRAMES_RANGE (1 a 2000).
         for options in ({"every_seconds": 0.1}, {"every_seconds": 601}, {"max_frames": 0}, {"max_frames": 2001}):
             with self.subTest(options=options):
                 with self.assertRaises(ValueError):
@@ -274,6 +387,7 @@ class PhotoIngestTests(IngestFixture):
         self.assertFalse((self.reviews / "lote_v2").exists(), "Argumentos inválidos não criam pasta.")
 
     def test_unsupported_files_are_ignored(self) -> None:
+        """Em pastas, outros arquivos são ignorados em silêncio; informados à mão, são relatados ou recusados."""
         self.photo("fotos/a.png")
         (self.uploads / "fotos" / "notas.txt").write_text("campanha", encoding="utf-8")
         (self.uploads / "fotos" / "planilha.xlsx").write_bytes(b"x")
@@ -289,6 +403,7 @@ class PhotoIngestTests(IngestFixture):
         self.assertFalse((self.reviews / "lote_v3").exists())
 
     def test_unreadable_photo_is_skipped_and_all_unreadable_marks_incomplete(self) -> None:
+        """Foto ilegível é pulada; se nada for legível, a pasta fica marcada com ``INCOMPLETO.txt``."""
         self.photo("a.png")
         (self.uploads / "quebrada.jpg").write_bytes(b"isto nao e um jpeg")
         result = ingest_media(self.config, [self.uploads], self.reviews / "lote_v1", "galpao_b")
@@ -300,7 +415,9 @@ class PhotoIngestTests(IngestFixture):
 
 
 class VideoIngestTests(IngestFixture):
+    """Testes da extração de quadros de vídeo (OpenCV ou ffmpeg)."""
     def test_video_frames_share_the_scene_and_are_sampled_every_second(self) -> None:
+        """Quadros do mesmo vídeo ficam na mesma cena, a cada 1 s, com nomes ``<video>_t<segundos>.jpg``."""
         video = self.video()
         result = ingest_media(self.config, [video], self.reviews / "voo_v1", "galpao_b", every_seconds=1.0,
                               campaign_notes="voo de teste")
@@ -336,6 +453,7 @@ class VideoIngestTests(IngestFixture):
         self.assertEqual(len(json.loads((directory / "browser_data.json").read_text(encoding="utf-8"))["images"]), 3)
 
     def test_keep_sources_keeps_the_whole_video(self) -> None:
+        """Com ``keep_sources``, o vídeo inteiro é guardado na inspeção, não só os quadros."""
         video = self.video()
         digest = file_hash(video)
         result = ingest_media(self.config, [video], self.reviews / "video_v2", "galpao_b", every_seconds=1, keep_sources=True)
@@ -347,6 +465,7 @@ class VideoIngestTests(IngestFixture):
         self.assertEqual({item["original_path"] for item in registry["images"]}, {str(kept)})
 
     def test_max_frames_increases_the_interval_uniformly(self) -> None:
+        """``max_frames`` aumenta o intervalo de forma uniforme (3 s com limite 2 -> a cada 1.5 s)."""
         video = self.video()
         result = ingest_media(self.config, [video], self.reviews / "voo_v1", "galpao_b", every_seconds=1.0, max_frames=2)
         self.assertEqual(result["video_frames"], 2)
@@ -356,6 +475,7 @@ class VideoIngestTests(IngestFixture):
         self.assertEqual(registry["ingest"]["max_frames"], 2)
 
     def test_extract_video_frames_contract_and_limits(self) -> None:
+        """Contrato de ``extract_video_frames``: nomes, tempos, JPEG, limites e nunca sobrescrever."""
         video = self.video()
         output = self.root / "quadros"
         frames = extract_video_frames(video, output, every_seconds=2.0)
@@ -372,6 +492,7 @@ class VideoIngestTests(IngestFixture):
             extract_video_frames(video, output, every_seconds=2.0)  # nunca sobrescreve um quadro
 
     def test_ffmpeg_fallback_follows_the_same_contract(self) -> None:
+        """O caminho via ffmpeg devolve os mesmos quadros/tempos que o OpenCV (quando ambos existem)."""
         ffmpeg = shutil.which("ffmpeg")
         if not ffmpeg:
             self.skipTest("ffmpeg ausente do PATH.")
@@ -393,6 +514,7 @@ class VideoIngestTests(IngestFixture):
                 self.assertLess(abs(left.getpixel((32, 10))[1] - right.getpixel((32, 10))[1]), 60, mine["path"].name)
 
     def test_duplicate_video_is_not_decoded_twice(self) -> None:
+        """Vídeo repetido (mesmo hash) não é decodificado de novo e aparece como "video_repetido"."""
         video = self.video()
         shutil.copyfile(video, self.uploads / "voo_copia.mp4")
         result = ingest_media(self.config, [self.uploads], self.reviews / "voo_v1", "galpao_b", every_seconds=1.0)
@@ -401,9 +523,12 @@ class VideoIngestTests(IngestFixture):
 
 
 class CliTests(IngestFixture):
+    """Teste do comando ``import-media`` da CLI de ponta a ponta (sem processo separado)."""
     def test_import_media_command_prints_report_and_output_folder(self) -> None:
+        """``import-media`` imprime o relatório JSON e a pasta de saída; saída existente devolve código 2."""
         from dronecamp_ia.cli import main
 
+        # project.yaml mínimo para a CLI carregar a configuração da raiz temporária.
         config_path = self.root / "configs" / "project.yaml"
         config_path.write_text(
             "schema_version: 1\ntask: detect\nmodel: fixture.pt\nrequested_model: fixture.pt\n"
@@ -418,6 +543,7 @@ class CliTests(IngestFixture):
             code = main(["--config", str(config_path), "import-media", "--source", str(self.uploads), "--output", str(output),
                          "--group", "galpao_b", "--every-seconds", "1", "--max-frames", "5", "--notes", "via cli"])
         self.assertEqual(code, 0, stdout.getvalue())
+        # A saída é o JSON do relatório seguido da linha "Execução salva em: <pasta>".
         text, _, footer = stdout.getvalue().rpartition("Execução salva em: ")
         self.assertEqual(footer.strip(), str(output.resolve()))
         report = json.loads(text)

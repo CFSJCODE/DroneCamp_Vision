@@ -13,6 +13,28 @@ Mapa rápido (o que cada arquivo faz):
 - Entrada: ``cli.py`` (comandos) e ``__main__.py`` (``python -m dronecamp_ia``).
 
 A revisão técnica permanece humana: o modelo só propõe caixas.
+
+Função deste arquivo no projeto: marca a pasta ``src/dronecamp_ia`` como pacote
+Python e guarda a versão do pacote. Ele é executado sempre que qualquer módulo
+do pacote é importado, por isso NÃO importa nada pesado (Ultralytics, torch):
+cada módulo importa o que precisa só quando é usado.
+
+O que contém:
+- ``__version__``: versão do pacote (texto ``"MAIOR.MENOR.CORREÇÃO"``).
+
+Quem usa: o Python, ao importar ``dronecamp_ia``; ``__version__`` pode ser lido
+por quem quiser registrar a versão do código.
+
+O que lê e grava no disco: nada.
+
+Onde mexer:
+- Para registrar uma versão nova do pacote, troque ``__version__`` abaixo.
+- Para acrescentar um módulo novo, crie o arquivo nesta pasta e inclua uma linha
+  no "Mapa rápido" acima e no mapa de ``docs/guia_manutencao.md``.
+- ATENCAO: não acrescente importações pesadas aqui; elas deixariam todos os
+  comandos (até ``--help``) lentos e exigiriam a Ultralytics instalada.
 """
 
+# Versão do pacote (versionamento semântico: maior.menor.correção).
+# EXTENSAO: suba este número quando publicar uma versão nova do código.
 __version__ = "0.1.0"

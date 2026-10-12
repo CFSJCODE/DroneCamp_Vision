@@ -5,6 +5,44 @@ esperadas, que decisões da página sobrepõem o registro, que filtros e reduç�
 funcionam, que foto alterada é recusada, que o laudo nunca preenche gravidade,
 diagnóstico ou recomendação, que sugestões pendentes só aparecem no anexo e que
 nada é gravado fora de ``output_dir``.
+
+Módulos cobertos: ``dronecamp_ia.exports`` (``draw_boxes``, ``resolve_decisions``,
+``build_evidence_package``, ``occurrences_csv``, ``build_report``, ``OCCURRENCE_COLUMNS``,
+``PENDING_TEXT``) e, pelo laudo, ``dronecamp_ia.laudo_abnt`` (``DEFAULT_TITLE``,
+``table_of_contents``). Usa as cores de ``review_render.COLORS``.
+
+Como rodar (na pasta ``sistema_ia``, com o venv do projeto):
+    python -m unittest tests.test_exports
+    python -m unittest tests.test_exports.ReportTests
+    python -m unittest tests.test_exports.EvidencePackageTests.test_only_filters_and_keeps_registry_numbering
+O teste de PDF só roda com ``reportlab`` instalado (extra "reports"); o texto do PDF só é
+conferido se ``pypdf`` também existir.
+
+O que cada classe de teste prepara:
+    - ``ExportsFixture`` (base, sem testes próprios) -> ``setUp`` cria pasta temporária com
+      acento, taxonomia de 2 classes (com critério e gravidade de REFERÊNCIA), um
+      ``ProjectConfig`` à mão, 3 fotos 120x80 em ``data/reference`` (a: positiva com 1 caixa,
+      b: negativa, c: ambígua), o ``registry.json`` em ``data/reviews/fixture_v1``, a pasta de
+      saída ``saidas``, as sugestões do modelo para a foto b (``self.suggestions``: s001,
+      s002, s003) e a decisão da página para a foto b (``self.decision``: positiva, aceita
+      s001, descarta s002, deixa s003 pendente). Helpers: ``snapshot`` (bytes de tudo fora
+      da saída) e ``csv_rows`` (lê CSV sem BOM).
+    - ``DrawBoxesTests``, ``ResolveDecisionsTests``, ``EvidencePackageTests``,
+      ``OccurrencesCsvTests`` e ``ReportTests`` herdam de ``ExportsFixture``;
+      ``ReportTests.build`` gera o laudo (sem PDF por padrão) e devolve (resultado, html, json).
+
+ATENCAO: o laudo NUNCA preenche gravidade, diagnóstico, recomendação, conformidade ou
+prioridade (sempre ``PENDING_TEXT``); a gravidade de referência da taxonomia só aparece no
+Anexo E; sugestões pendentes só aparecem no Anexo B; nada é gravado fora da pasta de saída.
+
+EXTENSAO: para testar algo novo do pacote ZIP, copie
+``EvidencePackageTests.test_decisions_override_registry_with_human_origin`` (chame
+``build_evidence_package`` e abra o zip com ``zipfile``). Para o laudo, copie
+``ReportTests.test_details_are_shown_as_given_and_unknown_keys_are_rejected`` e use
+``self.build(**opções)``. Uma coluna nova em ``OCCURRENCE_COLUMNS`` exige atualizar as linhas
+esperadas em ``test_zip_has_expected_entries_hashes_and_writes_nothing_else`` e os
+fatiamentos ``[8:13]`` de ``test_csv_text_matches_registry_and_decisions``. Uma seção nova do
+laudo entra na lista ``anchors`` de ``test_abnt_structure_sections_norms_and_checklist_items``.
 """
 
 from copy import deepcopy
@@ -18,6 +56,7 @@ import tempfile
 import unittest
 import zipfile
 
+# Permite rodar este arquivo direto (sem instalar o pacote): põe sistema_ia/src no caminho.
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from PIL import Image, ImageColor
@@ -30,21 +69,42 @@ from dronecamp_ia.io import file_hash
 from dronecamp_ia.laudo_abnt import DEFAULT_TITLE, table_of_contents
 from dronecamp_ia.review_render import COLORS
 
+# O PDF do laudo é opcional; o teste de PDF é pulado sem reportlab.
 HAS_REPORTLAB = importlib.util.find_spec("reportlab") is not None
 
 
 def write_json(path: Path, value: dict) -> None:
+    """Grava ``value`` como JSON indentado, criando as pastas que faltarem.
+
+    Parâmetros:
+        path (Path): destino.
+        value (dict): conteúdo.
+    Retorna: None.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(value, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 class ExportsFixture(unittest.TestCase):
-    """Taxonomia com 2 classes; fotos: positiva no registro, negativa e ambígua."""
+    """Taxonomia com 2 classes; fotos: positiva no registro, negativa e ambígua.
+
+    Base comum das classes de teste deste arquivo (não tem testes próprios).
+    """
 
     def setUp(self) -> None:
+        """Monta taxonomia, config, 3 fotos, o registro, as sugestões e a decisão da página.
+
+        Atributos criados: ``root``, ``taxonomy_path``, ``config``, ``directory`` (pasta da
+        revisão), ``photos`` (3 caminhos), ``box`` (caixa padrão da foto a), ``registry``,
+        ``registry_path``, ``sha`` (hash das 3 fotos, na ordem), ``output`` (pasta de saída),
+        ``suggestions`` e ``decision``.
+        Retorna: None.
+        """
+        # 1. Pasta temporária com acento, apagada no fim do teste.
         temporary = tempfile.TemporaryDirectory(prefix="dronecamp exportações á ")
         self.addCleanup(temporary.cleanup)
         self.root = Path(temporary.name)
+        # 2. Taxonomia de 2 classes com critério e gravidade de referência (que o laudo NÃO pode aplicar).
         self.taxonomy_path = self.root / "configs" / "taxonomy.json"
         write_json(self.taxonomy_path, {"version": "fixture", "classes": [
             {"id": 0, "slug": "telha_quebrada", "label": "Telha quebrada", "phase": 1,
@@ -55,12 +115,14 @@ class ExportsFixture(unittest.TestCase):
                                     taxonomy_path=self.taxonomy_path, dataset_path=self.root / "dataset.yaml",
                                     device="cpu", prediction={}, training={})
         self.directory = self.root / "data" / "reviews" / "fixture_v1"
+        # 3. Três fotos lisas 120x80 de cores diferentes (hashes distintos).
         self.photos = []
         for name, color in (("foto_a", (90, 90, 90)), ("foto_b", (120, 100, 80)), ("foto_c", (60, 80, 120))):
             path = self.root / "data" / "reference" / f"{name}.png"
             path.parent.mkdir(parents=True, exist_ok=True)
             Image.new("RGB", (120, 80), color=color).save(path)
             self.photos.append(path)
+        # 4. Registro: foto a positiva com a caixa padrão, b negativa, c ambígua; nenhuma aprovada.
         self.box = {"class_id": 0, "bbox_xyxy": [20, 10, 60, 50], "note": "Sintética."}
         statuses = (("positive", [deepcopy(self.box)]), ("negative", []), ("ambiguous", []))
         self.registry = {"schema_version": 1, "version": "fixture_v1", "taxonomy_sha256": file_hash(self.taxonomy_path),
@@ -79,22 +141,36 @@ class ExportsFixture(unittest.TestCase):
             {"id": "s001", "class_id": 1, "bbox_xyxy": [10, 10, 30, 30], "confidence": 0.4},
             {"id": "s002", "class_id": 0, "bbox_xyxy": [50, 20, 90, 60], "confidence": 0.2},
             {"id": "s003", "class_id": 1, "bbox_xyxy": [5, 5, 15, 15], "confidence": 0.3}]}
+        # Decisão exportada pela página para a foto b: positiva, aceita s001 (vira caixa humana),
+        # descarta s002 e deixa s003 pendente.
+        # EXTENSAO: novo campo da decisão a testar: acrescente aqui.
         self.decision = {self.sha[1]: {"status": "positive", "notes": "Conferida.", "confirmed_complete": True,
                                        "boxes": [{"class_id": 1, "bbox_xyxy": [10, 10, 30, 30], "note": "Sugestão aceita."}],
                                        "dismissed_suggestions": ["s002"]}}
 
     def snapshot(self) -> dict:
-        """Tudo que existe fora de output_dir (para provar que nada mais foi tocado)."""
+        """Tudo que existe fora de output_dir (para provar que nada mais foi tocado).
+
+        Retorna: dict caminho -> bytes de cada arquivo fora de ``self.output``.
+        """
         return {path: path.read_bytes() for path in self.root.rglob("*")
                 if path.is_file() and self.output not in path.parents}
 
     def csv_rows(self, text: str) -> list[list[str]]:
+        """Lê um texto CSV (removendo o BOM inicial, se houver) em lista de linhas.
+
+        Parâmetros:
+            text (str): conteúdo do CSV.
+        Retorna: lista de linhas, cada uma lista de strings.
+        """
         import csv
         return list(csv.reader(io.StringIO(text.lstrip("﻿"))))
 
 
 class DrawBoxesTests(ExportsFixture):
+    """Testes de ``draw_boxes``: contorno na cor da classe, escala e sugestões tracejadas."""
     def test_draws_class_colored_outline_without_mutating_input(self) -> None:
+        """Desenha o contorno na cor da classe, sem alterar a imagem de entrada nem o interior da caixa."""
         image = Image.new("RGB", (120, 80), (90, 90, 90))
         before = image.tobytes()
         drawn = draw_boxes(image, [deepcopy(self.box)], {0: "Telha quebrada", 1: "Resíduos em calha"}, COLORS)
@@ -104,6 +180,7 @@ class DrawBoxesTests(ExportsFixture):
         self.assertEqual(drawn.getpixel((40, 30)), (90, 90, 90), "Interior da caixa fica intacto.")
 
     def test_scale_maps_original_coordinates_onto_reduced_image(self) -> None:
+        """Com ``scale``, as coordenadas originais são levadas para a imagem reduzida."""
         small = Image.new("RGB", (60, 40), (90, 90, 90))
         drawn = draw_boxes(small, [deepcopy(self.box)], {0: "Telha quebrada"}, COLORS, scale=0.5)
         self.assertEqual(drawn.getpixel((10, 20)), ImageColor.getrgb(COLORS[0]), "Caixa [20,10,60,50] vira [10,5,30,25].")
@@ -111,9 +188,11 @@ class DrawBoxesTests(ExportsFixture):
         self.assertEqual(drawn.getpixel((45, 30)), (90, 90, 90), "Nada desenhado nas coordenadas originais.")
 
     def test_suggestions_are_dashed_in_class_color(self) -> None:
+        """Sugestões são desenhadas tracejadas na cor da classe; ``scale=0`` é recusado."""
         image = Image.new("RGB", (400, 300), (90, 90, 90))
         suggestion = {"class_id": 1, "bbox_xyxy": [50, 50, 350, 250], "confidence": 0.42}
         drawn = draw_boxes(image, [], {0: "Telha quebrada", 1: "Resíduos em calha"}, COLORS, suggestions=[suggestion])
+        # Pixels da borda superior: deve haver cor da classe (traços) e fundo (lacunas).
         edge = [drawn.getpixel((x, 50)) for x in range(50, 350)]
         color = ImageColor.getrgb(COLORS[1])
         self.assertIn(color, edge, "Segmentos na cor da classe.")
@@ -123,7 +202,9 @@ class DrawBoxesTests(ExportsFixture):
 
 
 class ResolveDecisionsTests(ExportsFixture):
+    """Testes de ``resolve_decisions``: como decisões da página e registro se combinam."""
     def test_registry_is_used_when_there_is_no_decision(self) -> None:
+        """Sem decisões da página, vale o que está no registro (origem "registro")."""
         resolved = resolve_decisions(self.registry, None, 2)
         self.assertEqual([entry["source"] for entry in resolved], ["registro"] * 3)
         self.assertEqual([entry["status"] for entry in resolved], ["positive", "negative", "ambiguous"])
@@ -131,6 +212,7 @@ class ResolveDecisionsTests(ExportsFixture):
         self.assertEqual(resolved[0]["pending_suggestions"], 0)
 
     def test_decision_overrides_registry_and_counts_pending_suggestions(self) -> None:
+        """A decisão da página sobrepõe o registro e só sugestões não aceitas/descartadas contam como pendentes."""
         resolved = resolve_decisions(self.registry, self.decision, 2, suggestions=self.suggestions)
         second = resolved[1]
         self.assertEqual((second["source"], second["status"]), ("revisao_humana", "positive"))
@@ -142,6 +224,12 @@ class ResolveDecisionsTests(ExportsFixture):
         self.assertEqual(without[1]["pending_suggestions"], 3)
 
     def test_invalid_status_boxes_and_unknown_images_are_rejected(self) -> None:
+        """Estado inválido, caixas contraditórias/fora da foto, foto desconhecida e sugestão de classe inexistente são recusados.
+
+        EXTENSAO: nova regra de decisão: acrescente o caso inválido na tupla do laço.
+        """
+        # Casos: estado inexistente, positivo sem caixa, negativo com caixa, classe 5 inexistente,
+        # caixa além da largura de 120 px e decisão que não é dict.
         for decision in ({"status": "approved", "boxes": []}, {"status": "positive", "boxes": []},
                          {"status": "negative", "boxes": [deepcopy(self.box)]},
                          {"status": "positive", "boxes": [{"class_id": 5, "bbox_xyxy": [1, 1, 5, 5]}]},
@@ -155,6 +243,7 @@ class ResolveDecisionsTests(ExportsFixture):
             resolve_decisions(self.registry, None, 2, suggestions={self.sha[0]: [{"class_id": 9, "bbox_xyxy": [1, 1, 2, 2], "confidence": 0.5}]})
 
     def test_pending_draft_keeps_boxes_without_counting_as_positive(self) -> None:
+        """Rascunho "pending" guarda as caixas, mas não conta como positivo nem confirmado."""
         resolved = resolve_decisions(self.registry, {self.sha[2]: {"status": "pending", "boxes": [deepcopy(self.box)]}}, 2)
         self.assertEqual(resolved[2]["status"], "pending")
         self.assertEqual(len(resolved[2]["boxes"]), 1)
@@ -162,7 +251,12 @@ class ResolveDecisionsTests(ExportsFixture):
 
 
 class EvidencePackageTests(ExportsFixture):
+    """Testes de ``build_evidence_package`` (o ZIP de evidências)."""
     def test_zip_has_expected_entries_hashes_and_writes_nothing_else(self) -> None:
+        """O ZIP tem as entradas esperadas, manifesto com hashes, CSV com BOM e nada é gravado fora da saída.
+
+        Teste de referência do conteúdo do pacote (nomes, ordem, colunas e LEIA-ME).
+        """
         before = self.snapshot()
         result = build_evidence_package(self.config, self.registry_path, self.output)
         self.assertEqual(self.snapshot(), before, "Nada fora de output_dir.")
@@ -172,6 +266,8 @@ class EvidencePackageTests(ExportsFixture):
         self.assertEqual((result["images"], result["boxes"], result["bytes"], result["sha256"]),
                          (3, 1, path.stat().st_size, file_hash(path)))
         with zipfile.ZipFile(path) as archive:
+            # Ordem fixa das entradas do ZIP.
+            # EXTENSAO: arquivo novo no pacote: acrescente o nome aqui, na posição em que é gravado.
             self.assertEqual(archive.namelist(), ["evidencias/001_foto_a.jpg", "evidencias/002_foto_b.jpg", "evidencias/003_foto_c.jpg",
                                                   "ocorrencias.csv", "fotos.csv", "LEIA-ME.txt", "manifesto.json"])
             self.assertIsNone(archive.testzip())
@@ -180,6 +276,7 @@ class EvidencePackageTests(ExportsFixture):
             self.assertEqual(manifest["taxonomy_sha256"], file_hash(self.taxonomy_path))
             self.assertEqual(manifest["version"], "fixture_v1")
             self.assertEqual(manifest["counts"]["by_status"], {"positive": 1, "negative": 1, "ambiguous": 1, "excluded": 0, "pending": 0})
+            # Cada arquivo (menos o próprio manifesto) tem o sha256 registrado no manifesto.
             for name in archive.namelist():
                 if name != "manifesto.json":
                     from hashlib import sha256
@@ -193,12 +290,14 @@ class EvidencePackageTests(ExportsFixture):
             self.assertTrue(occurrences.startswith("﻿".encode("utf-8")), "UTF-8 com BOM para o Excel.")
             rows = self.csv_rows(occurrences.decode("utf-8"))
             self.assertEqual(rows[0], OCCURRENCE_COLUMNS)
+            # Linha esperada na ordem de OCCURRENCE_COLUMNS (nº, hash, arquivo, estado, origem, ..., xyxy, nota).
             self.assertEqual(rows[1], ["1", self.sha[0], "foto_a.png", "positive", "registro", "1", "0", "Telha quebrada", "20", "10", "60", "50", "Sintética."])
             photos = self.csv_rows(archive.read("fotos.csv").decode("utf-8"))
             self.assertEqual(len(photos), 4)
             self.assertEqual(photos[2][8:12], ["negative", "registro", "0", "0"])
 
     def test_decisions_override_registry_with_human_origin(self) -> None:
+        """Com decisões da página, a foto b vira positiva com origem "revisao_humana" nos CSVs."""
         result = build_evidence_package(self.config, self.registry_path, self.output, decisions=self.decision, suggestions=self.suggestions)
         self.assertEqual(result["boxes"], 2)
         with zipfile.ZipFile(result["zip"]) as archive:
@@ -210,6 +309,7 @@ class EvidencePackageTests(ExportsFixture):
             self.assertEqual(json.loads(archive.read("manifesto.json"))["counts"]["pending_suggestions"], 1)
 
     def test_only_filters_and_keeps_registry_numbering(self) -> None:
+        """``only`` filtra as fotos ("positive", "decided") mantendo a numeração do registro."""
         positive = build_evidence_package(self.config, self.registry_path, self.output, only="positive")
         with zipfile.ZipFile(positive["zip"]) as archive:
             self.assertEqual([name for name in archive.namelist() if name.endswith(".jpg")], ["evidencias/001_foto_a.jpg"])
@@ -222,6 +322,10 @@ class EvidencePackageTests(ExportsFixture):
             build_evidence_package(self.config, self.registry_path, self.output, only="tudo")
 
     def test_max_side_reduces_and_none_keeps_original(self) -> None:
+        """``max_side`` reduz as fotos (com sugestões tracejadas em escala) e ``None`` mantém o original.
+
+        Compara byte a byte com o JPEG esperado, então mudar a qualidade JPEG quebra o teste.
+        """
         reduced = build_evidence_package(self.config, self.registry_path, self.output, max_side=60, include_suggestions=True,
                                          suggestions=self.suggestions)
         with zipfile.ZipFile(reduced["zip"]) as archive:
@@ -244,12 +348,14 @@ class EvidencePackageTests(ExportsFixture):
         self.assertNotEqual(reduced["zip"], original["zip"], "Cada exportação é um arquivo novo.")
 
     def test_changed_photo_is_rejected_and_leaves_no_partial_zip(self) -> None:
+        """Foto alterada depois da revisão é recusada e nenhum ZIP parcial fica para trás."""
         Image.new("RGB", (120, 80), color="white").save(self.photos[2])
         with self.assertRaises(ValueError):
             build_evidence_package(self.config, self.registry_path, self.output)
         self.assertEqual(list(self.output.glob("*.zip")), [])
 
     def test_changed_taxonomy_and_invalid_decisions_are_rejected(self) -> None:
+        """Decisão com estado inválido e taxonomia alterada são recusadas sem deixar arquivos."""
         with self.assertRaises(ValueError):
             build_evidence_package(self.config, self.registry_path, self.output, decisions={self.sha[0]: {"status": "ok", "boxes": []}})
         taxonomy = json.loads(self.taxonomy_path.read_text(encoding="utf-8"))
@@ -261,7 +367,9 @@ class EvidencePackageTests(ExportsFixture):
 
 
 class OccurrencesCsvTests(ExportsFixture):
+    """Testes de ``occurrences_csv`` (o mesmo CSV do ZIP, como texto)."""
     def test_csv_text_matches_registry_and_decisions(self) -> None:
+        """O CSV segue registro + decisões e é idêntico ao ``ocorrencias.csv`` do ZIP (sem BOM)."""
         rows = self.csv_rows(occurrences_csv(self.config, self.registry_path))
         self.assertEqual(rows[0], OCCURRENCE_COLUMNS)
         self.assertEqual(len(rows), 2)
@@ -276,7 +384,16 @@ class OccurrencesCsvTests(ExportsFixture):
 
 
 class ReportTests(ExportsFixture):
+    """Testes de ``build_report`` (laudo preliminar HTML/JSON/PDF no padrão ABNT)."""
     def build(self, **options) -> tuple[dict, str, dict]:
+        """Gera o laudo (sem PDF, salvo se pedido) e lê o HTML e o JSON gravados.
+
+        Parâmetros:
+            options: argumentos nomeados repassados a ``build_report`` (decisions,
+                suggestions, reviewer, client, details, only_positive_images, max_side, pdf...).
+        Retorna: tupla (resultado de build_report, texto do laudo.html, dict do laudo.json).
+        """
+        # PDF desligado por padrão para não depender do reportlab.
         options.setdefault("pdf", False)
         result = build_report(self.config, self.registry_path, self.output, **options)
         html = Path(result["html"]).read_text(encoding="utf-8")
@@ -284,6 +401,7 @@ class ReportTests(ExportsFixture):
         return result, html, data
 
     def test_report_files_manifest_and_nothing_outside_output_dir(self) -> None:
+        """O laudo gera só laudo.html, laudo.json e manifesto.json na pasta datada, com cabeçalho completo."""
         before = self.snapshot()
         result, html, data = self.build(reviewer="rev01", client="Cliente X", site="Galpão B", inspector="Insp. Y", notes="Obs. <teste>")
         self.assertEqual(self.snapshot(), before)
@@ -311,8 +429,13 @@ class ReportTests(ExportsFixture):
         self.assertEqual(data["summary"]["positive"], 1)
 
     def test_abnt_structure_sections_norms_and_checklist_items(self) -> None:
+        """Estrutura ABNT: seções na ordem da NBR 10719, sumário, normas citadas, itens e figuras numeradas.
+
+        EXTENSAO: seção nova do laudo: acrescente a âncora na lista ``anchors`` na posição certa.
+        """
         _, html, data = self.build(decisions=self.decision, suggestions=self.suggestions)
         # Elementos pré-textuais, seções numeradas, referências e anexos na ordem da NBR 10719.
+        # Âncoras das seções na ordem exigida; a posição de cada uma no HTML deve ser crescente.
         anchors = ["capa", "folha-rosto", "sumario", "s1", "s2", "s3", "s4", "s5", "s6", "s7", "s8", "s9", "s10", "referencias",
                    "anexo-a", "anexo-b", "anexo-c", "anexo-d", "anexo-e"]
         positions = [html.index(f'<section id="{anchor}"') for anchor in anchors]
@@ -320,6 +443,7 @@ class ReportTests(ExportsFixture):
         for anchor, _, _ in table_of_contents(data):
             self.assertIn(f'href="#{anchor}"', html)
             self.assertIn(f'id="{anchor}"', html)
+        # Normas que precisam aparecer na seção 3 (entre s3 e s4).
         for norm in ("NBR 16747", "NBR 5674", "NBR 7196", "NBR 10844", "NBR 10719", "RBAC-E nº 94"):
             self.assertIn(norm, html.split('<section id="s3">')[1].split('<section id="s4">')[0], norm)
         self.assertIn("ASSOCIAÇÃO BRASILEIRA DE NORMAS TÉCNICAS. NBR 16747: Inspeção predial", html)
@@ -348,6 +472,7 @@ class ReportTests(ExportsFixture):
         self.assertNotIn("Detecção automática de candidatas", html)
 
     def test_details_are_shown_as_given_and_unknown_keys_are_rejected(self) -> None:
+        """Os dados do imóvel aparecem como informados; chave desconhecida em ``details`` é recusada."""
         details = {"inspection_date": "06/08/2025", "roof_type": "Telhas de fibrocimento tipo canaleta", "area": "6040 m²",
                    "responsible_name": "Eng. Fulano", "responsible_registry": "CREA-MG 123", "art_number": "MG2025000", "equipment": "DJI Air 3"}
         _, html, data = self.build(details=details, inspector="ignorado")
@@ -359,9 +484,14 @@ class ReportTests(ExportsFixture):
             build_report(self.config, self.registry_path, self.output, pdf=False, details={"area_calculada": "1"})
 
     def test_evaluation_fields_are_always_pending(self) -> None:
+        """Conformidade, risco, diagnóstico, recomendação e prioridade ficam sempre pendentes.
+
+        ATENCAO: a gravidade de referência e o texto do laudo-modelo só podem aparecer no Anexo E.
+        """
         result, html, data = self.build(decisions=self.decision, suggestions=self.suggestions)
         self.assertEqual(result["images"], 2)
         self.assertEqual(html.count('<article class="item"'), 2)
+        # Em cada item, a célula de cada campo de avaliação deve conter exatamente PENDING_TEXT.
         for field in ("Conformidade", "Risco (gravidade)", "Diagnóstico", "Recomendação", "Prioridade (NBR 16747)"):
             values = re.findall(rf"<tr><th>{re.escape(field)}</th><td class=\"pendente\">(.*?)</td>", html)
             self.assertEqual(values, [PENDING_TEXT] * 2, field)
@@ -381,6 +511,7 @@ class ReportTests(ExportsFixture):
         self.assertEqual(data["conclusion"]["technical_conclusion"], PENDING_TEXT)
 
     def test_pending_suggestions_only_in_annex_b(self) -> None:
+        """Sugestões pendentes ficam só no Anexo B; a figura do corpo mostra só as caixas decididas."""
         result, html, data = self.build(decisions=self.decision, suggestions=self.suggestions)
         self.assertEqual(result["pending_suggestions"], 1)
         body = html.split('<section id="s6">')[1].split('<section id="s7">')[0]
@@ -388,6 +519,7 @@ class ReportTests(ExportsFixture):
         self.assertNotIn("IA 1", body)
         # A figura da foto_b é exatamente o desenho das caixas da decisão, sem a sugestão pendente.
         import base64
+        # Extrai a imagem base64 da figura da foto 002 e compara com o desenho esperado (JPEG q=82).
         encoded = re.findall(r'data-foto="002".*?src="data:image/jpeg;base64,([^"]+)"', body, re.S)[0]
         with Image.open(self.photos[1]) as photo:
             expected = draw_boxes(photo, self.decision[self.sha[1]]["boxes"], {0: "Telha quebrada", 1: "Resíduos em calha"}, COLORS)
@@ -402,6 +534,7 @@ class ReportTests(ExportsFixture):
         self.assertEqual(data["summary"]["confirmed_boxes"], 2, "Sugestões pendentes não entram nas contagens de ocorrências.")
 
     def test_annex_a_lists_non_positive_photos_and_all_photos_can_be_shown(self) -> None:
+        """O Anexo A lista fotos não positivas; com ``only_positive_images=False`` todas viram figura."""
         _, html, data = self.build()
         annex = html.split('<section id="anexo-a">')[1].split('<section id="anexo-b">')[0]
         self.assertIn("foto_b.png", annex)
@@ -416,6 +549,8 @@ class ReportTests(ExportsFixture):
         self.assertEqual(data["images"][1]["status_label"], "negativa")
 
     def test_ai_notes_of_this_registry_become_pending_support(self) -> None:
+        """Notas do VLM (ai_notes.json) desta versão viram "Subsídio de IA" pendente; de outra versão, são ignoradas."""
+        # Notas do VLM ligadas ao hash atual do registro, com uma descrição para a caixa da foto a.
         notes_path = self.directory / "ai_notes.json"
         write_json(notes_path, {"schema_version": 1, "kind": "vlm_notes", "registry_sha256": file_hash(self.registry_path),
                                 "created_at": "2026-10-11T00:00:00+00:00", "settings": {"model_requested": "openrouter/free"},
@@ -443,6 +578,7 @@ class ReportTests(ExportsFixture):
         self.assertEqual(data["items"][0]["ai_support"], [])
 
     def test_suggestion_file_next_to_registry_is_used_only_for_this_version(self) -> None:
+        """O suggestions.json ao lado do registro só é usado se for desta versão do registro."""
         suggestions_path = self.directory / "suggestions.json"
         write_json(suggestions_path, {"schema_version": 1, "registry_sha256": file_hash(self.registry_path), "model_label": "Modelo piloto (não validado)",
                                       "weights_sha256": "a" * 64, "conf": 0.15, "pilot": True, "images": self.suggestions})
@@ -458,6 +594,7 @@ class ReportTests(ExportsFixture):
         self.assertIn("outra versão", data["provenance"]["suggestion_note"])
 
     def test_changed_photo_leaves_no_partial_report(self) -> None:
+        """Foto alterada é recusada e a pasta de saída fica vazia."""
         Image.new("RGB", (120, 80), color="white").save(self.photos[0])
         with self.assertRaises(ValueError):
             build_report(self.config, self.registry_path, self.output, pdf=False)
@@ -465,6 +602,7 @@ class ReportTests(ExportsFixture):
 
     @unittest.skipUnless(HAS_REPORTLAB, "reportlab não instalado (extra 'reports')")
     def test_pdf_is_generated_with_reportlab(self) -> None:
+        """Com reportlab, o PDF é gerado, entra no manifesto e (com pypdf) contém as seções esperadas."""
         result = build_report(self.config, self.registry_path, self.output, decisions=self.decision, suggestions=self.suggestions,
                               reviewer="rev01", client="Cliente X", pdf=True)
         self.assertIsNone(result["pdf_reason"])

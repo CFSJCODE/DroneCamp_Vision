@@ -7,9 +7,19 @@ precisar ler o projeto inteiro. Ele responde três perguntas:
 2. **Se quebrar X, onde eu olho?** (tabela de sintomas)
 3. **Para implementar Z, por onde eu começo?** (receitas passo a passo)
 
-Todo arquivo `.py` de `src/dronecamp_ia/` também começa com um texto explicando a função
-dele no projeto, o que cada função principal faz e **quando mexer** nele. Leia esse
-cabeçalho antes de editar um arquivo.
+Todo o código está comentado arquivo por arquivo (módulos, plataforma, scripts e testes):
+
+- **Cabeçalho de cada arquivo:** a função no projeto, a lista do que o arquivo contém, quem
+  o chama, o que ele lê e grava no disco e uma seção **"Onde mexer"** com casos concretos.
+- **Toda função, classe e método** tem docstring com o que faz, `Parâmetros:`, `Retorna:`,
+  `Erros:` e `Chamada por:`. No `platform.js`, o mesmo vem em comentários `/** ... */`.
+- **Cada bloco do corpo** de uma função tem um comentário dizendo o que faz e por quê; as
+  funções longas têm etapas numeradas (`# 1.`, `# 2.`...).
+- **Constantes** dizem a unidade e o efeito de mudar o valor.
+
+Para entender um arquivo: leia o cabeçalho, procure `ENTRADA:` para achar onde o fluxo
+começa e siga as etapas numeradas. Para alterar algo: procure `EXTENSAO:` no arquivo e leia
+o `ATENCAO:` mais próximo.
 
 ## 1. Marcadores no código
 

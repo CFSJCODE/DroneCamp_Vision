@@ -1,4 +1,34 @@
-"""Relatório comparativo: lê os quatro formatos, um modelo = um rótulo e uma cor, HTML autônomo."""
+"""Relatório comparativo: lê os quatro formatos, um modelo = um rótulo e uma cor, HTML autônomo.
+
+Módulo coberto: ``dronecamp_ia.model_report`` (``build_model_report`` e ``ModelCatalog``),
+que junta gates (gate.json), comparações (compare_*.json), avaliações por classe
+(eval_por_classe_*.json), medições (measurement.json) e execuções de treino (runs/) num
+``models.json`` + ``report.html`` autônomo com gráficos PNG embutidos.
+
+Como rodar (na pasta ``sistema_ia``, com o venv do projeto):
+    python -m unittest tests.test_model_report
+    python -m unittest tests.test_model_report.ModelReportTests.test_catalog_merges_windows_and_relative_paths_without_sha
+
+O que a classe de teste prepara (``ModelReportTests.setUpClass``, UMA vez para todos os testes):
+    - pasta temporária que faz papel de ``sistema_ia`` (``cls.config.root``);
+    - ``gate.json`` com métricas por classe do modelo atual (A) e do candidato (B);
+    - ``compare_test.json`` e ``eval_por_classe_test.json`` citando os mesmos dois pesos
+      por caminhos DIFERENTES (Windows absoluto, relativo com barra invertida e relativo com "/");
+    - duas execuções falsas em ``runs/`` (``write_fake_run``), a A com curva de avaliação GPU;
+    - o relatório pronto em ``report/`` (``cls.output``), com ``cls.models`` (models.json lido)
+      e ``cls.html`` (report.html lido).
+    Como o relatório é montado só uma vez, os testes NÃO devem alterar esses arquivos; quem
+    precisa de outro cenário gera um relatório novo noutra pasta (ex.: ``report_sem_gpu``).
+
+Helpers de módulo: ``class_metrics`` (métricas de uma classe), ``gate_metrics`` (métricas
+de todas as classes + ``_total`` no formato do gate) e ``write_fake_run`` (execução falsa).
+
+EXTENSAO: para testar uma parte nova do relatório, copie
+``test_gpu_chart_absent_when_no_run_has_the_curve``: chame ``build_model_report`` numa pasta
+nova sob ``self.config.root`` com as entradas desejadas e confira ``models.json``/``report.html``.
+Se o relatório ganhar um gráfico novo, acrescente o nome em ``EXPECTED_CHARTS`` (na ordem em
+que ele aparece) e na lista esperada de ``test_measurement_is_primary_and_older_inputs_become_archive``.
+"""
 
 from dataclasses import replace
 import json
@@ -11,6 +41,10 @@ from PIL import Image
 from dronecamp_ia.config import detection_names, load_config, load_taxonomy
 from dronecamp_ia.model_report import ModelCatalog, build_model_report
 
+# ---------------------------------------------------------------------------
+# Constantes das entradas falsas
+# ---------------------------------------------------------------------------
+# Nomes de execução no padrão pilot_train_<data UTC>_<id de 8 caracteres>; o id vira o rótulo.
 RUN_A = "pilot_train_20261004T170212Z_aaaaaaaa"
 RUN_B = "pilot_train_20261004T170212Z_bbbbbbbb"
 SHA_A, SHA_B = "a" * 64, "b" * 64
@@ -18,23 +52,46 @@ SHA_A, SHA_B = "a" * 64, "b" * 64
 WEIGHTS_A_WINDOWS = f"E:\\Acadêmico\\sistema_ia\\runs\\{RUN_A}\\fit\\weights\\best.pt"
 WEIGHTS_A_RELATIVE = f"runs\\{RUN_A}\\fit\\weights\\best.pt"
 WEIGHTS_B = f"runs/{RUN_B}/fit/weights/best.pt"
+# Cabeçalho do results.csv no formato da Ultralytics.
 CSV_HEADER = ("epoch,time,train/box_loss,train/cls_loss,train/l1_loss,metrics/precision(B),metrics/recall(B),"
               "metrics/mAP50(B),metrics/mAP50-95(B),val/box_loss,val/cls_loss,val/l1_loss")
+# Gráficos que o relatório completo deve gerar, na ordem.
+# EXTENSAO: gráfico novo no relatório: acrescente o nome aqui, na posição em que é gerado.
 EXPECTED_CHARTS = ("overall_metrics.png", "per_class_recall.png", "per_class_errors.png", "training_curves.png",
                    "gpu_eval_curves.png", "compare_found.png")
 
 
+# ---------------------------------------------------------------------------
+# Helpers que montam métricas e execuções falsas
+# ---------------------------------------------------------------------------
 def class_metrics(tp, fp, fn, boxes, ap50):
+    """Monta as métricas de uma classe no formato do gate.
+
+    Parâmetros:
+        tp, fp, fn (int): acertos, falsos positivos e omissões.
+        boxes (int): caixas humanas da classe.
+        ap50 (float | None): AP50 da classe.
+    Retorna: dict com tp/fp/fn/human_boxes/precision/recall/ap50; recall e precisão
+    ficam ``None`` quando o denominador é zero ("não medido").
+    """
     recall = round(tp / boxes, 4) if boxes else None
     precision = round(tp / (tp + fp), 4) if tp + fp else None
     return {"tp": tp, "fp": fp, "fn": fn, "human_boxes": boxes, "precision": precision, "recall": recall, "ap50": ap50}
 
 
 def gate_metrics(names, measured):
-    """Métricas no formato do gate: classes não medidas ficam com zeros e None."""
+    """Métricas no formato do gate: classes não medidas ficam com zeros e None.
+
+    Parâmetros:
+        names (list[str]): todas as classes da taxonomia.
+        measured (dict): nome -> (tp, fp, fn, boxes, ap50) das classes medidas.
+    Retorna: dict nome -> métricas, mais ``_total`` (somas, precisão, recall, mAP50 médio
+    das classes com AP e ``classes_measured``).
+    """
     metrics = {name: class_metrics(0, 0, 0, 0, None) for name in names}
     for name, values in measured.items():
         metrics[name] = class_metrics(*values)
+    # Totais somados sobre todas as classes; mAP50 = média dos AP das classes com AP.
     tp = sum(item["tp"] for item in metrics.values())
     fp = sum(item["fp"] for item in metrics.values())
     fn = sum(item["fn"] for item in metrics.values())
@@ -47,9 +104,22 @@ def gate_metrics(names, measured):
 
 
 def write_fake_run(root, name, epochs, with_gpu_curve):
+    """Cria uma execução de treino falsa em ``root/runs/<name>``.
+
+    Grava ``fit/results.csv`` (mAP50 = 0.1 x época), ``execution.json``, ``summary.json``
+    e, opcionalmente, ``gpu_eval/eval_curve.jsonl`` com 3 linhas válidas, 1 de erro e 1 truncada.
+
+    Parâmetros:
+        root (Path): raiz temporária.
+        name (str): nome da pasta da execução (ex.: ``RUN_A``).
+        epochs (int): quantidade de épocas no CSV.
+        with_gpu_curve (bool): se grava a curva de avaliação GPU.
+    Retorna: Path da execução.
+    """
     run = root / "runs" / name
     (run / "fit").mkdir(parents=True)
     rows = [CSV_HEADER]
+    # mAP50 cresce 0.1 por época; assim a melhor época é sempre a última.
     for epoch in range(1, epochs + 1):
         map50 = 0.1 * epoch
         rows.append(f"{epoch},{40.0 * epoch},1.9,6.3,0.01,{0.3},{0.2},{map50},{map50 / 2},3.1,15.9,0.04")
@@ -58,6 +128,7 @@ def write_fake_run(root, name, epochs, with_gpu_curve):
         "parameters": {"epochs": 80, "imgsz": 640, "batch": 4}, "runtime": {"checkpoint": "models\\yolo26l.pt"}}),
         encoding="utf-8")
     (run / "summary.json").write_text(json.dumps({"state": "completed"}), encoding="utf-8")
+    # Curva GPU: 3 linhas válidas, 1 com "error" e 1 truncada (as 2 últimas devem ser ignoradas).
     if with_gpu_curve:
         (run / "gpu_eval").mkdir()
         lines = [json.dumps({"epoch": epoch, "split": "test", "map50": 0.05 * epoch, "precision": 0.4, "recall": 0.1,
@@ -73,15 +144,24 @@ class ModelReportTests(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        """Grava gate, comparação, avaliação e duas execuções falsas e monta o relatório uma vez.
+
+        Atributos de classe: ``temporary``, ``config``, ``names``, ``gate``, ``compare``,
+        ``eval``, ``run_a``, ``run_b``, ``output``, ``models`` e ``html``.
+        Retorna: None.
+        """
         cls.temporary = TemporaryDirectory()
         root = Path(cls.temporary.name)
         base = load_config()
         cls.config = replace(base, root=root)
         cls.names = detection_names(load_taxonomy(base.taxonomy_path))
         names = cls.names
+        # Métricas por classe (tp, fp, fn, caixas, ap50): "measured" = modelo atual (A),
+        # "candidate" = modelo candidato (B).
         measured = {names[1]: (0, 0, 1, 1, 0.0), names[3]: (3, 1, 2, 5, 0.61), names[5]: (4, 2, 8, 12, 0.35),
                     names[2]: (0, 3, 0, 0, None)}
         candidate = {names[1]: (1, 0, 0, 1, 1.0), names[3]: (2, 2, 3, 5, 0.42), names[5]: (6, 5, 6, 12, 0.44)}
+        # 1. gate.json: A citado pelo caminho Windows absoluto, B pelo relativo com "/".
         cls.gate = root / "gate.json"
         cls.gate.write_text(json.dumps({
             "conf": 0.15, "splits": ["test"], "images_evaluated": 9, "images_excluded_seen_in_training": 21,
@@ -91,6 +171,7 @@ class ModelReportTests(unittest.TestCase):
             "baseline": {"weights": WEIGHTS_A_WINDOWS, "sha256": SHA_A, "metrics": gate_metrics(names, measured)},
             "candidate": {"weights": WEIGHTS_B, "sha256": SHA_B, "metrics": gate_metrics(names, candidate)},
         }, ensure_ascii=False), encoding="utf-8")
+        # 2. compare_test.json: A citado pelo caminho relativo com "\".
         cls.compare = root / "compare_test.json"
         cls.compare.write_text(json.dumps({
             "dataset": "data\\pilot\\ceasa_v9\\dataset.yaml", "pilot_sha256": "f" * 64, "conf": 0.15, "iou_match": 0.5,
@@ -104,6 +185,7 @@ class ModelReportTests(unittest.TestCase):
                     "val": {"images": 7, "truth": 12, "found": 1, "suggestions": 28, "correct": 1},
                     "train (visto no treino)": {"images": 21, "truth": 114, "found": 83, "suggestions": 205, "correct": 83}}},
             ]}, ensure_ascii=False), encoding="utf-8")
+        # 3. eval_por_classe_test.json: métricas globais e por classe dos dois pesos.
         cls.eval = root / "eval_por_classe_test.json"
         cls.eval.write_text(json.dumps({"conf": 0.15, "iou": 0.5, "models": {
             WEIGHTS_A_RELATIVE: {"test": {
@@ -116,6 +198,7 @@ class ModelReportTests(unittest.TestCase):
                 "per_class_ultralytics": {names[5]: {"P": 0.2, "R": 0.5, "mAP50": 0.3}},
                 "per_class_at_conf": {names[5]: {"truth": 12, "tp": 6, "fp": 5, "fn": 6}}}},
         }}, ensure_ascii=False), encoding="utf-8")
+        # 4. Duas execuções falsas e o relatório completo, lido uma vez para todos os testes.
         cls.run_a = write_fake_run(root, RUN_A, 5, with_gpu_curve=True)
         cls.run_b = write_fake_run(root, RUN_B, 5, with_gpu_curve=False)
         cls.output = build_model_report(cls.config, root / "report", gates=[str(cls.gate)], compares=[cls.compare],
@@ -125,9 +208,11 @@ class ModelReportTests(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        """Apaga a pasta temporária compartilhada. Retorna: None."""
         cls.temporary.cleanup()
 
     def test_writes_json_html_and_every_chart(self):
+        """Grava models.json, report.html e cada gráfico esperado como PNG de largura >= 300."""
         self.assertTrue((self.output / "models.json").is_file())
         self.assertTrue((self.output / "report.html").is_file())
         for name in EXPECTED_CHARTS:
@@ -139,6 +224,10 @@ class ModelReportTests(unittest.TestCase):
         self.assertEqual(self.models["charts"], list(EXPECTED_CHARTS))
 
     def test_same_model_gets_one_label_and_one_color_across_inputs(self):
+        """O mesmo peso citado por caminhos diferentes vira UM modelo, com um rótulo e uma cor.
+
+        Importa porque cada máquina grava o caminho de um jeito (Windows x relativo).
+        """
         models = self.models["models"]
         self.assertEqual(len(models), 2)
         self.assertEqual([model["label"] for model in models], ["aaaaaaaa · best.pt", "bbbbbbbb · best.pt"])
@@ -152,6 +241,10 @@ class ModelReportTests(unittest.TestCase):
         self.assertEqual([run["model"] for run in self.models["runs"]], [SHA_A, SHA_B])
 
     def test_normalized_gate_compare_eval_and_runs(self):
+        """Gate, comparação, avaliação e execuções são normalizados para os IDs (sha256) dos modelos.
+
+        Também confere caminhos com "/" e que a curva GPU ignora linhas de erro e truncadas.
+        """
         gate = self.models["gates"][0]
         self.assertEqual((gate["baseline"], gate["candidate"]), (SHA_A, SHA_B))
         self.assertFalse(gate["adopt"])
@@ -179,6 +272,7 @@ class ModelReportTests(unittest.TestCase):
         self.assertEqual(run_b["gpu_eval"], [])
 
     def test_html_is_standalone_and_in_portuguese(self):
+        """O HTML é autônomo (sem link/script, imagens em base64) e está em português."""
         self.assertIn("aaaaaaaa · best.pt", self.html)
         self.assertIn("bbbbbbbb · best.pt", self.html)
         self.assertIn("excluídas", self.html)
@@ -194,6 +288,7 @@ class ModelReportTests(unittest.TestCase):
         self.assertIn("E:/Acadêmico/sistema_ia/runs/", self.html)
 
     def test_notes_cover_gate_decision_and_poorly_measured_classes(self):
+        """As notas explicam a decisão do gate, as fotos excluídas e as classes pouco medidas."""
         notes = self.models["notes"]
         self.assertIn("Nenhum resultado aqui aprova um modelo para produção: a avaliação usa uma única edificação.", notes)
         self.assertTrue(any(note.startswith("Fotos vistas no treino") and "(21 excluídas)" in note for note in notes))
@@ -205,6 +300,7 @@ class ModelReportTests(unittest.TestCase):
         self.assertNotIn(f"{self.names[5]} (12)", few)
 
     def test_runs_none_discovers_pilot_runs_under_root(self):
+        """Sem ``runs`` nem pasta de saída, as execuções são descobertas em ``root/runs``."""
         output = build_model_report(self.config, gates=[self.gate])
         self.addCleanup(lambda: None)
         self.assertEqual(output.parent, Path(self.config.root) / "runs")
@@ -214,6 +310,7 @@ class ModelReportTests(unittest.TestCase):
         self.assertIn("training_curves.png", models["charts"])
 
     def test_gpu_chart_absent_when_no_run_has_the_curve(self):
+        """Sem curva GPU (e sem comparação), os gráficos correspondentes não são gerados."""
         output = build_model_report(self.config, Path(self.config.root) / "report_sem_gpu", gates=[self.gate],
                                     runs=[self.run_b])
         self.assertFalse((output / "gpu_eval_curves.png").exists())
@@ -223,6 +320,7 @@ class ModelReportTests(unittest.TestCase):
         self.assertNotIn("compare_found.png", models["charts"])
 
     def test_refuses_without_any_data(self):
+        """Sem nenhum dado de entrada o relatório é recusado e nada é criado."""
         with self.assertRaises(ValueError):
             build_model_report(self.config, Path(self.config.root) / "report_vazio", runs=[])
         with TemporaryDirectory() as empty:
@@ -231,9 +329,15 @@ class ModelReportTests(unittest.TestCase):
             self.assertFalse((Path(empty) / "runs").exists())
 
     def test_measurement_is_primary_and_older_inputs_become_archive(self):
+        """Com measurement.json, a medição vira a seção principal e gates/comparações viram "arquivo".
+
+        Confere rótulos com o regime (janelas/inteira), cores vizinhas para o mesmo peso,
+        ordem dos gráficos, estratos e o intervalo de confiança de Wilson no HTML.
+        """
         names = self.names
         root = Path(self.config.root)
         series = []
+        # Três séries de medição: A e B em janelas (fotos fatiadas) e B em foto inteira.
         for weights, sha, regime, measured in (
                 (WEIGHTS_A_WINDOWS, SHA_A, "janelas", {names[3]: (3, 1, 2, 5, 0.61), names[5]: (4, 2, 8, 12, 0.35),
                                                         names[1]: (1, 0, 1, 2, 0.5), names[0]: (0, 4, 0, 0, None)}),
@@ -245,6 +349,7 @@ class ModelReportTests(unittest.TestCase):
             series.append({"weights": weights, "sha256": sha, "source_checkpoint": weights, "runtime": "pytorch",
                            "regime": regime, "metrics": metrics,
                            "strata": {"fotos_fatiadas": metrics, "fotos_inteiras": gate_metrics(names, {names[5]: (1, 1, 2, 3, 0.3)})}})
+        # measurement.json com as três séries, estratos e a quantidade de fotos excluídas.
         measurement = root / "measurement.json"
         measurement.write_text(json.dumps({
             "schema_version": 1, "dataset": "data\\pilot\\ceasa_v9\\dataset.yaml", "pilot_sha256": "f" * 64,
@@ -283,6 +388,7 @@ class ModelReportTests(unittest.TestCase):
         self.assertTrue(any("mesmas fotos" in note for note in notes))
 
     def test_catalog_merges_windows_and_relative_paths_without_sha(self):
+        """``ModelCatalog`` junta caminhos Windows e relativos do mesmo peso, mesmo antes do sha256."""
         catalog = ModelCatalog()
         first = catalog.register(WEIGHTS_A_WINDOWS)
         self.assertEqual(catalog.register(WEIGHTS_A_RELATIVE), first)

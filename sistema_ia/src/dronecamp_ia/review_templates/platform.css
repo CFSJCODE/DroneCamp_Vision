@@ -10,13 +10,39 @@
    Os nomes --primary, --ai, --ok, --warn, --bad, --muted, --line-strong e
    --chart-grid também são lidos pelo JavaScript (gráficos e barras).
    --------------------------------------------------------------------------- */
+/* ---------------------------------------------------------------------------
+   COMO ESTE ARQUIVO É USADO
+   review_render.build_page lê este arquivo e o embute dentro da tag style do index.html
+   (no lugar do marcador do CSS). Não há outro CSS: tudo o que a plataforma mostra sai daqui.
+   ATENCAO: não escreva neste arquivo a tag de fechamento de style nem os nomes dos marcadores de
+   substituição (nem em comentário): build_page recusa o arquivo ou troca o texto no lugar errado.
+   ATENCAO: algumas cores também estão fixas no platform.js: LOSS_SERIES e METRIC_SERIES (gráficos)
+   usam os hex do tema claro (#2457F5, #7C3AED, #D97706, #16A34A). Ao trocar a paleta, mude lá também.
+   Mapa das seções deste arquivo (procure pelo título):
+     Tokens (:root e tema escuro) / Base / Estrutura / Cartões e grades / Chips e estados / Botões /
+     Formulários / Tabelas / Barras e gráficos / Revisão / Treinamento, monitoramento, modelos /
+     Inspeções, upload e laudos / Toast / Responsivo.
+   EXTENSAO: estilo de um componente novo = um bloco na seção mais próxima, usando SEMPRE as variáveis
+   (var(--surface), var(--line), var(--radius-card)...) e nunca cores fixas; assim ele funciona nos dois temas.
+   --------------------------------------------------------------------------- */
+/* ============================== Tokens do tema claro (:root) ==============================
+   Variáveis CSS que todo o resto usa. Mudar um valor aqui muda a página inteira de uma vez. */
 :root {
   color-scheme: light;
+  /* Largura da barra lateral no computador (coluna 1 da grade .app).
+       EXTENSAO: para alargar ou estreitar a barra, mude só este valor (abaixo de 860 px ela vira menu). */
   --sidebar: 248px;
+  /* Famílias de fonte: texto (Inter), títulos (Manrope) e código/caminhos (Cascadia/Consolas).
+       As alternativas depois da primeira são usadas quando o Google Fonts não carrega (sem internet).
+       EXTENSAO: trocar a fonte = mude aqui e o link do Google Fonts no head do index.html. */
   --font-body: "Inter", "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
   --font-display: "Manrope", "Segoe UI Variable Display", "Segoe UI", system-ui, -apple-system, sans-serif;
   --font-mono: "Cascadia Code", "Cascadia Mono", Consolas, ui-monospace, monospace;
 
+  /* Raios de borda: controles (botões, campos), cartões e pílulas (chips, contadores).
+       Movimento: --ease (curva de aceleração), --fast e --normal (duração das transições, em segundos).
+       EXTENSAO: cantos mais retos ou mais redondos = mude só estes três raios; mantenha cartão > controle
+       para não perder a hierarquia visual. */
   --radius-ctl: 8px;
   --radius-card: 12px;
   --radius-pill: 999px;
@@ -24,6 +50,11 @@
   --fast: .12s;
   --normal: .2s;
 
+  /* Superfícies e bordas: --bg (fundo da página), --bg-sidebar (barra lateral escura), --surface (cartões),
+       --surface-2/--surface-3 (fundos internos, um pouco mais escuros), --line/--line-strong (bordas fina e
+       forte) e --shadow-1/--shadow-2 (sombra dos cartões e de elementos flutuantes).
+       EXTENSAO: mude os tons mantendo a ordem de claridade bg < surface e surface-2 < surface-3;
+       se trocar aqui, ajuste o mesmo grupo no tema escuro abaixo. */
   --bg: #F4F6F9;
   --bg-sidebar: #0F172A;
   --surface: #FFFFFF;
@@ -34,18 +65,33 @@
   --shadow-1: 0 1px 2px rgba(15, 23, 42, .05), 0 1px 3px rgba(15, 23, 42, .08);
   --shadow-2: 0 8px 24px rgba(15, 23, 42, .10);
 
+  /* Texto: --ink (principal), --ink-2 (secundário), --muted (dicas e legendas), --disabled-ink
+       (placeholder e desabilitado) e --subtle-hover (fundo leve ao passar o mouse).
+       ATENCAO: mantenha contraste suficiente de --ink e --muted sobre --surface (legibilidade). */
   --ink: #0F172A;
   --ink-2: #334155;
   --muted: #64748B;
   --disabled-ink: #94A3B8;
   --subtle-hover: rgba(15, 23, 42, .04);
 
+  /* Cor da marca (azul): botões principais, links, seleção e foco. --primary-hover é o tom do mouse
+       por cima, --primary-ink o texto sobre o azul e --primary-soft/--primary-soft-2 os fundos claros.
+       EXTENSAO: trocar a cor da marca = mude estes cinco valores (e os equivalentes no tema escuro);
+       o degradê do logotipo (.brand .mark) e as séries dos gráficos no platform.js usam o hex direto. */
   --primary: #2457F5;
   --primary-hover: #1A47D1;
   --primary-ink: #FFFFFF;
   --primary-soft: rgba(36, 87, 245, .10);
   --primary-soft-2: rgba(36, 87, 245, .18);
 
+  /* Cores de estado, cada uma com a versão -soft (fundo translúcido):
+       --ok (verde: concluído, foto negativa), --warn (âmbar: atenção, ambígua), --bad (vermelho: erro,
+       foto com ocorrência), --info (azul claro: avisos informativos) e --ai (violeta: tudo o que veio da IA).
+       --chart-grid é a cor das linhas de grade dos gráficos SVG.
+       ATENCAO: o violeta (--ai) é reservado às sugestões da IA não validadas; não use em outra coisa,
+       senão o usuário perde a distinção entre decisão humana e sugestão.
+       ATENCAO: --primary, --ai, --ok, --warn, --bad, --muted, --line-strong, --chart-grid, --ink-2 e
+       --primary-soft também são lidos pelo platform.js (renderHome e lineChart); não renomeie. */
   --ok: #16A34A;      --ok-soft: rgba(22, 163, 74, .12);
   --warn: #D97706;    --warn-soft: rgba(217, 119, 6, .14);
   --bad: #DC2626;     --bad-soft: rgba(220, 38, 38, .12);
@@ -53,9 +99,12 @@
   --ai: #7C3AED;      --ai-soft: rgba(124, 58, 237, .12);  --ai-hover: #6D28D9;
   --chart-grid: #E5E9F0;
 
+  /* Anel de foco do teclado (acessibilidade): anel externo na cor da marca e interno na cor do fundo. */
   --focus-outer: #2457F5;
   --focus-inner: #FFFFFF;
 
+  /* Cores da barra lateral (sempre escura, nos dois temas; por isso o tema escuro não as redefine):
+       texto, texto forte, texto apagado, fundo ao passar o mouse, item ativo e linha divisória. */
   --sidebar-ink: #CBD5E1;
   --sidebar-ink-strong: #FFFFFF;
   --sidebar-muted: #7C8BA3;
@@ -63,6 +112,11 @@
   --sidebar-active: rgba(36, 87, 245, .22);
   --sidebar-line: rgba(255, 255, 255, .08);
 }
+/* ============================== Tokens do tema escuro ==============================
+   Vale quando o html tem data-theme="dark" (applyTheme() no platform.js, botão #themeToggle).
+   Redefine SÓ as cores; tamanhos, fontes e raios continuam os de :root.
+   EXTENSAO: toda variável de cor nova criada em :root precisa de um valor aqui também, senão o tema
+   escuro herda o tom claro. Mantenha a mesma ordem dos grupos do :root para comparar lado a lado. */
 [data-theme="dark"] {
   color-scheme: dark;
   --bg: #0B1220;
@@ -79,6 +133,7 @@
   --muted: #8392AA;
   --disabled-ink: #5B6A82;
   --subtle-hover: rgba(232, 238, 248, .06);
+  /* Marca e estados no escuro: tons mais claros e fundos -soft um pouco mais fortes para manter contraste. */
   --primary: #5B8CFF;
   --primary-hover: #7AA2FF;
   --primary-ink: #06112A;
@@ -95,6 +150,11 @@
 }
 
 /* ============================== Base ============================== */
+/* Regras globais: box-sizing, fonte e cor do corpo, títulos (h1 a h3), parágrafos, links e
+   classes utilitárias (.hidden, .muted, .small-text, .mono, .num, .cell-bad/.cell-warn, .sr-only) e o foco.
+   ATENCAO: .hidden usa !important porque o platform.js mostra e esconde elementos alternando essa classe;
+   não remova o !important. .sr-only esconde o texto na tela mas mantém para leitores de tela.
+   EXTENSAO: tamanho geral do texto = mude o 14px do body; títulos = h1/h2/h3 abaixo. */
 *, *::before, *::after { box-sizing: border-box }
 html { -webkit-text-size-adjust: 100% }
 body {
@@ -120,11 +180,14 @@ a:hover { color: var(--primary-hover) }
 :focus-visible { outline: none; box-shadow: 0 0 0 2px var(--focus-inner), 0 0 0 4px var(--focus-outer) }
 
 /* ============================== Estrutura ============================== */
+/* Grade da página: barra lateral (largura --sidebar) + área principal. */
 .app { display: grid; grid-template-columns: var(--sidebar) minmax(0, 1fr); min-height: 100vh }
+/* Barra lateral (nav#sidebar): fixa no topo ao rolar (sticky), coluna com logotipo, grupos e rodapé. */
 .sidebar {
   position: sticky; top: 0; height: 100vh; overflow: auto; background: var(--bg-sidebar); color: var(--sidebar-ink);
   display: flex; flex-direction: column; padding: 18px 14px 14px; gap: 18px;
 }
+/* Logotipo: .brand (link) e .mark (quadrado "DV" com degradê azul para violeta, cores fixas da marca). */
 .brand { display: flex; align-items: center; gap: 10px; padding: 2px 6px; color: var(--sidebar-ink-strong); text-decoration: none }
 .brand .mark {
   width: 36px; height: 36px; border-radius: 10px; flex: none; display: grid; place-items: center;
@@ -133,6 +196,9 @@ a:hover { color: var(--primary-hover) }
 }
 .brand b { display: block; font: 700 15px/1.15 var(--font-display) }
 .brand small { display: block; color: var(--sidebar-muted); font-size: 11.5px; margin-top: 2px }
+/* Itens de menu (.nav-item): o ativo é marcado por aria-current="page" (posto por showView()).
+   .count é o contador à direita (#navInspections; .count.ai em violeta para #navSuggestions) e
+   .live-dot é o ponto verde pulsante de treino em andamento (#liveDot). */
 .nav-group { display: flex; flex-direction: column; gap: 2px }
 .nav-group .nav-title { font-size: 10.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--sidebar-muted); padding: 6px 10px 4px }
 .nav-item {
@@ -146,6 +212,7 @@ a:hover { color: var(--primary-hover) }
 .nav-item .count { margin-left: auto; font-size: 11px; font-weight: 600; background: rgba(255, 255, 255, .10); border-radius: var(--radius-pill); padding: 1px 7px; color: var(--sidebar-ink-strong) }
 .nav-item .count.ai { background: rgba(167, 139, 250, .25); color: #DDD6FE }
 .nav-item .live-dot { margin-left: auto; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px rgba(52, 211, 153, .25); animation: pulse 1.6s infinite }
+/* Rodapé da barra lateral: chip de modo (.status.ok/.bad conforme setMode()), versão e botão de tema. */
 .sidebar .spacer { flex: 1 }
 .sidebar-foot { border-top: 1px solid var(--sidebar-line); padding-top: 12px; display: grid; gap: 8px; min-width: 0 }
 .sidebar-foot .status { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--sidebar-ink); padding: 4px 6px }
@@ -157,6 +224,8 @@ a:hover { color: var(--primary-hover) }
 .theme-btn:hover { background: var(--sidebar-hover); color: var(--sidebar-ink-strong) }
 .theme-btn svg { width: 14px; height: 14px }
 
+/* Área principal e cabeçalho: .topbar fica fixo no topo com fundo translúcido; .top-actions agrupa o
+   seletor de inspeção, o revisor e o botão Salvar. .mobile-bar só aparece no celular (ver Responsivo). */
 .main { min-width: 0; display: flex; flex-direction: column }
 .topbar {
   position: sticky; top: 0; z-index: 20; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
@@ -168,23 +237,34 @@ a:hover { color: var(--primary-hover) }
 .top-actions select, .top-actions input { width: auto; min-width: 180px }
 #reviewPicker { max-width: 360px; text-overflow: ellipsis }
 .mobile-bar { display: none }
+/* Avisos: .notice (âmbar por padrão), .notice.info (azul) e .notice.ai (violeta, avisos sobre a IA). */
 .notice-strip { padding: 12px 24px 0; display: grid; gap: 8px }
 .notice { background: var(--warn-soft); border: 1px solid color-mix(in srgb, var(--warn) 40%, transparent); color: var(--ink); border-radius: var(--radius-ctl); padding: 9px 12px; font-size: 12.5px; margin: 0 }
 .notice.info { background: var(--info-soft); border-color: color-mix(in srgb, var(--info) 40%, transparent) }
 .notice.ai { background: var(--ai-soft); border-color: color-mix(in srgb, var(--ai) 40%, transparent) }
+/* Seções: cada .view fica escondida; showView() põe .active na seção aberta (com animação fade).
+   EXTENSAO: espaçamento das bordas da página = os paddings de main, .notice-strip, .topbar e .footer
+   (mude todos juntos para manter o alinhamento; no celular eles são redefinidos em Responsivo). */
 main { padding: 20px 24px 40px; flex: 1 }
 .view { display: none; animation: fade .18s var(--ease) }
 .view.active { display: block }
 .footer { padding: 14px 24px 24px; color: var(--muted); font-size: 12px; border-top: 1px solid var(--line) }
+/* Animações: fade (entrada das seções) e pulse (ponto de treino ao vivo e .chip.live). */
 @keyframes fade { from { opacity: 0; transform: translateY(3px) } to { opacity: 1; transform: none } }
 @keyframes pulse { 0%, 100% { box-shadow: 0 0 0 3px rgba(52, 211, 153, .25) } 50% { box-shadow: 0 0 0 6px rgba(52, 211, 153, .08) } }
 
 /* ============================== Cartões e grades ============================== */
+/* Cartão (.card): o bloco básico de toda seção. .card-head é o cabeçalho com título à esquerda e ações
+   à direita; .section-title é a versão compacta usada no inspetor da revisão.
+   EXTENSAO: espaçamento interno dos cartões = o padding de .card (16px); entre cartões = margin-top. */
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-card); padding: 16px; box-shadow: var(--shadow-1); min-width: 0 }
 .card + .card { margin-top: 16px }
 .card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 12px }
 .card-head p { margin: 2px 0 0; color: var(--muted); font-size: 12.5px }
 .section-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px }
+/* Grades: .grid.two (duas colunas que quebram abaixo de 340 px cada), .grid.halves, .grid.wide-first
+   (2/3 + 1/3, vira uma coluna abaixo de 1100 px) e .grid.kpis (indicadores do Início).
+   EXTENSAO: layout novo = crie .grid.(nome) aqui com grid-template-columns; o espaço entre itens vem do gap de .grid. */
 .grid { display: grid; gap: 16px }
 .grid.two { grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)) }
 .grid.halves { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) }
@@ -192,17 +272,23 @@ main { padding: 20px 24px 40px; flex: 1 }
 @media (max-width: 1100px) { .grid.wide-first { grid-template-columns: 1fr } }
 .grid.kpis { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)) }
 .grid .card + .card { margin-top: 0 }
+/* Indicadores (KPIs) do Início: rótulo, valor grande, dica; .kpi.accent tem fundo azul suave e .kpi.ai valor violeta. */
 .kpi .label { font-size: 12px; color: var(--muted); font-weight: 500 }
 .kpi .value { font: 700 28px/1.1 var(--font-display); margin: 6px 0 4px; letter-spacing: -.02em; font-variant-numeric: tabular-nums }
 .kpi .hint { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
 .kpi.accent { background: linear-gradient(135deg, var(--primary-soft), transparent 70%) }
 .kpi.ai .value { color: var(--ai) }
+/* Barra de progresso: o elemento i interno recebe a largura em % pelo platform.js; .progress.ok fica verde. */
 .progress { height: 6px; background: var(--surface-3); border-radius: var(--radius-pill); overflow: hidden; margin-top: 8px }
 .progress i { display: block; height: 100%; background: var(--primary); border-radius: inherit; transition: width var(--normal) var(--ease) }
 .progress.ok i { background: var(--ok) }
+/* Estado vazio (.empty): caixa tracejada com texto centralizado quando não há dados. */
 .empty { padding: 20px; text-align: center; color: var(--muted); border: 1px dashed var(--line-strong); border-radius: var(--radius-ctl); font-size: 13px }
 
 /* ============================== Chips e estados ============================== */
+/* Chips: etiquetas arredondadas de estado. Variantes: .ok, .warn, .bad, .info/.primary, .ai, .neutral;
+   .chip.live faz o ponto pulsar.
+   EXTENSAO: variante nova = .chip.(nome) { background: var(--x-soft); color: var(--x) } usando um par de tokens. */
 .chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px; border-radius: var(--radius-pill); font-size: 11.5px; font-weight: 600; line-height: 18px; background: var(--surface-3); color: var(--ink-2); white-space: nowrap }
 .chip .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor }
 .chip.ok { background: var(--ok-soft); color: var(--ok) }
@@ -214,6 +300,12 @@ main { padding: 20px 24px 40px; flex: 1 }
 .chip.live .dot { animation: pulse 1.6s infinite }
 
 /* ============================== Botões ============================== */
+/* Botões: estilo padrão para todo button e .btn, exceto os que têm estilo próprio (.nav-item,
+   .theme-btn, .q-item, .box-item, por isso a lista de :not()). Variantes: .primary (azul, ação principal),
+   .ai (violeta, ações da IA), .ghost (sem borda), .bad/.danger (destrutivo), .small e .icon (quadrado).
+   ATENCAO: se criar outro botão com visual próprio, acrescente :not(.classe) nas três regras abaixo,
+   senão o estilo padrão se mistura ao novo.
+   EXTENSAO: variante nova = button.(nome), .btn.(nome) { background/border-color/color com tokens }. */
 button, .btn { font: 500 13px/1.2 var(--font-body) }
 button:not(.nav-item):not(.theme-btn):not(.q-item):not(.box-item), .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 14px; border-radius: var(--radius-ctl);
@@ -234,6 +326,7 @@ button.bad:hover:not(:disabled) { background: var(--bad-soft) }
 button.small, .btn.small { padding: 5px 10px; font-size: 12px }
 button.icon { padding: 6px; width: 32px; height: 32px }
 button svg, .btn svg { width: 16px; height: 16px; flex: none }
+/* Linha de botões (.row-actions) e atalhos do Início (.quick-actions, grade de cartões clicáveis). */
 .row-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px }
 .quick-actions { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px }
 .quick-actions button, .quick-actions .btn { justify-content: flex-start; padding: 12px 14px; text-align: left; border-radius: 10px; gap: 10px }
@@ -242,6 +335,10 @@ button svg, .btn svg { width: 16px; height: 16px; flex: none }
 .quick-actions span.d { display: block; font-size: 11.5px; color: var(--muted); font-weight: 400 }
 
 /* ============================== Formulários ============================== */
+/* Campos: label acima do campo; input, select e textarea ocupam a largura toda; foco com anel azul.
+   .form-grid organiza campos lado a lado (.wide ocupa a linha inteira), .checks alinha checkbox e texto,
+   .toggle e .range são os controles da barra de ferramentas da revisão e .field-help é a dica abaixo do campo.
+   EXTENSAO: altura e espaçamento dos campos = padding de input/select/textarea e margin de label. */
 label { display: block; font-size: 12px; font-weight: 500; color: var(--ink-2); margin: 10px 0 4px }
 input, select, textarea {
   width: 100%; font: 13px/1.4 var(--font-body); color: var(--ink); background: var(--surface); border: 1px solid var(--line-strong);
@@ -265,6 +362,8 @@ input[type="color"] { width: 48px; height: 32px; padding: 2px 3px }
 .field-help { font-size: 11.5px; color: var(--muted); margin: 3px 0 0 }
 
 /* ============================== Tabelas ============================== */
+/* Tabelas: .table-wrap dá borda e rolagem horizontal; th em maiúsculas pequenas; tr.clickable
+   (linhas clicáveis, como as execuções de treino) e tr[aria-selected="true"] (linha selecionada). */
 .table-wrap { overflow: auto; border: 1px solid var(--line); border-radius: var(--radius-ctl) }
 table { width: 100%; border-collapse: collapse; font-size: 12.5px }
 th { text-align: left; font-weight: 600; color: var(--muted); font-size: 11.5px; text-transform: uppercase; letter-spacing: .04em; padding: 9px 12px; background: var(--surface-2); border-bottom: 1px solid var(--line); white-space: nowrap }
@@ -277,6 +376,9 @@ tr[aria-selected="true"] td { background: var(--primary-soft) }
 td .empty { border: 0; padding: 14px }
 
 /* ============================== Barras e gráficos ============================== */
+/* Barras horizontais do Início (barRow() no platform.js): a cor da classe chega pela variável --c,
+   definida inline pelo JS; i.ai é a parte listrada das sugestões da IA.
+   Gráficos SVG (lineChart()): .chart, legenda, tooltip; as linhas usam as cores de LOSS_SERIES/METRIC_SERIES. */
 .bar-row { display: grid; grid-template-columns: minmax(120px, 190px) 1fr auto; gap: 10px; align-items: center; padding: 5px 0; font-size: 12.5px }
 .bar-row .name { display: flex; align-items: center; gap: 8px; min-width: 0 } .bar-row .name span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
 .bar-row .swatch { width: 10px; height: 10px; border-radius: 3px; background: var(--c); flex: none }
@@ -293,7 +395,11 @@ td .empty { border: 0; padding: 14px }
 .chart .tooltip.multi { white-space: pre-line; line-height: 1.5 }
 
 /* ============================== Revisão ============================== */
+/* Grade da revisão: fila (290 px), foto (resto) e inspetor (330 px). Em telas menores ver Responsivo.
+   EXTENSAO: largura das colunas laterais = os dois valores em px aqui e nas @media de 1200 px e 1000 px. */
 .review-grid { display: grid; grid-template-columns: 290px minmax(0, 1fr) 330px; gap: 16px; align-items: start }
+/* Fila de fotos: .queue-card fica fixo ao rolar (top: 78px = altura aproximada da .topbar);
+   cada .q-item é uma foto (miniatura, título, situação) e .q-state é o ponto colorido da decisão. */
 .queue-card { position: sticky; top: 78px; max-height: calc(100vh - 100px); display: flex; flex-direction: column }
 .queue { overflow: auto; margin: 8px -6px 0; padding: 0 6px; display: grid; gap: 4px; flex: 1 }
 .q-item { display: grid; grid-template-columns: 52px 1fr 10px; gap: 10px; align-items: center; width: 100%; text-align: left; border: 1px solid transparent; background: transparent; border-radius: 10px; padding: 6px; cursor: pointer; color: var(--ink) }
@@ -302,29 +408,43 @@ td .empty { border: 0; padding: 14px }
 .q-item img { width: 52px; height: 40px; object-fit: cover; border-radius: 6px; background: var(--surface-3) }
 .q-item .q-title { font-size: 12.5px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
 .q-item small { display: block; color: var(--muted); font-size: 11px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+/* Cores do ponto da decisão: positiva = --bad (tem ocorrência), negativa = --ok, ambígua = --warn,
+   excluída = --muted. São as mesmas de triageColors em renderHome() no platform.js.
+   EXTENSAO: situação nova de decisão = mais uma regra .q-state.(situação) aqui e a cor em triageColors. */
 .q-state { width: 8px; height: 8px; border-radius: 50%; background: var(--line-strong) }
 .q-state.positive { background: var(--bad) } .q-state.negative { background: var(--ok) } .q-state.ambiguous { background: var(--warn) } .q-state.excluded { background: var(--muted) }
+/* Palco da foto: barra com título e setas (.stage-bar) e barra de ferramentas (.toolbar, .sep). */
 .stage-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 10px }
 .stage-title { flex: 1; min-width: 0 } .stage-title p { margin: 0; color: var(--muted); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
 .toolbar { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 8px 10px; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius-ctl); margin-bottom: 10px }
 .toolbar .sep { width: 1px; height: 20px; background: var(--line-strong) }
+/* Visualizador da foto: fundo sempre escuro (#0B1220) para a foto se destacar nos dois temas.
+   O canvas recebe transform (zoom) a partir do canto 0 0; .zoomed/.panning/.drawing mudam o cursor
+   (classes postas por applyZoom(), pelo arrastar e por toggleDrawing()).
+   ATENCAO: touch-action: none no canvas é necessário para desenhar caixas com o dedo sem rolar a página. */
 .viewer { background: #0B1220; border-radius: 10px; overflow: hidden; display: grid; place-items: center; min-height: 240px; border: 1px solid var(--line) }
 .viewer canvas { max-width: 100%; max-height: 72vh; display: block; touch-action: none; transform-origin: 0 0 }
 .viewer.zoomed:not(.drawing) canvas { cursor: grab } .viewer.panning canvas { cursor: grabbing }
 .zoom-controls { display: inline-flex; align-items: center; gap: 4px }
 .zoom-value { font: 600 12px var(--font-mono); min-width: 44px; text-align: center }
 .viewer.drawing canvas { cursor: crosshair }
+/* Mensagem da revisão (#message) e status das classes; a classe .error (posta pelo JS) deixa em vermelho. */
 #message { font-size: 12.5px; color: var(--ink-2); margin: 10px 0 6px; min-height: 18px }
 #message.error, #classesStatus.error { color: var(--bad); font-weight: 600 }
+/* Observações recolhíveis (details), lista de atalhos (.shortcuts/kbd) e inspetor fixo ao rolar. */
 details { font-size: 12.5px; margin-top: 6px } details summary { cursor: pointer; color: var(--muted); font-weight: 500 } details p { margin: 6px 0 0; white-space: pre-wrap; color: var(--ink-2) }
 .shortcuts { font-size: 11.5px; color: var(--muted); margin-top: 10px } kbd { font: 11px var(--font-mono); background: var(--surface-3); border: 1px solid var(--line-strong); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px }
 .inspector { display: grid; gap: 16px; position: sticky; top: 78px } .inspector .card + .card { margin-top: 0 }
+/* Lista de caixas da foto: .box-item tem a borda esquerda na cor da classe (variável --box-color
+   definida pelo JS em renderBoxes()); .selected marca a caixa em edição. .coordinates organiza x1/y1/x2/y2. */
 .boxes { display: grid; gap: 6px; max-height: 240px; overflow: auto; margin-top: 4px }
 .box-item { display: block; width: 100%; text-align: left; border: 1px solid var(--line); border-left: 4px solid var(--box-color); background: var(--surface); border-radius: 8px; padding: 7px 10px; font: 500 12.5px var(--font-body); color: var(--ink); cursor: pointer }
 .box-item:hover { background: var(--subtle-hover) }
 .box-item.selected { background: var(--primary-soft); border-color: var(--primary) }
 .box-caption { font-family: var(--font-mono); font-size: 11px; color: var(--muted); margin-top: 2px }
 .coordinates { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 10px }
+/* Cartão de sugestão da IA (renderSuggestions()): fundo violeta suave, índice, ponto na cor da classe,
+   metadados, barra de confiança (.conf) e botões aceitar/descartar. .s-overlap avisa sobreposição com caixa existente. */
 .suggestion { border: 1px solid color-mix(in srgb, var(--ai) 35%, var(--line)); background: var(--ai-soft); border-radius: 10px; padding: 10px 12px; margin-bottom: 8px }
 .s-head { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 12.5px }
 .s-index { font: 600 10.5px var(--font-mono); color: var(--ai); background: var(--surface); border-radius: 4px; padding: 1px 5px }
@@ -334,14 +454,19 @@ details { font-size: 12.5px; margin-top: 6px } details summary { cursor: pointer
 .suggestion .actions { display: flex; gap: 6px; margin-top: 8px }
 
 /* ============================== Treinamento / monitoramento / modelos ============================== */
+/* Passos do ciclo de fine-tuning (renderCycle()): numerados por counter CSS; .step.done troca o número por ✓. */
 .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; counter-reset: step }
 .step { border: 1px solid var(--line); border-radius: 10px; padding: 12px; background: var(--surface-2); position: relative; counter-increment: step }
 .step h3 { padding-left: 28px; margin-bottom: 4px } .step h3::before { content: counter(step); position: absolute; left: 12px; top: 11px; width: 20px; height: 20px; border-radius: 50%; background: var(--primary); color: var(--primary-ink); font: 700 11px/20px var(--font-mono); text-align: center }
 .step.done h3::before { content: "✓"; background: var(--ok) }
 .step p { font-size: 12px; color: var(--muted) }
+/* Caixa de comando (comando equivalente do terminal) e log da tarefa: fundo escuro nos dois temas;
+   no tema escuro ficam ainda mais escuros para não sumir no fundo. */
 .command { position: relative; font: 11.5px/1.5 var(--font-mono); background: var(--ink); color: #DCE6F5; border-radius: 8px; padding: 10px 70px 10px 12px; white-space: pre-wrap; word-break: break-all; margin-top: 8px }
 [data-theme="dark"] .command { background: #060B14 }
 .command button { position: absolute; top: 6px; right: 6px; padding: 3px 8px; font-size: 11px; background: rgba(255, 255, 255, .12); color: #fff; border-color: transparent }
+/* Miniaturas dos gráficos do treino (#runPlots) e anel de progresso do Monitoramento (.ring, cujo
+   stroke-dashoffset é alterado por renderMonitor()); .facts é a lista de dados e .tile cada métrica. */
 .plots { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; margin-top: 14px }
 .plots a { display: block; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--surface-2); color: var(--ink-2); font-size: 11.5px; text-decoration: none }
 .plots img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; display: block } .plots span { display: block; padding: 6px 8px }
@@ -351,11 +476,13 @@ details { font-size: 12.5px; margin-top: 6px } details summary { cursor: pointer
 .facts { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; margin: 0; font-size: 12.5px } .facts dt { color: var(--muted) } .facts dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums }
 .metric-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 8px }
 .tile { border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; background: var(--surface-2) } .tile span { display: block; font-size: 11px; color: var(--muted) } .tile b { display: block; font: 700 18px var(--font-display) } .tile .delta { font-size: 11px } .tile .delta.up { color: var(--ok) } .tile .delta.down { color: var(--bad) }
+/* Log da tarefa (#jobLog) e veredito (.verdict, faixa lateral âmbar; .verdict.ok verde) usado em Modelos e no upload. */
 .log { font: 11.5px/1.45 var(--font-mono); background: var(--ink); color: #C9D4E5; border-radius: 8px; padding: 10px 12px; max-height: 260px; overflow: auto; white-space: pre-wrap; word-break: break-word; margin: 10px 0 0 }
 [data-theme="dark"] .log { background: #060B14 }
 .verdict { border-left: 4px solid var(--warn); background: var(--warn-soft); border-radius: 8px; padding: 12px 14px; font-size: 12.5px } .verdict.ok { border-color: var(--ok); background: var(--ok-soft) } .verdict ul { margin: 6px 0 0; padding-left: 18px }
 
 /* ============================== Inspeções, upload e laudos ============================== */
+/* Cartões de inspeção (inspectionCards()): .current destaca a inspeção aberta. */
 .inspection-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px }
 .inspection { border: 1px solid var(--line); border-radius: var(--radius-card); background: var(--surface); padding: 14px; box-shadow: var(--shadow-1); display: flex; flex-direction: column; gap: 8px; min-width: 0 }
 .inspection.current { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft) }
@@ -364,6 +491,8 @@ details { font-size: 12.5px; margin-top: 6px } details summary { cursor: pointer
 .inspection .meta { font-size: 12px; color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 12px }
 .inspection .nums { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; font-size: 11.5px; color: var(--muted) } .inspection .nums b { display: block; font: 700 16px var(--font-display); color: var(--ink) }
 .inspection .actions { display: flex; gap: 6px; flex-wrap: wrap; margin-top: auto }
+/* Upload: área de arrastar (.dropzone; .over enquanto arrasta arquivos por cima) e lista de arquivos
+   (.file com ícone, nome, progresso e estado). */
 .dropzone { border: 2px dashed var(--line-strong); border-radius: var(--radius-card); padding: 28px 20px; text-align: center; background: var(--surface-2); transition: border-color var(--fast), background var(--fast); cursor: pointer }
 .dropzone:hover, .dropzone.over { border-color: var(--primary); background: var(--primary-soft) }
 .dropzone svg { width: 36px; height: 36px; color: var(--primary); margin-bottom: 6px }
@@ -372,6 +501,7 @@ details { font-size: 12.5px; margin-top: 6px } details summary { cursor: pointer
 .file { display: grid; grid-template-columns: 24px 1fr auto; gap: 10px; align-items: center; font-size: 12.5px; padding: 6px 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface) }
 .file svg { width: 18px; height: 18px; color: var(--muted) } .file .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap } .file small { color: var(--muted); display: block; font-size: 11px }
 .file .progress { margin: 4px 0 0; height: 4px } .file .state { font-size: 11px; font-weight: 600; color: var(--muted) } .file .state.ok { color: var(--ok) } .file .state.bad { color: var(--bad) }
+/* Lista de downloads e laudos (.download-list/.download, definidos abaixo das regras da seção Classes). */
 .download-list { display: grid; gap: 8px }
 /* Seção Classes: amostra de cor, edição em linha e linhas inativas. */
 .class-name { display: flex; align-items: center; gap: 8px; min-width: 0 }
@@ -382,18 +512,26 @@ tr.inactive td { color: var(--muted) } tr.inactive .class-name .swatch { opacity
 .class-slug { margin-top: 3px; color: var(--muted) } .class-slug .mono { font-size: 11.5px } .class-slug input { margin: 0; padding: 3px 8px; font-size: 11.5px; max-width: 220px }
 .class-actions { display: flex; gap: 6px; justify-content: flex-end; white-space: nowrap }
 #classesTable td { vertical-align: middle }
+/* Linha de download (fileRow() e a lista fixa do index.html): ícone, texto e botão. .disclaimer é o
+   aviso violeta de limitações do laudo. */
 .download { display: grid; grid-template-columns: 36px 1fr auto; gap: 12px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface) }
 .download .ico { width: 36px; height: 36px; border-radius: 8px; display: grid; place-items: center; background: var(--primary-soft); color: var(--primary) } .download .ico svg { width: 18px; height: 18px } .download .ico.ai { background: var(--ai-soft); color: var(--ai) }
 .download b { display: block; font-size: 13px } .download small { color: var(--muted); font-size: 11.5px; overflow-wrap: anywhere }
 .disclaimer { border-left: 4px solid var(--ai); padding: 8px 12px; background: var(--ai-soft); border-radius: 8px; font-size: 12px; color: var(--ink-2) }
 
 /* ============================== Toast ============================== */
+/* Toast: aviso flutuante no canto inferior direito; a função toast() põe .show e tira depois de 3,6 s. */
 #toast { position: fixed; right: 20px; bottom: 20px; z-index: 50; display: flex; gap: 10px; align-items: center; background: var(--ink); color: var(--bg); border-radius: 10px; padding: 10px 14px; box-shadow: var(--shadow-2); transform: translateY(20px); opacity: 0; pointer-events: none; transition: transform var(--normal) var(--ease), opacity var(--normal); max-width: min(420px, calc(100vw - 40px)); font-size: 12.5px }
 #toast.show { transform: none; opacity: 1 }
 #toast .check { width: 24px; height: 24px; border-radius: 50%; background: var(--ok); color: #fff; display: grid; place-items: center; font-weight: 700; flex: none }
 #toast b { display: block } #toast span { color: color-mix(in srgb, var(--bg) 75%, transparent) }
 
 /* ============================== Responsivo ============================== */
+/* Pontos de quebra: 1200 px (colunas da revisão mais estreitas), 1000 px (revisão em uma coluna),
+   860 px (celular: barra lateral vira menu deslizante com .open, aparece a .mobile-bar e o .scrim),
+   movimento reduzido (respeita a preferência do sistema) e impressão (esconde menus e avisos).
+   ATENCAO: o valor 860 px precisa ser o mesmo em todas as regras do celular abaixo.
+   EXTENSAO: ajuste para outra largura de tela = uma @media nova aqui, sempre depois das regras normais. */
 @media (max-width: 1200px) { .review-grid { grid-template-columns: 250px minmax(0, 1fr) 300px } }
 @media (max-width: 1000px) {
   .review-grid { grid-template-columns: 1fr } .queue-card, .inspector { position: static; max-height: none } .queue { max-height: 260px }
