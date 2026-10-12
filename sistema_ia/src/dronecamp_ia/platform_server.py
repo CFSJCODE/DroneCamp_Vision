@@ -22,7 +22,10 @@ Este servidor, só da biblioteca padrão e preso a 127.0.0.1, faz isso:
 - ``POST /api/feedback``: grava o arquivo de revisão exportado na pasta da revisão;
 - ``GET/POST /api/classes``, ``PUT/DELETE /api/classes/<id>``: cadastro das classes
   (``class_catalog``): nome de exibição, cor, ativo/inativo e classes propostas,
-  gravados em ``configs/taxonomy_overrides.json`` sem tocar em ``taxonomy.json``.
+  gravados em ``configs/taxonomy_overrides.json`` sem tocar em ``taxonomy.json``;
+- Assistente IA (``ai_panel``/``ai_usage``): ``GET /api/ai/status`` e ``GET /api/ai/usage``
+  (leitura); ``POST /api/ai/settings``, ``/api/ai/key/delete``, ``/api/ai/models``,
+  ``/api/ai/provider-usage`` e ``/api/ai/chat`` (usam ou alteram a chave do ``.env``).
 
 O que não faz: aprovar dados, adotar modelos, apagar inspeções ou classes,
 reescrever a taxonomia ou inferir gravidade. Toda requisição que altera algo exige o token sorteado na partida
@@ -97,12 +100,14 @@ import threading
 from urllib.parse import parse_qs, unquote, urlsplit
 import webbrowser
 
-from . import class_catalog
+from . import ai_panel, ai_usage, class_catalog
 from .config import ProjectConfig, detection_names, load_taxonomy
 from .io import file_hash
 from .operations import collect_operations, collect_review_files
 from .naming import review_name
 from .review_render import build_page, empty_page_payload, load_page_payload
+# load_vlm_settings: configuração da IA em vigor (vlm_assist.json + .env) para a consulta de limites.
+from .vlm_assist import load_vlm_settings
 
 # ---------------------------------------------------------------------------
 # Constantes: limites de tamanho, formato dos lotes, tipos de arquivo servidos
@@ -1248,6 +1253,17 @@ def make_handler(config: ProjectConfig, registry_path: Path | list[Path] | None,
                     return self._json(class_catalog.list_classes(config))
                 except (OSError, ValueError) as error:
                     return self._json({"error": str(error)}, HTTPStatus.INTERNAL_SERVER_ERROR)
+            # GET /api/ai/status: provedor, modelo e se há chave (só os 4 últimos caracteres)
+            # (ai_panel.ai_status). Página: seção Assistente IA, todos os submenus.
+            if full == "/api/ai/status":
+                return self._json(ai_panel.ai_status(config))
+            # GET /api/ai/usage?period=30d: consumo local da IA (ai_usage.local_usage).
+            # Página: submenu Uso e limites do Assistente IA.
+            if full == "/api/ai/usage":
+                try:
+                    return self._json(ai_usage.local_usage(root, (query.get("period") or ["30d"])[0]))
+                except ValueError as error:
+                    return self._json({"error": str(error)}, HTTPStatus.BAD_REQUEST)
             # GET /api/reviews/<pasta>/files: laudos e ZIPs já gerados (operations.collect_review_files).
             # Página: renderFileHistory na seção Laudos e downloads.
             match = re.match(r"^/api/reviews/([^/]+)/files$", full)
@@ -1443,6 +1459,33 @@ def make_handler(config: ProjectConfig, registry_path: Path | list[Path] | None,
                 # Página: botão "makeReport" na seção Laudos e downloads.
                 if path == "/api/report":
                     return self._json(_build_report(config, root, registry_for(body, reviews), body))
+                # Rotas do Assistente IA (ai_panel/ai_usage). Ficam no POST porque usam a chave ou a
+                # alteram: o token impede que outro site dispare chamadas com a chave deste PC.
+                # POST /api/ai/settings: testa chave+modelo e grava no .env (submenu Configuração da IA).
+                if path == "/api/ai/settings":
+                    return self._json(ai_panel.save_settings(config, body))
+                # POST /api/ai/key/delete: tira a chave do .env (botão "Remover chave").
+                if path == "/api/ai/key/delete":
+                    return self._json(ai_panel.delete_key(config))
+                # POST /api/ai/models: modelos gratuitos com visão (botão "Listar modelos gratuitos").
+                if path == "/api/ai/models":
+                    return self._json(ai_panel.free_models(config))
+                # POST /api/ai/provider-usage: teto, consumo e saldo da chave no OpenRouter, sem
+                # inferência (submenu Uso e limites).
+                if path == "/api/ai/provider-usage":
+                    return self._json(ai_usage.provider_usage(load_vlm_settings(config)))
+                # POST /api/ai/chat: pergunta do chat com o instantâneo do projeto (submenu Chat).
+                # Corpo: {"messages": [...], "review": <pasta aberta na página> (opcional)}.
+                if path == "/api/ai/chat":
+                    name = body.get("review") if body.get("review") in reviews else workspace.default()
+                    try:
+                        classes = class_catalog.list_classes(config)
+                    except (OSError, ValueError):
+                        classes = None
+                    context = ai_panel.project_context(
+                        config, workspace.describe(name), collect_operations(config, reviews[name].parent.resolve() if name else None),
+                        classes, reviews[name] if name else None)
+                    return self._json(ai_panel.ask(config, body.get("messages"), context))
                 # EXTENSAO: rota POST nova = um "if path == ..." ACIMA desta linha.
                 return self._json({"error": "Rota desconhecida."}, HTTPStatus.NOT_FOUND)
             except RuntimeError as error:

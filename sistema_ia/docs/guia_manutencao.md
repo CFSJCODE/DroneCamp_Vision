@@ -172,6 +172,7 @@ Regras que atravessam toda a jornada (não as quebre):
 | Avaliação | `model_report.py` | Relatório com gráficos dos modelos. | `report-models` |
 | Avaliação | `cycle.py` | Ciclo completo de retreino. | `retrain-cycle` |
 | IA de apoio | `vlm_assist.py` | VLM gratuito descreve recortes e rascunha apoio ao laudo. | `describe-occurrences`, `report-support`, `list-free-models` |
+| IA de apoio | `ai_panel.py`, `ai_usage.py` | Assistente IA da plataforma: chave/modelo no `.env`, chat com o instantâneo do projeto, consumo local e limites do OpenRouter. | `/api/ai/...` |
 | Plataforma | `platform_server.py` | Servidor local (127.0.0.1): página, API, uploads, tarefas. | `platform` |
 | Plataforma | `operations.py` | Treinos, curvas, comparações e datasets para a página. | — |
 | Plataforma | `review_templates/` | A página: `index.html` (estrutura), `platform.css` (visual), `platform.js` (comportamento). | — |
@@ -226,7 +227,7 @@ aponta para `src/dronecamp_ia/` é onde começar.
 | Plataforma não abre: endereço em uso. | Outra plataforma já ocupa a porta 8765. | Feche a outra janela ou use `platform --port 8766`. |
 | "A página desta revisão ainda não foi gerada (render-review)". | Inspeção sem `browser_data.json`. | `render-review --registry ...`. |
 | Laudo sai só em HTML, sem PDF. | `reportlab` não instalado. | `pip install reportlab` no `.venv` (extra `reports`). O motivo vem em `pdf_reason`. |
-| `describe-occurrences` diz para definir `OPENROUTER_API_KEY`. | Sem chave do OpenRouter. | Crie `sistema_ia\.env` com `OPENROUTER_API_KEY=...` (nunca no repositório). `vlm_assist.load_vlm_settings`. |
+| `describe-occurrences` diz para definir `OPENROUTER_API_KEY`. | Sem chave do OpenRouter. | Assistente IA → Configuração da IA (testa e grava em `sistema_ia\.env`) ou crie o `.env` com `OPENROUTER_API_KEY=...` (nunca no repositório). `vlm_assist.load_vlm_settings`. |
 | `--gpu-eval` falha ao iniciar. | `onnxruntime-directml` ausente. | Instale o extra `directml` (no lugar do `onnxruntime` comum). `gpu_eval.py`. |
 | Classe nova não aparece no menu da caixa. | Classe criada na seção Classes fica "proposta" (fase 2); a revisão usa só as classes ativas da taxonomia. | Receita "Ativar uma classe" abaixo. |
 | Botão ou seção da página não reage. | Erro de JavaScript. | No navegador, `F12` → Console. A linha indicada está dentro do `index.html` gerado; procure o mesmo trecho em `review_templates/platform.js`. |
@@ -374,6 +375,7 @@ Alguns testes são pulados (aparecem como `skipped`) quando falta algo opcional:
 | `tiling.py`, `suggestions.py` | `tests.test_tiling`, `tests.test_tiled_pipeline` |
 | `model_gate.py`, `model_report.py`, `cycle.py` | `tests.test_learning_methods`, `tests.test_model_report`, `tests.test_cycle` |
 | `vlm_assist.py`, `model_family.py` | `tests.test_vlm_assist`, `tests.test_model_family` |
+| `ai_panel.py`, `ai_usage.py` | `tests.test_ai_panel` |
 
 No fim, rode a suíte inteira antes de dar a mudança por pronta.
 
