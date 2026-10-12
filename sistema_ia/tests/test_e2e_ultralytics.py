@@ -3,6 +3,42 @@
 Usa o peso local models/yolo26l.pt e as fotos/revisões reais do CEASA. O treino é
 curto (1 época, imagens pequenas) porque verifica o encadeamento, não a qualidade.
 Defina DRONECAMP_SKIP_E2E=1 para pular em máquinas sem os arquivos ou sem tempo.
+
+Módulos cobertos (em conjunto, com a biblioteca real): ``pilot`` (dataset piloto),
+``training`` (train_pilot, tiling, Repeat Factor Sampling), ``gpu_eval`` (avaliação em
+paralelo durante o treino), ``operations`` (collect_runs), ``prediction`` (predict),
+``exporting`` (ONNX e paridade), ``suggestions`` + ``review_data`` (sugestões -> revisão ->
+próximo dataset), ``model_gate`` (compare_models, measure_models), ``model_report``,
+``hparam_bandit`` (successive halving) e ``calibration`` (fit_calibrator).
+
+Como rodar (na pasta ``sistema_ia``, com o venv do projeto; leva minutos):
+    python -m unittest tests.test_e2e_ultralytics
+    python -m unittest tests.test_e2e_ultralytics.EndToEndUltralyticsTests.test_4_real_onnx_export_matches_pytorch_outputs
+    (rodar um teste isolado ainda executa o treino do setUpClass)
+Para pular: defina a variável de ambiente DRONECAMP_SKIP_E2E=1.
+
+O que a classe de teste prepara (``EndToEndUltralyticsTests.setUpClass``, UMA vez):
+    - pasta temporária que faz papel de ``sistema_ia`` com cópia de ``configs/``;
+    - a taxonomia v5 (13 classes) no lugar de ``configs/taxonomy.json``, porque os dados
+      e pesos reais ainda seguem esse contrato;
+    - ``zero_shot_prompts.json`` filtrado para as classes v5;
+    - o dataset piloto ``data/pilot/e2e`` a partir da revisão real v7;
+    - UM treino real curto (``TINY``) com avaliação GPU (na CPU) a cada época;
+    - ``cls.best`` (best.pt desse treino) e ``cls.sample_images`` (2 fotos reais).
+    ``tearDownClass`` devolve as pastas reais à configuração global da Ultralytics.
+
+ATENCAO: os testes compartilham estado e dependem de ordem: ``test_6`` grava
+``type(self).rfs_best`` e ``test_7`` o usa (falha com AttributeError se o 6 não rodar
+antes). O unittest ordena por NOME, então ``test_10_...`` roda ANTES de ``test_1_...``
+("0" < "_"); hoje isso é inofensivo porque o test_10 só usa o que o setUpClass prepara.
+Ao numerar um teste novo, lembre dessa ordenação alfabética.
+
+EXTENSAO: para testar uma função nova contra a Ultralytics real, copie
+``test_3_real_prediction_writes_findings_marked_as_pilot``: importe a função dentro do
+teste (importação pesada), use ``self.config``, ``self.best`` e ``self.sample_images`` e
+grave tudo sob ``self.root``. Escolha um número/sufixo que coloque o teste depois dos
+testes de que ele depende. Se depender de arquivos grandes opcionais (Git LFS), proteja
+com ``@unittest.skipUnless(...)`` como em ``test_9``.
 """
 
 from dataclasses import replace
@@ -19,6 +55,10 @@ from dronecamp_ia.io import file_hash, resolve_local_path, write_json
 from dronecamp_ia.pilot import consolidate_duplicates
 from dronecamp_ia.review_data import boxes_to_yolo
 
+# ---------------------------------------------------------------------------
+# Arquivos reais usados pelo teste (pulado se faltarem)
+# ---------------------------------------------------------------------------
+# Configuração real, peso base e a revisão real v7 do CEASA.
 REAL = load_config()
 WEIGHTS = REAL.root / "models" / "yolo26l.pt"
 REGISTRY = REAL.root / "data" / "reviews" / "ceasa_v7_revisao002_ba8cc323c8a1" / "registry.json"
@@ -30,22 +70,34 @@ DATASET_V8 = REAL.root / "data" / "pilot" / "ceasa_v8_piloto_s42" / "dataset.yam
 TAXONOMY_V5 = REAL.root / "configs" / "taxonomy_ceasa_v5_reparo_rufo.json"
 # YOLOE com as frases de configs/zero_shot_prompts.json já embutidas (Git LFS).
 ZERO_SHOT_DIR = REAL.root / "models" / "zero_shot"
+# Parâmetros de treino mínimos: 1 época, imagens de 160 px, sem gráficos nem paciência.
+# ATENCAO: são para testar o encadeamento; nunca use estes valores num treino real.
 TINY = {"epochs": 1, "imgsz": 160, "batch": 8, "plots": False, "patience": 0}
 
 
 @unittest.skipIf(os.environ.get("DRONECAMP_SKIP_E2E") == "1", "E2E desativado por DRONECAMP_SKIP_E2E=1.")
 @unittest.skipUnless(WEIGHTS.is_file() and REGISTRY.is_file(), "Peso yolo26l.pt ou revisão v7 ausente.")
 class EndToEndUltralyticsTests(unittest.TestCase):
-    """Os testes compartilham um treino real; a ordem numérica é intencional."""
+    """Os testes compartilham um treino real; a ordem numérica é intencional.
+
+    Pulada inteira se DRONECAMP_SKIP_E2E=1 ou se faltar o peso yolo26l.pt / a revisão v7.
+    """
 
     @classmethod
     def setUpClass(cls):
+        """Monta a raiz temporária, o dataset piloto e roda UM treino real curto para todos os testes.
+
+        Atributos de classe: ``temporary``, ``root``, ``config``, ``names``, ``dataset``,
+        ``build`` (resultado de build_pilot_dataset), ``train_run``, ``best`` e ``sample_images``.
+        Retorna: None.
+        """
         from dronecamp_ia.pilot import build_pilot_dataset
         from dronecamp_ia.training import train_pilot
 
         cls.temporary = TemporaryDirectory()
         cls.root = Path(cls.temporary.name)
         # O worker de avaliação (processo à parte) lê configs/project.yaml da raiz do teste.
+        # 1. Copia configs/ e troca a taxonomia pela v5 (contrato dos dados e pesos reais).
         shutil.copytree(REAL.root / "configs", cls.root / "configs")
         taxonomy = cls.root / "configs" / "taxonomy.json"
         shutil.copyfile(TAXONOMY_V5, taxonomy)
@@ -56,30 +108,43 @@ class EndToEndUltralyticsTests(unittest.TestCase):
         prompts = json.loads(prompts_path.read_text(encoding="utf-8"))
         prompts["classes"] = {slug: values for slug, values in prompts["classes"].items() if slug in cls.names}
         prompts_path.write_text(json.dumps(prompts, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        # 2. Dataset piloto a partir da revisão real.
         cls.dataset = cls.root / "data" / "pilot" / "e2e"
         cls.build = build_pilot_dataset(cls.config, [REGISTRY], cls.dataset)
+        # 3. Treino real curto com avaliação em paralelo a cada época.
         # CPU + GPU em conjunto, com o ONNX Runtime na CPU no lugar do DirectML (ausente aqui).
         cls.train_run = train_pilot(cls.config, cls.dataset / "dataset.yaml", str(WEIGHTS), dict(TINY),
                                     {"enabled": True, "every": 1, "provider": "cpu", "split": "val"})
         cls.best = cls.train_run / "fit" / "weights" / "best.pt"
+        # 4. Duas fotos reais da revisão, usadas por predição, exportação e sugestões.
         registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
         cls.sample_images = [resolve_local_path(item["source_path"], REAL.root) for item in registry["images"][:2]]
 
     @classmethod
     def tearDownClass(cls):
+        """Restaura as pastas reais nas configurações da Ultralytics e apaga a raiz temporária.
+
+        Retorna: None.
+        """
         from dronecamp_ia.backend import _ultralytics
 
         _ultralytics(REAL)  # restaura as pastas reais nas configurações da biblioteca
         cls.temporary.cleanup()
 
     def test_1_pilot_dataset_keeps_scenes_in_one_split_and_labels_match_review(self):
+        """O dataset piloto mantém cada cena num só split e as labels batem com a revisão humana.
+
+        Só fotos aprovadas entram, e as caixas duplicadas são consolidadas como no piloto.
+        """
         manifest = json.loads((self.dataset / "pilot.json").read_text(encoding="utf-8"))
         self.assertFalse(manifest["production_ready"])
+        # Agrupa os splits por cena: cada cena deve aparecer em exatamente um split.
         splits_by_scene = {}
         for sample in manifest["images"]:
             splits_by_scene.setdefault(sample["scene_group"], set()).add(sample["split"])
         self.assertTrue(all(len(splits) == 1 for splits in splits_by_scene.values()))
         self.assertEqual({sample["split"] for sample in manifest["images"]}, {"train", "val", "test"})
+        # Compara cada label do dataset com as caixas da revisão (após consolidar duplicatas).
         reviewed = {item["image_sha256"]: item for item in json.loads(REGISTRY.read_text(encoding="utf-8"))["images"]}
         duplicate_iou = (manifest.get("duplicate_policy") or {}).get("iou")
         for sample in manifest["images"]:
@@ -92,6 +157,10 @@ class EndToEndUltralyticsTests(unittest.TestCase):
         self.assertEqual(len(manifest["images"]), approved)
 
     def test_2_real_training_produces_audited_checkpoint(self):
+        """O treino real termina completo, com contrato de classes conferido e proveniência válida.
+
+        ``production_ready`` fica falso: modelo piloto nunca vai direto para produção.
+        """
         summary = json.loads((self.train_run / "summary.json").read_text(encoding="utf-8"))
         self.assertTrue(summary["complete"], summary["reasons"])
         self.assertEqual(summary["state"], "completed")
@@ -103,6 +172,10 @@ class EndToEndUltralyticsTests(unittest.TestCase):
         self.assertTrue(provenance["valid"])
 
     def test_2b_gpu_eval_worker_evaluated_the_checkpoint_while_training(self):
+        """O worker de avaliação em paralelo avaliou a época 1 e a curva aparece em collect_runs.
+
+        Em caso de falha, a mensagem mostra o fim do ``worker.log``.
+        """
         from dronecamp_ia.gpu_eval import read_curve
         from dronecamp_ia.operations import collect_runs
 
@@ -128,8 +201,13 @@ class EndToEndUltralyticsTests(unittest.TestCase):
         self.assertTrue((self.train_run / "fit" / "heartbeat").is_file())
 
     def test_3_real_prediction_writes_findings_marked_as_pilot(self):
+        """A predição real grava achados marcados como "modelo piloto não validado", sem gravidade.
+
+        ATENCAO: gravidade nunca é inferida pela IA (``severity`` sempre None).
+        """
         from dronecamp_ia.prediction import predict
 
+        # Copia as 2 fotos para uma pasta de entrada e roda a predição com o best.pt do treino.
         folder = self.root / "predict_input"
         folder.mkdir()
         for image in self.sample_images:
@@ -147,6 +225,7 @@ class EndToEndUltralyticsTests(unittest.TestCase):
                 self.assertIsNone(detection["severity"])
 
     def test_4_real_onnx_export_matches_pytorch_outputs(self):
+        """O ONNX exportado tem hash registrado e dá as mesmas caixas que o PyTorch."""
         from dronecamp_ia.exporting import export_onnx, verify_onnx_parity
 
         run = export_onnx(self.config, str(self.best), parity_images=self.sample_images)
@@ -155,16 +234,22 @@ class EndToEndUltralyticsTests(unittest.TestCase):
         self.assertTrue(onnx.is_file())
         self.assertEqual(file_hash(onnx), export["sha256"])
         self.assertTrue(export["runtime_parity_validated"], (run / "parity.json").read_text(encoding="utf-8"))
+        # Paridade de novo, agora chamada diretamente com limiar de confiança 0.001.
         # Limiar baixo: compara dezenas de caixas, não só a ausência delas.
         parity = verify_onnx_parity(self.config, run / "model.pt", onnx, self.sample_images, 0.001)
         self.assertGreater(sum(item["matched"] for item in parity["images"]), 0)
         self.assertTrue(parity["runtime_parity_validated"], parity)
 
     def test_5_suggestions_feed_review_and_accepted_boxes_reach_next_dataset(self):
+        """Sugestões viram página de revisão; a caixa aceita pelo revisor chega ao próximo dataset.
+
+        Também confere que fotos repetidas em duas revisões contam uma vez (decisão mais recente).
+        """
         from dronecamp_ia.pilot import build_pilot_dataset
         from dronecamp_ia.review_data import import_human_feedback
         from dronecamp_ia.suggestions import create_review_for_new_images
 
+        # 1. Fotos novas -> revisão com sugestões do modelo piloto (limiar 0.001).
         folder = self.root / "fotos_novas"
         folder.mkdir()
         for image in self.sample_images:
@@ -178,6 +263,7 @@ class EndToEndUltralyticsTests(unittest.TestCase):
         self.assertIn("model_suggestions", html)
         self.assertIn("Modelo piloto (não validado)", html)
 
+        # 2. Simula o retorno do revisor (feedback.json) e importa no registro.
         # O revisor aceita uma sugestão: ela passa a ser caixa humana do registro.
         registry_path = review / "registry.json"
         registry = json.loads(registry_path.read_text(encoding="utf-8"))
@@ -192,6 +278,7 @@ class EndToEndUltralyticsTests(unittest.TestCase):
         import_human_feedback(self.config, registry_path, feedback, reviewed_path)
         self.assertEqual(len(registry["images"]), len(self.sample_images))
 
+        # 3. Novo dataset juntando a revisão v7 e a revisão nova.
         # Fotos repetidas em duas revisões contam uma vez, com a decisão mais recente.
         merged = build_pilot_dataset(self.config, [REGISTRY, reviewed_path], self.root / "data" / "pilot" / "e2e_v2")
         manifest = json.loads((self.root / "data" / "pilot" / "e2e_v2" / "pilot.json").read_text(encoding="utf-8"))
@@ -205,6 +292,7 @@ class EndToEndUltralyticsTests(unittest.TestCase):
 
 
     def test_5b_tiled_training_measures_and_reports_models_window_by_window(self):
+        """Treino por janelas (tiling), predição janela a janela, measure-models e report-models."""
         from dronecamp_ia.model_gate import measure_models
         from dronecamp_ia.model_report import build_model_report
         from dronecamp_ia.prediction import predict
@@ -237,11 +325,17 @@ class EndToEndUltralyticsTests(unittest.TestCase):
         report = build_model_report(config, None, measurements=[measurement / "measurement.json"], runs=[run])
         self.assertTrue((report / "report.html").is_file())
         self.assertTrue((report / "strata_recall.png").is_file())
+        # Guarda o treino por janelas na classe; hoje nenhum outro teste lê tiled_run.
         type(self).tiled_run = run
 
     def test_6_repeat_factor_sampling_trains_with_rare_photos_repeated(self):
+        """Treino com Repeat Factor Sampling repete fotos raras sem perder nenhuma foto.
+
+        Grava ``type(self).rfs_best`` para o test_7.
+        """
         from dronecamp_ia.training import train_pilot
 
+        # Treino com RFS (limiar 0.3); o resultado vira o "candidato" do test_7.
         run = train_pilot(self.config, self.dataset / "dataset.yaml", str(WEIGHTS),
                           {**TINY, "repeat_factor_threshold": 0.3})
         summary = json.loads((run / "summary.json").read_text(encoding="utf-8"))
@@ -251,9 +345,14 @@ class EndToEndUltralyticsTests(unittest.TestCase):
         lines = Path(sampling["list"]).read_text(encoding="utf-8").split()
         self.assertEqual(len(set(lines)), sampling["images"])
         self.assertIn("train_repeat_factor.txt", (run / "dataset_resolved.yaml").read_text(encoding="utf-8"))
+        # ATENCAO: o test_7 depende deste atributo de classe.
         type(self).rfs_best = run / "fit" / "weights" / "best.pt"
 
     def test_7_gate_compares_two_real_models_per_class_without_trained_photos(self):
+        """O gate compara dois modelos reais por classe, sem usar fotos vistas no treino.
+
+        Depende de ``rfs_best`` gravado pelo test_6.
+        """
         from dronecamp_ia.model_gate import compare_models
 
         run = compare_models(self.config, self.dataset / "dataset.yaml", str(self.best), str(self.rfs_best),
@@ -266,6 +365,7 @@ class EndToEndUltralyticsTests(unittest.TestCase):
         self.assertIsInstance(gate["adopt"], bool)
 
     def test_8_successive_halving_runs_real_trainings_and_never_uses_test(self):
+        """Successive halving roda treinos reais (1, 1 e 2 épocas) e nunca usa o split de teste."""
         from dronecamp_ia.hparam_bandit import successive_halving
 
         run = successive_halving(self.config, self.dataset / "dataset.yaml", str(WEIGHTS), arms=2, min_epochs=1,
@@ -281,6 +381,10 @@ class EndToEndUltralyticsTests(unittest.TestCase):
 
     @unittest.skipUnless(PILOT_V7.is_file() and DATASET_V8.is_file(), "Pesos piloto v7 (Git LFS) ou dataset v8 ausentes.")
     def test_9_calibrator_learns_from_human_boxes_and_annotates_suggestions(self):
+        """O calibrador aprende com caixas humanas (excluindo fotos de treino) e anota as sugestões.
+
+        Só roda se os pesos piloto v7 e o dataset v8 (Git LFS) estiverem presentes.
+        """
         from dronecamp_ia.calibration import fit_calibrator
         from dronecamp_ia.suggestions import suggest_for_registry
 
@@ -291,6 +395,7 @@ class EndToEndUltralyticsTests(unittest.TestCase):
         self.assertGreaterEqual(metadata["positives"], 5)
         self.assertIn("improves_over_raw_confidence", metadata["cross_validation"])
 
+        # Revisão com 2 fotos reais para receber sugestões anotadas pelo calibrador.
         review = self.root / "data" / "reviews" / "calibrada"
         review.mkdir(parents=True)
         registry = json.loads(REGISTRY.read_text(encoding="utf-8"))
@@ -312,9 +417,14 @@ class EndToEndUltralyticsTests(unittest.TestCase):
 
     @unittest.skipUnless(any(ZERO_SHOT_DIR.glob("*.pt")), "Checkpoint da busca aberta (models/zero_shot) ausente.")
     def test_10_open_search_adds_pending_suggestions_with_prompt_and_source(self):
+        """A busca aberta (YOLOE) acrescenta sugestões pendentes com frase e origem registradas.
+
+        Só roda se houver checkpoint em models/zero_shot. Nenhuma foto sai aprovada.
+        """
         from dronecamp_ia.suggestions import create_review_for_new_images
 
         (self.root / "models").mkdir(exist_ok=True)
+        # Liga models/zero_shot real dentro da raiz temporária (link simbólico).
         link = self.root / "models" / "zero_shot"
         if not link.exists():
             link.symlink_to(ZERO_SHOT_DIR, target_is_directory=True)

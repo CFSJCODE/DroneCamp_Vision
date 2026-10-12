@@ -1,20 +1,53 @@
 <!doctype html>
 <html lang="pt-BR" data-theme="light">
+<!-- ======================= MODELO DA PLATAFORMA (index.html) =======================
+     O que é: o esqueleto HTML da plataforma DroneCamp Vision. review_render.build_page lê este arquivo,
+     troca o marcador do CSS pelo conteúdo de platform.css e o marcador do JS pelo conteúdo de platform.js
+     e, por fim, troca o marcador de dados (dentro do JS) pelo JSON da inspeção. O resultado é UM único HTML
+     que abre direto do disco (data/reviews/(inspeção)/index.html) ou é servido pelo platform_server.py.
+     Como navegar: todo elemento com id="..." é lido no platform.js por $('id') (atalho de
+     document.getElementById). Procure o id no platform.js para achar a função que preenche o elemento
+     ou o evento (onclick/onchange/oninput) do botão. Classes CSS (card, grid, chip...) ficam no platform.css.
+     Ordem do arquivo: cabeçalho (head), ícones SVG, barra lateral, barra do celular, cabeçalho da página,
+     faixa de avisos, as nove seções (section class="view"), rodapé, toast e o script.
+     Busca rápida: procure ENTRADA:, EXTENSAO: e ATENCAO: neste arquivo, no platform.js e no platform.css.
+     ATENCAO: nunca escreva nos comentários deste arquivo o nome dos marcadores de substituição nem a tag
+     de fechamento de script ou de style: build_page procura esses textos e o primeiro achado seria o comentário.
+     ATENCAO: mudar este arquivo não altera páginas já geradas em disco; rode refresh-page/render-review
+     (o servidor local monta a página de novo a cada acesso, então basta recarregar).
+     ATENCAO: comentários HTML não podem conter dois hifens seguidos. -->
 <head>
+<!-- Codificação UTF-8 (acentos) e viewport para a página funcionar no celular. -->
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <!-- Preenchidos só quando a página vem do servidor local (comando platform); vazios no arquivo em disco. -->
+<!-- ATENCAO: as duas metas abaixo são trocadas por platform_server._page com str.replace na linha EXATA
+     (nome e content vazio). Não mude espaços, aspas nem a ordem dos atributos, senão o token do servidor
+     não entra e a página se comporta como aberta do disco (SERVER falso no platform.js).
+     A primeira recebe o token que autoriza os POST (lida em TOKEN/SERVER no topo do platform.js);
+     a segunda recebe a lista de inspeções do seletor (lida em REVIEWS no topo do platform.js). -->
 <meta name="dronecamp-server" content="">
 <meta name="dronecamp-reviews" content="">
+<!-- Ícone da aba do navegador (SVG embutido em data URI, sem arquivo externo). -->
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%232457F5'/%3E%3Cpath d='M8 22 16 8l8 14H8Z' fill='none' stroke='%23fff' stroke-width='2.5' stroke-linejoin='round'/%3E%3C/svg%3E">
+<!-- Fontes Inter (texto) e Manrope (títulos) do Google Fonts. Sem internet, o navegador usa as fontes
+     de reserva definidas em platform.css (variáveis font-sans e font-display). -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+<!-- Título inicial da aba; showView() no platform.js o reescreve com a seção e a inspeção abertas. -->
 <title>DroneCamp Vision · Inspeção assistida de telhados</title>
+<!-- Estilos: o conteúdo de platform.css é embutido aqui por review_render.build_page. Mude o visual
+     no platform.css, não aqui. -->
 <style>
 __PLATFORM_CSS__
 </style>
 </head>
 <body>
+<!-- ======================= ÍCONES (sprite SVG) =======================
+     Cada symbol id="i-..." é um ícone usado com svg + use href="#i-..." no HTML ou com icon('i-...') no
+     platform.js (usado em renderFiles, fileRow e applyTheme, por exemplo).
+     EXTENSAO: ícone novo = um symbol id="i-<nome>" viewBox="0 0 24 24" aqui dentro, desenhado com
+     stroke="currentColor" (assim ele herda a cor do texto e funciona no tema escuro). -->
 <svg display="none" aria-hidden="true">
   <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5M5.5 10v10h13V10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
   <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></symbol>
@@ -37,18 +70,35 @@ __PLATFORM_CSS__
   <symbol id="i-spark" viewBox="0 0 24 24"><path d="m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3ZM5 17l.9 2.1L8 20l-2.1.9L5 23l-.9-2.1L2 20l2.1-.9L5 17Z" fill="currentColor"/></symbol>
 </svg>
 
+<!-- Estrutura geral: div.app (grade de duas colunas no platform.css) com a barra lateral (nav.sidebar)
+     e a área principal (div.main). Abaixo de 860 px a barra lateral vira um menu deslizante. -->
 <div class="app">
+  <!-- ======================= BARRA LATERAL =======================
+       Menu de seções. Cada botão .nav-item com data-view="(nome)" chama showView(nome) no platform.js
+       (ligado no bloco "Navegação entre seções"); showView marca aria-current="page" no botão ativo.
+       No celular, #sidebar abre e fecha por #menuToggle e fecha por closeMenu() (clique no #scrim). -->
 <nav class="sidebar" id="sidebar" aria-label="Seções da plataforma">
+  <!-- Logotipo: também é um link data-view="home" (volta ao Início). -->
   <a class="brand" href="#home" data-view="home"><span class="mark" aria-hidden="true">DV</span><span><b>DroneCamp Vision</b><small>Inspeção assistida de telhados</small></span></a>
   <div class="nav-group">
+    <!-- Grupo "Operação": fluxo da inspeção (importar, revisar, gerar laudo).
+           EXTENSAO: seção nova na plataforma = (1) um botão aqui (ou no grupo de IA) no mesmo formato:
+           button type="button" class="nav-item" data-view="(nome)" com ícone e texto; (2) uma section
+           class="view" id="view-(nome)" dentro de main; (3) a entrada em VIEWS no platform.js; (4) a linha
+           if (view === '(nome)') render(Nome)() em showView; (5) a função render(Nome)() num bloco próprio. -->
     <div class="nav-title">Operação</div>
     <button type="button" class="nav-item" data-view="home"><svg><use href="#i-home"/></svg>Início</button>
+    <!-- #navInspections: contador de inspeções, preenchido por refreshWorkspace(). -->
     <button type="button" class="nav-item" data-view="inspections"><svg><use href="#i-folder"/></svg>Inspeções<span class="count" id="navInspections"></span></button>
     <button type="button" class="nav-item" data-view="upload"><svg><use href="#i-upload"/></svg>Importar mídia</button>
+    <!-- #navSuggestions: contador de sugestões da IA pendentes, atualizado por queue(). -->
     <button type="button" class="nav-item" data-view="review"><svg><use href="#i-review"/></svg>Revisão<span class="count ai hidden" id="navSuggestions" title="Sugestões da IA pendentes"></span></button>
     <button type="button" class="nav-item" data-view="reports"><svg><use href="#i-report"/></svg>Laudos e downloads</button>
   </div>
   <div class="nav-group">
+    <!-- Grupo "Inteligência artificial": treino, monitoramento, modelos e classes.
+           #liveDot (ponto pulsante no Monitoramento) aparece quando há treino rodando; quem liga é
+           refreshOperations() e renderMonitor(). -->
     <div class="nav-title">Inteligência artificial</div>
     <button type="button" class="nav-item" data-view="training"><svg><use href="#i-training"/></svg>Treinamento</button>
     <button type="button" class="nav-item" data-view="monitor"><svg><use href="#i-monitor"/></svg>Monitoramento<span class="live-dot hidden" id="liveDot" title="Treino em andamento"></span></button>
@@ -56,6 +106,9 @@ __PLATFORM_CSS__
     <button type="button" class="nav-item" data-view="classes"><svg><use href="#i-tags"/></svg>Classes</button>
   </div>
   <div class="spacer"></div>
+  <!-- Rodapé da barra lateral: #modeChip (servidor conectado ou não, atualizado por setMode()),
+         #versionLabel (nome da inspeção aberta, preenchido na inicialização do platform.js) e
+         #themeToggle (alterna tema claro/escuro por applyTheme(); a escolha fica no localStorage). -->
   <div class="sidebar-foot">
     <div class="status" id="modeChip"><span class="dot"></span><span>Instantâneo offline</span></div>
     <div class="row">
@@ -64,18 +117,31 @@ __PLATFORM_CSS__
     </div>
   </div>
 </nav>
+<!-- #scrim: fundo escurecido atrás do menu no celular; clicar nele chama closeMenu(). -->
 <div class="scrim hidden" id="scrim"></div>
 
+<!-- ======================= ÁREA PRINCIPAL =======================
+     Barra do celular, cabeçalho com título e ações, faixa de avisos e as seções. -->
 <div class="main">
+<!-- Barra do celular (só aparece abaixo de 860 px): logotipo e #menuToggle, que abre a barra lateral
+     (evento ligado logo após closeMenu() no platform.js). -->
 <div class="mobile-bar">
   <a class="brand" href="#home" data-view="home"><span class="mark" aria-hidden="true">DV</span><span><b>DroneCamp Vision</b></span></a>
   <button type="button" class="icon" id="menuToggle" aria-label="Abrir menu" aria-controls="sidebar" aria-expanded="false"><svg><use href="#i-menu"/></svg></button>
 </div>
+<!-- ======================= CABEÇALHO DA PÁGINA =======================
+     #viewTitle e #viewSubtitle: título e subtítulo da seção atual, escritos por showView() a partir de VIEWS. -->
 <header class="topbar">
   <div class="titles">
     <h1 id="viewTitle">Início</h1>
     <p class="sub" id="viewSubtitle">Inspeção assistida de telhados industriais</p>
   </div>
+  <!-- Ações fixas do topo (valem em todas as seções):
+         #reviewPicker: seletor de inspeção, preenchido por fillReviewPicker(); trocar abre a página da outra inspeção.
+         #reviewer: identificador do revisor; persist() guarda no localStorage e reviewFile() exige que esteja preenchido.
+         #export: "Salvar revisão", baixa o arquivo JSON de decisões (onclick no bloco de revisão, usa reviewFile()
+         e, com servidor, também envia para /api/feedback).
+         EXTENSAO: ação global nova = um botão com id aqui + $('(id)').onclick no platform.js. -->
   <div class="top-actions">
     <label for="reviewPicker" class="sr-only">Inspeção aberta</label>
     <select id="reviewPicker" aria-label="Inspeção aberta" title="Inspeção aberta"></select>
@@ -84,16 +150,27 @@ __PLATFORM_CSS__
     <button class="primary" id="export" type="button"><svg><use href="#i-save"/></svg><span>Salvar revisão</span></button>
   </div>
 </header>
+<!-- Faixa de avisos: #aiNotice (lembrete de que a IA só sugere; escondido sem fotos na inicialização)
+     e #taxonomyNotice (classes que ainda precisam de conferência; mostrado na inicialização quando
+     DATA.taxonomy_recheck_pending é verdadeiro e também atualizado por openPhoto()). -->
 <div class="notice-strip">
   <div class="notice ai" id="aiNotice"><strong>Sugestões da IA aguardam decisão humana.</strong> A plataforma não certifica a condição do telhado: gravidade, diagnóstico e recomendações dependem de validação técnica. Treinar ou gerar pesos não comprova melhoria.</div>
   <p class="notice hidden" id="taxonomyNotice"></p>
 </div>
 
+<!-- ======================= SEÇÕES =======================
+     Cada section class="view" id="view-(nome)" é uma tela; só a que tem a classe .active aparece
+     (showView() liga e desliga). A ordem aqui segue a barra lateral. -->
 <main>
 <!-- EXTENSAO: cada seção é um <section class="view" id="view-<nome>">; ver VIEWS no platform.js. -->
 <!-- ATENCAO: este arquivo é só o modelo; a página que abre no navegador é gerada por render-review/refresh-page. -->
 <!-- ======================= INÍCIO ======================= -->
+<!-- Seção Início (view-home): painel geral da inspeção aberta. Quem preenche: renderHome(). -->
 <section class="view" id="view-home">
+  <!-- Indicadores (KPIs): #kpiPhotos, #kpiDecisions (+ barra #kpiDecisionsBar), #kpiBoxes,
+         #kpiSuggestions e #kpiSparse, todos escritos por renderHome() com os totais de reviewTotals().
+         EXTENSAO: indicador novo = um div.card.kpi com .label e .value id="kpi(Nome)" aqui + o
+         $('kpi(Nome)').textContent = ... dentro de renderHome(). -->
   <div class="grid kpis">
     <div class="card kpi accent"><div class="label">Fotos na inspeção</div><div class="value" id="kpiPhotos">0</div><div class="hint" id="kpiPhotosHint"></div></div>
     <div class="card kpi"><div class="label">Decisões registradas</div><div class="value" id="kpiDecisions">0</div><div class="progress ok" aria-hidden="true"><i id="kpiDecisionsBar" style="width:0"></i></div></div>
@@ -103,6 +180,9 @@ __PLATFORM_CSS__
   </div>
   <div class="card" style="margin-top:16px">
     <div class="card-head"><h2>Ações rápidas</h2><span class="muted small-text" id="homeContext"></span></div>
+    <!-- Ações rápidas: botões com data-goto="(seção)" chamam showView(seção) (ligados junto com os
+             data-view no bloco de navegação do platform.js). #qaReview recebe o texto de progresso em renderHome().
+             EXTENSAO: atalho novo = outro button type="button" data-goto="(nome da seção)" aqui; não precisa de JS. -->
     <div class="quick-actions">
       <button type="button" data-goto="upload"><svg><use href="#i-upload"/></svg><span><b>Nova inspeção</b><span class="d">Enviar fotos ou vídeos do voo</span></span></button>
       <button type="button" data-goto="review"><svg><use href="#i-review"/></svg><span><b>Continuar revisão</b><span class="d" id="qaReview">Conferir caixas e sugestões</span></span></button>
@@ -113,23 +193,28 @@ __PLATFORM_CSS__
   <div class="grid two" style="margin-top:16px">
     <div class="card">
       <div class="card-head"><h2>Cobertura por classe</h2><span class="muted small-text"><span class="chip neutral">sólido: caixas</span> <span class="chip ai">listrado: sugestões IA</span></span></div>
+      <!-- #classBars: barras de caixas e sugestões por classe, desenhadas por renderHome() com barRow(). -->
       <div id="classBars"></div>
     </div>
     <div class="grid" style="align-content:start">
       <div class="card">
         <div class="card-head"><h2>Triagem das fotos</h2><button class="small" type="button" data-goto="review">Abrir revisão</button></div>
+        <!-- #triageBars: contagem de fotos por situação (positiva, negativa...), desenhada por renderHome(). -->
         <div id="triageBars"></div>
       </div>
       <div class="card">
         <div class="card-head"><h2>Modelo das sugestões</h2><span id="modelChip"></span></div>
+        <!-- #modelChip e #modelSummary: modelo que gerou as sugestões, escritos por renderHome(). -->
         <div id="modelSummary" class="small-text"></div>
       </div>
       <div class="card">
         <div class="card-head"><h2>Último treino</h2><button class="small" type="button" data-goto="monitor">Monitorar</button></div>
+        <!-- #lastRunSummary: resumo do treino mais recente (OPS.runs), escrito por renderHome(). -->
         <div id="lastRunSummary" class="small-text"></div>
       </div>
     </div>
   </div>
+  <!-- Inspeções recentes: #homeInspections recebe os cartões compactos de inspectionCards(true) em renderHome(). -->
   <div class="card" style="margin-top:16px" id="homeInspectionsCard">
     <div class="card-head"><h2>Inspeções recentes</h2><button class="small" type="button" data-goto="inspections">Ver todas</button></div>
     <div id="homeInspections"></div>
@@ -137,32 +222,51 @@ __PLATFORM_CSS__
 </section>
 
 <!-- ======================= INSPEÇÕES ======================= -->
+<!-- Seção Inspeções (view-inspections): lista de todas as inspeções do espaço de trabalho.
+     Quem preenche: renderInspections() (usa inspectionItems() e inspectionCards()). Com servidor, a lista
+     vem de /api/workspace (refreshWorkspace()); aberta do disco, só aparece a inspeção atual. -->
 <section class="view" id="view-inspections">
   <div class="card">
     <div class="card-head">
       <div><h2>Inspeções e campanhas</h2><p id="inspectionsHint">Cada inspeção guarda as fotos originais congeladas por hash, o registro de revisão e o histórico das decisões.</p></div>
       <div class="row-actions" style="margin:0"><button type="button" class="primary" data-goto="upload"><svg><use href="#i-upload"/></svg>Nova inspeção</button></div>
     </div>
+    <!-- #inspectionList: cartões das inspeções; #inspectionsHint acima recebe a dica conforme o modo. -->
     <div class="inspection-list" id="inspectionList"></div>
   </div>
 </section>
 
 <!-- ======================= IMPORTAR MÍDIA ======================= -->
+<!-- Seção Importar mídia (view-upload): envio de fotos e vídeos que vira uma inspeção nova.
+     Quem prepara: renderUpload() (aviso offline, lista de pesos, nome padrão). Fluxo do envio:
+     ENTRADA: #startUpload.onclick no platform.js: cria o lote (/api/uploads), envia cada arquivo com
+     putFile() (PUT cru com progresso), pede a ingestão (/api/uploads/(lote)/ingest) e consulta o estado a
+     cada 1,5 s até terminar. #uploadOffline aparece quando a página foi aberta do disco (sem servidor). -->
 <section class="view" id="view-upload">
   <p class="notice info hidden" id="uploadOffline">Para enviar fotos e vídeos pela interface, abra a plataforma pelo servidor local (<b>Abrir plataforma DroneCamp.cmd</b>). Aberta direto do disco, use o comando <code>import-media</code> no terminal.</p>
   <div class="grid two">
     <div class="card">
       <div class="card-head"><div><h2>Enviar fotos e vídeos</h2><p>Fotos (JPG, PNG, WEBP, TIFF, BMP) e vídeos (MP4, MOV, AVI, MKV). TIFF e BMP são regravadas como JPEG; vídeos viram quadros amostrados no intervalo escolhido. Os arquivos enviados ficam guardados na pasta da inspeção.</p></div></div>
+      <!-- Área de arrastar e soltar: clique ou Enter abrem o #fileInput escondido; soltar arquivos chama
+                 addFiles(). As extensões aceitas pelo JS estão em IMAGE_EXT e VIDEO_EXT (bloco Importar mídia).
+                 EXTENSAO: formato novo = acrescente a extensão no accept do #fileInput abaixo, em IMAGE_EXT/VIDEO_EXT
+                 no platform.js e em IMAGE_EXTENSIONS/VIDEO_EXTENSIONS do ingest.py. -->
       <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Selecionar ou arrastar arquivos">
         <svg><use href="#i-upload"/></svg>
         <b>Arraste os arquivos aqui ou clique para escolher</b>
         <p>Os originais são preservados; nada é alterado ou apagado.</p>
         <input type="file" id="fileInput" class="hidden" multiple accept="image/*,video/*,.jpg,.jpeg,.png,.webp,.tif,.tiff,.bmp,.mp4,.mov,.avi,.mkv,.m4v,.webm">
       </div>
+      <!-- #fileList e #fileSummary: arquivos escolhidos e total, desenhados por renderFiles(). -->
       <div class="file-list" id="fileList"></div>
       <p class="muted small-text" id="fileSummary"></p>
     </div>
     <div class="card">
+      <!-- Formulário da inspeção nova. Os valores são lidos dentro de #startUpload.onclick e vão no corpo de
+                 /api/uploads/(lote)/ingest: name (#uploadName), group (#uploadGroup), every_seconds (#uploadEvery),
+                 max_frames (#uploadMaxFrames), notes (#uploadNotes) e os pesos (#uploadWeights, lista montada em renderUpload()).
+                 EXTENSAO: campo novo = label + input com id aqui, o valor no objeto enviado ao ingest em
+                 #startUpload.onclick e a leitura correspondente na rota de ingestão do platform_server.py. -->
       <div class="card-head"><h2>Dados da inspeção</h2></div>
       <label for="uploadName">Nome da inspeção</label><input id="uploadName" maxlength="60" placeholder="ex.: Galpão B · outubro 2026">
       <p class="field-help">Nome mostrado na plataforma. A pasta no disco usa a mesma forma sem acentos (ex.: galpao_b_outubro_2026).</p>
@@ -175,6 +279,8 @@ __PLATFORM_CSS__
       <label for="uploadNotes">Observações da campanha</label><textarea id="uploadNotes" placeholder="Data do voo, equipamento, condições, responsável."></textarea>
       <label for="uploadWeights">Gerar sugestões da IA após importar</label><select id="uploadWeights"></select>
       <p class="field-help">As sugestões ficam pendentes até a sua decisão. Escolha “não gerar” para revisar sem modelo.</p>
+      <!-- #startUpload (habilitado por renderFiles() quando há arquivos) e #cancelUpload (aborta o envio atual).
+                 #uploadProgress, #uploadStatus e #uploadResult mostram o andamento e o resultado do envio. -->
       <div class="row-actions"><button type="button" class="primary" id="startUpload" disabled><svg><use href="#i-upload"/></svg>Enviar e criar inspeção</button><button type="button" id="cancelUpload" class="hidden">Cancelar</button></div>
       <div class="progress hidden" id="uploadProgress" aria-hidden="true"><i style="width:0"></i></div>
       <p class="small-text" id="uploadStatus" role="status" aria-live="polite"></p>
@@ -184,9 +290,18 @@ __PLATFORM_CSS__
 </section>
 
 <!-- ======================= REVISÃO ======================= -->
+<!-- Seção Revisão (view-review): conferir, corrigir e decidir foto a foto.
+     Três colunas: fila de fotos (esquerda), foto com as caixas (centro) e inspetor (direita).
+     Funções principais no platform.js (bloco "Revisão"): openPhoto() abre uma foto, paint() desenha o canvas,
+     renderBoxes() e renderSuggestions() montam as listas, queue() monta a fila, commitBox() grava uma caixa.
+     #reviewEmpty aparece e #reviewGrid some quando a inspeção não tem fotos (ajustado na inicialização). -->
 <section class="view" id="view-review">
   <div class="empty hidden" id="reviewEmpty">Nenhuma inspeção aberta. Importe fotos ou escolha uma inspeção na lista.</div>
   <div class="review-grid" id="reviewGrid">
+    <!-- Fila de revisão: #stats e #queueProgress (resumo e progresso) e #queue (lista clicável), todos
+             preenchidos por queue(). #filter muda o filtro e chama queue().
+             EXTENSAO: filtro novo = um option value="(chave)" em #filter + o caso correspondente em queue()
+             (os valores comuns são comparados com photo.status, a situação proposta no registro). -->
     <aside class="card queue-card" aria-label="Fila de revisão">
       <div class="card-head"><h2>Fotos para revisão</h2></div>
       <div class="muted small-text" id="stats"></div>
@@ -196,6 +311,8 @@ __PLATFORM_CSS__
       <div class="queue" id="queue"></div>
     </aside>
 
+    <!-- Palco da foto: título e metadados (#photoTitle, #photoMeta, #proposalStatus) escritos por openPhoto();
+             #previous e #next abrem a foto anterior e a seguinte (também pelas setas do teclado). -->
     <section class="card" aria-labelledby="photoTitle">
       <div class="stage-bar">
         <button id="previous" type="button" class="icon" aria-label="Foto anterior">←</button>
@@ -203,6 +320,14 @@ __PLATFORM_CSS__
         <span class="chip" id="proposalStatus"></span>
         <button id="next" type="button" class="icon" aria-label="Próxima foto">→</button>
       </div>
+      <!-- Barra de ferramentas da foto:
+                 #showBoxes e #showSuggestions ligam/desligam camadas (onchange chama paint());
+                 #confFilter filtra sugestões pela confiança (mostrado por renderSuggestions(), valor em #confValue);
+                 #drawToggle liga o modo desenho (toggleDrawing(), tecla B);
+                 #zoomOut, #zoomIn e #zoomFit controlam o zoom (zoomTo()/resetZoom(); valor em #zoomValue por applyZoom());
+                 #originalLink aponta para a foto original (definido em openPhoto()).
+                 EXTENSAO: ferramenta nova = um botão com id aqui + $('(id)').onclick no bloco Revisão do
+                 platform.js; se tiver atalho, acrescente a tecla no listener de keydown e no texto de .shortcuts abaixo. -->
       <div class="toolbar" role="toolbar" aria-label="Camadas e ferramentas">
         <label class="toggle"><input type="checkbox" id="showBoxes" checked>Caixas</label>
         <label class="toggle hidden" id="showSuggestionsLabel"><input type="checkbox" id="showSuggestions" checked>Sugestões IA</label>
@@ -218,29 +343,57 @@ __PLATFORM_CSS__
         </span>
         <a id="originalLink" target="_blank" rel="noopener" class="small-text">Abrir foto original</a>
       </div>
+      <!-- #historyNotice: aviso sobre o histórico da foto, mostrado por openPhoto() quando há o que avisar. -->
       <p id="historyNotice" class="notice hidden"></p>
+      <!-- Visualizador: #canvas recebe a foto e as caixas em paint(). Desenhar uma caixa usa os eventos
+                 pointerdown/move/up do #canvas (point() converte o clique para pixels da foto original); arrastar
+                 e a roda do mouse no #viewer movem e ampliam a foto (zoomTo()).
+                 ATENCAO: o zoom é só visual (transform CSS); as coordenadas das caixas são sempre em pixels da foto. -->
       <div class="viewer" id="viewer"><canvas id="canvas" tabindex="0" aria-label="Fotografia com caixas propostas. Use os campos de coordenadas ao lado para anotar com teclado."></canvas></div>
+      <!-- #message: linha de mensagens da revisão, escrita pela função message(texto, erro). -->
       <div id="message" role="status" aria-live="polite">Selecione uma foto para começar.</div>
+      <!-- #proposalNotes e #auditNotes: observações registradas da foto, escritas por openPhoto(). -->
       <details><summary>Observações da proposta inicial</summary><p id="proposalNotes"></p></details>
       <details open><summary>Observações da revisão visual</summary><p id="auditNotes"></p></details>
+      <!-- Lista de atalhos mostrada ao usuário. As teclas de verdade ficam no listener de keydown do platform.js
+                 ("Atalhos de teclado só na revisão"); mude os dois juntos. -->
       <div class="shortcuts">Atalhos: <kbd>←</kbd> <kbd>→</kbd> fotos · <kbd>Scroll</kbd> zoom no cursor · arrastar ou botão do meio: mover a foto · <kbd>+</kbd> <kbd>–</kbd> <kbd>0</kbd> zoom · <kbd>B</kbd> desenhar · <kbd>A</kbd> aceitar 1ª sugestão · <kbd>X</kbd> descartar 1ª sugestão · <kbd>Del</kbd> excluir caixa selecionada</div>
     </section>
 
+    <!-- Inspetor da foto (coluna da direita): sugestões da IA, caixas da foto e a decisão. -->
     <aside class="inspector" aria-label="Inspetor da foto">
+      <!-- Sugestões do modelo: #suggestionPanel só aparece quando há sugestões pendentes; #suggestionCount,
+                 #suggestionMeta e a lista #suggestions são montados por renderSuggestions(). Aceitar chama
+                 acceptSuggestion() (tecla A); descartar chama dismissSuggestion() (tecla X).
+                 ATENCAO: a IA nunca aprova sozinha; aceitar uma sugestão só cria uma caixa no rascunho e a foto
+                 continua pendente até a decisão humana. -->
       <section class="card hidden" id="suggestionPanel">
         <div class="section-title"><h2>Sugestões do modelo</h2><span class="chip ai" id="suggestionCount"></span></div>
         <p class="muted small-text" id="suggestionMeta"></p>
         <div class="boxes suggestions" id="suggestions"></div>
       </section>
       <section class="card">
+        <!-- Ocorrências na foto: lista #boxes e contador #boxCount (renderBoxes()); clicar numa caixa chama
+                   selectBox(), que preenche #classId e #x1/#y1/#x2/#y2. #applyBox chama commitBox() com as coordenadas
+                   digitadas, #newBox limpa a seleção (resetSelection()) e #deleteBox chama deleteSelected().
+                   As opções de #classId são criadas na inicialização a partir de DATA.classes (classes inativas
+                   aparecem desabilitadas). -->
         <div class="section-title"><h2>Ocorrências na foto</h2><span class="chip neutral" id="boxCount"></span></div>
         <p class="muted small-text">Selecione uma caixa para corrigir. Para criar uma nova, desenhe sobre a foto ou preencha as coordenadas.</p>
         <div class="boxes" id="boxes"></div>
         <label for="classId">Categoria da caixa</label><select id="classId"></select>
+        <!-- Coordenadas em pixels da foto original (canto superior esquerdo x1,y1 e inferior direito x2,y2).
+                     validBox() exige área positiva e a caixa dentro da foto. -->
         <div class="coordinates"><div><label for="x1">X inicial</label><input id="x1" type="number" min="0" step="1"></div><div><label for="y1">Y inicial</label><input id="y1" type="number" min="0" step="1"></div><div><label for="x2">X final</label><input id="x2" type="number" min="0" step="1"></div><div><label for="y2">Y final</label><input id="y2" type="number" min="0" step="1"></div></div>
         <div class="row-actions"><button id="applyBox" class="primary small" type="button">Adicionar caixa</button><button id="newBox" class="small" type="button">Nova caixa</button><button id="deleteBox" class="small bad" type="button" disabled>Excluir selecionada</button></div>
       </section>
       <section class="card">
+        <!-- Decisão sobre a foto: #decision (situação), #notes (observações) e #confirmed (revisão completa).
+                   #saveDecision.onclick valida as regras (positiva precisa de caixa e confirmação; negativa não pode
+                   ter caixa), grava no rascunho com persist() e atualiza a fila com queue().
+                   EXTENSAO: situação nova = um option em #decision + as regras em #saveDecision.onclick, o nome em
+                   decisionNames e a cor do ponto (.q-state) no platform.css e o tratamento do status no lado Python (import-review).
+                   ATENCAO: qualquer edição de caixa volta a decisão para "pendente" (commitBox() e deleteSelected()). -->
         <h2>Sua decisão sobre a foto</h2>
         <label for="decision">Situação da revisão</label><select id="decision"><option value="pending">Pendente</option><option value="positive">Revisei: há ocorrências</option><option value="negative">Revisei: nenhuma das classes ativas</option><option value="ambiguous">Há dúvida: precisa de análise técnica</option><option value="excluded">Excluir do treinamento</option></select>
         <label for="notes">Correções, dúvidas ou motivo da decisão</label><textarea id="notes" placeholder="Descreva o que você conferiu ou o que ainda precisa esclarecer."></textarea>
@@ -253,10 +406,19 @@ __PLATFORM_CSS__
 </section>
 
 <!-- ======================= LAUDOS E DOWNLOADS ======================= -->
+<!-- Seção Laudos e downloads (view-reports): laudo técnico, pacote de evidências e arquivos.
+     Quem prepara: renderReports() (habilita botões conforme servidor e fotos, título padrão, PDF disponível)
+     e renderFileHistory() (lista de arquivos gerados). #reportsOffline aparece sem servidor. -->
 <section class="view" id="view-reports">
   <p class="notice info hidden" id="reportsOffline">Gerar laudos e pacotes de evidências exige o servidor local (<b>Abrir plataforma DroneCamp.cmd</b>). Aqui você ainda pode baixar o arquivo de revisão e o CSV das ocorrências.</p>
   <div class="grid two">
     <div class="card">
+      <!-- Formulário do laudo. ENTRADA: #makeReport.onclick envia para /api/report: título (#reportTitle),
+                 cliente (#reportClient), local (#reportSite), responsável (#reportInspector), observações
+                 (#reportNotes), todas as fotos (#reportAllImages), PDF (#reportPdf), os rascunhos (allDrafts())
+                 e os dados técnicos (reportDetails()).
+                 EXTENSAO: campo novo de primeiro nível = input com id aqui + a chave no objeto enviado em
+                 #makeReport.onclick + a leitura em platform_server.py (rota /api/report) e o uso em laudo_abnt. -->
       <div class="card-head"><div><h2>Laudo técnico de inspeção</h2><p>PDF e HTML no formato ABNT (NBR 10719 e NBR 16747), no estilo do laudo CEASA: figuras numeradas, normas aplicáveis e campos de validação técnica pendentes.</p></div></div>
       <div class="form-grid">
         <div class="wide"><label for="reportTitle">Título</label><input id="reportTitle" placeholder="Laudo técnico de inspeção de cobertura com uso de drone"></div>
@@ -266,6 +428,9 @@ __PLATFORM_CSS__
         <div class="wide"><label for="reportNotes">Observações</label><textarea id="reportNotes" placeholder="Condições do voo, limitações, pendências."></textarea></div>
       </div>
       <!-- EXTENSAO: campo novo no laudo = input com data-detail="<chave>" aqui + a mesma chave em laudo_abnt.DETAIL_FIELDS. -->
+      <!-- Dados técnicos opcionais: cada input com data-detail="(chave)" é lido por reportDetails(), que só
+                 envia os campos preenchidos. As chaves precisam existir em laudo_abnt.DETAIL_FIELDS (chave
+                 desconhecida é recusada no servidor). -->
       <details id="reportDetails"><summary>Dados técnicos do laudo (opcional): imóvel, voo e responsável técnico</summary>
         <div class="form-grid">
           <div><label for="reportD_inspection_date">Data da inspeção</label><input id="reportD_inspection_date" data-detail="inspection_date" placeholder="ex.: 06/08/2025"></div>
@@ -286,6 +451,8 @@ __PLATFORM_CSS__
         </div>
         <p class="small-text">Campos vazios saem como "não informado"; o sistema não estima área, inclinação nem extensões.</p>
       </details>
+      <!-- Opções do laudo: #reportAllImages (todas as fotos) e #reportPdf (renderReports() desmarca e desabilita
+                 quando o servidor informa que não há reportlab). #reportStatus mostra o andamento e os links. -->
       <div class="checks"><input id="reportAllImages" type="checkbox"><label for="reportAllImages">Incluir evidências de todas as fotos (por padrão, só as fotos com ocorrências).</label></div>
       <div class="checks"><input id="reportPdf" type="checkbox" checked><label for="reportPdf">Gerar PDF (requer <code>reportlab</code>; o HTML é gerado sempre).</label></div>
       <div class="row-actions"><button type="button" class="primary" id="makeReport" disabled><svg><use href="#i-report"/></svg>Gerar laudo técnico</button></div>
@@ -293,6 +460,12 @@ __PLATFORM_CSS__
       <div class="disclaimer" style="margin-top:12px">O laudo reúne evidências e decisões de revisão. Gravidade, diagnóstico e recomendações ficam explicitamente pendentes de validação por responsável técnico; nada é preenchido por inferência.</div>
     </div>
     <div class="card">
+      <!-- Downloads. ENTRADA: #makeEvidence.onclick envia para /api/export/evidence as opções #evidenceOnly,
+                 #evidenceSize e #evidenceSuggestions (resultado em #evidenceStatus). #downloadCsv monta o CSV no
+                 próprio navegador (onclick no bloco Laudos) e #downloadReview baixa o JSON de revisão (reviewFile()).
+                 EXTENSAO: opção nova do pacote = select/checkbox com id aqui + a chave no corpo enviado em
+                 #makeEvidence.onclick + a leitura na rota /api/export/evidence do platform_server.py.
+                 EXTENSAO: download novo = outro div.download na lista abaixo com um botão de id próprio + o onclick no platform.js. -->
       <div class="card-head"><div><h2>Downloads da inspeção</h2><p>As caixas das suas decisões locais entram nos pacotes gerados pelo servidor.</p></div></div>
       <div class="form-grid">
         <div><label for="evidenceOnly">Fotos incluídas</label><select id="evidenceOnly"><option value="all">Todas</option><option value="decided">Só com decisão registrada</option><option value="positive">Só com ocorrências</option></select></div>
@@ -308,12 +481,17 @@ __PLATFORM_CSS__
     </div>
   </div>
   <div class="card" style="margin-top:16px">
+    <!-- Histórico de arquivos: #fileHistory recebe uma linha por arquivo (fileRow()) em renderFileHistory();
+             #refreshFiles chama renderFileHistory() de novo. -->
     <div class="card-head"><h2>Laudos e pacotes já gerados</h2><button type="button" class="small" id="refreshFiles">Atualizar</button></div>
     <div class="download-list" id="fileHistory"></div>
   </div>
 </section>
 
 <!-- ======================= TREINAMENTO ======================= -->
+<!-- Seção Treinamento (view-training): ciclo de fine-tuning e treino piloto.
+     Quem preenche: renderTraining() (tabela de execuções, listas de dataset/pesos, dispositivo) e
+     renderCycle() (passos do ciclo em #cycleSteps). -->
 <section class="view" id="view-training">
   <div class="card">
     <div class="card-head"><h2>Ciclo de fine-tuning com correções humanas</h2><span class="muted small-text">Cada etapa preserva a versão anterior; nada é adotado automaticamente.</span></div>
@@ -322,9 +500,19 @@ __PLATFORM_CSS__
   <div class="grid two" style="margin-top:16px">
     <div class="card">
       <div class="card-head"><h2>Execuções de treino</h2><span class="muted small-text" id="runsHint"></span></div>
+      <!-- #runsTable: uma linha por execução em runs/ (OPS.runs), montada por renderTraining(); clicar abre
+                 os detalhes em renderRunDetail(). #runsHint recebe a dica.
+                 EXTENSAO: coluna nova = um th aqui + a célula td na mesma posição em renderTraining(). -->
       <div class="table-wrap"><table><thead><tr><th>Execução</th><th>Estado</th><th class="num">Épocas</th><th class="num">Melhor mAP50</th><th class="num">s/época</th></tr></thead><tbody id="runsTable"></tbody></table></div>
     </div>
     <div class="card">
+      <!-- Novo treino piloto. trainOptions() lê #trainData, #trainWeights, #trainEpochs, #trainImgsz,
+                 #trainBatch, #trainTile e #trainGpuEval; updateTrainCommand() mostra o comando equivalente em
+                 #trainCommand e a estimativa em #trainEstimate a cada mudança.
+                 ENTRADA: #startTrain.onclick pede confirmação e chama startJob('train-pilot', trainOptions()).
+                 EXTENSAO: opção nova de treino = input com id aqui + o id na lista de ids observados (logo após
+                 renderRunDetail no platform.js) + a chave em trainOptions() + a leitura no job train-pilot do
+                 platform_server.py. -->
       <div class="card-head"><h2>Novo treino piloto</h2><span class="chip neutral" id="deviceChip"></span></div>
       <div class="form-grid">
         <div class="wide"><label for="trainData">Dataset piloto</label><select id="trainData"></select></div>
@@ -342,6 +530,8 @@ __PLATFORM_CSS__
     </div>
   </div>
   <div class="card" style="margin-top:16px">
+    <!-- Detalhes de uma execução: #runDetailTitle, #runDetailChips, gráficos #runLossChart e #runMetricChart
+             (lineChart() com LOSS_SERIES e METRIC_SERIES) e imagens #runPlots, tudo em renderRunDetail(). -->
     <div class="card-head"><h2 id="runDetailTitle">Detalhes da execução</h2><span id="runDetailChips"></span></div>
     <div class="grid halves">
       <div><h3>Perdas (treino e validação)</h3><div class="chart" id="runLossChart"></div></div>
@@ -352,11 +542,18 @@ __PLATFORM_CSS__
 </section>
 
 <!-- ======================= MONITORAMENTO ======================= -->
+<!-- Seção Monitoramento (view-monitor): treino ao vivo e tarefas do servidor local.
+     Quem preenche: renderMonitor() (anel de progresso, fatos, última época, gráficos ao vivo) e renderJob()
+     (estado da tarefa, log, botões). Com servidor, refreshOperations() atualiza a cada 5 s.
+     #monitorOffline some quando há servidor. -->
 <section class="view" id="view-monitor">
   <p class="notice info" id="monitorOffline">Instantâneo gerado quando a página foi criada. Para acompanhar um treino ao vivo, abra a plataforma pelo <b>Abrir plataforma DroneCamp.cmd</b> (servidor local).</p>
   <div class="grid two">
     <div class="card">
       <div class="card-head"><h2 id="monitorTitle">Treino</h2><span id="monitorState"></span></div>
+      <!-- Anel de progresso: renderMonitor() muda stroke-dashoffset de #ringValue (339,3 = circunferência
+                 2 x pi x 54) e escreve #ringText/#ringSub; #monitorFacts recebe os dados da execução e #monitorTiles
+                 as métricas da última época. -->
       <div class="ring-wrap">
         <svg class="ring" viewBox="0 0 132 132" role="img" aria-labelledby="ringLabel"><title id="ringLabel">Progresso do treino</title><circle class="track" cx="66" cy="66" r="54"/><circle class="value" id="ringValue" cx="66" cy="66" r="54" stroke-dasharray="339.3" stroke-dashoffset="339.3"/><text x="66" y="66" text-anchor="middle" id="ringText">0%</text><text x="66" y="86" text-anchor="middle" class="ring-sub" id="ringSub"></text></svg>
         <dl class="facts" id="monitorFacts"></dl>
@@ -365,6 +562,11 @@ __PLATFORM_CSS__
       <div class="metric-tiles" id="monitorTiles"></div>
     </div>
     <div class="card">
+      <!-- Tarefa no servidor: #jobState, #jobHint e #jobLog (renderJob()).
+                 ENTRADA: #startSuggest.onclick chama startJob('suggest', ...) com #suggestWeights e #suggestConf;
+                 #stopJob.onclick pede /api/jobs/stop.
+                 EXTENSAO: tarefa nova = um botão com id aqui + startJob('(tipo)', opções) no platform.js + o tipo
+                 aceito na rota /api/jobs do platform_server.py. -->
       <div class="card-head"><h2>Tarefa no servidor local</h2><span id="jobState" class="chip neutral">sem tarefa</span></div>
       <p class="muted small-text" id="jobHint">Disponível quando a plataforma é aberta pelo servidor local.</p>
       <div class="form-grid">
@@ -376,24 +578,31 @@ __PLATFORM_CSS__
     </div>
   </div>
   <div class="grid halves" style="margin-top:16px">
+    <!-- Gráficos ao vivo: #liveLossChart e #liveMetricChart, desenhados por renderMonitor() com lineChart(). -->
     <div class="card"><h2>Perdas ao vivo</h2><div class="chart" id="liveLossChart"></div></div>
     <div class="card"><h2>Métricas ao vivo</h2><div class="chart" id="liveMetricChart"></div></div>
   </div>
 </section>
 
 <!-- ======================= MODELOS ======================= -->
+<!-- Seção Modelos (view-models): critério de adoção, comparação, cobertura e evolução.
+     Quem preenche: renderModels() (veredito #adoptionVerdict, ranking #leaderboard e as listas),
+     renderCompare(), renderCoverage() e renderEvolution(). -->
 <section class="view" id="view-models">
   <div class="card">
     <div class="card-head"><h2>Critério de adoção de uma nova versão</h2></div>
     <div id="adoptionVerdict"></div>
   </div>
   <div class="card" style="margin-top:16px">
+    <!-- #compareSelect escolhe o arquivo de comparação (OPS.comparisons); onchange chama renderCompare(),
+             que monta #compareTable com recall e precisão por divisão. -->
     <div class="card-head"><h2>Comparação entre modelos</h2><select id="compareSelect" aria-label="Arquivo de comparação" style="width:auto"></select></div>
     <p class="muted small-text">Encontradas = caixas verdadeiras recuperadas (recall). Corretas/sugeridas = acertos entre as caixas sugeridas (precisão). Divisões marcadas como “vistas no treino” não medem generalização.</p>
     <div class="table-wrap" id="compareTable"></div>
   </div>
   <div class="grid halves" style="margin-top:16px">
     <div class="card">
+      <!-- #coverageRun escolhe a execução; onchange chama renderCoverage(), que monta #coverageTable. -->
       <div class="card-head"><h2>Caixas por classe no dataset do treino</h2><select id="coverageRun" aria-label="Execução" style="width:auto"></select></div>
       <div class="table-wrap" id="coverageTable"></div>
     </div>
@@ -404,6 +613,9 @@ __PLATFORM_CSS__
     </div>
   </div>
   <div class="card" style="margin-top:16px">
+    <!-- Evolução: #evolutionFilter (onchange chama renderEvolution()) escolhe os treinos; o gráfico vai em
+             #evolutionChart e o resumo em #evolutionSummary, ambos por renderEvolution().
+             EXTENSAO: filtro novo = um option em #evolutionFilter + o caso em evolutionPoints(). -->
     <div class="card-head"><div><h2>Evolução dos modelos</h2><p id="evolutionHint"></p></div>
       <label for="evolutionFilter" class="sr-only">Treinos no gráfico</label>
       <select id="evolutionFilter" style="width:auto"><option value="all">Todos os treinos</option><option value="completed">Só concluídos</option></select></div>
@@ -414,6 +626,10 @@ __PLATFORM_CSS__
 </section>
 
 <!-- ======================= CLASSES ======================= -->
+<!-- Seção Classes (view-classes): cadastro das categorias de ocorrência.
+     Quem preenche: renderClasses() (tabela #classesTable, #classesHint, #classesVersion); os dados vêm de
+     loadClasses() (/api/classes) com servidor ou de DATA.classes aberta do disco (#classesOffline aparece).
+     ATENCAO: IDs de classe são contrato com pesos, labels e revisões; nunca são reaproveitados. -->
 <section class="view" id="view-classes">
   <p class="notice" id="classesNotice"><strong>Mudanças nas classes exigem novo ciclo de treinamento para ter efeito nos modelos.</strong> Nome de exibição, cor e ativo/inativo valem só na interface; uma classe nova só passa a ser detectada depois de fotos aprovadas, nova versão da taxonomia e treino comparado.</p>
   <p class="notice info hidden" id="classesOffline">Para editar as classes, abra a plataforma pelo servidor local (<b>Abrir plataforma DroneCamp.cmd</b>). Aberta direto do disco, a página só lista as classes embutidas.</p>
@@ -424,6 +640,11 @@ __PLATFORM_CSS__
       <p class="muted small-text">Inativa: a classe some das opções de caixa nova; caixas já feitas e os pesos treinados não mudam. IDs nunca são reaproveitados.</p>
     </div>
     <div class="card">
+      <!-- Nova classe. ENTRADA: #createClass.onclick envia POST /api/classes com #newClassName, #newClassDisplay,
+                 #newClassColor e #newClassCriterion; o botão só habilita quando newClassValid() aceita o nome
+                 (snake_case) e o nome de exibição. #classesStatus mostra o resultado (classStatus()).
+                 EXTENSAO: atributo novo da classe = campo com id aqui + a chave no corpo de #createClass.onclick
+                 + a validação e gravação em class_catalog.py (via a rota /api/classes do platform_server.py). -->
       <div class="card-head"><h2>Nova classe</h2></div>
       <label for="newClassName">Nome técnico</label><input id="newClassName" maxlength="60" placeholder="ex.: calha_danificada" autocomplete="off">
       <p class="field-help">Português em snake_case (minúsculas sem acento, números e _). É o nome que entra no dataset e nos pesos.</p>
@@ -438,11 +659,15 @@ __PLATFORM_CSS__
   </div>
 </section>
 </main>
+<!-- Rodapé fixo com o aviso de limitações técnicas da plataforma. -->
 <div class="footer">Caixas em fotos semelhantes podem repetir o mesmo defeito. Não há medição física, avaliação hidráulica ou aprovação técnica automática. Gravidade, diagnóstico e recomendações dependem de validação técnica.</div>
 </div>
 </div>
+<!-- #toast: aviso flutuante no canto da tela, mostrado pela função toast(título, texto) do platform.js. -->
 <div id="toast" role="status" aria-live="polite"><div class="check" aria-hidden="true">✓</div><div><b id="toastTitle"></b><span id="toastText"></span></div></div>
 
+<!-- Script: o conteúdo de platform.js é embutido aqui por review_render.build_page (lógica de toda a página).
+     Mude o comportamento no platform.js, não aqui. -->
 <script>
 __PLATFORM_JS__
 </script>
