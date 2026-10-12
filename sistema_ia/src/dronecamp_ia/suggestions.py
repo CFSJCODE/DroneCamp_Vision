@@ -59,6 +59,7 @@ Onde mexer:
 
 from __future__ import annotations
 
+from dataclasses import replace
 from datetime import datetime, timezone
 import json
 from pathlib import Path
@@ -245,7 +246,8 @@ def detect_boxes(model, path: Path, config: ProjectConfig, conf: float, tiling: 
 # migrate-review as sugestões antigas são recusadas e precisam ser geradas de novo.
 def suggest_for_registry(config: ProjectConfig, registry_path: Path, weights: str, conf: float | None = None,
                          calibrator: Path | str | None = None, allow_unproven_calibrator: bool = False,
-                         zero_shot: bool = False, onnx_provider: str = "directml") -> Path:
+                         zero_shot: bool = False, onnx_provider: str = "directml",
+                         imgsz: int | None = None) -> Path:
     """Grave suggestions.json ao lado do registro e regenere a página de revisão.
 
     Com ``calibrator`` (pasta de ``fit-calibrator``), cada caixa ganha
@@ -264,6 +266,15 @@ def suggest_for_registry(config: ProjectConfig, registry_path: Path, weights: st
         allow_unproven_calibrator (bool): aceita calibrador sem ganho medido (testes).
         zero_shot (bool): liga a busca aberta por texto (YOLOE).
         onnx_provider (str): provedor do ONNX Runtime (``"directml"`` = GPU no Windows).
+        imgsz (int | None): tamanho de inferência explícito. Para pesos piloto copiados
+            para fora de ``runs/`` (ex.: ``C:\\DroneCamp_runs``), sem ``summary.json``, que
+            seriam lidos no imgsz de produção em vez do tamanho do treino.
+
+    Pesos de uma taxonomia anterior (classes = início exato das atuais) são aceitos;
+    as classes que eles não conhecem vão em ``uncovered_classes`` do JSON e na página.
+    Os ids das sugestões levam os 8 primeiros caracteres do hash dos pesos (ex.:
+    ``809d823e-s001``): descartes guardados no navegador para sugestões de outro
+    modelo não escondem as novas por coincidência de id.
 
     Retorna:
         Path: o ``index.html`` regenerado por ``render_review_package``.
@@ -291,10 +302,14 @@ def suggest_for_registry(config: ProjectConfig, registry_path: Path, weights: st
     # .onnx exportado roda na GPU (DirectML) por padrão; .pt roda no PyTorch (CPU).
     model = load_inference_model(config, weights, onnx_provider)
     # ATENCAO: recusa pesos cujas classes não sejam exatamente as da taxonomia (ex.: COCO).
-    check_domain_names(model, detection_names(load_taxonomy(config.taxonomy_path)))
+    uncovered = check_domain_names(model, detection_names(load_taxonomy(config.taxonomy_path)), allow_prefix=True)
     pilot = is_pilot_checkpoint(model.dronecamp_source)
-    # A partir daqui "config" é a cópia ajustada (imgsz do piloto/ONNX).
+    # A partir daqui "config" é a cópia ajustada (imgsz do piloto/ONNX, ou o --imgsz explícito).
     config = pilot_inference_config(config, model)
+    if imgsz is not None:
+        if imgsz < 32:
+            raise ValueError("imgsz deve ser pelo menos 32.")
+        config = replace(config, prediction={**config.prediction, "imgsz": int(imgsz)})
     calibration = load_calibrator(config, calibrator, allow_unproven_calibrator)
     # 2a. Busca aberta opcional: (prompts, modelo YOLOE, checkpoint, descrição para o JSON).
     open_search = None
@@ -329,13 +344,23 @@ def suggest_for_registry(config: ProjectConfig, registry_path: Path, weights: st
     # 4. suggestions.json fica preso a esta versão do registro (hash) e aos pesos usados.
     # Pesos: o .onnx quando a inferência foi em ONNX, senão o .pt de origem.
     checkpoint = Path(getattr(model, "dronecamp_onnx", None) or model.dronecamp_source).resolve()
+    weights_sha256 = file_hash(checkpoint)
+    # Ids presos ao modelo: "s001" de outro modelo, já descartado no navegador, não esconde este.
+    for boxes in images.values():
+        for box in boxes:
+            box["id"] = f"{weights_sha256[:8]}-{box['id']}"
     # EXTENSAO: novo campo em suggestions.json: acrescente neste dict; para a página vê-lo,
     # inclua a chave na tupla de "suggestions" do payload em review_render.render_review_package.
     write_json(registry_path.parent / "suggestions.json", {
         "schema_version": 1, "registry_sha256": file_hash(registry_path),
         "created_at": datetime.now(timezone.utc).isoformat(),
-        "weights": str(checkpoint), "weights_sha256": file_hash(checkpoint), "pilot": pilot,
-        "model_label": "Modelo piloto (não validado)" if pilot else "Modelo especializado",
+        "weights": str(checkpoint), "weights_sha256": weights_sha256, "pilot": pilot,
+        # Classes da taxonomia que estes pesos não propõem (pesos de taxonomia anterior).
+        "uncovered_classes": uncovered, "imgsz_override": imgsz,
+        # Pesos fora de runs/ não são reconhecidos como piloto; com classes a menos ou --imgsz
+        # são de um treino anterior e também não foram validados para produção.
+        "model_label": "Modelo piloto (não validado)" if pilot
+        else "Modelo de treino anterior (não validado)" if uncovered or imgsz is not None else "Modelo especializado",
         "runtime": model.dronecamp_runtime, "source_checkpoint": str(model.dronecamp_source),
         "tiling": config.pilot.get("tiling"),
         "conf": conf, "imgsz": config.prediction["imgsz"], "warning": SUGGESTION_WARNING, "images": images,
@@ -353,7 +378,7 @@ def suggest_for_registry(config: ProjectConfig, registry_path: Path, weights: st
 def create_review_for_new_images(config: ProjectConfig, source: Path, output: Path, building_group: str,
                                  weights: str, conf: float | None = None, calibrator: Path | str | None = None,
                                  allow_unproven_calibrator: bool = False, zero_shot: bool = False,
-                                 onnx_provider: str = "directml") -> Path:
+                                 onnx_provider: str = "directml", imgsz: int | None = None) -> Path:
     """Fotos novas viram uma revisão própria, com originais congelados por hash.
 
     Parâmetros:
@@ -432,4 +457,4 @@ def create_review_for_new_images(config: ProjectConfig, source: Path, output: Pa
     registry_path = output / "registry.json"
     write_json(registry_path, registry)
     return suggest_for_registry(config, registry_path, weights, conf, calibrator, allow_unproven_calibrator, zero_shot,
-                                onnx_provider)
+                                onnx_provider, imgsz)

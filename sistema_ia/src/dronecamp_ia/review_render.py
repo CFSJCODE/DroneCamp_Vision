@@ -393,7 +393,7 @@ def render_review_package(config: ProjectConfig, registry_path: Path) -> Path:
                # weights_run_id: execução dos pesos das sugestões (só o id, nunca o caminho do PC),
                # para a página ligar o modelo em uso ao treino sem depender de uma comparação salva.
                # EXTENSAO: novo metadado das sugestões para a página: acrescente a chave na tupla.
-               "suggestions": {**{key: suggestions.get(key) for key in ("model_label", "conf", "warning", "weights_sha256", "pilot", "calibrator")},
+               "suggestions": {**{key: suggestions.get(key) for key in ("model_label", "conf", "warning", "weights_sha256", "pilot", "calibrator", "uncovered_classes")},
                                "weights_run_id": run_id_from_path(suggestions.get("weights"))} if suggestions else None}
     write_json(directory / "browser_data.json", payload)
     (directory / "index.html").write_text(build_page(payload, collect_operations(config, directory)), encoding="utf-8")

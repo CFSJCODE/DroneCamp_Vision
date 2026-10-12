@@ -357,11 +357,20 @@ __PLATFORM_CSS__
       <details open><summary>Observações da revisão visual</summary><p id="auditNotes"></p></details>
       <!-- Lista de atalhos mostrada ao usuário. As teclas de verdade ficam no listener de keydown do platform.js
                  ("Atalhos de teclado só na revisão"); mude os dois juntos. -->
-      <div class="shortcuts">Atalhos: <kbd>←</kbd> <kbd>→</kbd> fotos · <kbd>Scroll</kbd> zoom no cursor · arrastar ou botão do meio: mover a foto · <kbd>+</kbd> <kbd>–</kbd> <kbd>0</kbd> zoom · <kbd>B</kbd> desenhar · <kbd>A</kbd> aceitar 1ª sugestão · <kbd>X</kbd> descartar 1ª sugestão · <kbd>Del</kbd> excluir caixa selecionada</div>
+      <div class="shortcuts">Atalhos: <kbd>←</kbd> <kbd>→</kbd> fotos · <kbd>Scroll</kbd> zoom no cursor · arrastar ou botão do meio: mover a foto · <kbd>+</kbd> <kbd>–</kbd> <kbd>0</kbd> zoom · <kbd>B</kbd> desenhar · <kbd>A</kbd> aceitar 1ª sugestão · <kbd>X</kbd> descartar 1ª sugestão · <kbd>Enter</kbd> aceitar foto · <kbd>R</kbd> recusar foto · <kbd>Del</kbd> excluir caixa selecionada</div>
     </section>
 
     <!-- Inspetor da foto (coluna da direita): sugestões da IA, caixas da foto e a decisão. -->
     <aside class="inspector" aria-label="Inspetor da foto">
+      <!-- Decisão rápida: #acceptPhoto (acceptPhoto(), tecla Enter) aceita as sugestões visíveis + caixas
+                 registradas e confirma a foto; #rejectPhoto (rejectPhoto(), tecla R) descarta as sugestões visíveis
+                 e marca a foto como "Há dúvida". As duas abrem a próxima foto sem decisão.
+                 ATENCAO: é decisão humana sobre o que está na tela; continua no rascunho até salvar o arquivo. -->
+      <section class="card">
+        <div class="section-title"><h2>Decisão rápida</h2></div>
+        <p class="muted small-text">Confira a foto com as caixas e as sugestões tracejadas da IA. Aceitar confirma tudo o que está visível; recusar deixa a foto em dúvida para correção posterior.</p>
+        <div class="row-actions"><button class="primary" id="acceptPhoto" type="button">Aceitar foto (Enter)</button><button class="bad" id="rejectPhoto" type="button">Recusar (R)</button></div>
+      </section>
       <!-- Sugestões do modelo: #suggestionPanel só aparece quando há sugestões pendentes; #suggestionCount,
                  #suggestionMeta e a lista #suggestions são montados por renderSuggestions(). Aceitar chama
                  acceptSuggestion() (tecla A); descartar chama dismissSuggestion() (tecla X).

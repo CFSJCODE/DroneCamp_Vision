@@ -296,6 +296,8 @@ def build_parser() -> argparse.ArgumentParser:
                          help="Somar a busca aberta (YOLOE + configs/zero_shot_prompts.json) às sugestões do piloto.")
     suggest.add_argument("--onnx-provider", choices=["directml", "cpu"], default="directml",
                          help="Para --weights .onnx (comando export): directml usa a GPU; cpu, o ONNX Runtime na CPU.")
+    suggest.add_argument("--imgsz", type=int,
+                         help="Tamanho de inferência; para pesos piloto fora de runs/ (sem summary.json), use o do treino (ex.: 640).")
     # EXTENSAO: opção nova do suggest: acrescente aqui e passe-a nas DUAS chamadas do
     # ramo "suggest" em main (suggest_for_registry e create_review_for_new_images),
     # que recebem os argumentos por posição.
@@ -601,13 +603,13 @@ def main(argv: list[str] | None = None) -> int:
                 # ATENCAO: argumentos por POSIÇÃO; a ordem tem de ser a da assinatura
                 # de suggest_for_registry (confira lá ao acrescentar um).
                 output = suggest_for_registry(config, args.registry, args.weights, args.conf, args.calibrator,
-                                              args.allow_unproven_calibrator, args.zero_shot, args.onnx_provider)
+                                              args.allow_unproven_calibrator, args.zero_shot, args.onnx_provider, args.imgsz)
             else:
                 if not args.output or not args.group:
                     raise ValueError("Fotos novas exigem --output e --group.")
                 output = create_review_for_new_images(config, args.source, args.output, args.group, args.weights,
                                                       args.conf, args.calibrator, args.allow_unproven_calibrator,
-                                                      args.zero_shot, args.onnx_provider)
+                                                      args.zero_shot, args.onnx_provider, args.imgsz)
         # Ramo import-media: ingest.ingest_media; imprime o resumo e devolve a pasta da revisão nova.
         elif args.command == "import-media":
             from .ingest import ingest_media
