@@ -23,6 +23,8 @@ from datetime import datetime, timedelta, timezone
 import re
 
 # Etapas de ``runs/<etapa>_<AAAAMMDDTHHMMSSZ>_<hash8>``.
+# EXTENSAO: tipo novo de pasta em runs/ = nome aqui E no bloco "Nomes legíveis" do
+# platform.js. ATENCAO: os dois algoritmos precisam dar o mesmo resultado (tests/test_naming.py).
 STAGE_NAMES = {
     "pilot_train": "Treino Piloto", "train": "Treino de Produção", "tune": "Ajuste de Hiperparâmetros",
     "export": "Exportação", "export_demo": "Exportação de Demonstração", "predict_demo": "Predição de Demonstração",

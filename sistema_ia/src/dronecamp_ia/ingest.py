@@ -49,6 +49,8 @@ __all__ = ["IMAGE_EXTENSIONS", "VIDEO_EXTENSIONS", "WEB_IMAGE_SUFFIXES", "media_
            "extract_video_frames", "canonicalize_photo", "ingest_media"]
 
 # Contêineres de vídeo aceitos (a decodificação fica com OpenCV ou ffmpeg).
+# EXTENSAO: formato de vídeo novo = extensão aqui; formato de foto novo = dataset.IMAGE_EXTENSIONS
+# (e WEB_IMAGE_SUFFIXES abaixo, se o navegador mostra o formato sem conversão).
 VIDEO_EXTENSIONS = frozenset({".mp4", ".mov", ".avi", ".mkv", ".m4v", ".webm"})
 # Formatos que o navegador exibe e o servidor serve; fotos nos demais (TIFF, BMP) são regravadas como JPEG ao congelar.
 WEB_IMAGE_SUFFIXES = frozenset({".jpg", ".jpeg", ".png", ".webp"})

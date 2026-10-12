@@ -39,6 +39,9 @@ from .io import write_json
 # Definição dos comandos e de suas opções.
 # ---------------------------------------------------------------------------
 
+# EXTENSAO: comando novo = (1) commands.add_parser(...) aqui, com as opções; (2) um ramo
+# ``elif args.command == "..."`` em main(), com o import dentro do ramo; (3) uma linha na
+# lista de comandos do docstring do topo; (4) um teste em tests/. Guia: docs/guia_manutencao.md.
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="DroneCamp: detecção assistida de evidências em telhados.")
     parser.add_argument("--config", type=Path, help="Arquivo configs/project.yaml alternativo.")
@@ -266,6 +269,8 @@ def build_parser() -> argparse.ArgumentParser:
 # Execução: lê a configuração e despacha cada comando para seu módulo.
 # ---------------------------------------------------------------------------
 
+# ENTRADA: todo ``python -m dronecamp_ia <comando>`` (e toda tarefa iniciada pela plataforma,
+# que roda este mesmo CLI num processo filho) começa aqui.
 def main(argv: list[str] | None = None) -> int:
     """Ponto de entrada protegido por __main__ para compatibilidade com Windows."""
     args = build_parser().parse_args(argv)
@@ -463,6 +468,8 @@ def main(argv: list[str] | None = None) -> int:
             migrate_review_taxonomy(config, args.registry, args.previous_taxonomy, args.output)
             output = args.output
         else:
+            # ATENCAO: este else pega qualquer comando sem ramo próprio. Comando novo sem o seu elif cai
+            # aqui e quebra com AttributeError ('Namespace' sem 'pdf'); confira o elif ao criar um comando.
             from .report_images import extract_report_images
             manifest = extract_report_images(args.pdf, args.output)
             print(json.dumps({"count": manifest["count"], "unique_binary_images": manifest["unique_binary_images"], "output": str(args.output.resolve())}, ensure_ascii=False))

@@ -29,6 +29,7 @@ import yaml
 from PIL import Image
 
 # Formatos de foto aceitos, nomes dos splits e tolerância numérica das caixas.
+# EXTENSAO: formato de imagem aceito em todo o projeto (dataset, export, importação de mídia).
 IMAGE_EXTENSIONS = frozenset({".jpg", ".jpeg", ".png", ".tif", ".tiff", ".bmp", ".webp"})
 SPLITS = ("train", "val", "test")
 BOX_TOLERANCE = 1e-6

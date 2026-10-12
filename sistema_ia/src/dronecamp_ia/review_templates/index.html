@@ -90,6 +90,8 @@ __PLATFORM_CSS__
 </div>
 
 <main>
+<!-- EXTENSAO: cada seção é um <section class="view" id="view-<nome>">; ver VIEWS no platform.js. -->
+<!-- ATENCAO: este arquivo é só o modelo; a página que abre no navegador é gerada por render-review/refresh-page. -->
 <!-- ======================= INÍCIO ======================= -->
 <section class="view" id="view-home">
   <div class="grid kpis">
@@ -263,6 +265,7 @@ __PLATFORM_CSS__
         <div class="wide"><label for="reportInspector">Responsável técnico (validação)</label><input id="reportInspector" placeholder="Nome e registro profissional, se houver"></div>
         <div class="wide"><label for="reportNotes">Observações</label><textarea id="reportNotes" placeholder="Condições do voo, limitações, pendências."></textarea></div>
       </div>
+      <!-- EXTENSAO: campo novo no laudo = input com data-detail="<chave>" aqui + a mesma chave em laudo_abnt.DETAIL_FIELDS. -->
       <details id="reportDetails"><summary>Dados técnicos do laudo (opcional): imóvel, voo e responsável técnico</summary>
         <div class="form-grid">
           <div><label for="reportD_inspection_date">Data da inspeção</label><input id="reportD_inspection_date" data-detail="inspection_date" placeholder="ex.: 06/08/2025"></div>

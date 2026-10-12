@@ -165,6 +165,9 @@ function persist() {
 }
 
 /* ======================= Navegação entre seções ======================= */
+// EXTENSAO: seção nova na plataforma = (1) <section class="view" id="view-<nome>"> no index.html;
+// (2) botão .nav-item com data-view="<nome>" na barra lateral; (3) entrada aqui em VIEWS;
+// (4) if (view === '<nome>') render<Nome>() em showView; (5) bloco próprio com render<Nome>().
 const VIEWS = {
   home: ['Início', 'Visão geral da inspeção aberta e do espaço de trabalho'],
   inspections: ['Inspeções', 'Campanhas, edificações e revisões registradas'],
@@ -1400,6 +1403,9 @@ $('createClass').onclick = async () => {
 };
 
 /* ======================= Servidor local (opcional) ======================= */
+// EXTENSAO: chamada nova ao servidor = api('/api/...') para ler (GET) ou api('/api/...', corpo)
+// para alterar (POST com o token). A rota correspondente fica em platform_server.py (do_GET/do_POST).
+// ATENCAO: aberta do disco (SERVER falso) não há servidor; teste SERVER antes de chamar.
 async function api(path, body) {
   const response = await fetch(path, body === undefined ? {} : { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-DroneCamp-Token': TOKEN }, body: JSON.stringify(body) });
   const value = await response.json().catch(() => ({}));
@@ -1452,6 +1458,9 @@ $('stopJob').onclick = async () => {
 $('suggestWeights').onchange = renderJob;
 
 /* ======================= Inicialização ======================= */
+// ENTRADA: daqui para baixo roda uma vez quando a página abre (tema, classes, primeira foto,
+// seção inicial e, com servidor, consultas a cada 5 s/30 s). Erro de JavaScript aparece no
+// console do navegador (F12 → Console) com a linha deste arquivo dentro do index.html.
 function applyTheme(theme) {
   document.documentElement.dataset.theme = theme;
   try { localStorage.setItem('dronecamp-theme', theme) } catch {}

@@ -105,6 +105,8 @@ def evaluate_model(model, model_config: ProjectConfig, root: Path, samples: list
     return report
 
 
+# ATENCAO: esta é a regra de adoção de modelo. Afrouxar os limites abaixo faz um modelo pior
+# parecer melhor; mude só com justificativa registrada em docs/decisoes.md.
 def decide(baseline: dict, candidate: dict, names: list[str], min_map_gain: float = 0.01,
            max_class_recall_drop: float = 0.1, min_class_boxes: int = 3) -> dict:
     """Aplica a regra de adoção e lista cada motivo de recusa e cada regressão."""

@@ -32,6 +32,9 @@ from .operations import collect_operations, run_id_from_path
 from .review_data import boxes_to_yolo, review_image_size, validate_boxes, write_review_summary
 
 # Uma cor por classe (índice = ID da classe), usada nas evidências e na página (paleta controlada e harmoniosa).
+# ATENCAO: a paleta tem 14 cores (IDs 0–13). render_review_package indexa COLORS[class_id] sem
+# módulo; ao ativar a classe 14 (fase 1) acrescente cores aqui antes, senão o render-review
+# quebra com IndexError. Cor editada pela seção Classes fica em taxonomy_overrides.json.
 COLORS = ["#FF5C70", "#E63950", "#FF9F43", "#42B8E8", "#9B6DF2", "#EC5DAA", "#52C79A", "#2BBE72", "#F4C542", "#56D1E8", "#FF7A1A", "#F5D547", "#B89AF8", "#4F7DFF"]
 
 
@@ -60,6 +63,9 @@ def _load_suggestions(directory: Path, registry_path: Path, class_count: int) ->
     return suggestions
 
 
+# ATENCAO: os marcadores de substituição do template (CSS, JS e dados) são trocados por texto
+# puro. Não escreva esses nomes em comentários do index.html/platform.js: o marcador de dados
+# precisa aparecer uma única vez no platform.js, senão a página não é gerada.
 def build_page(payload: dict, operations: dict | None) -> str:
     """Preenche o modelo da plataforma com os dados da revisão e o painel de operações.
 
@@ -127,6 +133,9 @@ def refresh_review_page(config: ProjectConfig, registry_path: Path) -> Path:
     return directory / "index.html"
 
 
+# ENTRADA: comando render-review. Gera a pasta inteira da revisão; refresh-page (acima) só
+# regrava o index.html. ATENCAO: data/reviews/*/index.html é gerado no PC do projeto; depois de
+# mudar o template rode refresh-page lá, em cada inspeção, em vez de editar o HTML gerado.
 def render_review_package(config: ProjectConfig, registry_path: Path) -> Path:
     """Copie evidências para visualização; fotos e registros anteriores permanecem."""
     # 1. Registro na taxonomia atual e pastas de saída ao lado dele.

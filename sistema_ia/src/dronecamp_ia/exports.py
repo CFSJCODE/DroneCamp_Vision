@@ -58,6 +58,8 @@ DECISION_STATUSES = IMAGE_STATUSES | {"pending"}
 # Cor do texto nas placas das caixas (contraste ≥ 4,5:1 com todas as cores de classe).
 PLATE_TEXT = "#08111F"
 # Colunas do ocorrencias.csv (uma linha por caixa) e do fotos.csv (uma linha por foto).
+# EXTENSAO: coluna nova no ocorrencias.csv/fotos.csv = nome aqui + valor na mesma posição em
+# _occurrence_rows/_photo_rows (mais abaixo). A ordem das listas precisa casar.
 OCCURRENCE_COLUMNS = ["numero_foto", "image_sha256", "filename", "status", "origem", "caixa", "classe_id", "classe",
                       "x1", "y1", "x2", "y2", "nota"]
 PHOTO_COLUMNS = ["numero_foto", "image_sha256", "filename", "largura", "altura", "paginas", "grupo_edificacao", "cena",
@@ -498,6 +500,7 @@ class _HashingWriter:
         pass
 
 
+# ENTRADA: POST /api/export/evidence (botão do ZIP de evidências na seção Laudos).
 def build_evidence_package(config: ProjectConfig, registry_path: Path, output_dir: Path, *, decisions: dict | None = None,
                            suggestions: dict | None = None, max_side: int | None = 2048, only: str = "all",
                            include_suggestions: bool = False) -> dict:
@@ -580,6 +583,9 @@ def occurrences_csv(config: ProjectConfig, registry_path: Path, decisions: dict 
 # Laudo técnico preliminar (HTML / JSON / PDF).
 # ---------------------------------------------------------------------------
 
+# ENTRADA: POST /api/report (botão de laudo na seção Laudos). Monta laudo.json e chama
+# laudo_abnt.render_html/write_pdf. ATENCAO: gravidade, diagnóstico e recomendação ficam
+# "pendente de validação técnica"; nunca preencha esses campos por inferência do modelo.
 def build_report(config: ProjectConfig, registry_path: Path, output_dir: Path, *, decisions: dict | None = None,
                  suggestions: dict | None = None, reviewer: str = "", title: str | None = None, client: str = "",
                  site: str = "", inspector: str = "", notes: str = "", details: dict | None = None, pdf: bool = True,

@@ -34,6 +34,8 @@ from .io import file_hash
 from .naming import run_name
 
 # Colunas do results.csv da Ultralytics enviadas à página (as demais ficam no disco).
+# EXTENSAO: métrica nova nas curvas da plataforma = coluna do results.csv (Ultralytics) → nome
+# curto aqui; a página lê esse nome curto em OPS.runs[].curves.
 CURVE_COLUMNS = {
     "epoch": "epoch", "time": "time",
     "train/box_loss": "train_box", "train/cls_loss": "train_cls",
@@ -299,6 +301,7 @@ def collect_review_files(directory: Path | None) -> list[dict]:
     return files
 
 
+# ENTRADA: GET /api/operations (a cada 5 s pela página) e o instantâneo embutido no index.html.
 def collect_operations(config: ProjectConfig, page_directory: Path | None = None) -> dict:
     """Instantâneo completo para a página (sem treinar, aprovar ou copiar nada)."""
     root = config.root

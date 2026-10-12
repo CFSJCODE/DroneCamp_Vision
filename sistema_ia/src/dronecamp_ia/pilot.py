@@ -187,6 +187,9 @@ def group_flight_sequences(images: list[dict], block: int) -> int:
     return changed
 
 
+# ENTRADA: comando build-pilot-data. Só fotos com aprovação humana entram (_approved).
+# ATENCAO: cenas relacionadas ficam no mesmo split (split_by_scene/--sequence-block); separar
+# fotos da mesma cena entre treino e teste infla as métricas.
 def build_pilot_dataset(config: ProjectConfig, registry_paths: list[Path], output: Path,
                         seed: int = 42, fractions: tuple[float, float] = (0.15, 0.15),
                         sequence_block: int = 0) -> dict:
