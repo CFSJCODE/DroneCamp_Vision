@@ -31,6 +31,8 @@ const decisionNames = { positive: 'Há ocorrências', negative: 'Negativa', ambi
 const storageKey = 'dronecamp-review-' + DATA.registry_sha256;
 let saved = {};
 try { saved = JSON.parse(localStorage.getItem(storageKey) || '{}') } catch {}
+// Zoom visual do visor (escala e deslocamento em px de tela); volta a 100% a cada foto.
+const zoom = { scale: 1, x: 0, y: 0, pan: null };
 let state = { index: 0, selected: -1, drawing: false, start: null, img: new Image(), drafts: saved.images || {}, reviewer: saved.reviewer || '', view: 'home', run: null };
 const clone = value => JSON.parse(JSON.stringify(value));
 const item = () => DATA.images[state.index];
@@ -41,6 +43,8 @@ const pct = value => value == null ? '—' : `${(value * 100).toFixed(1)}%`;
 const fmtBytes = n => n == null ? '—' : n >= 1e9 ? `${(n / 1e9).toFixed(2)} GB` : n >= 1e6 ? `${(n / 1e6).toFixed(1)} MB` : n >= 1e3 ? `${Math.round(n / 1e3)} kB` : `${n} B`;
 // Data legível dd/mm/aaaa hh:mm no fuso do navegador (nunca o carimbo ISO cru).
 const fmtDate = value => { if (!value) return '—'; const date = new Date(value); return isNaN(date) ? String(value) : date.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).replace(',', '') };
+// Quantas edificações a inspeção cobre, sem expor os códigos internos (building_group).
+const buildingCount = n => n ? `${n} edificaç${n > 1 ? 'ões' : 'ão'}` : 'edificação não informada';
 /* ======================= Nomes legíveis ======================= */
 // Mesmo algoritmo de naming.py (tests/test_naming.py roda os dois e exige resultados iguais).
 // Ids e pastas em disco nunca mudam; aqui só se deriva o nome mostrado.
@@ -409,7 +413,7 @@ function openPhoto(index) {
   $('viewer').classList.remove('drawing');
   const photo = item();
   $('photoTitle').textContent = `Foto ${index + 1} de ${DATA.images.length}`;
-  $('photoMeta').textContent = [photo.filename, photo.pages && photo.pages.length ? `páginas ${photo.pages.join(', ')}` : null, `${photo.width} × ${photo.height}`, photo.building_group, photo.ingest && photo.ingest.kind === 'video_frame' ? `quadro de vídeo em ${photo.ingest.frame_time_s}s` : null].filter(Boolean).join(' · ');
+  $('photoMeta').textContent = [photo.filename, photo.pages && photo.pages.length ? `páginas ${photo.pages.join(', ')}` : null, `${photo.width} × ${photo.height}`, photo.ingest && photo.ingest.kind === 'video_frame' ? `quadro de vídeo em ${photo.ingest.frame_time_s}s` : null].filter(Boolean).join(' · ');
   $('proposalStatus').textContent = names[photo.status];
   $('proposalStatus').className = 'chip ' + ({ positive: 'bad', negative: 'ok', ambiguous: 'warn', excluded: 'neutral' }[photo.status] || '');
   $('proposalNotes').textContent = photo.notes;
@@ -425,6 +429,7 @@ function openPhoto(index) {
   $('originalLink').href = photo.image_url;
   $('decision').value = active.status; $('notes').value = active.notes; $('confirmed').checked = active.confirmed_complete;
   $('canvas').width = photo.width; $('canvas').height = photo.height;
+  resetZoom();
   ['x1', 'x2'].forEach(id => $(id).max = photo.width); ['y1', 'y2'].forEach(id => $(id).max = photo.height);
   state.img = new Image();
   state.img.onload = () => renderBoxes();
@@ -486,6 +491,47 @@ function point(event) {
   const rect = $('canvas').getBoundingClientRect();
   return [Math.min(item().width, Math.max(0, (event.clientX - rect.left) * item().width / rect.width)), Math.min(item().height, Math.max(0, (event.clientY - rect.top) * item().height / rect.height))]
 }
+/* Zoom e movimento da foto. A escala é só visual (transform no canvas): point()
+   lê o retângulo já transformado, então as caixas continuam em pixels da foto. */
+function applyZoom() {
+  if (zoom.scale <= 1) { zoom.scale = 1; zoom.x = 0; zoom.y = 0 }
+  $('canvas').style.transform = zoom.scale === 1 ? '' : `translate(${zoom.x}px, ${zoom.y}px) scale(${zoom.scale})`;
+  $('viewer').classList.toggle('zoomed', zoom.scale > 1);
+  $('zoomValue').textContent = `${Math.round(zoom.scale * 100)}%`;
+}
+// Mantém fixo o ponto da foto sob (clientX, clientY); sem coordenadas, usa o centro do visor.
+function zoomTo(scale, clientX, clientY) {
+  const rect = $('canvas').getBoundingClientRect();
+  if (clientX == null) { const box = $('viewer').getBoundingClientRect(); clientX = box.left + box.width / 2; clientY = box.top + box.height / 2 }
+  const next = Math.min(12, Math.max(1, scale));
+  const u = (clientX - rect.left) / zoom.scale, v = (clientY - rect.top) / zoom.scale;
+  zoom.x += clientX - u * next - rect.left; zoom.y += clientY - v * next - rect.top;
+  zoom.scale = next; applyZoom();
+}
+function resetZoom() { zoom.scale = 1; applyZoom() }
+$('viewer').addEventListener('wheel', event => {
+  if (!HAS_IMAGES) return;
+  event.preventDefault();
+  zoomTo(zoom.scale * Math.exp(-event.deltaY * (event.deltaMode === 1 ? 0.05 : 0.0015)), event.clientX, event.clientY);
+}, { passive: false });
+$('zoomIn').onclick = () => zoomTo(zoom.scale * 1.25);
+$('zoomOut').onclick = () => zoomTo(zoom.scale / 1.25);
+$('zoomFit').onclick = resetZoom;
+// Arrastar move a foto ampliada (botão do meio sempre; botão esquerdo fora do modo desenho).
+$('viewer').addEventListener('pointerdown', event => {
+  if (zoom.scale <= 1 || !(event.button === 1 || (event.button === 0 && !state.drawing))) return;
+  event.preventDefault(); event.stopPropagation();
+  zoom.pan = { id: event.pointerId, x: event.clientX - zoom.x, y: event.clientY - zoom.y };
+  $('viewer').setPointerCapture(event.pointerId); $('viewer').classList.add('panning');
+}, true);
+$('viewer').addEventListener('pointermove', event => {
+  if (!zoom.pan || event.pointerId !== zoom.pan.id) return;
+  zoom.x = event.clientX - zoom.pan.x; zoom.y = event.clientY - zoom.pan.y; applyZoom();
+});
+const endPan = event => { if (!zoom.pan || event.pointerId !== zoom.pan.id) return; zoom.pan = null; $('viewer').classList.remove('panning') };
+$('viewer').addEventListener('pointerup', endPan); $('viewer').addEventListener('pointercancel', endPan);
+$('viewer').addEventListener('auxclick', event => { if (event.button === 1) event.preventDefault() });
+
 $('canvas').onpointerdown = event => { if (!state.drawing) return; event.preventDefault(); state.start = point(event); $('canvas').setPointerCapture(event.pointerId) };
 $('canvas').onpointermove = event => { if (!state.start) return; const end = point(event); paint([Math.min(state.start[0], end[0]), Math.min(state.start[1], end[1]), Math.max(state.start[0], end[0]), Math.max(state.start[1], end[1])]) };
 $('canvas').onpointerup = event => { if (!state.start) return; const end = point(event), start = state.start; state.start = null; commitBox([Math.min(start[0], end[0]), Math.min(start[1], end[1]), Math.max(start[0], end[0]), Math.max(start[1], end[1])]) };
@@ -580,6 +626,9 @@ document.addEventListener('keydown', event => {
   else if (event.key.toLowerCase() === 'a' && first) acceptSuggestion(first.suggestion);
   else if (event.key.toLowerCase() === 'x' && first) dismissSuggestion(first.suggestion);
   else if (event.key === 'Delete') deleteSelected();
+  else if (event.key === '+' || event.key === '=') zoomTo(zoom.scale * 1.25);
+  else if (event.key === '-' || event.key === '_') zoomTo(zoom.scale / 1.25);
+  else if (event.key === '0') resetZoom();
   else return;
   event.preventDefault()
 });
@@ -615,7 +664,7 @@ function renderHome() {
   const sparse = DATA.classes.filter(category => totals[category.id].boxes < 5);
   $('kpiPhotos').textContent = DATA.images.length;
   const groups = [...new Set(DATA.images.map(photo => photo.building_group).filter(Boolean))];
-  $('kpiPhotosHint').textContent = !HAS_IMAGES ? 'nenhuma inspeção aberta' : groups.length ? `${groups.length} edificaç${groups.length > 1 ? 'ões' : 'ão'}: ${groups.join(', ')}` : 'edificação não informada';
+  $('kpiPhotosHint').textContent = !HAS_IMAGES ? 'nenhuma inspeção aberta' : buildingCount(groups.length);
   $('kpiDecisions').textContent = `${decided}/${DATA.images.length}`;
   $('kpiDecisionsBar').style.width = `${DATA.images.length ? decided / DATA.images.length * 100 : 0}%`;
   $('kpiBoxes').textContent = boxes;
@@ -685,7 +734,8 @@ function inspectionCards(compact) {
     const card = el('div', { class: 'inspection' + (review.current ? ' current' : '') });
     card.append(
       el('div', { class: 'head' }, el('b', { title: review.name }, reviewLabel(review.name, review.display_name)), el('span', { class: 'chip ' + (review.current ? 'primary' : review.page_ready === false ? 'warn' : 'neutral') }, review.current ? 'aberta' : review.page_ready === false ? 'página não gerada' : review.scope_label || 'revisão')),
-      el('div', { class: 'meta' }, el('span', {}, (review.buildings || []).join(', ') || 'edificação não informada'), review.updated_at ? el('span', {}, `atualizada ${fmtDate(review.updated_at)}`) : null),
+      // Só a contagem: o código interno da edificação (ex.: ceasa_pavilhao_a) não é mostrado.
+      el('div', { class: 'meta' }, el('span', {}, buildingCount((review.buildings || []).length)), review.updated_at ? el('span', {}, `atualizada ${fmtDate(review.updated_at)}`) : null),
       el('div', { class: 'nums' }, el('div', {}, el('b', {}, review.images ?? '—'), 'fotos'), el('div', {}, el('b', {}, `${progress}%`), 'decididas'), el('div', {}, el('b', { class: review.suggestions_pending ? 'cell-ai' : '' }, review.suggestions_pending ?? 0), 'sugestões IA')),
       el('div', { class: 'progress ok' }, el('i', { style: `width:${progress}%` })));
     const actions = el('div', { class: 'actions' });

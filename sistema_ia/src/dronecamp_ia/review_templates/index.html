@@ -207,6 +207,13 @@ __PLATFORM_CSS__
         <label class="range hidden" id="confFilterLabel" for="confFilter">Confiança ≥ <b id="confValue"></b><input type="range" id="confFilter" min="0" max="100" step="5"></label>
         <span class="sep" aria-hidden="true"></span>
         <button id="drawToggle" type="button" aria-pressed="false" class="small">Desenhar caixa (B)</button>
+        <span class="sep" aria-hidden="true"></span>
+        <span class="zoom-controls" role="group" aria-label="Zoom da foto">
+          <button id="zoomOut" type="button" class="small" title="Diminuir zoom (–)">–</button>
+          <b id="zoomValue" class="zoom-value" aria-live="polite">100%</b>
+          <button id="zoomIn" type="button" class="small" title="Aumentar zoom (+)">+</button>
+          <button id="zoomFit" type="button" class="small" title="Ajustar foto à tela (0)">Ajustar</button>
+        </span>
         <a id="originalLink" target="_blank" rel="noopener" class="small-text">Abrir foto original</a>
       </div>
       <p id="historyNotice" class="notice hidden"></p>
@@ -214,7 +221,7 @@ __PLATFORM_CSS__
       <div id="message" role="status" aria-live="polite">Selecione uma foto para começar.</div>
       <details><summary>Observações da proposta inicial</summary><p id="proposalNotes"></p></details>
       <details open><summary>Observações da revisão visual</summary><p id="auditNotes"></p></details>
-      <div class="shortcuts">Atalhos: <kbd>←</kbd> <kbd>→</kbd> fotos · <kbd>B</kbd> desenhar · <kbd>A</kbd> aceitar 1ª sugestão · <kbd>X</kbd> descartar 1ª sugestão · <kbd>Del</kbd> excluir caixa selecionada</div>
+      <div class="shortcuts">Atalhos: <kbd>←</kbd> <kbd>→</kbd> fotos · <kbd>Scroll</kbd> zoom no cursor · arrastar ou botão do meio: mover a foto · <kbd>+</kbd> <kbd>–</kbd> <kbd>0</kbd> zoom · <kbd>B</kbd> desenhar · <kbd>A</kbd> aceitar 1ª sugestão · <kbd>X</kbd> descartar 1ª sugestão · <kbd>Del</kbd> excluir caixa selecionada</div>
     </section>
 
     <aside class="inspector" aria-label="Inspetor da foto">
