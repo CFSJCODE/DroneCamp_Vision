@@ -400,6 +400,14 @@ __PLATFORM_CSS__
       <p class="muted small-text">A validação do piloto tem poucas fotos de uma única edificação: diferenças pequenas são ruído.</p>
     </div>
   </div>
+  <div class="card" style="margin-top:16px">
+    <div class="card-head"><div><h2>Evolução dos modelos</h2><p id="evolutionHint"></p></div>
+      <label for="evolutionFilter" class="sr-only">Treinos no gráfico</label>
+      <select id="evolutionFilter" style="width:auto"><option value="all">Todos os treinos</option><option value="completed">Só concluídos</option></select></div>
+    <div class="chart" id="evolutionChart"></div>
+    <p class="small-text" id="evolutionSummary"></p>
+    <p class="muted small-text">Cada ponto é um treino em runs/, na ordem em que começou, com as métricas da sua melhor época de validação (maior mAP50). Treinos novos entram sozinhos a cada atualização. Ponto vazado: treino em andamento. Linha tracejada vertical: o dataset mudou, então a validação deixa de ser a mesma e os valores não são comparáveis entre os lados. Para decidir a adoção, use a comparação nas mesmas fotos (acima).</p>
+  </div>
 </section>
 
 <!-- ======================= CLASSES ======================= -->

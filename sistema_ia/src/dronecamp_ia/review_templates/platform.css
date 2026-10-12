@@ -290,6 +290,7 @@ td .empty { border: 0; padding: 14px }
 .chart .legend i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; background: var(--c); vertical-align: middle; margin-right: 6px }
 .chart .tooltip { position: absolute; background: var(--ink); color: var(--bg); font-size: 11.5px; padding: 5px 8px; border-radius: 6px; pointer-events: none; white-space: nowrap; z-index: 2 }
 .chart .empty { margin: 0 }
+.chart .tooltip.multi { white-space: pre-line; line-height: 1.5 }
 
 /* ============================== Revisão ============================== */
 .review-grid { display: grid; grid-template-columns: 290px minmax(0, 1fr) 330px; gap: 16px; align-items: start }

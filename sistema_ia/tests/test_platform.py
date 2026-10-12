@@ -10,6 +10,7 @@ import io
 import json
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 import threading
@@ -26,7 +27,7 @@ from PIL import Image
 
 from dronecamp_ia.config import ProjectConfig
 from dronecamp_ia.io import file_hash
-from dronecamp_ia.operations import collect_comparisons, collect_runs, read_curves
+from dronecamp_ia.operations import collect_comparisons, collect_runs, read_curves, run_id_from_path
 from dronecamp_ia.platform_server import JobRunner, _decisions_map, _job_arguments, make_handler, serve_platform
 from dronecamp_ia.review_render import refresh_review_page, render_review_package
 
@@ -121,6 +122,39 @@ class OperationsTests(PlatformFixture):
         write_json(self.root / "runs" / "nomes.json", {"dd284411": "v7 base", second: "v7.1"})
         renamed = {run["id"]: run["display_name"] for run in collect_runs(self.root)}
         self.assertEqual((renamed[first], renamed[second]), ("v7 base", "v7.1"))
+
+    @unittest.skipUnless(shutil.which("node"), "Node não instalado: gráfico de evolução não verificado.")
+    def test_evolution_chart_takes_every_run_with_validation_in_start_order(self) -> None:
+        """O gráfico da seção Modelos lê os treinos do instantâneo: um treino novo entra sozinho."""
+        self.make_run("pilot_train_20261007T010057Z_f5e5ba8b", 3, {"state": "completed", "complete": True})
+        self.make_run("pilot_train_20261004T170212Z_dd284411", 2, {"state": "completed", "complete": True})
+        self.make_run("tune_20261008T120000Z_0000abcd", 1, {"state": "failed", "complete": False})
+        source = (Path(__file__).resolve().parents[1] / "src" / "dronecamp_ia" / "review_templates" / "platform.js").read_text(encoding="utf-8")
+        series = source[source.index("const METRIC_SERIES"):source.index("];", source.index("const METRIC_SERIES")) + 2]
+        points = source[source.index("function evolutionPoints"):source.index("function renderEvolution")]
+
+        def evolution(runs: list[dict], filter_: str) -> list[list]:
+            script = f"{series}\nconst OPS = {{ runs: {json.dumps(runs)} }};\n{points}\n" + \
+                f"process.stdout.write(JSON.stringify(evolutionPoints({json.dumps(filter_)}).map(p => [p.x, p.run.id.slice(-8), p.map50])));"
+            return json.loads(subprocess.run(["node", "-e", script], capture_output=True, text=True, check=True, encoding="utf-8").stdout)
+
+        runs = collect_runs(self.root)
+        everything = evolution(runs, "all")
+        self.assertEqual([point[1] for point in everything], ["dd284411", "f5e5ba8b", "0000abcd"], "Ordem em que os treinos começaram.")
+        self.assertEqual([point[0] for point in everything], [1, 2, 3])
+        self.assertAlmostEqual(everything[1][2], 0.3, msg="Métricas da melhor época de validação.")
+        self.assertEqual([point[1] for point in evolution(runs, "completed")], ["dd284411", "f5e5ba8b"])
+        self.make_run("pilot_train_20261012T090000Z_1234beef", 1, None)
+        self.assertEqual(evolution(collect_runs(self.root), "all")[-1][1], "1234beef", "Treino novo aparece sem mudar o código.")
+
+    def test_dataset_identity_and_run_of_weights_cover_production_runs(self) -> None:
+        """Treino de produção também tem identidade de dataset (divisória do gráfico de evolução)."""
+        run = self.make_run("train_20261009T120000Z_0badc0de", 2, {"state": "completed", "complete": True})
+        (run / "pilot_provenance.json").unlink()
+        write_json(run / "training_provenance.json", {"valid": True, "dataset_yaml_sha256": "yaml123", "provenance_sha256": "prov456"})
+        self.assertEqual(collect_runs(self.root)[0]["dataset_sha256"], "yaml123")
+        self.assertEqual(run_id_from_path("E:\\proj\\runs\\train_20261009T120000Z_0badc0de\\fit\\weights\\last.pt"), "train_20261009T120000Z_0badc0de")
+        self.assertIsNone(run_id_from_path("models/yolo26l.pt"))
 
     def test_comparisons_link_weights_to_runs(self) -> None:
         write_json(self.root / "runs" / "compare_fixture.json", {"dataset": "d.yaml", "conf": 0.15, "iou_match": 0.5, "models": [

@@ -48,6 +48,11 @@ RUNNING_WINDOW_SECONDS = 15 * 60
 RUN_NAME = re.compile(r"^(?P<stage>[a-z_]+?)_(?P<stamp>\d{8}T\d{6}Z)_(?P<id>[0-9a-f]{8})$")
 
 
+def run_id_from_path(path) -> str | None:
+    """Id da execução em um caminho de pesos ("runs/<execução>/fit/weights/best.pt", "/" ou "\\")."""
+    return next((part for part in str(path or "").replace("\\", "/").split("/") if RUN_NAME.match(part)), None)
+
+
 def _read_json(path: Path) -> dict | None:
     """JSON opcional: arquivo ausente ou corrompido não derruba o painel."""
     try:
@@ -174,7 +179,9 @@ def collect_runs(root: Path, page_directory: Path | None = None, now: float | No
             # Caminho gravado em outra máquina (Windows): só o nome do arquivo interessa.
             "checkpoint": str((execution.get("runtime") or {}).get("checkpoint") or "").replace("\\", "/").rsplit("/", 1)[-1] or None,
             "device": (execution.get("runtime") or {}).get("device_requested"),
-            "dataset_sha256": provenance.get("pilot_sha256"),
+            # Identidade do dataset: piloto (pilot_sha256) ou produção (dataset.yaml); o gráfico
+            # Evolução dos modelos marca a troca porque validações diferentes não se comparam.
+            "dataset_sha256": provenance.get("pilot_sha256") or provenance.get("dataset_yaml_sha256") or provenance.get("provenance_sha256"),
             "buildings": provenance.get("buildings") or [],
             "independent_evaluation": provenance.get("independent_evaluation"),
             "class_counts": execution.get("class_counts") or {},
@@ -239,7 +246,7 @@ def collect_comparisons(root: Path) -> list[dict]:
         models = []
         for model in data["models"]:
             weights = str(model.get("weights") or "").replace("\\", "/")
-            run_id = next((part for part in weights.split("/") if RUN_NAME.match(part)), None)
+            run_id = run_id_from_path(weights)
             models.append({"weights": weights, "run_id": run_id, "file": weights.rsplit("/", 1)[-1],
                            "weights_sha256": model.get("weights_sha256"), "imgsz": model.get("imgsz"),
                            "splits": model.get("splits") or {}})
