@@ -30,7 +30,8 @@ import urllib.request
 
 from dronecamp_ia import ai_panel, ai_usage
 from dronecamp_ia.platform_server import JobRunner, make_handler
-from dronecamp_ia.vlm_assist import ENV_KEY, ENV_MODEL, describe_occurrences, load_vlm_settings
+from dronecamp_ia.io import file_hash
+from dronecamp_ia.vlm_assist import ENV_KEY, ENV_MODEL, OpenRouterClient, VLMUnavailable, describe_occurrences, load_vlm_settings
 
 from tests.test_vlm_assist import GOOD, KEY, REAL, FakeTransport, answer, make_review
 
@@ -80,6 +81,19 @@ class UsageTests(Base):
         line = usage_lines(self.root)[0]
         self.assertEqual((line["status"], line["http_status"]), ("error", 429))
         self.assertNotIn("privado", json.dumps(line))
+
+    def test_network_failure_does_not_inherit_the_previous_http_status(self):
+        replies = iter([(429, b'{"error": "limite"}'), urllib.error.URLError("sem rede")])
+        def transport(url, headers, body, timeout):
+            reply = next(replies)
+            if isinstance(reply, Exception):
+                raise reply
+            return reply
+        client = OpenRouterClient(load_vlm_settings(self.config, environ={ENV_KEY: KEY}), transport, usage_log=ai_usage.usage_logger(self.root, "chat"))
+        for _ in range(2):
+            with self.assertRaises(VLMUnavailable):
+                client.chat([{"role": "user", "content": "oi"}])
+        self.assertEqual([line["http_status"] for line in usage_lines(self.root)], [429, None])
 
     def test_local_usage_filters_period_and_keeps_missing_totals_partial(self):
         now = datetime(2026, 10, 12, 12, tzinfo=timezone.utc)
@@ -170,6 +184,31 @@ class SettingsTests(Base):
             ai_panel.save_settings(self.config, {"model": "m:free"}, environ={})
 
 
+    def test_duplicate_definitions_are_all_replaced_or_removed(self):
+        (self.root / ".env").write_text(f"{ENV_KEY}=velha-chave-duplicada-0000000\nOUTRA=1\n{ENV_KEY}=velha-chave-duplicada-1111111\n", encoding="utf-8")
+        ai_panel.save_settings(self.config, {"api_key": KEY, "model": "m:free"}, FakeTransport([answer("")]), environ={})
+        env = (self.root / ".env").read_text(encoding="utf-8")
+        self.assertEqual(env.count(ENV_KEY), 1)
+        self.assertNotIn("velha", env)
+        self.assertEqual(load_vlm_settings(self.config, environ={}).api_key, KEY)
+        ai_panel.delete_key(self.config, environ={})
+        self.assertNotIn(ENV_KEY, (self.root / ".env").read_text(encoding="utf-8"))
+
+    def test_valid_key_replaces_a_malformed_stored_key(self):
+        (self.root / ".env").write_text(f"{ENV_KEY}=chave com espaço\n", encoding="utf-8")
+        status = ai_panel.ai_status(self.config, environ={})
+        self.assertEqual((status["configured"], status["key_source"]), (False, ".env"))
+        status = ai_panel.save_settings(self.config, {"api_key": KEY, "model": "m:free"}, FakeTransport([answer("")]), environ={})
+        self.assertTrue(status["configured"])
+
+    def test_model_from_system_variable_is_not_shadowed_silently(self):
+        locked = {ENV_MODEL: "sistema/model:free"}
+        self.assertTrue(ai_panel.ai_status(self.config, environ=locked)["model_locked"])
+        with self.assertRaisesRegex(ValueError, ENV_MODEL):
+            ai_panel.save_settings(self.config, {"api_key": KEY, "model": "outro/model:free"}, FakeTransport([answer("")]), environ=locked)
+        self.assertFalse((self.root / ".env").exists())
+
+
 class ChatTests(Base):
     """``ai_panel.project_context`` e ``ai_panel.ask``."""
     def context(self):
@@ -182,10 +221,33 @@ class ChatTests(Base):
         context = self.context()
         opened = context["inspecao_aberta"]
         self.assertEqual(opened["fotos"], 2)
-        self.assertEqual(opened["caixas_registradas_por_classe"]["Telha quebrada"], 1)
-        self.assertEqual(opened["sugestoes_do_modelo"]["por_classe"], {"Rufo quebrado": 1})
+        self.assertEqual(opened["caixas_por_classe_todas_as_fotos"]["Telha quebrada"], 1)
+        self.assertEqual(opened["sugestoes_do_modelo"]["pendentes_por_classe"], {"Rufo quebrado": 1})
         self.assertEqual(opened["sugestoes_do_modelo"]["situacao"], "pendentes até decisão humana")
         self.assertEqual(context["treinos"][0]["nome"], "Treino Piloto ABCD1234")
+
+    def test_per_class_counts_follow_the_latest_review_file(self):
+        # Revisão salva descarta a sugestão da foto b e deixa a foto a sem confirmação.
+        registry = json.loads(self.registry.read_text(encoding="utf-8"))
+        a, b = registry["images"]
+        inbox = self.registry.parent / "feedback_inbox"
+        inbox.mkdir()
+        decision = lambda image, confirmed, dismissed: {"image_sha256": image["image_sha256"], "status": "positive", "boxes": image["boxes"],  # noqa: E731
+                                                        "notes": "", "confirmed_complete": confirmed, "dismissed_suggestions": dismissed}
+        (inbox / "2026-10-12_revisao.json").write_text(json.dumps({"registry_sha256": file_hash(self.registry),
+                                                                    "images": [decision(a, False, []), decision(b, True, ["s001"])]}), encoding="utf-8")
+        opened = self.context()["inspecao_aberta"]
+        self.assertEqual(opened["sugestoes_do_modelo"]["pendentes_por_classe"], {})
+        self.assertEqual(opened["fotos_confirmadas_por_humano"], 1)
+        self.assertNotIn("Telha quebrada", opened["caixas_por_classe_em_fotos_confirmadas_por_humano"])
+
+    def test_oversized_snapshot_stays_valid_json_and_keeps_the_open_inspection(self):
+        context = self.context()
+        context["treinos"] = [{"nome": f"Treino {index}", "detalhe": "x" * 400} for index in range(200)]
+        snapshot = json.loads(ai_panel._fit_snapshot(context))
+        self.assertEqual(snapshot["inspecao_aberta"], context["inspecao_aberta"])
+        self.assertGreater(snapshot["cortado_por_tamanho"]["treinos"], 0)
+        self.assertLessEqual(len(ai_panel._fit_snapshot(context)), ai_panel.CONTEXT_LIMIT)
 
     def test_answer_uses_snapshot_and_rules_without_the_key(self):
         transport = FakeTransport([answer("Há **1** sugestão pendente.")])

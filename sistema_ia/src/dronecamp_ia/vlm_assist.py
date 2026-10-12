@@ -412,6 +412,8 @@ class OpenRouterClient:
         # 1. Serializa o payload (None = GET sem corpo).
         body = json.dumps(payload).encode("utf-8") if payload is not None else None
         # 2. Envia; falhas de rede viram VLMUnavailable (o comando explica e para).
+        # last_status zera antes: falha sem resposta HTTP não herda o código da chamada anterior.
+        self.last_status = None
         try:
             status, raw = self.transport(f"{self.settings.base_url}{path}", self._headers(), body, self.settings.timeout_seconds)
         except (urllib.error.URLError, TimeoutError, OSError) as error:

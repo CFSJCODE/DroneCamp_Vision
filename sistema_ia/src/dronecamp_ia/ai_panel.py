@@ -52,7 +52,7 @@ from pathlib import Path
 import re
 
 # ProjectConfig: caminhos do projeto; load_taxonomy: classes da taxonomia em vigor.
-from .config import ProjectConfig
+from .config import ProjectConfig, detection_names, load_taxonomy
 # file_hash: confere se sugestões/notas pertencem à versão atual do registro.
 from .io import file_hash
 # Leitura de configuração, cliente HTTP e lista de modelos gratuitos (mesmo código da CLI).
@@ -130,17 +130,18 @@ def _write_dotenv(path: Path, values: dict[str, str | None]) -> None:
     ATENCAO: o ``.env`` é ignorado pelo git (``.gitignore``); nunca mude o destino
     para uma pasta versionada.
     """
-    pending = dict(values)
+    written: set[str] = set()
     lines = []
     for line in _dotenv_lines(path):
         key = line.strip().removeprefix("export ").partition("=")[0].strip()
-        if key in pending:
-            value = pending.pop(key)
-            if value is not None:
-                lines.append(f"{key}={value}")
-            continue  # variável removida: a linha some
+        if key in values:
+            # Toda definição repetida some (a última venceria na leitura); o valor novo entra uma vez.
+            if values[key] is not None and key not in written:
+                lines.append(f"{key}={values[key]}")
+            written.add(key)
+            continue
         lines.append(line)
-    lines += [f"{key}={value}" for key, value in pending.items() if value is not None]
+    lines += [f"{key}={value}" for key, value in values.items() if value is not None and key not in written]
     temporary = path.with_name(path.name + ".tmp")
     temporary.write_text("\n".join(lines) + ("\n" if lines else ""), encoding="utf-8")
     try:
@@ -163,6 +164,7 @@ def ai_status(config: ProjectConfig, environ: dict | None = None) -> dict:
     ``base_url``, ``model``, ``model_default`` (do ``vlm_assist.json``), ``key_hint``
     (4 últimos caracteres), ``key_source`` ("ambiente", ".env" ou None),
     ``key_locked`` (a chave vem do ambiente do sistema e a página não a troca),
+    ``model_locked`` (``OPENROUTER_MODEL`` no ambiente do sistema vence o ``.env``),
     ``key_help_url``, ``dashboard_url``, ``settings_file``, ``env_file`` e
     ``error`` (configuração ilegível ou chave com formato errado).
     """
@@ -170,6 +172,7 @@ def ai_status(config: ProjectConfig, environ: dict | None = None) -> dict:
     path = _env_path(config)
     status = {"configured": False, "provider": "openrouter", "provider_name": "OpenRouter", "base_url": OPENROUTER_BASE,
               "model": None, "model_default": None, "key_hint": None, "key_source": None, "key_locked": bool(env.get(ENV_KEY)),
+              "model_locked": bool(env.get(ENV_MODEL)),
               "key_help_url": PROVIDERS[OPENROUTER_BASE]["key_help_url"], "dashboard_url": PROVIDERS[OPENROUTER_BASE]["dashboard_url"],
               "settings_file": f"configs/{SETTINGS_FILE}", "env_file": ".env", "error": None}
     # 1. Origem da chave: o ambiente do sistema vence o .env (mesma regra de load_vlm_settings).
@@ -222,8 +225,11 @@ def save_settings(config: ProjectConfig, body: dict, transport=None, environ: di
         raise ValueError("A chave tem formato inesperado; cole só a chave, sem espaços ou aspas.")
     if api_key and env.get(ENV_KEY):
         raise ValueError(f"A chave atual vem da variável de ambiente {ENV_KEY} do sistema; troque-a lá ou remova a variável.")
+    if env.get(ENV_MODEL) and env[ENV_MODEL].strip() != model:
+        raise ValueError(f"O modelo vem da variável de ambiente {ENV_MODEL} do sistema e venceria o .env; troque-o lá ou remova a variável.")
     # 2. Configuração que será testada: a atual com o modelo (e a chave, se veio) trocados.
-    settings = replace(load_vlm_settings(config, model=model, environ=env), **({"api_key": api_key} if api_key else {}))
+    # A chave nova entra no ambiente antes da leitura: uma chave malformada no .env não impede a troca.
+    settings = load_vlm_settings(config, model=model, environ={**env, ENV_KEY: api_key} if api_key else env)
     if not settings.api_key:
         raise ValueError("Cole a chave da API do OpenRouter para ativar a IA.")
     # 3. Teste real (1 token). Falhou = nada é gravado.
@@ -280,35 +286,63 @@ def _read_json(path: Path) -> dict | None:
     return value if isinstance(value, dict) else None
 
 
-def _open_inspection(registry_path: Path, labels: dict[int, str], summary: dict | None) -> dict:
-    """Resumo da inspeção aberta: fotos, status proposto, caixas e sugestões por classe, notas da IA."""
+def _latest_decisions(directory: Path, registry_sha: str) -> dict | None:
+    """Decisões do arquivo de revisão mais recente da caixa de entrada, se for deste registro (mesma regra de ``Workspace._summary``)."""
+    from .platform_server import _decisions_map  # import tardio: platform_server importa este módulo
+    inbox = sorted(directory.glob("feedback_inbox/*.json"))
+    feedback = _read_json(inbox[-1]) if inbox else None
+    if not feedback or feedback.get("registry_sha256") != registry_sha:
+        return None
+    try:
+        return _decisions_map(feedback.get("images"))
+    except ValueError:
+        return None
+
+
+def _open_inspection(registry_path: Path, labels: dict[int, str], summary: dict | None, class_count: int | None) -> dict:
+    """Resumo da inspeção aberta: fotos, status, caixas e sugestões pendentes por classe, notas da IA.
+
+    Caixas, status e sugestões pendentes saem de ``exports.resolve_decisions`` com as decisões do
+    último arquivo de revisão: são os mesmos números da seção Inspeções e do laudo.
+    ``class_count`` None (taxonomia ilegível) = sem o detalhamento por classe.
+    """
+    from .exports import _resolve_entries
     registry = _read_json(registry_path) or {}
     images = registry.get("images") or []
-    boxes: dict[str, int] = {}
-    status: dict[str, int] = {}
-    for image in images:
-        status[image.get("status") or "sem status"] = status.get(image.get("status") or "sem status", 0) + 1
-        for box in image.get("boxes") or []:
-            name = labels.get(box.get("class_id"), f"classe {box.get('class_id')}")
-            boxes[name] = boxes.get(name, 0) + 1
+    registry_sha = file_hash(registry_path)
+    name_of = lambda class_id: labels.get(class_id, f"classe {class_id}")  # noqa: E731
     result = {"nome": (summary or {}).get("display_name") or registry_path.parent.name, "fotos": len(images),
-              "fotos_aprovadas_por_humano": sum(1 for image in images if image.get("human_approved") is True),
-              "fotos_por_status_proposto": status, "caixas_registradas_por_classe": boxes,
-              "observacao": "Caixas do registro salvo; rascunhos ainda não salvos no navegador não entram."}
+              "observacao": "Contagens do registro salvo e do último arquivo de revisão; rascunhos ainda não salvos no navegador não entram."}
     if summary:
         result.update({"fotos_decididas": summary.get("decided"), "sugestoes_pendentes": summary.get("suggestions_pending")})
-    # Sugestões do modelo por classe (só se pertencem a esta versão do registro).
-    registry_sha = file_hash(registry_path)
     suggestions = _read_json(registry_path.parent / "suggestions.json")
-    if suggestions and suggestions.get("registry_sha256") == registry_sha:
-        per_class: dict[str, int] = {}
-        for values in (suggestions.get("images") or {}).values():
-            for value in values if isinstance(values, list) else []:
-                name = labels.get(value.get("class_id"), f"classe {value.get('class_id')}")
-                per_class[name] = per_class.get(name, 0) + 1
-        result["sugestoes_do_modelo"] = {"modelo": suggestions.get("model_label"), "confianca_minima": suggestions.get("conf"),
-                                         "total": suggestions.get("total_suggestions"), "por_classe": per_class,
-                                         "situacao": "pendentes até decisão humana"}
+    if not suggestions or suggestions.get("registry_sha256") != registry_sha:
+        suggestions = None
+    entries = None
+    if class_count is not None:
+        try:
+            entries = _resolve_entries(registry, _latest_decisions(registry_path.parent, registry_sha), class_count,
+                                       (suggestions or {}).get("images"))
+        except (ValueError, KeyError, TypeError):
+            entries = None
+    if entries is not None:
+        status: dict[str, int] = {}
+        boxes: dict[str, int] = {}
+        confirmed: dict[str, int] = {}
+        pending: dict[str, int] = {}
+        for entry in entries:
+            status[entry["status"]] = status.get(entry["status"], 0) + 1
+            for box in entry["boxes"]:
+                boxes[name_of(box.get("class_id"))] = boxes.get(name_of(box.get("class_id")), 0) + 1
+                if entry["confirmed_complete"]:
+                    confirmed[name_of(box.get("class_id"))] = confirmed.get(name_of(box.get("class_id")), 0) + 1
+            for value in entry["pending"]:
+                pending[name_of(value.get("class_id"))] = pending.get(name_of(value.get("class_id")), 0) + 1
+        result.update({"fotos_por_status": status, "fotos_confirmadas_por_humano": sum(1 for entry in entries if entry["confirmed_complete"]),
+                       "caixas_por_classe_todas_as_fotos": boxes, "caixas_por_classe_em_fotos_confirmadas_por_humano": confirmed})
+        if suggestions:
+            result["sugestoes_do_modelo"] = {"modelo": suggestions.get("model_label"), "confianca_minima": suggestions.get("conf"),
+                                             "pendentes_por_classe": pending, "situacao": "pendentes até decisão humana"}
     # Concordância das notas do VLM com as classes humanas (describe-occurrences).
     notes = _read_json(registry_path.parent / NOTES_FILE)
     if notes and notes.get("registry_sha256") == registry_sha and isinstance(notes.get("agreement"), dict):
@@ -330,7 +364,7 @@ def project_context(config: ProjectConfig, workspace: dict, operations: dict, cl
     Retorna: dict só com nomes legíveis e contagens (sem caminhos de foto, sem chave).
 
     EXTENSAO: dado novo para o chat = chave nova aqui; mantenha o total abaixo de
-    ``CONTEXT_LIMIT`` (o que passar é cortado em ``ask``).
+    ``CONTEXT_LIMIT`` (acima dele ``_fit_snapshot`` tira os itens menos importantes).
     """
     catalog = (classes or {}).get("classes") or []
     labels = {entry.get("id"): entry.get("display_name") or entry.get("name") for entry in catalog}
@@ -356,7 +390,11 @@ def project_context(config: ProjectConfig, workspace: dict, operations: dict, cl
                         for comparison in (operations.get("comparisons") or [])[:8]],
     }
     if registry_path is not None:
-        context["inspecao_aberta"] = _open_inspection(registry_path, labels, current)
+        try:
+            class_count = len(detection_names(load_taxonomy(config.taxonomy_path)))
+        except (OSError, ValueError, KeyError):
+            class_count = None
+        context["inspecao_aberta"] = _open_inspection(registry_path, labels, current, class_count)
     return context
 
 
@@ -377,6 +415,30 @@ def _validate_messages(messages) -> list[dict]:
     if clean[-1]["role"] != "user":
         raise ValueError("A última mensagem precisa ser uma pergunta.")
     return clean
+
+
+def _fit_snapshot(context: dict) -> str:
+    """Serializa o instantâneo em até ``CONTEXT_LIMIT`` caracteres sem quebrar o JSON.
+
+    Acima do limite, tira primeiro os últimos itens das listas menos importantes
+    (comparações, treinos, inspeções), depois os critérios das classes; a inspeção aberta
+    nunca é cortada. O que saiu fica em ``cortado_por_tamanho`` para o modelo saber.
+    """
+    dump = lambda value: json.dumps(value, ensure_ascii=False, separators=(",", ":"))  # noqa: E731
+    snapshot = dump(context)
+    if len(snapshot) <= CONTEXT_LIMIT:
+        return snapshot
+    fitted = {key: list(value) if isinstance(value, list) else value for key, value in context.items()}
+    cut: dict[str, int] = {}
+    for key in ("comparacoes", "treinos", "inspecoes"):
+        while isinstance(fitted.get(key), list) and fitted[key] and len(dump({**fitted, "cortado_por_tamanho": cut})) > CONTEXT_LIMIT:
+            fitted[key].pop()
+            cut[key] = cut.get(key, 0) + 1
+    if len(dump({**fitted, "cortado_por_tamanho": cut})) > CONTEXT_LIMIT and isinstance(fitted.get("classes"), list):
+        fitted["classes"] = [{k: v for k, v in entry.items() if k != "criterio"} for entry in fitted["classes"]]
+        cut["criterios_das_classes"] = len(fitted["classes"])
+    fitted["cortado_por_tamanho"] = cut
+    return dump(fitted)
 
 
 def ask(config: ProjectConfig, messages, context: dict, transport=None, environ: dict | None = None) -> dict:
@@ -400,9 +462,7 @@ def ask(config: ProjectConfig, messages, context: dict, transport=None, environ:
         raise ValueError("IA desativada: cadastre a chave em Assistente IA → Configuração da IA.")
     # Resposta mais longa e um pouco mais livre que a descrição de recortes (que usa temperatura 0).
     settings = replace(settings, max_output_tokens=CHAT_MAX_TOKENS, temperature=0.2)
-    snapshot = json.dumps(context, ensure_ascii=False, separators=(",", ":"))
-    if len(snapshot) > CONTEXT_LIMIT:
-        snapshot = snapshot[:CONTEXT_LIMIT] + "…(instantâneo cortado por tamanho)"
+    snapshot = _fit_snapshot(context)
     system = {"role": "system", "content": f"{CHAT_RULES}\n\nINSTANTÂNEO DO PROJETO (JSON):\n{snapshot}"}
     try:
         client = OpenRouterClient(settings, transport, usage_log=usage_logger(config.root, "chat"))

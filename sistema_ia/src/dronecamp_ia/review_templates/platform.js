@@ -2094,7 +2094,7 @@ const AI_VIEWS = { 'ai-settings': 'ai-settings', 'ai-usage': 'ai-usage', 'ai-cha
 const AI_FEATURES = { chat: 'Chat do assistente', describe: 'Descrição de ocorrências', 'connection-test': 'Teste da chave' };
 // Perguntas prontas do chat (botões do estado vazio). EXTENSAO: pergunta nova = texto aqui.
 const AI_SUGGESTIONS = [
-  'Quais classes têm menos caixas aprovadas na inspeção aberta?',
+  'Quais classes têm menos caixas em fotos confirmadas na inspeção aberta?',
   'Quantas sugestões do modelo ainda estão pendentes e em quais classes?',
   'Resuma os treinos e diga qual comparação está registrada.',
   'Quais inspeções ainda têm fotos sem decisão?'
@@ -2148,9 +2148,11 @@ function renderAiSettings() {
   $('aiKey').disabled = !SERVER || locked;
   // O modelo só é preenchido na primeira vez (não apaga o que o usuário está digitando).
   if (status && status.model && !$('aiModel').dataset.touched) $('aiModel').value = status.model;
-  $('aiModel').disabled = !SERVER;
+  // OPENROUTER_MODEL no ambiente do sistema vence o .env: o campo fica travado (o servidor também recusa).
+  $('aiModel').disabled = !SERVER || Boolean(status && status.model_locked);
   $('aiListModels').disabled = !SERVER || !keeps;
-  $('aiRemoveKey').classList.toggle('hidden', !(keeps && status.key_source === '.env'));
+  // Com chave malformada no .env a IA fica desativada, mas a chave ainda pode ser removida.
+  $('aiRemoveKey').classList.toggle('hidden', !(status && status.key_source === '.env'));
   updateAiSave()
 }
 /** Habilita "Testar e salvar" só com modelo preenchido e chave disponível (nova ou já cadastrada). */
