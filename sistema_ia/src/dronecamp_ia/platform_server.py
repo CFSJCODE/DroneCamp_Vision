@@ -74,6 +74,8 @@ CONTENT_TYPES = {".webp": "image/webp", ".zip": "application/zip", ".pdf": "appl
                  ".csv": "text/csv; charset=utf-8"}
 
 
+# ATENCAO: uma tarefa por vez. O log de cada tarefa fica em .runtime/jobs/<data>_<comando>.log;
+# é o primeiro lugar para olhar quando um treino ou sugestão iniciado pela página falha.
 class JobRunner:
     """Uma tarefa por vez; o processo filho é o mesmo CLI usado no terminal."""
 
@@ -147,6 +149,8 @@ def _integer(options: dict, key: str, low: int, high: int) -> list[str]:
     return [f"--{key}", str(value)]
 
 
+# EXTENSAO: para a página iniciar outro comando do CLI, acrescente um ramo ``if kind == ...``
+# validando CADA opção (nunca repasse texto livre do navegador para a linha de comando).
 def _job_arguments(root: Path, registry_path: Path | None, kind: str, options: dict) -> list[str]:
     """Lista fechada de comandos e opções que a página pode iniciar; só ``suggest`` precisa de ``registry_path``."""
     if kind == "train-pilot":
@@ -556,6 +560,8 @@ def make_handler(config: ProjectConfig, registry_path: Path | list[Path] | None,
                 raise ValueError("Envie um objeto JSON.")
             return value
 
+        # ATENCAO: toda rota que altera algo (POST/PUT/DELETE) passa por aqui. A página manda o token
+        # no cabeçalho X-DroneCamp-Token; sem ele a resposta é 403 (proteção contra outros sites).
         def _authorized(self) -> bool:
             return secrets.compare_digest(self.headers.get("X-DroneCamp-Token", ""), token)
 
@@ -575,6 +581,8 @@ def make_handler(config: ProjectConfig, registry_path: Path | list[Path] | None,
                                 f'<meta name="dronecamp-reviews" content="{_reviews_meta(reviews, name)}">', 1)
             self._send(200, page.encode("utf-8"), "text/html; charset=utf-8")
 
+        # EXTENSAO: rota de leitura nova = um ``if full == "/api/..."`` aqui, antes do trecho que
+        # serve arquivos da revisão; devolva com self._json(...). Do lado da página, use api(path).
         def do_GET(self) -> None:  # noqa: N802 - nome exigido pela biblioteca
             parts = urlsplit(self.path)
             full, query = parts.path, parse_qs(parts.query)
@@ -674,6 +682,8 @@ def make_handler(config: ProjectConfig, registry_path: Path | list[Path] | None,
                 self.close_connection = True  # o corpo pode não ter sido lido inteiro
                 return self._json({"error": str(error)}, HTTPStatus.BAD_REQUEST)
 
+        # EXTENSAO: rota que altera algo = um ``if path == "/api/..."`` aqui (o token já foi conferido).
+        # ValueError/OSError viram 400 e RuntimeError vira 409, com a mensagem mostrada na página.
         def do_POST(self) -> None:  # noqa: N802
             if not self._authorized():
                 return self._json({"error": "Token ausente ou inválido."}, HTTPStatus.FORBIDDEN)
@@ -768,6 +778,8 @@ def _save_feedback(root: Path, registry_path: Path, feedback: dict) -> dict:
     return {"saved": target.resolve().relative_to(root).as_posix(), "decisions": len(feedback["images"])}
 
 
+# ATENCAO: uma inspeção feita com taxonomia anterior não abre na plataforma; o erro pede
+# migrate-review + render-review. Não contorne isso: as classes da página ficariam erradas.
 def _require_current_taxonomy(config: ProjectConfig, registry_path: Path) -> None:
     """Revisão de taxonomia anterior mostraria classes a menos e geraria arquivos recusados."""
     registry = json.loads(registry_path.read_text(encoding="utf-8"))
@@ -778,6 +790,7 @@ def _require_current_taxonomy(config: ProjectConfig, registry_path: Path) -> Non
             "antes de abri-la na plataforma.")
 
 
+# ENTRADA: comando platform (e o atalho "Abrir plataforma DroneCamp.cmd").
 def serve_platform(config: ProjectConfig, registry: Path | list[Path] | None = None, port: int = 8765, open_browser: bool = True) -> None:
     """Inicia o servidor em 127.0.0.1 até Ctrl+C.
 

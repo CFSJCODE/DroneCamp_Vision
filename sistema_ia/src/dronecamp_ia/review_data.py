@@ -226,6 +226,9 @@ def apply_visual_audits(config: ProjectConfig, directory: Path) -> dict:
 # Decisões humanas exportadas pela página (import-review).
 # ---------------------------------------------------------------------------
 
+# ENTRADA: comando import-review (decisões exportadas pela página viram registro novo).
+# ATENCAO: o arquivo exportado só vale para o registro de onde saiu (registry_sha256); se o
+# registro mudou depois, exporte de novo pela página em vez de editar o hash à mão.
 def import_human_feedback(config: ProjectConfig, registry_path: Path, feedback_path: Path, output: Path) -> dict:
     """Valide arquivo exportado pelo revisor e preserve o registro anterior."""
     # 1. O feedback precisa ter sido gerado a partir desta versão exata do registro (hash).
@@ -365,6 +368,8 @@ def apply_ai_proposals(config: ProjectConfig, registry_path: Path, proposals_pat
     return registry
 
 
+# ENTRADA: comando migrate-review. Use depois de mudar configs/taxonomy.json: cria uma cópia
+# da revisão na taxonomia nova; a revisão original fica intacta.
 def migrate_review_taxonomy(config: ProjectConfig, registry_path: Path, previous_taxonomy: Path, output: Path) -> dict:
     """Acrescente classes sem inventar caixas ou transferir aprovações antigas.
 

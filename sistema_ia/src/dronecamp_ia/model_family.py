@@ -35,6 +35,8 @@ _OFFICIAL = re.compile(r"^yolo(?P<version>\d{1,2})(?P<size>[nslmx])(?:-(?P<task>
 
 # O que o pipeline precisa saber de cada família. Dados do YOLO27 vêm da página oficial
 # consultada em docs/pesquisa_ultralytics.md (prévia, sem pesos públicos): confirmar no lançamento.
+# EXTENSAO: versão nova do YOLO = entrada nova aqui; depois troque ``model:`` em
+# configs/project.yaml e rode model-info. Adoção só depois do compare-models.
 FAMILIES: dict[int, dict] = {
     26: {
         "name": "YOLO26",

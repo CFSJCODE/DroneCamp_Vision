@@ -134,6 +134,8 @@ def train(config: ProjectConfig, data_path: Path, weights: str | None = None) ->
     return run
 
 
+# ENTRADA: comando train-pilot e a tarefa "train-pilot" da seção Treinamento. Hiperparâmetros
+# vêm de configs/project.yaml (pilot.training > training); não fixe valores aqui.
 def train_pilot(config: ProjectConfig, data_path: Path, weights: str | None = None, overrides: dict | None = None,
                 gpu_eval: dict | None = None) -> Path:
     """Treino real e exploratório com o dataset piloto; nunca aprova o modelo para uso.
@@ -480,6 +482,8 @@ def _review_training_csv(path: Path, distance_loss: tuple[str, ...] = GENERIC_DI
                      "loss_columns_checked": loss_columns}
 
 
+# ATENCAO: um treino só conta como concluído se passar por esta auditoria (pesos, results.csv
+# e classes). Se summary.json tem "complete": false, os motivos estão em "reasons".
 def review_training_result(run: Path, model, expected_names: list[str], **details) -> dict:
     """Recuse retorno sem artefatos, métricas finitas ou contrato das classes ativas."""
     run = Path(run).resolve()

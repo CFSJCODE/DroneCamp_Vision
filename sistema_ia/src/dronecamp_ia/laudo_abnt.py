@@ -188,6 +188,9 @@ GENERAL_RECOMMENDATIONS = [
 ]
 
 # Campos do imóvel e da inspeção que o usuário pode informar (chave → rótulo). Nada é calculado.
+# EXTENSAO: campo novo no laudo = (1) chave aqui; (2) input com data-detail="<chave>" no
+# formulário "Dados técnicos" de index.html; (3) onde ele aparece em render_html e write_pdf.
+# Chave fora desta lista é recusada pelo servidor (normalize_details).
 DETAIL_FIELDS = {
     "report_number": "Número do laudo",
     "inspection_date": "Data da inspeção",
@@ -416,6 +419,8 @@ def _figure_html(figure: dict, evidences: dict[int, bytes]) -> str:
             f'<div class="fonte">Fonte: {_esc(figure["source"])}</div></figure>')
 
 
+# ATENCAO: HTML e PDF (write_pdf, abaixo) são desenhados separadamente a partir do mesmo
+# laudo.json. Mudou uma seção em um, mude no outro; tests/test_exports.py gera os dois.
 def render_html(report: dict, evidences: dict[int, bytes]) -> str:
     header, details, summary = report["header"], report["details"], report["summary"]
     figures = {figure["number"]: figure for figure in report["figures"]}

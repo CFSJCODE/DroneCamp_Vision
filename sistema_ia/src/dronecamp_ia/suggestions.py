@@ -124,6 +124,9 @@ def detect_boxes(model, path: Path, config: ProjectConfig, conf: float, tiling: 
 # Sugestões numa revisão existente ou numa revisão nova de fotos novas.
 # ---------------------------------------------------------------------------
 
+# ENTRADA: comando suggest --registry e a tarefa "suggest" da seção Treinamento.
+# ATENCAO: suggestions.json fica preso ao hash do registro; depois de import-review ou
+# migrate-review as sugestões antigas são recusadas e precisam ser geradas de novo.
 def suggest_for_registry(config: ProjectConfig, registry_path: Path, weights: str, conf: float | None = None,
                          calibrator: Path | str | None = None, allow_unproven_calibrator: bool = False,
                          zero_shot: bool = False, onnx_provider: str = "directml") -> Path:

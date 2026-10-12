@@ -171,6 +171,8 @@ def load_inference_model(config: ProjectConfig, weights: str, onnx_provider: str
     return model
 
 
+# ATENCAO: se aparecer "Checkpoint não corresponde às N classes", os pesos foram treinados com
+# outra lista de classes ativas (ex.: depois de ativar uma classe nova). Só um treino novo resolve.
 def check_domain_names(model, expected: list[str]) -> None:
     """Evite apresentar classes COCO como patologias: nomes precisam coincidir."""
     names = model.names

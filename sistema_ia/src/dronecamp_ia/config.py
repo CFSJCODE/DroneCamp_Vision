@@ -38,6 +38,8 @@ class ProjectConfig:
     pilot: dict = field(default_factory=dict)
 
 
+# EXTENSAO: seção nova no project.yaml = campo novo em ProjectConfig + leitura/validação aqui.
+# Parâmetro novo dentro de training/pilot/prediction não precisa de código: já chega como dict.
 def load_config(path: Path | None = None) -> ProjectConfig:
     """Resolva caminhos no projeto e rejeite configurações de outra tarefa."""
     # Usa configs/project.yaml do projeto, ou o arquivo passado em --config.
@@ -68,6 +70,9 @@ def load_config(path: Path | None = None) -> ProjectConfig:
     )
 
 
+# ATENCAO: os IDs da taxonomia são o contrato entre labels YOLO, pesos treinados, registros
+# de revisão e laudos. Nunca renumere nem apague uma classe; acrescente no fim e migre as
+# revisões (migrate-review). Mudar este arquivo muda o SHA-256 que tudo confere.
 def load_taxonomy(path: Path) -> dict:
     """IDs e slugs são contrato do dataset, checkpoint e saída."""
     taxonomy = json.loads(path.read_text(encoding="utf-8"))

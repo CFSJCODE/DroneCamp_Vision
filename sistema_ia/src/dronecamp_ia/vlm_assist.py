@@ -112,6 +112,8 @@ def _read_dotenv(path: Path) -> dict[str, str]:
     return values
 
 
+# ATENCAO: a chave do OpenRouter vem só de OPENROUTER_API_KEY (ambiente) ou de sistema_ia/.env.
+# Nunca a escreva em código, configs, docs ou commits (o repositório é público).
 def load_vlm_settings(config: ProjectConfig, model: str | None = None, environ: dict | None = None) -> VLMSettings:
     """Lê configs/vlm_assist.json; a chave vem do ambiente ou de sistema_ia/.env."""
     path = config.taxonomy_path.parent / SETTINGS_FILE

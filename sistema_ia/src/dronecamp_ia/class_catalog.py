@@ -112,6 +112,8 @@ def load_overrides(config: ProjectConfig, taxonomy: dict | None = None) -> dict:
     return value
 
 
+# ATENCAO: a seção Classes grava SÓ em configs/taxonomy_overrides.json. Nunca escreva em
+# taxonomy.json daqui: o hash dele está em revisões, datasets e laudos.
 def _save(config: ProjectConfig, value: dict) -> None:
     """Grava em arquivo temporário e troca de uma vez: uma queda no meio não deixa JSON pela metade."""
     path = overrides_path(config)
