@@ -244,6 +244,8 @@ def build_parser() -> argparse.ArgumentParser:
     worker.add_argument("--poll", type=float, default=5.0, help="Segundos entre consultas à fila.")
     worker.add_argument("--max-idle", type=float, help="Encerrar após N s sem checkpoint novo (worker órfão).")
     worker.add_argument("--watch-stdin", action="store_true", help="Sair quando o processo do treino fechar o stdin.")
+    worker.add_argument("--parent-pid", type=int,
+                        help="Pid do treino; no Windows o worker sai quando ele termina (substitui o stdin, que travava).")
     # Comando report-models: model_report.build_model_report. Grava runs/report_<data>_<id>/
     # (ou --output) com models.json, gráficos PNG e report.html.
     report = commands.add_parser("report-models", help="Relatório com gráficos comparativos entre modelos (PNG + HTML).")
@@ -563,7 +565,8 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "gpu-eval-worker":
             from .gpu_eval import run_worker
             result = run_worker(config, args.run, args.data, args.provider, args.split, args.imgsz, args.work,
-                                args.poll, max_idle_seconds=args.max_idle, watch_stdin=args.watch_stdin)
+                                args.poll, max_idle_seconds=args.max_idle, watch_stdin=args.watch_stdin,
+                                parent_pid=args.parent_pid)
             print(json.dumps(result, ensure_ascii=False), flush=True)
             # Saída imediata: a finalização normal do interpretador com ONNX Runtime + Torch
             # carregados pode abortar (SIGABRT) depois do trabalho feito; a curva já está gravada.
