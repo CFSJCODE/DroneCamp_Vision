@@ -487,7 +487,93 @@ def build_pilot_dataset(config: ProjectConfig, registry_paths: list[Path], outpu
             "buildings": buildings, "warning": PILOT_WARNING}
 
 
+def remap_pilot_dataset(config: ProjectConfig, source: Path, output: Path) -> dict:
+    """Copia um piloto da taxonomia anterior trocando o ID das classes pelo mapa da migração.
+
+    As fotos, as caixas e a aprovação humana continuam as mesmas (só fusões de classe);
+    o manifesto ganha ``class_remap`` e as novas hashes das labels, e a cópia passa pela
+    validação completa (``validate_pilot_dataset``) antes de ser usada.
+
+    REVISAR: a conferência humana das classes ampliadas da taxonomia nova continua
+    pendente na revisão migrada; este piloto só reaproveita decisões já tomadas.
+
+    Erros (ValueError): destino já existe; origem de outro tipo, já remapeada ou de
+    taxonomia diferente da anterior declarada na migração.
+    """
+    source, output = Path(source).resolve(), Path(output).resolve()
+    if output.exists():
+        raise ValueError(f"Destino já existe: {output}")
+    source_sha, mapping = migration_class_remap(config)
+    manifest = json.loads((source / "pilot.json").read_text(encoding="utf-8"))
+    if (manifest.get("kind") != PILOT_KIND or manifest.get("class_remap")
+            or manifest.get("taxonomy_sha256") != source_sha or (source / "INCOMPLETO.txt").exists()):
+        raise ValueError("Origem não é um piloto completo da taxonomia anterior da migração.")
+    taxonomy = load_taxonomy(config.taxonomy_path)
+    names = detection_names(taxonomy)
+    shutil.copytree(source, output)
+    try:
+        coverage = {name: {split: 0 for split in SPLITS} for name in names}
+        for sample in manifest["images"]:
+            label = output / sample["label"]
+            split = Path(sample["image"]).parts[1]
+            lines = []
+            for line in label.read_text(encoding="utf-8").splitlines():
+                if line.strip():
+                    parts = line.split()
+                    class_id = mapping[int(parts[0])]
+                    coverage[names[class_id]][split] += 1
+                    lines.append(" ".join([str(class_id), *parts[1:]]))
+            label.write_text("".join(f"{line}\n" for line in lines), encoding="utf-8")
+            sample["label_sha256"] = file_hash(label)
+        (output / "dataset.yaml").write_text(yaml.safe_dump(
+            {"path": ".", "train": "images/train", "val": "images/val", "test": "images/test",
+             "nc": len(names), "names": names}, allow_unicode=True, sort_keys=False), encoding="utf-8")
+        manifest.update({
+            "created_at": datetime.now(timezone.utc).isoformat(), "version": output.name,
+            "class_remap": {"from": (taxonomy.get("migration") or {}).get("from_version"),
+                            "to": taxonomy.get("version"), "map": {str(k): v for k, v in mapping.items()},
+                            "source_dataset": str(source), "source_pilot_sha256": file_hash(source / "pilot.json")},
+            "boxes_by_class_and_split": coverage,
+            "classes_without_training_boxes": [name for name in names if coverage[name]["train"] == 0],
+            "classes_not_measured_in_val": [name for name in names if coverage[name]["val"] == 0],
+        })
+        write_json(output / "pilot.json", manifest)
+        report = validate_pilot_dataset(config, output / "dataset.yaml")
+    except Exception:
+        (output / "INCOMPLETO.txt").write_text("Criação interrompida; não utilize esta pasta.\n", encoding="utf-8")
+        raise
+    return {"dataset": str(output / "dataset.yaml"), "boxes_by_class_and_split": coverage,
+            "classes_without_training_boxes": report["classes_without_training_boxes"], "warning": PILOT_WARNING}
+
+
 # ENTRADA: conferência feita por training.train_pilot antes de cada treino piloto.
+def migration_class_remap(config: ProjectConfig) -> tuple[str, dict[int, int]]:
+    """Mapa de IDs da taxonomia anterior para a atual, a partir de ``migration``.
+
+    Retorna ``(sha256 da taxonomia anterior, {id antigo: id novo})``. Só vale para
+    migrações que fundem classes (toda classe ativa antiga cabe inteira numa nova),
+    então as caixas aprovadas não mudam; apenas o ID da classe.
+
+    Erros: ValueError se a taxonomia atual não declarar migração, se o arquivo anterior
+    mudou (hash) ou se o mapa não cobrir todas as classes ativas antigas.
+    """
+    taxonomy = load_taxonomy(config.taxonomy_path)
+    migration = taxonomy.get("migration") or {}
+    if not migration.get("from_taxonomy_file") or not migration.get("active_class_map"):
+        raise ValueError("A taxonomia atual não declara migração de classes.")
+    source = resolve_local_path(migration["from_taxonomy_file"], config.root)
+    if file_hash(source) != migration.get("from_taxonomy_sha256"):
+        raise ValueError("Arquivo da taxonomia anterior mudou desde a migração.")
+    old_names, new_names = detection_names(load_taxonomy(source)), detection_names(taxonomy)
+    mapping = {}
+    for slug, target in migration["active_class_map"].items():
+        if slug in old_names:
+            mapping[old_names.index(slug)] = new_names.index(target if isinstance(target, str) else target["to"])
+    if len(mapping) != len(old_names):
+        raise ValueError("migration.active_class_map não cobre todas as classes ativas anteriores.")
+    return migration["from_taxonomy_sha256"], mapping
+
+
 def validate_pilot_dataset(config: ProjectConfig, data_path: Path) -> dict:
     """Reconfira hashes e labels contra os registros humanos antes do treino piloto.
 
@@ -521,7 +607,17 @@ def validate_pilot_dataset(config: ProjectConfig, data_path: Path) -> dict:
     if (root / "INCOMPLETO.txt").exists():
         raise ValueError("Dataset piloto marcado como incompleto.")
     manifest = json.loads((root / "pilot.json").read_text(encoding="utf-8"))
-    if manifest.get("kind") != PILOT_KIND or manifest.get("taxonomy_sha256") != file_hash(config.taxonomy_path):
+    remap = {}
+    if manifest.get("class_remap"):
+        # Piloto remapeado: as labels vêm da taxonomia anterior declarada na migração e o mapa
+        # gravado tem de ser exatamente o derivado de migration.active_class_map.
+        source_sha, expected_map = migration_class_remap(config)
+        remap = {int(k): int(v) for k, v in (manifest["class_remap"].get("map") or {}).items()}
+        if manifest.get("taxonomy_sha256") != source_sha or remap != expected_map:
+            raise ValueError("class_remap do pilot.json não confere com a migração da taxonomia atual.")
+    elif manifest.get("taxonomy_sha256") != file_hash(config.taxonomy_path):
+        raise ValueError("pilot.json ausente, de outro tipo ou de outra taxonomia.")
+    if manifest.get("kind") != PILOT_KIND:
         raise ValueError("pilot.json ausente, de outro tipo ou de outra taxonomia.")
     # 2. Cada foto/label: hash intacto, registro humano intacto e label recalculada igual.
     # Mesmo limite de IoU usado na criação (None se a consolidação estava desligada).
@@ -550,6 +646,11 @@ def validate_pilot_dataset(config: ProjectConfig, data_path: Path) -> dict:
         # Recalcula a label a partir do registro (mesma consolidação e mesma conversão
         # xyxy -> YOLO) e compara o texto byte a byte com o arquivo do dataset.
         expected = consolidate_duplicates(reviewed["boxes"], duplicate_iou)
+        # class_remap: piloto montado de revisões aprovadas numa taxonomia anterior com as
+        # classes trocadas pelo mapa da migração (só fusões; caixas iguais). A label confere
+        # com o registro depois do mesmo mapa; o revisor ainda confere as classes ampliadas.
+        if remap:
+            expected = [{**box, "class_id": remap[box["class_id"]]} for box in expected]
         if label.read_text(encoding="utf-8") != boxes_to_yolo(expected, reviewed["width"], reviewed["height"]):
             raise ValueError(f"Label diverge das caixas aprovadas: {sample['label']}.")
         declared.add(sample["image"])

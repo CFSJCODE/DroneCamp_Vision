@@ -59,8 +59,11 @@ pilot:
   tiling:
     enabled: true
     min_side: 2000
-    patch: 1280
-    overlap: 0.2
+    # 640 = escala 1:1 com imgsz 640 (13/10/2026): na janela de 1280 reduzida a 640, metade
+    # das caixas aprovadas do Lado A chegava ao modelo com 14-20 px e o recall abaixo de 40 px
+    # era 20/46. Overlap maior para não cortar as emendas entre faixas de telha.
+    patch: 640
+    overlap: 0.3
     full_image: true
     merge_iou: 0.5
   # Caixas da mesma classe com IoU >= limite viram um único alvo no dataset piloto.
