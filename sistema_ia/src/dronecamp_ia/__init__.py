@@ -21,11 +21,13 @@ cada módulo importa o que precisa só quando é usado.
 
 O que contém:
 - ``__version__``: versão do pacote (texto ``"MAIOR.MENOR.CORREÇÃO"``).
+- ``YOLO_AUTOINSTALL=false`` no ambiente (se ainda não definido), antes de qualquer
+  import da Ultralytics em qualquer comando.
 
 Quem usa: o Python, ao importar ``dronecamp_ia``; ``__version__`` pode ser lido
 por quem quiser registrar a versão do código.
 
-O que lê e grava no disco: nada.
+O que lê e grava no disco: nada (só define uma variável de ambiente do processo).
 
 Onde mexer:
 - Para registrar uma versão nova do pacote, troque ``__version__`` abaixo.
@@ -34,6 +36,15 @@ Onde mexer:
 - ATENCAO: não acrescente importações pesadas aqui; elas deixariam todos os
   comandos (até ``--help``) lentos e exigiriam a Ultralytics instalada.
 """
+
+import os
+
+# ATENCAO: a Ultralytics lê YOLO_AUTOINSTALL no próprio import e, ligada, tenta
+# "uv/pip install" de pacotes que acha faltando. Em 13/10 o gpu-eval-worker importou a
+# Ultralytics antes de backend.py desligar isso, não reconheceu o onnxruntime-directml
+# como "onnxruntime" e sobrescreveu parte dele com o onnxruntime 1.31 (pacote misturado,
+# session.run quebrado). Definir aqui vale para todo comando do pacote.
+os.environ.setdefault("YOLO_AUTOINSTALL", "false")
 
 # Versão do pacote (versionamento semântico: maior.menor.correção).
 # EXTENSAO: suba este número quando publicar uma versão nova do código.

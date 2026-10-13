@@ -351,7 +351,9 @@ def start_worker(config: ProjectConfig, run: Path, data_path: Path, settings: di
     # cli.py e no parâmetro correspondente de run_worker.
     command = [sys.executable, "-m", "dronecamp_ia", "--config", str(config_path),
                "gpu-eval-worker", "--run", str(run), "--work", str(work), "--data", str(Path(data_path).resolve()),
-               "--provider", settings["provider"], "--split", settings["split"], "--imgsz", str(imgsz), "--watch-stdin"]
+               "--provider", settings["provider"], "--split", settings["split"], "--imgsz", str(imgsz), "--watch-stdin",
+               # No Windows o worker observa este pid em vez do stdin (ver _watch_parent).
+               "--parent-pid", str(os.getpid())]
     # 6. No Windows o worker roda com prioridade abaixo do normal (o treino tem preferência).
     extra = {}
     if os.name == "nt":
@@ -664,10 +666,41 @@ def _watch_stdin() -> None:
     threading.Thread(target=wait_for_parent, daemon=True).start()
 
 
+def _watch_parent(pid: int) -> None:
+    """Windows: encerra o worker quando o processo do treino (``pid``) termina.
+
+    ATENCAO: substitui ``_watch_stdin`` no Windows. Uma thread parada em
+    ``sys.stdin.buffer.read()`` sobre um pipe síncrono trava outras chamadas no mesmo
+    handle (o Windows serializa a E/S do arquivo), e os imports de torch/numpy consultam
+    o stdin: o worker do treino de 13/10 ficou travado na partida e a GPU parada. Aqui a
+    thread espera o próprio processo do treino (``WaitForSingleObject``), sem tocar no stdin.
+
+    Parâmetros: pid do processo do treino (``os.getpid()`` em ``start_worker``).
+    Retorna: None. Sem acesso ao processo (já terminou), encerra na hora com código 3.
+    """
+    import ctypes
+
+    kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+    kernel32.OpenProcess.restype = ctypes.c_void_p
+    handle = kernel32.OpenProcess(0x00100000, False, int(pid))  # SYNCHRONIZE
+    if not handle:
+        print("gpu-eval-worker: treino não encontrado; saindo.", flush=True)
+        os._exit(3)
+
+    def wait_for_parent():
+        """Bloqueia até o treino terminar e então encerra o worker (os._exit(3))."""
+        kernel32.WaitForSingleObject(ctypes.c_void_p(handle), 0xFFFFFFFF)  # INFINITE
+        print("gpu-eval-worker: treino encerrado; saindo.", flush=True)
+        os._exit(3)
+
+    threading.Thread(target=wait_for_parent, daemon=True).start()
+
+
 # ENTRADA: comando interno gpu-eval-worker (cli.py), iniciado por start_worker.
 def run_worker(config: ProjectConfig, run: Path, data_path: Path, provider: str, split: str, imgsz: int,
                work: Path | None = None, poll_seconds: float = 5.0, evaluator=evaluate_checkpoint,
-               max_idle_seconds: float | None = None, watch_stdin: bool = False) -> dict:
+               max_idle_seconds: float | None = None, watch_stdin: bool = False,
+               parent_pid: int | None = None) -> dict:
     """Laço do worker: avalia cada checkpoint da fila até DONE com a fila vazia.
 
     Sempre pega o checkpoint mais recente; os mais antigos ainda na fila são
@@ -687,6 +720,8 @@ def run_worker(config: ProjectConfig, run: Path, data_path: Path, provider: str,
         evaluator: função com a assinatura de ``evaluate_checkpoint``.
         max_idle_seconds: encerra após esse tempo sem checkpoint (None = espera para sempre).
         watch_stdin: True liga ``_watch_stdin`` (usado quando iniciado por ``start_worker``).
+        parent_pid: pid do treino; no Windows, com ele o worker observa o processo
+            (``_watch_parent``) em vez do stdin, que travava a partida do worker.
 
     Retorna:
         ``{"processed": n, "status": "done" | "failed" | "idle_timeout"}``.
@@ -694,7 +729,9 @@ def run_worker(config: ProjectConfig, run: Path, data_path: Path, provider: str,
     run = Path(run).resolve()
     work = Path(work).resolve() if work else work_directory(run)
     (work / "queue").mkdir(parents=True, exist_ok=True)
-    if watch_stdin:
+    if parent_pid and os.name == "nt":
+        _watch_parent(parent_pid)
+    elif watch_stdin:
         _watch_stdin()
     # Só limita threads quando o avaliador é o real (os testes usam um falso, sem torch).
     if evaluator is evaluate_checkpoint:
