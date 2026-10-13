@@ -21,7 +21,7 @@
    Mapa das seções deste arquivo (procure pelo título):
      Tokens (:root e tema escuro) / Base / Estrutura / Cartões e grades / Chips e estados / Botões /
      Formulários / Tabelas / Barras e gráficos / Revisão / Treinamento, monitoramento, modelos /
-     Inspeções, upload e laudos / Toast / Responsivo.
+     Inspeções, upload e laudos / Assistente IA / Toast / Responsivo.
    EXTENSAO: estilo de um componente novo = um bloco na seção mais próxima, usando SEMPRE as variáveis
    (var(--surface), var(--line), var(--radius-card)...) e nunca cores fixas; assim ele funciona nos dois temas.
    --------------------------------------------------------------------------- */
@@ -212,6 +212,12 @@ a:hover { color: var(--primary-hover) }
 .nav-item .count { margin-left: auto; font-size: 11px; font-weight: 600; background: rgba(255, 255, 255, .10); border-radius: var(--radius-pill); padding: 1px 7px; color: var(--sidebar-ink-strong) }
 .nav-item .count.ai { background: rgba(167, 139, 250, .25); color: #DDD6FE }
 .nav-item .live-dot { margin-left: auto; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px rgba(52, 211, 153, .25); animation: pulse 1.6s infinite }
+/* Subitens do Assistente IA (.nav-sub dentro de .nav-subs): recuados sob o item principal, sem ícone,
+   com uma linha guia à esquerda. O principal fica marcado em qualquer um dos três submenus. */
+.nav-subs { display: flex; flex-direction: column; gap: 1px; margin: 0 0 4px 19px; padding-left: 10px; border-left: 1px solid var(--sidebar-line) }
+.nav-item.nav-sub { padding: 6px 10px; font-size: 12.5px; color: var(--sidebar-muted) }
+.nav-item.nav-sub:hover { color: var(--sidebar-ink-strong) }
+.nav-item.nav-sub[aria-current="page"] { background: var(--sidebar-hover); color: var(--sidebar-ink-strong) }
 /* Rodapé da barra lateral: chip de modo (.status.ok/.bad conforme setMode()), versão e botão de tema. */
 .sidebar .spacer { flex: 1 }
 .sidebar-foot { border-top: 1px solid var(--sidebar-line); padding-top: 12px; display: grid; gap: 8px; min-width: 0 }
@@ -519,6 +525,51 @@ tr.inactive td { color: var(--muted) } tr.inactive .class-name .swatch { opacity
 .download b { display: block; font-size: 13px } .download small { color: var(--muted); font-size: 11.5px; overflow-wrap: anywhere }
 .disclaimer { border-left: 4px solid var(--ai); padding: 8px 12px; background: var(--ai-soft); border-radius: 8px; font-size: 12px; color: var(--ink-2) }
 
+/* ============================== Assistente IA ============================== */
+/* Seção Assistente IA (view-assistant): abas dos três submenus (.ai-tabs, como a navegação do painel de IA
+   do NetInventory), painéis (.ai-panel; só o .active aparece), formulário da chave, métricas de uso e chat.
+   O violeta (--ai) marca só o que veio da IA: as respostas do assistente. A pergunta do usuário é azul. */
+.ai-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; padding: 6px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-card); box-shadow: var(--shadow-1); margin-bottom: 16px }
+.ai-tabs button:not(.nav-item):not(.theme-btn):not(.q-item):not(.box-item) { justify-content: center; min-height: 40px; border-color: transparent; background: transparent; color: var(--muted); font-weight: 600 }
+.ai-tabs button:not(.nav-item):not(.theme-btn):not(.q-item):not(.box-item):hover { background: var(--subtle-hover); border-color: transparent; color: var(--ink) }
+.ai-tabs button:not(.nav-item):not(.theme-btn):not(.q-item):not(.box-item)[aria-current="page"] { background: var(--primary-soft); color: var(--primary) }
+.ai-tabs button:not(.nav-item):not(.theme-btn):not(.q-item):not(.box-item)[aria-current="page"]:hover { background: var(--primary-soft); color: var(--primary) }
+.ai-panel { display: none } .ai-panel.active { display: block }
+.ai-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 4px 0 12px }
+.ai-head p { margin: 4px 0 0; font-size: 12.5px }
+.ai-panel > .card + .ai-head, .ai-panel > .grid + .card { margin-top: 20px }
+.row-inline { display: flex; align-items: center; gap: 8px; flex-wrap: wrap } .row-inline select { width: auto }
+h2.with-icon { display: flex; align-items: center; gap: 8px } h2.with-icon svg { width: 16px; height: 16px; color: var(--ai) }
+.ai-state { font-size: 13px; overflow-wrap: anywhere }
+.ai-state .on { color: var(--ok); font-weight: 600 } .ai-state .off { font-weight: 600 }
+.ai-state code, .mono-input { font-family: var(--font-mono); font-size: 12.5px }
+.ai-form { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: 0 16px }
+.ai-form .wide { grid-column: 1 / -1 }
+.input-row { display: flex; gap: 8px; align-items: center } .input-row input { flex: 1; min-width: 0 } .input-row button { white-space: nowrap }
+.ai-dl { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin: 14px 0 6px; font-size: 12.5px }
+.ai-dl dt { color: var(--muted) } .ai-dl dd { margin: 3px 0 0; font-weight: 600 }
+.ext-link { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 500; margin-top: 6px } .ext-link svg { width: 13px; height: 13px }
+.kpi .value.long { font-size: 20px }
+.ai-chat { display: flex; flex-direction: column; gap: 12px; min-height: 56vh }
+.ai-log { flex: 1; display: flex; flex-direction: column; gap: 12px; overflow-y: auto; max-height: 62vh; padding: 2px }
+.ai-empty { display: grid; gap: 10px; padding: 12px 0; color: var(--muted); font-size: 13px }
+.ai-suggestions { display: flex; flex-wrap: wrap; gap: 8px }
+.ai-suggestions button { white-space: normal; text-align: left; font-size: 12.5px }
+.ai-msg { max-width: min(85%, 760px); padding: 10px 14px; border-radius: 14px; font-size: 13px; line-height: 1.55; overflow-wrap: anywhere }
+.ai-msg.user { align-self: flex-end; background: var(--primary); color: var(--primary-ink); border-bottom-right-radius: 4px; white-space: pre-wrap }
+.ai-msg.assistant { align-self: flex-start; background: var(--surface-2); border: 1px solid var(--line); border-left: 3px solid var(--ai); border-bottom-left-radius: 4px }
+.ai-msg.assistant p { margin: 0 0 6px } .ai-msg.assistant p:last-child { margin: 0 }
+.ai-msg.assistant ul { margin: 0 0 6px; padding-left: 18px } .ai-msg.assistant li { margin: 2px 0 }
+.ai-msg.assistant code { font-family: var(--font-mono); font-size: 12px; background: var(--surface-3); padding: 0 4px; border-radius: 4px }
+.ai-msg .meta { display: block; margin-top: 6px; font-size: 11px; color: var(--muted) }
+.ai-msg.pending { color: var(--muted); display: inline-flex; align-items: center; gap: 8px }
+.ai-msg.pending .dots i { display: inline-block; width: 6px; height: 6px; margin-right: 3px; border-radius: 50%; background: var(--ai); animation: ai-dot 1.2s infinite }
+@keyframes ai-dot { 0%, 100% { opacity: .25 } 50% { opacity: 1 } }
+.ai-msg.pending .dots i:nth-child(2) { animation-delay: .2s } .ai-msg.pending .dots i:nth-child(3) { animation-delay: .4s }
+.ai-error { color: var(--bad); font-size: 12.5px; margin: 0 }
+.ai-compose { display: flex; gap: 8px; align-items: center; border-top: 1px solid var(--line); padding-top: 12px }
+.ai-compose input { flex: 1; min-width: 0 } .ai-compose button.icon { width: 38px; height: 38px; justify-content: center }
+
 /* ============================== Toast ============================== */
 /* Toast: aviso flutuante no canto inferior direito; a função toast() põe .show e tira depois de 3,6 s. */
 #toast { position: fixed; right: 20px; bottom: 20px; z-index: 50; display: flex; gap: 10px; align-items: center; background: var(--ink); color: var(--bg); border-radius: 10px; padding: 10px 14px; box-shadow: var(--shadow-2); transform: translateY(20px); opacity: 0; pointer-events: none; transition: transform var(--normal) var(--ease), opacity var(--normal); max-width: min(420px, calc(100vw - 40px)); font-size: 12.5px }
@@ -548,6 +599,8 @@ tr.inactive td { color: var(--muted) } tr.inactive .class-name .swatch { opacity
   main, .notice-strip, .footer { padding-left: 16px; padding-right: 16px }
   .bar-row { grid-template-columns: minmax(90px, 130px) 1fr auto }
   .ring-wrap { grid-template-columns: 1fr; justify-items: center }
+  .ai-tabs { grid-template-columns: 1fr } .ai-form { grid-template-columns: 1fr } .ai-msg { max-width: 92% }
+  .input-row { flex-wrap: wrap } .input-row button { width: 100%; justify-content: center }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important } }
 @media print { .sidebar, .topbar, .mobile-bar, .notice-strip, #toast { display: none !important } .app { display: block } main { padding: 0 } .card { box-shadow: none; break-inside: avoid } }

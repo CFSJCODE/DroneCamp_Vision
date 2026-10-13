@@ -49,3 +49,5 @@ sistema_ia/data/reviews/*/laudos/
 sistema_ia/data/reviews/*/exportacoes/
 # Fotos e vídeos tal como enviados pela página (GB): ficam só no disco, junto da inspeção que criaram.
 sistema_ia/data/reviews/*/midia_enviada/
+# Consumo da IA generativa (só metadados de cada chamada; painel Assistente IA → Uso e limites).
+sistema_ia/.runtime/ai_usage.jsonl

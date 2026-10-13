@@ -14,7 +14,8 @@ O que faz:
 - ``load_vlm_settings``: lê ``configs/vlm_assist.json`` e a chave de
   ``OPENROUTER_API_KEY`` (ambiente ou ``.env`` local, nunca de arquivos versionados).
 - ``OpenRouterClient``: chamada ``chat/completions`` compatível com OpenAI via
-  ``urllib`` (sem dependência nova); ``transport`` injetável nos testes.
+  ``urllib`` (sem dependência nova); ``transport`` injetável nos testes; cada
+  chamada pode ser registrada em ``.runtime/ai_usage.jsonl`` (``usage_log``, ver ai_usage.py).
 - ``describe_occurrences``: recorta cada caixa (humana e, opcionalmente, sugerida),
   pergunta ao VLM e grava ``ai_notes.json`` ao lado do registro, retomável.
 - ``agreement_report``: concordância da classe sugerida pelo VLM com a humana.
@@ -102,6 +103,9 @@ from .config import ProjectConfig, load_taxonomy
 # file_hash: SHA-256 de arquivo; resolve_local_path: caminho do registro → caminho local;
 # write_json: grava JSON (formato padrão do projeto).
 from .io import file_hash, resolve_local_path, write_json
+# completion_usage/usage_logger: metadados de consumo de cada chamada ao modelo
+# (submenu Uso e limites do Assistente IA da plataforma).
+from .ai_usage import completion_usage, usage_logger
 
 # ---------------------------------------------------------------------------
 # Constantes do módulo (nomes de arquivo, variáveis de ambiente, textos fixos)
@@ -351,13 +355,15 @@ class OpenRouterClient:
     que chame ``self._request("/caminho", payload_ou_None)``.
     """
 
-    def __init__(self, settings: VLMSettings, transport=None):
+    def __init__(self, settings: VLMSettings, transport=None, usage_log=None):
         """Cria o cliente e falha cedo se não houver chave.
 
         Parâmetros:
         - ``settings``: ``VLMSettings`` de ``load_vlm_settings``.
         - ``transport``: função ``(url, headers, body, timeout) -> (status, bytes)``;
           None usa ``_urllib_transport`` (os testes passam um falso).
+        - ``usage_log``: função ``log(entry: dict)`` que registra os metadados de
+          consumo de cada chamada ao modelo (``ai_usage.usage_logger``); None não registra.
 
         Erros: ``VLMUnavailable`` quando ``settings.api_key`` é None ou vazio, com a
         instrução de definir ``OPENROUTER_API_KEY``.
@@ -368,8 +374,11 @@ class OpenRouterClient:
                                  "para usar o apoio do VLM; a chave não fica em nenhum arquivo versionado.")
         self.settings = settings
         self.transport = transport or _urllib_transport
+        self.usage_log = usage_log
         # Requisições que chegaram a ter resposta (inclui as com erro HTTP).
         self.calls = 0
+        # Código HTTP da última resposta (None antes da primeira ou sem rede); vai para o registro de consumo.
+        self.last_status = None
 
     def _headers(self) -> dict:
         """Cabeçalhos de toda requisição.
@@ -403,11 +412,14 @@ class OpenRouterClient:
         # 1. Serializa o payload (None = GET sem corpo).
         body = json.dumps(payload).encode("utf-8") if payload is not None else None
         # 2. Envia; falhas de rede viram VLMUnavailable (o comando explica e para).
+        # last_status zera antes: falha sem resposta HTTP não herda o código da chamada anterior.
+        self.last_status = None
         try:
             status, raw = self.transport(f"{self.settings.base_url}{path}", self._headers(), body, self.settings.timeout_seconds)
         except (urllib.error.URLError, TimeoutError, OSError) as error:
             raise VLMUnavailable(f"Sem acesso a {self.settings.base_url}: {type(error).__name__}: {error}") from error
         self.calls += 1
+        self.last_status = status
         # 3. Decodifica o corpo; errors="replace" evita exceção com bytes inválidos.
         text = raw.decode("utf-8", errors="replace") if isinstance(raw, (bytes, bytearray)) else str(raw)
         # 4. Traduz os códigos HTTP em mensagens para o usuário.
@@ -454,20 +466,71 @@ class OpenRouterClient:
                    "max_tokens": self.settings.max_output_tokens}
         if len(chain) > 1:
             payload["models"] = chain
-        data = self._request("/chat/completions", payload)
-        # Extrai o texto da primeira escolha; estrutura diferente vira VLMUnavailable.
+
+        def extract(data: dict) -> tuple[str, dict]:
+            # Extrai o texto da primeira escolha; estrutura diferente vira VLMUnavailable
+            # (e entra no registro de consumo como falha, por estar dentro de _measured).
+            try:
+                choice = data["choices"][0]
+                content = choice["message"]["content"]
+            except (KeyError, IndexError, TypeError) as error:
+                raise VLMUnavailable(f"Resposta sem conteúdo: {json.dumps(data, ensure_ascii=False)[:300]}") from error
+            if isinstance(content, list):  # alguns provedores devolvem partes
+                # Junta só as partes de texto ({"type": "text", "text": ...}).
+                content = "".join(part.get("text", "") for part in content if isinstance(part, dict))
+            # Metadados gravados em ai_notes.json (model_used, usage).
+            meta = {"model_used": data.get("model"), "provider": data.get("provider"), "usage": data.get("usage"),
+                    "finish_reason": choice.get("finish_reason")}
+            return str(content or ""), meta
+
+        return self._measured(payload, extract)
+
+    def ping(self) -> dict:
+        """Chamada mínima (1 token) que confirma chave, rede e modelo; usada antes de salvar a chave.
+
+        Retorna: ``{"model_used": ...}`` com o modelo que respondeu (o roteador
+        ``openrouter/free`` informa qual sorteou).
+
+        Erros: ``VLMUnavailable`` com a mensagem de ``_request`` (chave recusada, 429, rede...).
+        Resposta sem texto NÃO é erro aqui: alguns modelos gastam o único token em raciocínio.
+
+        Chamada por: ``ai_panel.save_settings`` (submenu Configuração da IA).
+        """
+        # Cadeia "a,b" ou atalho free-vision: o teste usa um slug real (o primeiro / o preferido).
+        first = model_chain(self.settings.model)[0]
+        payload = {"model": PREFERRED_FREE_VISION[0] if first == FREE_VISION else first,
+                   "messages": [{"role": "user", "content": "ping"}], "max_tokens": 1}
+        return self._measured(payload, lambda data: {"model_used": data.get("model")})
+
+    def _measured(self, payload: dict, extract):
+        """Faz ``POST /chat/completions`` e registra os metadados de consumo (sucesso ou falha).
+
+        Parâmetros:
+        - ``payload``: corpo da requisição (formato OpenAI).
+        - ``extract``: função que recebe o JSON da resposta e devolve o resultado de quem chamou;
+          pode lançar ``VLMUnavailable`` (resposta sem conteúdo), que também conta como falha.
+
+        Retorna: o que ``extract`` devolver.
+
+        ATENCAO: o registro (``usage_log``) recebe só metadados: modelo, tempo, código HTTP,
+        tokens e custo. Nunca passe ``payload`` ou o texto da resposta para ele.
+        Chamada por: ``chat`` e ``ping``.
+        """
+        started = time.monotonic()
+        entry = {"provider": self.settings.provider, "model": self.settings.model}
         try:
-            choice = data["choices"][0]
-            content = choice["message"]["content"]
-        except (KeyError, IndexError, TypeError) as error:
-            raise VLMUnavailable(f"Resposta sem conteúdo: {json.dumps(data, ensure_ascii=False)[:300]}") from error
-        if isinstance(content, list):  # alguns provedores devolvem partes
-            # Junta só as partes de texto ({"type": "text", "text": ...}).
-            content = "".join(part.get("text", "") for part in content if isinstance(part, dict))
-        # Metadados gravados em ai_notes.json (model_used, usage).
-        meta = {"model_used": data.get("model"), "provider": data.get("provider"), "usage": data.get("usage"),
-                "finish_reason": choice.get("finish_reason")}
-        return str(content or ""), meta
+            data = self._request("/chat/completions", payload)
+            result = extract(data)
+        except VLMUnavailable:
+            if self.usage_log:
+                self.usage_log({**entry, "status": "error", "duration_ms": round((time.monotonic() - started) * 1000),
+                                "http_status": self.last_status if (self.last_status or 0) >= 400 else None})
+            raise
+        if self.usage_log:
+            self.usage_log({**entry, "status": "success", "duration_ms": round((time.monotonic() - started) * 1000),
+                            "model_used": data.get("model") if isinstance(data, dict) else None,
+                            **completion_usage(data.get("usage") if isinstance(data, dict) else None)})
+        return result
 
     def models(self) -> list[dict]:
         """Lista os modelos do provedor (GET ``/models``).
@@ -899,7 +962,8 @@ def describe_occurrences(config: ProjectConfig, registry_path: Path, include_sug
     # (o OpenRouter cai para o próximo quando um falha ou está limitado).
     if settings.model == FREE_VISION:
         settings = replace(settings, model=free_vision_chain(settings, transport))
-    client = OpenRouterClient(settings, transport)  # falha cedo sem chave
+    # Cada chamada entra no consumo local (.runtime/ai_usage.jsonl, submenu Uso e limites).
+    client = OpenRouterClient(settings, transport, usage_log=usage_logger(config.root, "describe"))  # falha cedo sem chave
     # 3. Chaves de retomada: prompt, parâmetros do modelo e versão do registro.
     digest = prompt_digest(taxonomy)
     resume_key = resume_digest(settings, digest)

@@ -1,6 +1,6 @@
 # Plataforma DroneCamp Vision
 
-A página de revisão (`data/reviews/<inspeção>/index.html`) é a plataforma do produto: uma única página, sem dependências externas, com nove seções navegáveis pela barra lateral. Com o servidor local ela recebe fotos e vídeos, gera laudos e pacotes de evidências e acompanha treinos ao vivo; aberta do disco, a revisão continua funcionando inteira.
+A página de revisão (`data/reviews/<inspeção>/index.html`) é a plataforma do produto: uma única página, sem dependências externas, com dez seções navegáveis pela barra lateral. Com o servidor local ela recebe fotos e vídeos, gera laudos e pacotes de evidências e acompanha treinos ao vivo; aberta do disco, a revisão continua funcionando inteira.
 
 | Seção | O que faz | De onde vêm os dados |
 | --- | --- | --- |
@@ -13,6 +13,7 @@ A página de revisão (`data/reviews/<inspeção>/index.html`) é a plataforma d
 | Monitoramento | Progresso do treino em andamento, métricas da última época, curvas ao vivo e a tarefa do servidor com o log | `fit/results.csv` relido a cada 5 s pelo servidor local |
 | Modelos | Critério de adoção, comparação entre modelos por divisão, caixas por classe no dataset de cada treino, melhor mAP50 por treino e o gráfico **Evolução dos modelos** (um ponto por treino, em ordem cronológica, com precisão, recall, mAP50 e mAP50-95 da melhor época de validação; treinos novos entram sozinhos a cada atualização, o modelo das sugestões aparece como "em uso" e a troca de dataset é marcada) | `runs/compare_*.json`, `execution.json`, `fit/results.csv` |
 | Classes | Cadastro das categorias de ocorrência: nome de exibição, cor, ativo/inativo e classes propostas (sempre marcadas como "exige treino"); aviso fixo de que mudanças nas classes exigem novo ciclo de treinamento | `configs/taxonomy.json` (só leitura) + `configs/taxonomy_overrides.json` pelo servidor local ([análise da taxonomia](analise_taxonomia_classes.md)) |
+| Assistente IA | Três submenus, na mesma estrutura do painel de IA do NetInventory: **Configuração da IA** (provedor, chave e modelo; a chave é testada com 1 token antes de ser gravada e nunca volta ao navegador), **Uso e limites** (teto, consumo e saldo da chave no OpenRouter, sem inferência, e o consumo deste PC por período: tokens, chamadas, falhas, custo, tempo médio e tabela por recurso/modelo) e **Chat** (perguntas sobre inspeções, classes, sugestões pendentes, treinos e comparações, respondidas a partir de um instantâneo real do projeto) | `ai_panel.py` e `ai_usage.py` pelo servidor local; chave em `sistema_ia/.env`, consumo em `.runtime/ai_usage.jsonl` |
 
 Em toda seção a página repete o limite do produto: sugestões da IA aguardam decisão humana; gravidade, diagnóstico e recomendações dependem de validação técnica e nunca são inferidos. O laudo sai como "preliminar, sujeito a validação por responsável técnico", com esses campos em branco.
 
@@ -113,6 +114,16 @@ Os arquivos ficam em `review_templates/`: `index.html` (estrutura), `platform.cs
 
 Regrava só o `index.html` com o modelo atual e o instantâneo de `runs/`. Fotos, evidências, rótulos propostos e `browser_data.json` ficam como estão; o comando recusa o registro se `browser_data.json` pertencer a outra versão. Rode uma vez por inspeção depois de atualizar o código para que as páginas em disco ganhem o visual novo (o servidor local já monta a página atual a cada abertura).
 
+## Assistente IA
+
+Fica no grupo "Inteligência artificial" do menu: o item **Assistente IA** abre o Chat e os subitens abrem cada submenu, os mesmos das abas no topo da seção. A conversa do chat fica só na memória da aba (trocar de submenu não a apaga; recarregar a página, sim).
+
+- **Chave**: gravada só em `sistema_ia/.env` (`OPENROUTER_API_KEY`, ignorado pelo git) e só depois de o teste de 1 token passar; o modelo escolhido vai para `OPENROUTER_MODEL` no mesmo arquivo. Se a chave estiver definida como variável de ambiente do Windows, ela vence o `.env` e a página só deixa trocar o modelo; o mesmo vale para `OPENROUTER_MODEL` definido no sistema, que trava o campo do modelo. A página nunca recebe a chave, só os 4 últimos caracteres.
+- **Modelo**: prefira um modelo gratuito com entrada de imagem (botão "Listar modelos gratuitos"). O roteador `openrouter/free` sorteia um modelo por chamada e pode cair em modelos sem visão.
+- **Consumo local**: cada chamada ao modelo (descrição de ocorrências, chat, teste da chave) grava uma linha de metadados em `.runtime/ai_usage.jsonl`: data, recurso, modelo, resultado, duração, código HTTP da falha, tokens e custo informados. Nenhuma pergunta, resposta, foto ou chave. O que o provedor não informa aparece como "Não informado"; a coleta começa nesta versão.
+- **Limites do provedor**: `GET /api/v1/key` e `GET /api/v1/credits` do OpenRouter, sem gerar inferência. O saldo da conta exige chave de gerenciamento; sem ela, o painel mostra só o teto e o consumo da chave. Com outra URL base a chave não é enviada.
+- **Chat**: cada pergunta leva a conversa e um instantâneo do projeto (inspeções com fotos, decisões e sugestões pendentes; caixas e sugestões por classe da inspeção aberta; classes; treinos; comparações; concordância das notas da IA). O assistente responde só com esses dados, não altera nada, não aprova caixas e não atribui gravidade, diagnóstico ou recomendação. Rascunhos ainda não salvos no navegador não entram no instantâneo.
+
 ## Limites
 
 - Métricas do piloto vêm de uma única edificação. A seção Modelos declara que nenhuma versão pode ser adotada enquanto não houver avaliação em edificação independente, comparação salva e análise de regressões por classe.
@@ -125,6 +136,7 @@ Regrava só o `index.html` com o modelo atual e o instantâneo de `runs/`. Fotos
 ## Código
 
 - `src/dronecamp_ia/platform_server.py`: servidor local, espaço de trabalho, lotes de envio, laudos/pacotes e lista fechada de tarefas.
+- `src/dronecamp_ia/ai_panel.py` e `src/dronecamp_ia/ai_usage.py`: Assistente IA (configuração da chave, chat com o instantâneo do projeto, consumo local e limites do OpenRouter; rotas `/api/ai/...`).
 - `src/dronecamp_ia/class_catalog.py`: cadastro das classes (rotas `/api/classes`), edições em `configs/taxonomy_overrides.json` com histórico.
 - `src/dronecamp_ia/ingest.py`: importação de fotos e vídeos (hash, EXIF, quadros) para um registro novo; comando `import-media`.
 - `src/dronecamp_ia/exports.py`: pacote de evidências, dados do laudo (`laudo.json`) e CSV de ocorrências.
@@ -132,4 +144,5 @@ Regrava só o `index.html` com o modelo atual e o instantâneo de `runs/`. Fotos
 - `src/dronecamp_ia/operations.py`: coleta treinos, curvas, comparações, datasets e arquivos gerados (só leitura).
 - `src/dronecamp_ia/review_render.py`: `build_page`, `empty_page_payload` e `refresh_review_page`.
 - `src/dronecamp_ia/review_templates/`: `index.html`, `platform.css`, `platform.js`.
+- `tests/test_ai_panel.py`: Assistente IA sem rede (chave só no `.env` e depois do teste, consumo só com metadados, chat ancorado nos dados, rotas protegidas pelo token).
 - `tests/test_platform.py`, `tests/test_ingest.py`, `tests/test_exports.py`: painel, página gerada, servidor (espaço de trabalho, envio, laudos), importação e exportações.

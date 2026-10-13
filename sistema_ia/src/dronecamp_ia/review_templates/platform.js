@@ -21,7 +21,7 @@
      5. Revisão: fila de fotos, caixas, sugestões da IA, desenho, zoom, decisão, exportação
      6. Início (painel), 7. Inspeções, 8. Importar mídia, 9. Laudos e downloads
     10. Gráficos SVG (lineChart) e rótulos de execuções/pesos/métricas
-    11. Treinamento, 12. Monitoramento, 13. Modelos, 14. Classes (cadastro)
+    11. Treinamento, 12. Monitoramento, 13. Modelos, 14. Classes (cadastro), 14b. Assistente IA (configuração, uso e limites, chat)
     15. Servidor local (api, refreshWorkspace, refreshOperations, tarefas)
     16. Inicialização (roda uma vez quando a página abre)
 
@@ -351,8 +351,15 @@ const VIEWS = {
   training: ['Treinamento', 'Ciclo de fine-tuning com as correções humanas'],
   monitor: ['Monitoramento', 'Treino em andamento e tarefas do servidor local'],
   models: ['Modelos', 'Comparação, cobertura e critério de adoção'],
-  classes: ['Classes', 'Categorias de ocorrência: nomes, cores e classes propostas']
+  classes: ['Classes', 'Categorias de ocorrência: nomes, cores e classes propostas'],
+  // Assistente IA: três chaves, uma só <section id="view-assistant"> (ver AI_VIEWS no bloco Assistente IA).
+  'ai-settings': ['Assistente IA', 'Configuração da IA: provedor, chave e modelo'],
+  'ai-usage': ['Assistente IA', 'Uso e limites: consumo local e limites do provedor'],
+  'ai-chat': ['Assistente IA', 'Chat sobre as inspeções, classes, treinos e comparações']
 };
+// VIEW_SECTION: chaves de VIEWS que dividem a mesma <section> (submenus). As demais usam view-<chave>.
+// EXTENSAO: seção nova com submenus = mapeie cada chave para o nome da section aqui.
+const VIEW_SECTION = { 'ai-settings': 'assistant', 'ai-usage': 'assistant', 'ai-chat': 'assistant' };
 /**
  * Abre uma seção: marca a <section> ativa, o item do menu, o título, a URL (#view) e chama o render dela.
  * Parâmetros: view (chave de VIEWS; desconhecida vira 'home'). Retorna: nada.
@@ -362,8 +369,10 @@ function showView(view) {
   if (!VIEWS[view]) view = 'home';
   state.view = view;
   // 1. mostra só a seção escolhida e marca o item do menu (aria-current) para leitores de tela.
-  document.querySelectorAll('.view').forEach(section => section.classList.toggle('active', section.id === 'view-' + view));
+  document.querySelectorAll('.view').forEach(section => section.classList.toggle('active', section.id === 'view-' + (VIEW_SECTION[view] || view)));
   document.querySelectorAll('.nav-item[data-view]').forEach(button => button.setAttribute('aria-current', button.dataset.view === view ? 'page' : 'false'));
+  // Item principal do Assistente IA fica marcado em qualquer um dos três submenus.
+  document.querySelectorAll('.nav-item[data-group="assistant"]').forEach(button => button.setAttribute('aria-current', VIEW_SECTION[view] === 'assistant' ? 'page' : 'false'));
   // 2. título, subtítulo e título da aba do navegador.
   $('viewTitle').textContent = VIEWS[view][0];
   $('viewSubtitle').textContent = DATA.version ? `${VIEWS[view][1]} · ${reviewLabel(DATA.version, DATA.display_name)}` : VIEWS[view][1];
@@ -382,6 +391,7 @@ function showView(view) {
   if (view === 'monitor') renderMonitor();
   if (view === 'models') renderModels();
   if (view === 'classes') renderClasses();
+  if (VIEW_SECTION[view] === 'assistant') renderAssistant(view);
   window.scrollTo({ top: 0 })
 }
 // ENTRADA: cliques no menu lateral ([data-view]) e nos atalhos internos ([data-goto]).
@@ -2167,6 +2177,261 @@ $('createClass').onclick = async () => {
     toast('Classe adicionada', `${created.display_name} aguarda fotos aprovadas e novo treino.`)
   } catch (error) { classStatus(error.message, true) }
 };
+
+/* ======================= Assistente IA ======================= */
+// Mesma estrutura do painel de IA do NetInventory: três submenus (Configuração da IA, Uso e limites, Chat)
+// numa só seção, com abas no topo e subitens no menu lateral.
+// Elementos do index.html: aiOffline, aiTabs, aiState, aiLocked, aiKey, aiKeyLabel, aiModel, aiModelList,
+// aiModelHelp, aiListModels, aiSave, aiRemoveKey, aiSettingsStatus, aiUsagePeriod, aiUsageRefresh,
+// aiProviderLine, aiProviderStatus, aiProviderKpis, aiProviderDetails, aiProviderChecked, aiDashboard,
+// aiUsageScope, aiUsageStatus, aiUsageKpis, aiUsageTable, aiUsageFoot, aiLog, aiChatError, aiChatForm,
+// aiDraft, aiSend, aiChatClear.
+// Rotas da API: GET /api/ai/status, GET /api/ai/usage?period=; POST /api/ai/settings, /api/ai/key/delete,
+// /api/ai/models, /api/ai/provider-usage e /api/ai/chat (platform_server.py → ai_panel.py / ai_usage.py).
+// ATENCAO: a chave digitada só vai no POST de /api/ai/settings e o campo é limpo em seguida; o servidor
+// nunca a devolve. A conversa fica só em AI.chat (memória desta aba): nada vai para o localStorage.
+// AI_VIEWS: chave de VIEWS → data-panel do painel mostrado. EXTENSAO: submenu novo = entrada aqui.
+const AI_VIEWS = { 'ai-settings': 'ai-settings', 'ai-usage': 'ai-usage', 'ai-chat': 'ai-chat' };
+// AI_FEATURES: nome legível do recurso que chamou o modelo (mesma tabela de ai_usage.FEATURES).
+const AI_FEATURES = { chat: 'Chat do assistente', describe: 'Descrição de ocorrências', 'connection-test': 'Teste da chave' };
+// Perguntas prontas do chat (botões do estado vazio). EXTENSAO: pergunta nova = texto aqui.
+const AI_SUGGESTIONS = [
+  'Quais classes têm menos caixas em fotos confirmadas na inspeção aberta?',
+  'Quantas sugestões do modelo ainda estão pendentes e em quais classes?',
+  'Resuma os treinos e diga qual comparação está registrada.',
+  'Quais inspeções ainda têm fotos sem decisão?'
+];
+// AI: estado do painel. status = /api/ai/status; usage/provider = consultas do Uso e limites;
+// chat = conversa em memória (messages, pending, error), mantida ao trocar de submenu.
+const AI = { status: null, usage: null, provider: null, providerError: null, usageError: null, loading: false, chat: { messages: [], pending: false, error: null } };
+// Números e valores em USD no padrão brasileiro; ausente vira "Não informado" (nunca zero inventado).
+const aiNumber = value => value == null ? 'Não informado' : Number(value).toLocaleString('pt-BR', { maximumFractionDigits: 0 });
+const aiMoney = value => value == null ? 'Não informado' : Number(value).toLocaleString('pt-BR', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 6 });
+/**
+ * Abre um submenu do Assistente IA: marca a aba, mostra o painel e carrega os dados dele.
+ * Parâmetros: view ('ai-settings', 'ai-usage' ou 'ai-chat'). Retorna: nada. Chamada por: showView.
+ */
+function renderAssistant(view) {
+  $('aiOffline').classList.toggle('hidden', SERVER);
+  document.querySelectorAll('#aiTabs [data-view]').forEach(button => button.setAttribute('aria-current', button.dataset.view === view ? 'page' : 'false'));
+  document.querySelectorAll('.ai-panel').forEach(panel => panel.classList.toggle('active', panel.dataset.panel === AI_VIEWS[view]));
+  if (view === 'ai-settings') renderAiSettings();
+  if (view === 'ai-usage') renderAiUsage();
+  if (view === 'ai-chat') renderAiChat();
+  if (SERVER && !AI.status) loadAiStatus()
+}
+/** Lê /api/ai/status e redesenha o submenu aberto. Parâmetros: nenhum. Retorna: Promise<void>. */
+async function loadAiStatus() {
+  try { AI.status = await api('/api/ai/status') } catch (error) { AI.status = { error: error.message } }
+  if (VIEW_SECTION[state.view] === 'assistant') {
+    if (state.view === 'ai-settings') renderAiSettings();
+    if (state.view === 'ai-chat') renderAiChat();
+    if (state.view === 'ai-usage') renderAiProvider()
+  }
+}
+/** Texto de estado ("● Ativa — OpenRouter, chave terminada em …"), sem nunca mostrar a chave. */
+function aiStateLine(status) {
+  if (!SERVER) return [el('span', { class: 'off' }, '● Indisponível.'), ' Abra a plataforma pelo servidor local.'];
+  if (!status) return ['Verificando…'];
+  if (status.error && !status.configured) return [el('span', { class: 'off' }, '● Desativada.'), ` ${status.error}`];
+  if (!status.configured) return [el('span', { class: 'off' }, '● Desativada.'), ' Os recursos de IA ficam indisponíveis até você cadastrar a chave (crie em ', el('a', { href: status.key_help_url, target: '_blank', rel: 'noreferrer' }, 'openrouter.ai/keys'), ').'];
+  const source = status.key_source === 'ambiente' ? 'variável de ambiente do sistema' : 'arquivo .env deste PC';
+  return [el('span', { class: 'on' }, '● Ativa'), ` — ${status.provider_name}, chave terminada em `, el('code', {}, `…${status.key_hint}`), ` (${source}), modelo `, el('code', {}, status.model), '.']
+}
+/** Submenu Configuração da IA: estado, campos e botões conforme a origem da chave. */
+function renderAiSettings() {
+  const status = AI.status;
+  $('aiState').replaceChildren(...aiStateLine(status));
+  const locked = Boolean(status && status.key_locked);
+  $('aiLocked').classList.toggle('hidden', !locked);
+  $('aiLocked').textContent = locked ? 'A chave vem da variável de ambiente OPENROUTER_API_KEY do Windows e vence o arquivo .env. Para trocá-la ou removê-la, altere a variável do sistema; aqui dá para escolher o modelo.' : '';
+  const keeps = Boolean(status && status.configured);
+  $('aiKeyLabel').textContent = locked ? 'Chave da API (definida no sistema)' : keeps ? 'Nova chave (deixe vazio para manter)' : 'Chave da API';
+  $('aiKey').disabled = !SERVER || locked;
+  // O modelo só é preenchido na primeira vez (não apaga o que o usuário está digitando).
+  if (status && status.model && !$('aiModel').dataset.touched) $('aiModel').value = status.model;
+  // OPENROUTER_MODEL no ambiente do sistema vence o .env: o campo fica travado (o servidor também recusa).
+  $('aiModel').disabled = !SERVER || Boolean(status && status.model_locked);
+  $('aiListModels').disabled = !SERVER || !keeps;
+  // Com chave malformada no .env a IA fica desativada, mas a chave ainda pode ser removida.
+  $('aiRemoveKey').classList.toggle('hidden', !(status && status.key_source === '.env'));
+  updateAiSave()
+}
+/** Habilita "Testar e salvar" só com modelo preenchido e chave disponível (nova ou já cadastrada). */
+function updateAiSave() {
+  const status = AI.status || {};
+  $('aiSave').disabled = !SERVER || AI.loading || !$('aiModel').value.trim() || (!status.configured && !$('aiKey').value.trim())
+}
+/** Mensagem do submenu Configuração da IA. Parâmetros: text, error (boolean). */
+function aiSettingsStatus(text, error = false) { $('aiSettingsStatus').textContent = text; $('aiSettingsStatus').classList.toggle('error', error); $('aiSettingsStatus').style.color = error ? 'var(--bad)' : '' }
+// ENTRADA: campos e botões da Configuração da IA.
+$('aiKey').oninput = updateAiSave;
+$('aiModel').oninput = () => { $('aiModel').dataset.touched = '1'; updateAiSave() };
+$('aiSave').onclick = async () => {
+  AI.loading = true; updateAiSave();
+  $('aiSave').lastElementChild.textContent = 'Testando…';
+  aiSettingsStatus('Testando a chave e o modelo no provedor (1 token)…');
+  try {
+    AI.status = await api('/api/ai/settings', { api_key: $('aiKey').value.trim() || undefined, model: $('aiModel').value.trim() });
+    $('aiKey').value = '';
+    delete $('aiModel').dataset.touched;
+    AI.usage = null; AI.provider = null;
+    aiSettingsStatus(`Configuração salva. Respondeu: ${AI.status.tested_model || AI.status.model}.`);
+    toast('Configuração da IA salva', 'Chave testada no provedor e gravada no .env deste PC.')
+  } catch (error) { aiSettingsStatus(error.message, true) }
+  finally { AI.loading = false; $('aiSave').lastElementChild.textContent = 'Testar e salvar'; renderAiSettings() }
+};
+$('aiRemoveKey').onclick = async () => {
+  if (!confirm('Remover a chave do arquivo .env? Os recursos de IA ficam desativados até cadastrar outra.')) return;
+  try { AI.status = await api('/api/ai/key/delete', {}); AI.provider = null; aiSettingsStatus('Chave removida do .env.'); toast('Chave removida', 'Os recursos de IA estão desativados.') }
+  catch (error) { aiSettingsStatus(error.message, true) }
+  renderAiSettings()
+};
+$('aiListModels').onclick = async () => {
+  $('aiListModels').disabled = true; aiSettingsStatus('Consultando modelos gratuitos com entrada de imagem…');
+  try {
+    const { models } = await api('/api/ai/models', {});
+    $('aiModelList').replaceChildren(...models.map(model => el('option', { value: model.id }, model.name || model.id)));
+    aiSettingsStatus(`${models.length} modelos gratuitos com visão. Clique no campo Modelo para escolher.`)
+  } catch (error) { aiSettingsStatus(error.message, true) }
+  finally { $('aiListModels').disabled = !SERVER || !(AI.status && AI.status.configured) }
+};
+
+/** Cartão de métrica (mesmo componente .kpi do Início). Parâmetros: label, value, hint, long (valor longo). */
+function aiMetric(label, value, hint, long = false) {
+  return el('div', { class: 'card kpi' }, el('div', { class: 'label' }, label), el('div', { class: long ? 'value long' : 'value' }, value), el('div', { class: 'hint', title: hint }, hint))
+}
+/** Submenu Uso e limites: dispara as duas consultas (consumo local e provedor) e desenha o que já tem. */
+function renderAiUsage() {
+  renderAiProvider(); renderAiLocal();
+  if (SERVER && !AI.usage && !AI.usageError) loadAiUsage();
+  if (SERVER && !AI.provider && !AI.providerError) loadAiProvider()
+}
+/** GET /api/ai/usage com o período escolhido. Retorna: Promise<void>. */
+async function loadAiUsage() {
+  $('aiUsageStatus').textContent = 'Carregando métricas…';
+  try { AI.usage = await api('/api/ai/usage?period=' + encodeURIComponent($('aiUsagePeriod').value)); AI.usageError = null }
+  catch (error) { AI.usage = null; AI.usageError = error.message }
+  renderAiLocal()
+}
+/** POST /api/ai/provider-usage (consulta o OpenRouter com a chave, sem inferência). Retorna: Promise<void>. */
+async function loadAiProvider() {
+  $('aiProviderStatus').textContent = 'Consultando o provedor…';
+  try { AI.provider = await api('/api/ai/provider-usage', {}); AI.providerError = null }
+  catch (error) { AI.provider = null; AI.providerError = error.message }
+  renderAiProvider()
+}
+/** Cartão "Créditos e limites do provedor". */
+function renderAiProvider() {
+  const status = AI.status, provider = AI.provider;
+  $('aiProviderLine').replaceChildren(status ? status.provider_name || 'OpenRouter' : 'Carregando provedor…', status && status.model ? el('span', { class: 'mono', style: 'display:block;margin-top:2px' }, status.model) : '');
+  $('aiProviderStatus').textContent = !SERVER ? 'Disponível só com o servidor local.' : AI.providerError || (provider ? provider.message : 'Consultando o provedor…');
+  $('aiProviderStatus').style.color = AI.providerError || (provider && provider.state === 'error') ? 'var(--bad)' : '';
+  const available = Boolean(provider && provider.state === 'available');
+  $('aiProviderKpis').classList.toggle('hidden', !available);
+  $('aiProviderDetails').classList.toggle('hidden', !available);
+  if (available) {
+    $('aiProviderKpis').replaceChildren(
+      aiMetric('Créditos restantes na conta', aiMoney(provider.account_balance), 'Saldo da conta no provedor, em USD.', true),
+      aiMetric('Disponível no teto da chave', aiMoney(provider.key_remaining), provider.key_limit == null ? 'Chave sem teto definido ou teto não informado.' : `Teto da chave: ${aiMoney(provider.key_limit)}.`, true),
+      aiMetric('Consumo acumulado da chave', aiMoney(provider.key_usage), 'Inclui uso da mesma chave fora deste PC.', true),
+      aiMetric('Camada gratuita', provider.is_free_tier == null ? 'Não informado' : provider.is_free_tier ? 'Sim' : 'Não', 'Conta sem créditos comprados usa os limites diários dos modelos :free.', true));
+    const resets = { daily: 'Diária', weekly: 'Semanal', monthly: 'Mensal' };
+    $('aiProviderDetails').replaceChildren(
+      el('div', {}, el('dt', {}, 'Consumo da chave hoje (UTC)'), el('dd', {}, aiMoney(provider.daily_usage))),
+      el('div', {}, el('dt', {}, 'Consumo da chave no mês (UTC)'), el('dd', {}, aiMoney(provider.monthly_usage))),
+      el('div', {}, el('dt', {}, 'Renovação do teto da chave'), el('dd', {}, resets[provider.reset] || 'Não informada')))
+  }
+  $('aiProviderChecked').textContent = provider && provider.checked_at ? `Consulta em ${fmtDate(provider.checked_at)}. O filtro de período abaixo vale só para o consumo local.` : '';
+  const dashboard = status && status.dashboard_url;
+  $('aiDashboard').classList.toggle('hidden', !dashboard);
+  if (dashboard) $('aiDashboard').href = dashboard
+}
+/** Métricas e tabela "Consumo nesta instalação". */
+function renderAiLocal() {
+  const data = AI.usage;
+  $('aiUsageScope').textContent = `${$('aiUsagePeriod').selectedOptions[0].textContent}. Inclui descrição de ocorrências, chat e testes da chave feitos neste PC.`;
+  $('aiUsageStatus').textContent = !SERVER ? 'Disponível só com o servidor local.' : AI.usageError ? `Não foi possível carregar as métricas: ${AI.usageError}` : data ? '' : 'Carregando métricas…';
+  if (!data) { $('aiUsageKpis').replaceChildren(); $('aiUsageTable').replaceChildren(el('tr', {}, el('td', { colspan: 5 }, el('div', { class: 'empty' }, 'Sem dados.')))); $('aiUsageFoot').textContent = ''; return }
+  const seconds = data.average_duration_ms == null ? 'Não informado' : `${(data.average_duration_ms / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 2 })} s`;
+  $('aiUsageKpis').replaceChildren(
+    aiMetric('Tokens gastos', aiNumber(data.total_tokens), `${aiNumber(data.input_tokens)} de entrada · ${aiNumber(data.output_tokens)} de saída`),
+    aiMetric('Chamadas ao modelo', aiNumber(data.requests), `${aiNumber(data.successful)} concluídas · ${aiNumber(data.errors)} com falha`),
+    aiMetric('Custo informado', aiMoney(data.cost_usd), `${aiNumber(data.cost_reports)} de ${aiNumber(data.requests)} chamadas informaram custo.`, true),
+    aiMetric('Tempo médio por chamada', seconds, `${aiNumber(data.token_reports)} de ${aiNumber(data.requests)} chamadas informaram tokens.`, true));
+  $('aiUsageTable').replaceChildren(...(data.features.length ? data.features.map(row => el('tr', {},
+    el('td', {}, el('b', {}, AI_FEATURES[row.feature] || row.feature_label || row.feature), el('small', { class: 'mono', style: 'display:block;color:var(--muted);margin-top:2px;overflow-wrap:anywhere' }, `${row.provider} · ${row.model}`)),
+    el('td', { class: 'num' }, aiNumber(row.events)), el('td', { class: 'num' }, aiNumber(row.errors)),
+    el('td', { class: 'num' }, aiNumber(row.total_tokens)), el('td', { class: 'num' }, aiMoney(row.cost_usd))))
+    : [el('tr', {}, el('td', { colspan: 5 }, el('div', { class: 'empty' }, 'Nenhum uso registrado neste período. A coleta começa nesta versão da plataforma.')))]));
+  $('aiUsageFoot').textContent = `${data.tracking_since ? `Coleta iniciada em ${fmtDate(data.tracking_since)}.` : 'A coleta começa na primeira chamada à IA depois desta atualização.'} Não há recuperação do consumo anterior. Tokens e custos que o provedor não informa aparecem como "Não informado"; totais podem ser parciais. O registro (.runtime/ai_usage.jsonl) guarda só metadados: nenhuma pergunta, resposta, foto ou chave.`
+}
+// ENTRADA: filtro de período e botão Atualizar do Uso e limites.
+$('aiUsagePeriod').onchange = () => { AI.usage = null; AI.usageError = null; renderAiLocal(); if (SERVER) loadAiUsage() };
+$('aiUsageRefresh').onclick = () => { if (!SERVER) return; AI.usageError = null; AI.providerError = null; loadAiUsage(); loadAiProvider() };
+
+/**
+ * Markdown mínimo das respostas (parágrafos, listas, **negrito**, `código`) montado com el():
+ * nunca usa innerHTML, então texto malicioso vindo do modelo não vira script na página.
+ * Parâmetros: text (resposta do modelo). Retorna: lista de nós.
+ */
+function aiMarkdown(text) {
+  const inline = line => line.split(/(\*\*[^*]+\*\*|`[^`]+`)/g).filter(Boolean).map(part =>
+    part.startsWith('**') && part.endsWith('**') ? el('strong', {}, part.slice(2, -2)) : part.startsWith('`') && part.endsWith('`') ? el('code', {}, part.slice(1, -1)) : part);
+  const blocks = []; let list = null;
+  String(text).split(/\r?\n/).forEach(raw => {
+    const line = raw.trim();
+    const bullet = /^(?:[-*•]|\d+[.)])\s+(.*)$/.exec(line);
+    if (bullet) { if (!list) { list = el('ul'); blocks.push(list) } list.append(el('li', {}, inline(bullet[1]))); return }
+    list = null;
+    if (!line) return;
+    const heading = /^#{1,4}\s+(.*)$/.exec(line);
+    blocks.push(heading ? el('p', {}, el('strong', {}, inline(heading[1]))) : el('p', {}, inline(line)))
+  });
+  return blocks
+}
+/** Submenu Chat: conversa em memória, sugestões no estado vazio e indicador de resposta. */
+function renderAiChat() {
+  const chat = AI.chat, ready = SERVER && AI.status && AI.status.configured;
+  const nodes = [];
+  if (!chat.messages.length) {
+    nodes.push(el('div', { class: 'ai-empty' },
+      el('p', {}, !SERVER ? 'O chat precisa do servidor local.' : !AI.status ? 'Verificando a configuração da IA…' : ready ? 'Comece com uma pergunta sobre o projeto ou escolha uma sugestão:' : 'IA desativada. Cadastre a chave em Configuração da IA para conversar.'),
+      ready ? el('div', { class: 'ai-suggestions' }, AI_SUGGESTIONS.map(text => el('button', { type: 'button', class: 'small', onclick: () => sendAiMessage(text) }, text)))
+        : SERVER && AI.status ? el('div', {}, el('button', { type: 'button', class: 'small', 'data-goto': 'ai-settings', onclick: () => showView('ai-settings') }, 'Abrir Configuração da IA')) : null))
+  }
+  chat.messages.forEach(message => nodes.push(message.role === 'user'
+    ? el('div', { class: 'ai-msg user' }, message.content)
+    : el('div', { class: 'ai-msg assistant' }, aiMarkdown(message.content), message.model ? el('span', { class: 'meta' }, `Resposta da IA · ${message.model}`) : null)));
+  if (chat.pending) nodes.push(el('div', { class: 'ai-msg assistant pending' }, el('span', { class: 'dots', 'aria-hidden': 'true' }, el('i'), el('i'), el('i')), 'Consultando os dados da plataforma…'));
+  $('aiLog').replaceChildren(...nodes);
+  $('aiLog').scrollTop = $('aiLog').scrollHeight;
+  $('aiChatError').textContent = chat.error || '';
+  $('aiChatError').classList.toggle('hidden', !chat.error);
+  $('aiDraft').disabled = !ready || chat.pending;
+  $('aiSend').disabled = !ready || chat.pending;
+  $('aiChatClear').classList.toggle('hidden', !chat.messages.length);
+  $('aiChatClear').disabled = chat.pending
+}
+/**
+ * Envia a pergunta com a conversa inteira; o servidor junta o instantâneo do projeto e responde.
+ * Parâmetros: text (pergunta). Retorna: Promise<void>.
+ */
+async function sendAiMessage(text) {
+  const chat = AI.chat, question = String(text || '').trim();
+  if (!question || chat.pending || !(AI.status && AI.status.configured)) return;
+  chat.messages.push({ role: 'user', content: question });
+  chat.pending = true; chat.error = null; $('aiDraft').value = '';
+  renderAiChat();
+  try {
+    const result = await api('/api/ai/chat', { review: REVIEWS ? REVIEWS.current : DATA.version, messages: chat.messages.map(({ role, content }) => ({ role, content })) });
+    chat.messages.push({ role: 'assistant', content: result.answer, model: result.model_used })
+  } catch (error) { chat.error = error.message }
+  finally { chat.pending = false; AI.usage = null; renderAiChat(); if (state.view === 'ai-chat') $('aiDraft').focus() }
+}
+// ENTRADA: envio da pergunta (Enter ou botão) e limpeza da conversa.
+$('aiChatForm').onsubmit = event => { event.preventDefault(); sendAiMessage($('aiDraft').value) };
+$('aiChatClear').onclick = () => { AI.chat.messages = []; AI.chat.error = null; renderAiChat() };
 
 /* ======================= Servidor local (opcional) ======================= */
 // Elementos do index.html: modeChip, navInspections, liveDot, jobLog, startTrain, startSuggest, stopJob,
