@@ -191,7 +191,7 @@ def _approved(registry_path: Path, taxonomy_digest: str, class_count: int, root:
     ATENCAO: a IA nunca aprova: só entram itens com ``human_approved`` True,
     ``technical_status`` "human_visual_reviewed" e ``human_reviewer`` preenchido.
     """
-    # O registro precisa ser da taxonomia atual (mesmas 14 classes, mesmo hash).
+    # O registro precisa ser da taxonomia atual (mesmas classes ativas, mesmo hash).
     registry = json.loads(registry_path.read_text(encoding="utf-8"))
     if not isinstance(registry, dict) or registry.get("schema_version") != 1:
         raise ValueError(f"Schema inválido no registro {registry_path}.")

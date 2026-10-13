@@ -5,17 +5,12 @@ train: images/train
 val: images/val
 test: images/test
 names:
-  0: telha_quebrada
+  0: telha_danificada
   1: telha_ausente
-  2: residuos_telha
-  3: reparo_telha
-  4: rufo_ausente
-  5: rufo_quebrado
-  6: residuos_calha
-  7: vegetacao_calha
-  8: pedaco_telha
-  9: rufo_deslocado
-  10: pedaco_telha_sobreposto
-  11: fixador_telha_frouxo
-  12: reparo_rufo
-  13: pedaco_calha_sobre_telha
+  2: residuos_cobertura
+  3: objeto_solto_cobertura
+  4: calha_obstruida
+  5: rufo_ausente
+  6: rufo_danificado
+  7: reparo_material_aplicado
+  8: fixador_irregular

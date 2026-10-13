@@ -71,12 +71,20 @@ from .review_data import boxes_to_yolo, review_image_size, validate_boxes, write
 # ---------------------------------------------------------------------------
 
 # Uma cor por classe (índice = ID da classe), usada nas evidências e na página (paleta controlada e harmoniosa).
-# ATENCAO: a paleta tem 14 cores (IDs 0–13). render_review_package indexa COLORS[class_id] sem
-# módulo; ao ativar a classe 14 (fase 1) acrescente cores aqui antes, senão o render-review
-# quebra com IndexError. Cor editada pela seção Classes fica em taxonomy_overrides.json.
-# EXTENSAO: nova classe ativa: acrescente uma cor hexadecimal "#RRGGBB" ao FIM da lista
-# (a posição é o ID da classe), junto com a classe em configs/taxonomy.json.
-COLORS = ["#FF5C70", "#E63950", "#FF9F43", "#42B8E8", "#9B6DF2", "#EC5DAA", "#52C79A", "#2BBE72", "#F4C542", "#56D1E8", "#FF7A1A", "#F5D547", "#B89AF8", "#4F7DFF"]
+# Taxonomia v7 (13/10/2026): 15 cores para as 15 classes (0–8 ativas, 9–14 no catálogo).
+# Cada classe ativa herdou a cor da classe v6 que mais contribuiu para ela (telha danificada
+# = antiga telha quebrada etc.), para a página continuar familiar depois da migração.
+# Acima de 15 classes as cores se repetem (índice com módulo), em vez de quebrar o
+# render-review. Cor editada pela seção Classes fica em taxonomy_overrides.json.
+# EXTENSAO: nova classe: acrescente uma cor hexadecimal "#RRGGBB" ao FIM da lista (a posição
+# é o ID da classe), junto com a classe em configs/taxonomy.json.
+COLORS = ["#FF5C70", "#E63950", "#FF9F43", "#F4C542", "#52C79A", "#9B6DF2", "#EC5DAA", "#42B8E8", "#4F7DFF",
+          "#2BBE72", "#56D1E8", "#FF7A1A", "#B89AF8", "#F5D547", "#8DB360"]
+
+
+def class_color(class_id: int) -> str:
+    """Cor "#RRGGBB" da classe; repete a paleta quando há mais classes que cores."""
+    return COLORS[class_id % len(COLORS)]
 
 
 # ---------------------------------------------------------------------------
@@ -316,7 +324,7 @@ def render_review_package(config: ProjectConfig, registry_path: Path) -> Path:
 
     Erros (ValueError): taxonomia mudou (rode migrate-review); foto duplicada; original
     alterado (hash); dimensões divergentes; caixas inválidas; ``suggestions.json`` de
-    outra versão. IndexError se uma classe não tiver cor em ``COLORS``.
+    outra versão.
 
     Grava: veja "O que lê e grava" no cabeçalho do módulo.
 
@@ -341,6 +349,8 @@ def render_review_package(config: ProjectConfig, registry_path: Path) -> Path:
     # Rótulo legível por ID de classe ativa (ex.: 0 -> "Telha quebrada").
     labels = {item["id"]: item["label"] for item in taxonomy["classes"] if item["phase"] == 1}
     slugs = {item["id"]: item["slug"] for item in taxonomy["classes"] if item["phase"] == 1}
+    # Detalhes opcionais por classe (v7), ex.: {"tipo": ["quebra", "trinca", "furo"]}; a página monta os campos.
+    attributes = {item["id"]: item.get("attributes") or {} for item in taxonomy["classes"] if item["phase"] == 1}
     suggestions = _load_suggestions(directory, registry_path, len(names))
     vlm = _vlm_opinions(directory, registry_path)
     # 2. Cada foto: confere o original, copia, desenha as caixas e prepara os dados da página.
@@ -365,8 +375,7 @@ def render_review_package(config: ProjectConfig, registry_path: Path) -> Path:
         font = _font(max(14, int(item["width"] / 75)))
         for number, box in enumerate(item["boxes"], start=1):
             coordinates = box["bbox_xyxy"]
-            # ATENCAO: sem módulo; classe sem cor em COLORS gera IndexError (veja COLORS).
-            color = COLORS[box["class_id"]]
+            color = class_color(box["class_id"])
             # EXTENSAO: espessura do contorno (width=3) e deslocamento da etiqueta (22 px acima
             # da caixa, limitado ao topo da foto) se ajustam nestas linhas.
             draw.rectangle(coordinates, outline=color, width=3)
@@ -415,12 +424,12 @@ def render_review_package(config: ProjectConfig, registry_path: Path) -> Path:
                "taxonomy_recheck_pending": any(item.get("taxonomy_recheck_pending") for item in registry["images"]),
                "classes_requiring_review": [labels[key] for key in sorted(pending_class_ids)],
                # slug: nome técnico da classe, usado pela página para ler a opinião do VLM (class_guess).
-               "classes": [{"id": key, "label": value, "color": COLORS[key], "slug": slugs[key]} for key,value in labels.items()],
+               "classes": [{"id": key, "label": value, "color": class_color(key), "slug": slugs[key], "attributes": attributes[key]} for key,value in labels.items()],
                "duplicate_iou": config.pilot.get("duplicate_iou"),
                # weights_run_id: execução dos pesos das sugestões (só o id, nunca o caminho do PC),
                # para a página ligar o modelo em uso ao treino sem depender de uma comparação salva.
                # EXTENSAO: novo metadado das sugestões para a página: acrescente a chave na tupla.
-               "suggestions": {**{key: suggestions.get(key) for key in ("model_label", "conf", "warning", "weights_sha256", "pilot", "calibrator", "uncovered_classes")},
+               "suggestions": {**{key: suggestions.get(key) for key in ("model_label", "conf", "warning", "weights_sha256", "pilot", "calibrator", "uncovered_classes", "partial_classes")},
                                "weights_run_id": run_id_from_path(suggestions.get("weights"))} if suggestions else None}
     write_json(directory / "browser_data.json", payload)
     (directory / "index.html").write_text(build_page(payload, collect_operations(config, directory)), encoding="utf-8")

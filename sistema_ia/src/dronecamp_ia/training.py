@@ -151,7 +151,7 @@ def _resolve_and_snapshot(config: ProjectConfig, data_path: Path, run: Path, nam
 
     Retorna:
         tuple[Path, dict]: (``run/dataset_resolved.yaml``, contagem de caixas por
-        split e classe, ex.: ``{"train": {"telha_quebrada": 12, ...}, "val": {...}, "test": {...}}``).
+        split e classe, ex.: ``{"train": {"telha_danificada": 12, ...}, "val": {...}, "test": {...}}``).
 
     Grava: ``run/dataset_resolved.yaml`` e ``run/dataset_snapshot.json``.
 

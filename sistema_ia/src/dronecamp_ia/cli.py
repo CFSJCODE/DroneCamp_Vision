@@ -182,7 +182,7 @@ def build_parser() -> argparse.ArgumentParser:
     approved.add_argument("--output", type=Path, required=True)
     # Comando migrate-review: review_data.migrate_review_taxonomy. Grava registro novo
     # em --output adaptado à taxonomia atual (classes novas exigem nova revisão).
-    migration = commands.add_parser("migrate-review", help="Expandir classes preservando caixas e exigindo nova revisão.")
+    migration = commands.add_parser("migrate-review", help="Acrescentar ou fundir classes (mapa da taxonomia nova) preservando caixas e exigindo nova revisão.")
     migration.add_argument("--registry", type=Path, required=True)
     migration.add_argument("--previous-taxonomy", type=Path, required=True)
     migration.add_argument("--output", type=Path, required=True)

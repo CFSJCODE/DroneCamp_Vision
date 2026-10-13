@@ -60,8 +60,8 @@ from dronecamp_ia.config import detection_names, load_config, load_taxonomy
 REAL = load_config()
 # Nomes das classes do detector na ordem dos IDs (índice = class_id).
 NAMES = detection_names(load_taxonomy(REAL.taxonomy_path))
-# ID real da classe "residuos_calha"; buscado pelo nome para não quebrar se os IDs mudarem.
-GUTTER = NAMES.index("residuos_calha")
+# ID real da classe "calha_obstruida"; buscado pelo nome para não quebrar se os IDs mudarem.
+GUTTER = NAMES.index("calha_obstruida")
 
 
 class FakeTensor(list):

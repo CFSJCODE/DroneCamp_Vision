@@ -215,9 +215,14 @@ def detect_boxes(model, path: Path, config: ProjectConfig, conf: float, tiling: 
     detections = (_tiled_detections(model, path, config, conf, plan) if plan
                   else _raw_detections(model, str(path), config, conf))
     # 2. Converte cada detecção em {classe, caixa em pixels inteiros, confiança}.
-    class_count = len(model.names)
+    # Peso de taxonomia anterior (v6) aceito por check_domain_names(taxonomy=...): o ID
+    # do peso é traduzido para a classe fundida da taxonomia atual (v7).
+    remap = getattr(model, "dronecamp_class_remap", None)
+    class_count = max(remap) + 1 if remap else len(model.names)
     boxes = []
     for class_id, confidence, (x1, y1, x2, y2) in detections:
+        if remap:
+            class_id = remap[int(class_id)]
         # Arredonda e limita cada coordenada ao intervalo [0, largura] ou [0, altura].
         coordinates = [max(0, min(width, round(x1))), max(0, min(height, round(y1))),
                        max(0, min(width, round(x2))), max(0, min(height, round(y2)))]
@@ -232,6 +237,16 @@ def detect_boxes(model, path: Path, config: ProjectConfig, conf: float, tiling: 
     # 3. Mais confiantes primeiro; ids s001, s002... usados pela página ao descartar.
     # ATENCAO: o id depende da ordem; sugestões regeneradas podem trocar de id.
     boxes.sort(key=lambda value: -value["confidence"])
+    if remap:
+        # Duas classes antigas fundidas podem marcar o mesmo objeto: fica a mais confiante.
+        from .pilot import box_iou
+        limit = float(((config.pilot or {}).get("tiling") or {}).get("merge_iou", 0.5))
+        kept = []
+        for box in boxes:
+            if not any(other["class_id"] == box["class_id"] and box_iou(other["bbox_xyxy"], box["bbox_xyxy"]) >= limit
+                       for other in kept):
+                kept.append(box)
+        boxes = kept
     for index, box in enumerate(boxes, start=1):
         box["id"] = f"s{index:03d}"
     return boxes
@@ -276,7 +291,8 @@ def suggest_for_registry(config: ProjectConfig, registry_path: Path, weights: st
             registro), para que aceites e descartes já feitos continuem valendo.
 
     Pesos de uma taxonomia anterior (classes = início exato das atuais) são aceitos;
-    as classes que eles não conhecem vão em ``uncovered_classes`` do JSON e na página.
+    as classes que eles não conhecem vão em ``uncovered_classes`` do JSON e na página, e as
+    que eles conhecem só em parte (fusão v6 → v7) vão em ``partial_classes``.
     Os ids das sugestões levam os 8 primeiros caracteres do hash dos pesos (ex.:
     ``809d823e-s001``): descartes guardados no navegador para sugestões de outro
     modelo não escondem as novas por coincidência de id.
@@ -303,11 +319,14 @@ def suggest_for_registry(config: ProjectConfig, registry_path: Path, weights: st
     conf = float(conf if conf is not None else config.pilot.get("suggestion_conf", config.prediction["conf"]))
     if not 0 < conf <= 1:
         raise ValueError("conf deve estar no intervalo (0, 1].")
-    # 2. Modelo com as 14 classes; pesos piloto inferem no tamanho do treino (640).
+    # 2. Modelo com as classes ativas (ou pesos v6 pelo mapa da v7); pesos piloto inferem no tamanho do treino (640).
     # .onnx exportado roda na GPU (DirectML) por padrão; .pt roda no PyTorch (CPU).
     model = load_inference_model(config, weights, onnx_provider)
     # ATENCAO: recusa pesos cujas classes não sejam exatamente as da taxonomia (ex.: COCO).
-    uncovered = check_domain_names(model, detection_names(load_taxonomy(config.taxonomy_path)), allow_prefix=True)
+    taxonomy = load_taxonomy(config.taxonomy_path)
+    uncovered = check_domain_names(model, detection_names(taxonomy), allow_prefix=True, taxonomy=taxonomy)
+    # Pesos v6 traduzidos para a v7: classes ampliadas que eles só conhecem em parte.
+    partial = getattr(model, "dronecamp_partial_classes", [])
     pilot = is_pilot_checkpoint(model.dronecamp_source)
     # A partir daqui "config" é a cópia ajustada (imgsz do piloto/ONNX, ou o --imgsz explícito).
     config = pilot_inference_config(config, model)
@@ -373,13 +392,13 @@ def suggest_for_registry(config: ProjectConfig, registry_path: Path, weights: st
         "created_at": datetime.now(timezone.utc).isoformat(),
         "weights": str(checkpoint), "weights_sha256": weights_sha256, "pilot": pilot,
         # Classes da taxonomia que estes pesos não propõem (pesos de taxonomia anterior).
-        "uncovered_classes": uncovered, "imgsz_override": imgsz,
+        "uncovered_classes": uncovered, "partial_classes": partial, "imgsz_override": imgsz,
         # Fotos já decididas que mantiveram as sugestões anteriores (não reclassificadas).
         "kept_previous": {"images": len(kept), "weights_sha256": previous.get("weights_sha256")} if kept else None,
         # Pesos fora de runs/ não são reconhecidos como piloto; com classes a menos ou --imgsz
         # são de um treino anterior e também não foram validados para produção.
         "model_label": "Modelo piloto (não validado)" if pilot
-        else "Modelo de treino anterior (não validado)" if uncovered or imgsz is not None else "Modelo especializado",
+        else "Modelo de treino anterior (não validado)" if uncovered or partial or imgsz is not None else "Modelo especializado",
         "runtime": model.dronecamp_runtime, "source_checkpoint": str(model.dronecamp_source),
         "tiling": config.pilot.get("tiling"),
         "conf": conf, "imgsz": config.prediction["imgsz"], "warning": SUGGESTION_WARNING, "images": images,

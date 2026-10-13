@@ -71,22 +71,19 @@ from .review_data import boxes_to_yolo, review_image_size, validate_boxes
 # Classes do MVP (contrato com a taxonomia, os pesos e as labels)
 # ---------------------------------------------------------------------------
 
-# As 14 classes ativas, na ordem dos IDs (precisa coincidir com configs/taxonomy.json).
+# As 9 classes ativas da taxonomia v7, na ordem dos IDs (precisa coincidir com configs/taxonomy.json).
 # ATENCAO: a posição na tupla É o ID da classe (0, 1, 2...). build_approved_dataset e
 # review_provenance recusam a taxonomia se os slugs/IDs ativos não forem exatamente estes.
 # EXTENSAO: nova classe ativa: acrescente o slug ao FIM (nunca no meio nem reordene), na
-# mesma posição em que ela aparece com phase 1 em configs/taxonomy.json, e acrescente a
+# mesma posição em que ela aparece com phase 1 em configs/taxonomy.json, e confira a
 # cor em review_render.COLORS. Depois migre as revisões (migrate-review).
+# A v7 (13/10/2026) fundiu as 14 classes da v6 nestas 9 (mapa em migration.active_class_map
+# da taxonomia); fusão/reordenação só com taxonomia nova + migrate-review + treino novo.
 MVP_NAMES = (
-    "telha_quebrada", "telha_ausente", "residuos_telha", "reparo_telha",
-    "rufo_ausente", "rufo_quebrado", "residuos_calha", "vegetacao_calha",
-    "pedaco_telha",
-    "rufo_deslocado",
+    "telha_danificada", "telha_ausente", "residuos_cobertura", "objeto_solto_cobertura",
+    "calha_obstruida", "rufo_ausente", "rufo_danificado", "reparo_material_aplicado",
+    "fixador_irregular",
     # Acrescente classes ao fim: os rótulos já revisados mantêm seus IDs.
-    "pedaco_telha_sobreposto",
-    "fixador_telha_frouxo",
-    "reparo_rufo",
-    "pedaco_calha_sobre_telha",
 )
 
 

@@ -1,5 +1,7 @@
 # Análise da taxonomia de classes e cadastro pela plataforma — 11/10/2026
 
+> **Substituída em parte pela [taxonomia v7](taxonomia_v7.md) (13/10/2026).** Os pares sobrepostos apontados aqui (8/10, 2/8/17, 4/5/9/12) foram fundidos; IDs e slugs abaixo são os da v6.
+
 Pedido: "faça uma análise geral; caso haja muitas classes redundantes ou faltantes, adicione-as e crie um CRUD para as classes".
 
 **Resumo.** A taxonomia v6 tem 14 classes ativas (IDs 0–13, as que o detector aprende) e um catálogo de fase 2 (IDs 14–23) herdado do laudo CEASA. Não há classe redundante a ponto de justificar remoção: os pares parecidos (8/10, 2/8/17, 4/5/9/12) descrevem evidências visuais distintas e as políticas de anotação já dizem qual usar. O problema real é de **cobertura**: faltavam categorias comuns em telhados industriais (calha danificada, telha trincada, corrosão, água empoçada, telha translúcida, ralo obstruído, cumeeira) e as classes 10–13 quase não têm exemplos. Nove categorias entraram no catálogo (IDs 24–32, fase 2, `requires_training: true`) e a plataforma ganhou a seção **Classes** com rotas `/api/classes`. **Nenhum ID existente mudou e o detector atual continua com 14 classes**: só um novo ciclo de dados aprovados + nova versão da taxonomia + treino comparado leva uma classe nova à detecção.

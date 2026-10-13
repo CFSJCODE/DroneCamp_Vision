@@ -106,7 +106,24 @@ class EndToEndUltralyticsTests(unittest.TestCase):
         # Frases da busca aberta só das classes v5: mesmo vocabulário do checkpoint YOLOE salvo.
         prompts_path = cls.root / "configs" / "zero_shot_prompts.json"
         prompts = json.loads(prompts_path.read_text(encoding="utf-8"))
-        prompts["classes"] = {slug: values for slug, values in prompts["classes"].items() if slug in cls.names}
+        # A taxonomia atual (v7) fundiu classes; as frases v5 ficam congeladas aqui (as de
+        # configs/zero_shot_prompts.json até a v6), para o checkpoint YOLOE salvo continuar valendo.
+        prompts["classes"] = {
+            "telha_quebrada": ["broken roof tile", "cracked roof sheet", "broken fiber cement roof sheet"],
+            "telha_ausente": ["missing roof tile", "hole in the roof where a tile is missing"],
+            "residuos_telha": ["debris on roof", "pile of rubble on roof tiles", "trash on the roof"],
+            "reparo_telha": ["patched roof tile", "repair patch on roof sheet", "tape on roof"],
+            "rufo_ausente": ["missing roof flashing"],
+            "rufo_quebrado": ["broken roof flashing", "damaged metal flashing"],
+            "residuos_calha": ["debris in roof gutter", "dirt and leaves inside gutter", "clogged gutter"],
+            "vegetacao_calha": ["plants growing in gutter", "grass growing inside gutter", "moss in gutter"],
+            "pedaco_telha": ["loose piece of roof tile", "fragment of broken tile"],
+            "rufo_deslocado": ["displaced roof flashing", "lifted metal flashing"],
+            "pedaco_telha_sobreposto": ["piece of broken tile lying on roof sheet"],
+            "fixador_telha_frouxo": ["loose roof screw", "loose roof hook bolt", "missing washer on roof fastener"],
+            "reparo_rufo": ["sealant repair on flashing", "patched metal flashing"],
+        }
+        prompts["uncatalogued"] = ["rust on roof sheet", "standing water on roof", "hole in roof", "bird nest on roof", "damaged skylight"]
         prompts_path.write_text(json.dumps(prompts, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         # 2. Dataset piloto a partir da revisão real.
         cls.dataset = cls.root / "data" / "pilot" / "e2e"

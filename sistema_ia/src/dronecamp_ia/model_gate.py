@@ -310,10 +310,15 @@ def _load_models(config: ProjectConfig, weights: list[str], names: list[str], on
     from .backend import check_domain_names, load_inference_model
     from .training import pilot_inference_config
 
+    from .config import load_taxonomy
+
+    # Pesos de taxonomia anterior (v6) entram pelo mapa de fusão da atual (v7), para que
+    # modelo antigo e candidato sejam medidos nas mesmas classes.
+    taxonomy = load_taxonomy(config.taxonomy_path)
     loaded, excluded = [], set()
     for path in weights:
         model = load_inference_model(config, path, onnx_provider)
-        check_domain_names(model, names)
+        check_domain_names(model, names, taxonomy=taxonomy)
         # source = .pt de origem (achar o snapshot de treino); used = .onnx se for ONNX.
         source = Path(model.dronecamp_source).resolve()
         used = Path(getattr(model, "dronecamp_onnx", None) or source).resolve()
@@ -339,9 +344,16 @@ def _series(entry: dict, report: dict) -> dict:
     regime = report.pop("_regime", None)
     # EXTENSAO: identificação nova por modelo (ex.: data do treino): acrescente aqui;
     # vale para gate.json e measurement.json ao mesmo tempo.
-    return {"weights": str(entry["used"]), "sha256": file_hash(entry["used"]), "source_checkpoint": str(entry["source"]),
-            "runtime": entry["model"].dronecamp_runtime, "imgsz": entry["config"].prediction["imgsz"],
-            "regime": regime, "metrics": report, "strata": strata}
+    series = {"weights": str(entry["used"]), "sha256": file_hash(entry["used"]), "source_checkpoint": str(entry["source"]),
+              "runtime": entry["model"].dronecamp_runtime, "imgsz": entry["config"].prediction["imgsz"],
+              "regime": regime, "metrics": report, "strata": strata}
+    # Peso de taxonomia anterior medido pelo mapa de fusão: registra a tradução usada.
+    remap = getattr(entry["model"], "dronecamp_class_remap", None)
+    if remap:
+        names = entry["model"].names
+        series["class_remap"] = {(names[index] if isinstance(names, (list, dict)) else str(index)): target
+                                 for index, target in enumerate(remap)}
+    return series
 
 
 def _strata_counts(strata: dict) -> dict:

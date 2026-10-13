@@ -111,12 +111,14 @@ class SafetyTests(unittest.TestCase):
         A gravidade histórica do laudo de referência aparece só como informação
         (``historical_severity_only``).
         """
-        # Uma caixa da classe 0 (telha_quebrada) com confiança 0.999.
+        # Uma caixa da classe 0 (telha_quebrada) com confiança 0.999, na taxonomia v6 congelada:
+        # ela ainda traz a gravidade histórica do laudo (a v7 não atribui gravidade a classes fundidas).
+        v6 = load_taxonomy(self.config.taxonomy_path.with_name("taxonomy_ceasa_v6_pedaco_calha_sobre_telha.json"))
         result = SimpleNamespace(
             names={0: "telha_quebrada"},
             boxes=SimpleNamespace(xyxy=Values([[10, 20, 100, 200]]), conf=Values([0.999]), cls=Values([0])),
         )
-        findings = serialize_detections(result, self.taxonomy, demo=False)
+        findings = serialize_detections(result, v6, demo=False)
         self.assertIsNone(findings[0]["severity"])
         self.assertEqual(findings[0]["review_status"], "pendente")
         self.assertEqual(findings[0]["report_reference"]["historical_severity_only"], "gravissima")

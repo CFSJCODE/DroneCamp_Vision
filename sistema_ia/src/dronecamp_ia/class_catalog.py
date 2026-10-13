@@ -99,7 +99,7 @@ from .io import file_hash
 OVERRIDES_FILE = "taxonomy_overrides.json"
 # Aviso mostrado no topo da seção Classes (campo "notice" de list_classes).
 TRAINING_NOTICE = "Mudanças nas classes exigem novo ciclo de treinamento para ter efeito nos modelos."
-# Português em snake_case, como os slugs da taxonomia (ex.: pedaco_calha_sobre_telha).
+# Português em snake_case, como os slugs da taxonomia (ex.: objeto_solto_cobertura).
 # Regex: começa com letra minúscula, seguida de letras/números; depois, zero ou mais grupos
 # "_xxx" (sem "_" duplo, sem "_" no fim, sem acento, sem maiúscula).
 # EXTENSAO: para aceitar outro formato de nome técnico, mude esta regex E a mensagem em _slug.
@@ -410,7 +410,7 @@ def _entry(item: dict, edits: dict, proposed: bool) -> dict:
     class_id = item["id"]
     phase = item.get("phase")
     # Ativa na taxonomia (entra em detection_names) não é o mesmo que já aprendida pelos pesos:
-    # o ID 13 da v6 é ativo e ainda exige treino (os pesos piloto têm 13 classes).
+    # uma classe ativa pode marcar requires_training (ex.: ID 13 da v6, ausente dos pesos v5).
     # Regra: proposta sempre exige treino; da taxonomia, vale o campo requires_training e,
     # se ele faltar, exige treino toda classe que não é da fase 1.
     requires_training = True if proposed else bool(item.get("requires_training", phase != 1))

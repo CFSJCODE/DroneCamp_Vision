@@ -8,7 +8,8 @@ Módulos cobertos:
     - ``prediction.serialize_detections``: classes novas nunca herdam gravidade;
     - ``review_render.COLORS``: uma cor distinta por classe ativa;
     - ``review_data.migrate_review_taxonomy`` (comando ``migrate-review``): leva uma revisão
-      para a taxonomia nova preservando caixas e hashes, mas revogando as aprovações;
+      para a taxonomia nova (acréscimo ou fusão, como a v6 → v7) preservando caixas e
+      hashes, mas revogando as aprovações;
     - ``review_data.import_human_feedback`` (combinada com a migração).
 
 Como rodar (na pasta ``sistema_ia``, com o venv do projeto):
@@ -26,23 +27,21 @@ O que cada classe de teste prepara:
       pelo revisor sintético, o ``old_registry.json`` e a saída ``fixture-v2/registry.json``.
       ``prepare_ten_class_expansion`` troca as taxonomias por 10 -> 12 classes ativas.
 
-ATENCAO: ``TaxonomyMigrationTests`` trava o CONTRATO REAL de classes. Ao acrescentar uma
-classe ao configs/taxonomy.json é OBRIGATÓRIO atualizar aqui: a lista de nomes de
-``test_current_active_classes_preserve_ids_and_append_pedaco_calha_sobre_telha``, o
-``range(33)`` (total de classes do catálogo), os testes do ``migration`` (``new_active_class_ids``
-e ``catalog_id_mapping``) e o nome "fourteen" nos testes de checkpoint; e congelar a
-taxonomia anterior num ``taxonomy_ceasa_vN_*.json`` com um teste de snapshot próprio.
-Regras de migração travadas: IDs existentes nunca mudam; aprovações humanas antigas viram
-histórico (``previous_human_approved``) e ``human_approved`` fica False; gravidade vira None;
-nenhuma saída existente é sobrescrita.
+ATENCAO: ``TaxonomyMigrationTests`` trava o CONTRATO REAL de classes (v7, 13/10/2026: 9 ativas
+e 6 de catálogo, fundidas a partir da v6). Ao mudar configs/taxonomy.json é OBRIGATÓRIO
+atualizar aqui a lista de nomes e o total (15) de
+``test_current_v7_has_nine_active_classes_without_overlap_and_six_in_catalog``, o mapa de
+``test_v6_to_v7_map_only_merges_and_puts_tile_pieces_in_one_class`` e congelar a taxonomia
+anterior num ``taxonomy_ceasa_vN_*.json`` byte a byte, com um teste de snapshot próprio.
+Regras de migração travadas: acréscimo preserva IDs; fusão só pelo mapa declarado na taxonomia
+nova, guardando a classe anterior em cada caixa; aprovações humanas antigas viram histórico
+(``previous_human_approved``) e ``human_approved`` fica False; gravidade vira None; nenhuma
+saída existente é sobrescrita.
 
-EXTENSAO: para a próxima versão da taxonomia, copie
-``test_previous_snapshot_preserves_thirteen_classes_and_original_phase2_id13`` trocando o
-arquivo congelado e a quantidade de classes, e copie
-``test_pedaco_calha_sobre_telha_label_is_explicit_and_requires_human_review`` para a classe
-nova. Para uma regra nova da migração, copie
+EXTENSAO: para uma regra nova da migração, copie
 ``ReviewTaxonomyMigrationFixtureTests.test_nonexpanding_taxonomy_is_rejected`` (altere
-``self.new_taxonomy``/``self.registry``, regrave com ``self.write_json`` e chame ``self.migrate()``).
+``self.new_taxonomy``/``self.registry``, regrave com ``self.write_json`` e chame ``self.migrate()``);
+para fusões, parta de ``prepare_merge``.
 """
 
 from copy import deepcopy
@@ -55,7 +54,7 @@ import unittest
 from PIL import Image
 
 from dronecamp_ia.backend import check_domain_names
-from dronecamp_ia.config import ProjectConfig, detection_names, load_config, load_taxonomy
+from dronecamp_ia.config import ProjectConfig, active_class_remap, detection_names, load_config, load_taxonomy
 from dronecamp_ia.io import file_hash
 from dronecamp_ia.prediction import serialize_detections
 from dronecamp_ia.review_data import import_human_feedback, migrate_review_taxonomy
@@ -104,55 +103,102 @@ class TaxonomyMigrationTests(unittest.TestCase):
         self.names = detection_names(self.taxonomy)
         # Cópia congelada da primeira taxonomia (8 classes), ao lado de configs/taxonomy.json.
         self.snapshot_path = self.config.taxonomy_path.with_name("taxonomy_ceasa_v1.json")
+        # Cópia congelada da v6 (14 classes): as versões anteriores são prefixos dela.
+        self.v6_path = self.config.taxonomy_path.with_name("taxonomy_ceasa_v6_pedaco_calha_sobre_telha.json")
+        self.v6_names = detection_names(load_taxonomy(self.v6_path))
 
-    def test_current_active_classes_preserve_ids_and_append_pedaco_calha_sobre_telha(self) -> None:
-        """As 14 classes ativas mantêm seus IDs; classes novas sempre entram no fim.
+    def test_current_v7_has_nine_active_classes_without_overlap_and_six_in_catalog(self) -> None:
+        """A v7 tem 9 classes ativas (IDs 0–8) e 6 de catálogo (9–14), sem par sobreposto da v6.
 
-        Também trava o total do catálogo (33) e as classes de fase 2 nos IDs 21-23.
-        EXTENSAO: classe nova ativa: acrescente o slug no fim da lista e ajuste o total.
+        EXTENSAO: classe nova ativa: acrescente o slug no fim da lista e ajuste o total (15).
         """
+        self.assertEqual(self.taxonomy["version"], "ceasa-v7-classes-sem-sobreposicao")
         self.assertEqual(self.names, [
-            "telha_quebrada", "telha_ausente", "residuos_telha", "reparo_telha",
-            "rufo_ausente", "rufo_quebrado", "residuos_calha", "vegetacao_calha",
-            "pedaco_telha", "rufo_deslocado", "pedaco_telha_sobreposto", "fixador_telha_frouxo",
-            "reparo_rufo", "pedaco_calha_sobre_telha",
+            "telha_danificada", "telha_ausente", "residuos_cobertura", "objeto_solto_cobertura",
+            "calha_obstruida", "rufo_ausente", "rufo_danificado", "reparo_material_aplicado",
+            "fixador_irregular",
         ])
-        category = self.taxonomy["classes"][8]
-        self.assertEqual(category["id"], 8)
-        self.assertEqual(category["slug"], "pedaco_telha")
-        self.assertEqual(category["phase"], 1)
-        self.assertEqual(self.taxonomy["classes"][9]["slug"], "rufo_deslocado")
-        self.assertEqual(self.taxonomy["classes"][9]["phase"], 1)
-        for class_id, slug in (
-            (10, "pedaco_telha_sobreposto"), (11, "fixador_telha_frouxo"), (12, "reparo_rufo"),
-            (13, "pedaco_calha_sobre_telha"),
-        ):
-            with self.subTest(class_id=class_id):
-                self.assertEqual(self.taxonomy["classes"][class_id]["slug"], slug)
-                self.assertEqual(self.taxonomy["classes"][class_id]["phase"], 1)
-        # ATENCAO: 33 = total de classes do catálogo (ativas + fase 2); suba ao acrescentar classe.
-        self.assertEqual([category["id"] for category in self.taxonomy["classes"]], list(range(33)))
-        corroded = self.taxonomy["classes"][21]
-        self.assertEqual(corroded["slug"], "fixador_telha_corroido")
-        self.assertEqual(corroded["phase"], 2)
-        sealant = self.taxonomy["classes"][22]
-        self.assertEqual(sealant["slug"], "reparo_selante_fixador_telha")
-        self.assertEqual(sealant["phase"], 2)
-        flashing_fastener = self.taxonomy["classes"][23]
-        self.assertEqual(flashing_fastener["slug"], "fixador_rufo_ausente")
-        self.assertEqual(flashing_fastener["phase"], 2)
+        # ATENCAO: 15 = total de classes (ativas + catálogo); suba ao acrescentar classe.
+        self.assertEqual([category["id"] for category in self.taxonomy["classes"]], list(range(15)))
+        catalog = [category for category in self.taxonomy["classes"] if category["phase"] != 1]
+        self.assertEqual([category["id"] for category in catalog], list(range(9, 15)))
+        self.assertTrue(all(category.get("requires_training") for category in catalog))
+        for category in self.taxonomy["classes"]:
+            with self.subTest(slug=category["slug"]):
+                # Toda classe diz o que entra e o que não entra; gravidade nunca vem do rótulo.
+                self.assertTrue(category["criterion"])
+                self.assertTrue(category["excludes"])
+                self.assertIsNone(category["reference_severity"])
+        # A precedência resolve uma região com duas condições: cada classe aparece uma vez.
+        self.assertCountEqual(self.taxonomy["precedence"], [category["slug"] for category in self.taxonomy["classes"]])
+
+    def test_v6_snapshot_is_byte_identical_to_the_taxonomy_its_weights_and_reviews_use(self) -> None:
+        """O snapshot v6 congelado tem o SHA-256 que pesos e revisões v6 guardam e 14 classes ativas."""
+        snapshot = load_taxonomy(self.v6_path)
+        self.assertEqual(file_hash(self.v6_path), "a4350ab8923b648642a653f4d30066b0c7745b0b9dabb1589a2b185c9ad9b08e")
+        self.assertEqual(self.taxonomy["migration"]["from_taxonomy_sha256"], file_hash(self.v6_path))
+        self.assertEqual(detection_names(snapshot), self.v6_names)
+        self.assertEqual(len(self.v6_names), 14)
+        self.assertEqual(self.taxonomy["migration"]["from_active_classes"], self.v6_names)
+
+    def test_v6_to_v7_map_only_merges_and_puts_tile_pieces_in_one_class(self) -> None:
+        """Cada classe ativa da v6 vai inteira para uma classe da v7 (fusão, nunca divisão).
+
+        Pedaço de telha e pedaço de telha sobreposto (o par ambíguo da v6) viram a mesma
+        classe; o apoio fica no atributo da caixa.
+        """
+        remap = active_class_remap(self.taxonomy, self.v6_names)
+        targets = {self.v6_names[index]: entry["to_slug"] for index, entry in enumerate(remap)}
+        self.assertEqual(targets, {
+            "telha_quebrada": "telha_danificada", "telha_ausente": "telha_ausente",
+            "residuos_telha": "residuos_cobertura", "reparo_telha": "reparo_material_aplicado",
+            "rufo_ausente": "rufo_ausente", "rufo_quebrado": "rufo_danificado",
+            "residuos_calha": "calha_obstruida", "vegetacao_calha": "calha_obstruida",
+            "pedaco_telha": "objeto_solto_cobertura", "rufo_deslocado": "rufo_danificado",
+            "pedaco_telha_sobreposto": "objeto_solto_cobertura", "fixador_telha_frouxo": "fixador_irregular",
+            "reparo_rufo": "reparo_material_aplicado", "pedaco_calha_sobre_telha": "objeto_solto_cobertura",
+        })
+        self.assertEqual(remap[10]["attributes"], {"material": "telha", "apoio": "sobre_telha_instalada"})
+        self.assertEqual(remap[8]["attributes"], {"material": "telha"})
+        # Toda classe ativa da v7 recebe ao menos uma classe da v6: nenhuma caixa antiga se perde.
+        self.assertEqual({entry["to_id"] for entry in remap}, set(range(len(self.names))))
+        # Todo o catálogo v6 também tem destino (cobertura das não conformidades preservada).
+        catalog_v6 = [category["slug"] for category in load_taxonomy(self.v6_path)["classes"] if category["phase"] != 1]
+        self.assertCountEqual(self.taxonomy["migration"]["catalog_class_map"], catalog_v6)
+
+    def test_v6_checkpoint_is_accepted_only_through_the_merge_map(self) -> None:
+        """Pesos v6 entram na comparação/sugestões pelo mapa; sem a taxonomia são recusados."""
+        checkpoint = SimpleNamespace(names=dict(enumerate(self.v6_names)))
+        with self.assertRaises(ValueError):
+            check_domain_names(checkpoint, self.names)
+        self.assertEqual(check_domain_names(checkpoint, self.names, taxonomy=self.taxonomy), [])
+        self.assertEqual(checkpoint.dronecamp_class_remap, [0, 1, 2, 7, 5, 6, 4, 4, 3, 6, 3, 8, 7, 3])
+        # Só telha_ausente manteve o escopo da v6; as outras 8 foram ampliadas e a página avisa
+        # que o peso v6 as conhece só em parte (ex.: fixador ausente/corroído, resíduos em laje).
+        self.assertEqual(checkpoint.dronecamp_partial_classes, [name for name in self.names if name != "telha_ausente"])
+        self.assertEqual(self.taxonomy["migration"]["unchanged_scope_classes"], ["telha_ausente"])
+        # Peso v5 (sem as classes 9..13 da v6): telha_ausente continua inteira, as outras não.
+        v5 = SimpleNamespace(names=dict(enumerate(self.v6_names[:9])))
+        check_domain_names(v5, self.names, taxonomy=self.taxonomy)
+        self.assertNotIn("telha_ausente", v5.dronecamp_partial_classes)
+        # Pesos v5 (13 classes, prefixo da v6) também; nomes estranhos (COCO) continuam recusados.
+        v5 = SimpleNamespace(names=dict(enumerate(self.v6_names[:13])))
+        self.assertEqual(check_domain_names(v5, self.names, taxonomy=self.taxonomy), [])
+        with self.assertRaises(ValueError):
+            check_domain_names(SimpleNamespace(names={0: "person", 1: "car"}), self.names, taxonomy=self.taxonomy)
 
     def test_snapshot_preserves_eight_class_contract_and_original_phase2_id8(self) -> None:
         """A v1 congelada mantém as 8 classes originais; as classes de fase 2 movidas mantêm IDs novos."""
         snapshot = load_taxonomy(self.snapshot_path)
-        self.assertEqual(detection_names(snapshot), self.names[:8])
+        self.assertEqual(detection_names(snapshot), self.v6_names[:8])
         self.assertEqual(snapshot["classes"][8]["slug"], "telha_sobreposta_sem_travamento")
         self.assertEqual(snapshot["classes"][8]["phase"], 2)
-        displaced = next(category for category in self.taxonomy["classes"]
+        v6 = load_taxonomy(self.v6_path)
+        displaced = next(category for category in v6["classes"]
                          if category["slug"] == "telha_sobreposta_sem_travamento")
         self.assertEqual(displaced["id"], 19)
         self.assertEqual(displaced["phase"], 2)
-        old_fixador = next(category for category in self.taxonomy["classes"]
+        old_fixador = next(category for category in v6["classes"]
                            if category["slug"] == "fixador_telha_ausente")
         self.assertEqual(old_fixador["id"], 20)
         self.assertEqual(old_fixador["phase"], 2)
@@ -165,11 +211,11 @@ class TaxonomyMigrationTests(unittest.TestCase):
             check_domain_names(checkpoint, self.names)
 
     def test_intermediate_snapshot_preserves_nine_class_contract(self) -> None:
-        """A v2 congelada (9 classes) é prefixo da atual e seu checkpoint é recusado."""
+        """A v2 congelada (9 classes) é prefixo da v6 e seu checkpoint é recusado."""
         path = self.config.taxonomy_path.with_name("taxonomy_ceasa_v2_pedaco_telha.json")
         snapshot = load_taxonomy(path)
         names = detection_names(snapshot)
-        self.assertEqual(names, self.names[:9])
+        self.assertEqual(names, self.v6_names[:9])
         self.assertEqual(snapshot["classes"][9]["slug"], "fixador_telha_ausente")
         checkpoint = SimpleNamespace(names=dict(enumerate(names)))
         with self.assertRaises(ValueError):
@@ -192,11 +238,11 @@ class TaxonomyMigrationTests(unittest.TestCase):
                                allow_prefix=True)
 
     def test_previous_snapshot_preserves_ten_classes_and_phase2_fixation_ids(self) -> None:
-        """A v3 congelada (10 classes) é prefixo da atual e seu checkpoint é recusado."""
+        """A v3 congelada (10 classes) é prefixo da v6 e seu checkpoint é recusado."""
         path = self.config.taxonomy_path.with_name("taxonomy_ceasa_v3_pedaco_telha_rufo_deslocado.json")
         snapshot = load_taxonomy(path)
         names = detection_names(snapshot)
-        self.assertEqual(names, self.names[:10])
+        self.assertEqual(names, self.v6_names[:10])
         self.assertEqual(snapshot["classes"][10]["slug"], "fixador_telha_corroido")
         self.assertEqual(snapshot["classes"][10]["phase"], 2)
         self.assertEqual(snapshot["classes"][11]["slug"], "fixador_telha_frouxo")
@@ -206,11 +252,11 @@ class TaxonomyMigrationTests(unittest.TestCase):
             check_domain_names(checkpoint, self.names)
 
     def test_previous_snapshot_preserves_twelve_classes_and_original_phase2_id12(self) -> None:
-        """A v4 congelada (12 classes) é prefixo da atual e seu checkpoint é recusado."""
+        """A v4 congelada (12 classes) é prefixo da v6 e seu checkpoint é recusado."""
         path = self.config.taxonomy_path.with_name("taxonomy_ceasa_v4_fragmento_sobreposto_fixador_solto.json")
         snapshot = load_taxonomy(path)
         names = detection_names(snapshot)
-        self.assertEqual(names, self.names[:12])
+        self.assertEqual(names, self.v6_names[:12])
         self.assertEqual(snapshot["classes"][12]["slug"], "reparo_selante_fixador_telha")
         self.assertEqual(snapshot["classes"][12]["phase"], 2)
         self.assertEqual(snapshot["classes"][21]["slug"], "fixador_telha_corroido")
@@ -219,12 +265,11 @@ class TaxonomyMigrationTests(unittest.TestCase):
             check_domain_names(checkpoint, self.names)
 
     def test_previous_snapshot_preserves_thirteen_classes_and_original_phase2_id13(self) -> None:
-        """A v5 congelada (13 classes, contrato dos pesos piloto atuais) é recusada para a v6."""
-        # Pesos piloto atuais (13 classes) ficam presos à v5: não servem à v6 sem novo treino.
+        """A v5 congelada (13 classes) é prefixo da v6 e, sem o mapa da v7, seu checkpoint é recusado."""
         path = self.config.taxonomy_path.with_name("taxonomy_ceasa_v5_reparo_rufo.json")
         snapshot = load_taxonomy(path)
         names = detection_names(snapshot)
-        self.assertEqual(names, self.names[:13])
+        self.assertEqual(names, self.v6_names[:13])
         self.assertEqual(snapshot["version"], "ceasa-v5-proposta-reparo-rufo")
         self.assertEqual(snapshot["classes"][13]["slug"], "fixador_rufo_ausente")
         self.assertEqual(snapshot["classes"][13]["phase"], 2)
@@ -246,17 +291,13 @@ class TaxonomyMigrationTests(unittest.TestCase):
         checkpoint = SimpleNamespace(names=dict(enumerate(self.names)))
         check_domain_names(checkpoint, self.names)
 
-    def test_new_visual_categories_do_not_inherit_historical_engineering_severity(self) -> None:
-        """Detecções das classes 8-13 saem pendentes, sem gravidade nem gravidade histórica.
+    def test_v7_categories_do_not_inherit_historical_engineering_severity(self) -> None:
+        """Detecções de toda classe ativa da v7 saem pendentes, sem gravidade nem gravidade histórica.
 
-        ATENCAO: gravidade nunca é inferida pela IA.
+        ATENCAO: gravidade nunca é inferida pela IA; as classes fundidas não escolhem uma das
+        gravidades históricas das classes v6 de origem.
         """
-        # Uma detecção falsa por classe nova, com confiança alta, passada a serialize_detections.
-        for class_id, slug in (
-            (8, "pedaco_telha"), (9, "rufo_deslocado"),
-            (10, "pedaco_telha_sobreposto"), (11, "fixador_telha_frouxo"),
-            (12, "reparo_rufo"), (13, "pedaco_calha_sobre_telha"),
-        ):
+        for class_id, slug in enumerate(self.names):
             with self.subTest(class_id=class_id):
                 result = SimpleNamespace(
                     names=dict(enumerate(self.names)),
@@ -274,46 +315,6 @@ class TaxonomyMigrationTests(unittest.TestCase):
                 self.assertIsNone(finding["severity"])
                 self.assertEqual(finding["review_status"], "pendente")
                 self.assertIsNone(finding["report_reference"]["historical_severity_only"])
-
-    def test_reparo_rufo_label_is_explicit_and_requires_human_review(self) -> None:
-        """``reparo_rufo`` (ID 12) tem rótulo explícito, sem gravidade de referência, e sai pendente."""
-        category = self.taxonomy["classes"][12]
-        self.assertEqual(category["label"], "Reparo em rufo")
-        self.assertIsNone(category["reference_severity"])
-        result = SimpleNamespace(
-            names=dict(enumerate(self.names)),
-            boxes=SimpleNamespace(
-                xyxy=_Values([[10, 20, 50, 60]]),
-                conf=_Values([0.999]), cls=_Values([12]),
-            ),
-        )
-        finding = serialize_detections(result, self.taxonomy, demo=False)[0]
-        self.assertEqual(finding["category_label"], "Reparo em rufo")
-        self.assertEqual(finding["review_status"], "pendente")
-        self.assertIsNone(finding["severity"])
-
-    def test_pedaco_calha_sobre_telha_label_is_explicit_and_requires_human_review(self) -> None:
-        """``pedaco_calha_sobre_telha`` (ID 13) tem rótulo explícito e o bloco ``migration`` da taxonomia o registra.
-
-        ``catalog_id_mapping`` {"13": 23} diz que o ID ativo 13 veio do ID 23 do catálogo anterior.
-        """
-        category = self.taxonomy["classes"][13]
-        self.assertEqual(category["label"], "Pedaço de calha sobre telha")
-        self.assertEqual(category["phase"], 1)
-        self.assertIsNone(category["reference_severity"])
-        self.assertEqual(self.taxonomy["migration"]["new_active_class_ids"], [13])
-        self.assertEqual(self.taxonomy["migration"]["catalog_id_mapping"], {"13": 23})
-        result = SimpleNamespace(
-            names=dict(enumerate(self.names)),
-            boxes=SimpleNamespace(
-                xyxy=_Values([[10, 20, 50, 60]]),
-                conf=_Values([0.999]), cls=_Values([13]),
-            ),
-        )
-        finding = serialize_detections(result, self.taxonomy, demo=False)[0]
-        self.assertEqual(finding["category_label"], "Pedaço de calha sobre telha")
-        self.assertEqual(finding["review_status"], "pendente")
-        self.assertIsNone(finding["severity"])
 
 
 # ---------------------------------------------------------------------------
@@ -462,6 +463,87 @@ class ReviewTaxonomyMigrationFixtureTests(unittest.TestCase):
         self.write_json(self.current_taxonomy_path, self.new_taxonomy)
         self.registry["taxonomy_sha256"] = file_hash(self.previous_taxonomy_path)
         self.write_json(self.registry_path, self.registry)
+
+    def prepare_merge(self, attributes: dict | None = None) -> None:
+        """Taxonomia nova que FUNDE classes (como a v6 → v7), sem tocar nos dados do projeto.
+
+        Antiga: old_0, old_1, old_2 (ativas). Nova: ``merged`` (old_0 + old_1, atributo
+        ``tipo``) e ``kept`` (= old_2, escopo inalterado), com o mapa em ``migration``.
+        A foto 0 ganha uma terceira caixa (old_2) e uma caixa old_1 sobre a caixa old_0.
+        Parâmetros: attributes (dict | None): atributos do mapa para old_1 (padrão tipo b).
+        Retorna: None.
+        """
+        self.old_taxonomy["classes"] = [self.category(index, f"old_{index}") for index in range(3)]
+        self.write_json(self.previous_taxonomy_path, self.old_taxonomy)
+        merged = {**self.category(0, "merged"), "attributes": {"tipo": ["a", "b"]}}
+        self.new_taxonomy = {
+            "version": "fixture-merge",
+            "classes": [merged, self.category(1, "kept")],
+            "migration": {
+                "kind": "remap", "from_taxonomy_sha256": file_hash(self.previous_taxonomy_path),
+                "from_active_classes": ["old_0", "old_1", "old_2"],
+                "active_class_map": {
+                    "old_0": {"to": "merged", "attributes": {"tipo": "a"}},
+                    "old_1": {"to": "merged", "attributes": attributes if attributes is not None else {"tipo": "b"}},
+                    "old_2": {"to": "kept", "attributes": {}},
+                },
+                "unchanged_scope_classes": ["kept"],
+            },
+        }
+        self.write_json(self.current_taxonomy_path, self.new_taxonomy)
+        self.registry["images"][0]["boxes"] += [
+            {"class_id": 2, "bbox_xyxy": [20, 18, 30, 23], "note": "old fixture box2"},
+            {"class_id": 1, "bbox_xyxy": [2, 3, 10, 12], "note": "old_1 sobre a caixa old_0"},
+        ]
+        self.registry["taxonomy_sha256"] = file_hash(self.previous_taxonomy_path)
+        self.write_json(self.registry_path, self.registry)
+
+    def test_merge_relabels_boxes_keeps_origin_and_inputs_and_requires_review_of_widened_class(self) -> None:
+        """Fusão: caixas mudam de ID sem redesenho, guardam a classe antiga e só a classe inalterada conta como revista."""
+        self.prepare_merge()
+        paths = [self.registry_path, self.previous_taxonomy_path, self.current_taxonomy_path]
+        before = {path: path.read_bytes() for path in paths}
+
+        result = self.migrate()
+
+        self.assertEqual(before, {path: path.read_bytes() for path in paths})
+        first = result["images"][0]
+        self.assertEqual([box["class_id"] for box in first["boxes"]], [0, 0, 1, 0])
+        self.assertEqual([box["previous_class_slug"] for box in first["boxes"]], ["old_0", "old_1", "old_2", "old_1"])
+        self.assertEqual([box["attributes"] for box in first["boxes"]], [{"tipo": "a"}, {"tipo": "b"}, {}, {"tipo": "b"}])
+        self.assertEqual([box["bbox_xyxy"] for box in first["boxes"]],
+                         [box["bbox_xyxy"] for box in self.registry["images"][0]["boxes"]])
+        # A caixa old_1 sobre a old_0 virou par da mesma classe: sinalizado, nunca apagado.
+        self.assertEqual(first["taxonomy_merge_overlaps"], 1)
+        migration = result["taxonomy_migration"]
+        self.assertEqual(migration["kind"], "remap")
+        self.assertEqual(migration["new_class_ids"], [0])
+        self.assertEqual(migration["merge_overlap_images"], 1)
+        self.assertEqual([entry["to_slug"] for entry in migration["class_map"]], ["merged", "merged", "kept"])
+        for image in result["images"]:
+            self.assertEqual(image["classes_reviewed_before_migration"], [1])
+            self.assertTrue(image["taxonomy_recheck_pending"])
+            self.assertFalse(image["human_approved"])
+            self.assertTrue(image["previous_human_approved"])
+            self.assertEqual(image["historical_human_review"]["classes_reviewed"], [0, 1, 2])
+        self.assertEqual(result["scope"], "propostas_preservadas_fusao_de_classes_pendente_de_revisao")
+
+    def test_merge_map_written_for_another_taxonomy_is_rejected_without_output(self) -> None:
+        """O mapa só vale para a taxonomia de origem declarada (hash ou prefixo das classes)."""
+        self.prepare_merge()
+        self.new_taxonomy["migration"]["from_taxonomy_sha256"] = "0" * 64
+        self.new_taxonomy["migration"]["from_active_classes"] = ["outra", "old_1", "old_2"]
+        self.write_json(self.current_taxonomy_path, self.new_taxonomy)
+        with self.assertRaises(ValueError):
+            self.migrate()
+        self.assertFalse(self.output.exists())
+
+    def test_merge_map_with_undeclared_attribute_value_is_rejected(self) -> None:
+        """Atributo fora dos valores da classe de destino não vira dado "revisado"."""
+        self.prepare_merge(attributes={"tipo": "inventado"})
+        with self.assertRaises(ValueError):
+            self.migrate()
+        self.assertFalse(self.output.exists())
 
     def test_ten_to_twelve_classes_adds_ids10_and11_without_relabeling_old_boxes(self) -> None:
         """De 10 para 12 classes: IDs 10 e 11 entram, caixas antigas ficam iguais e o escopo revisado é 0..9."""

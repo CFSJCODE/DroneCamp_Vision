@@ -270,7 +270,7 @@ class TrainingProvenanceTests(unittest.TestCase):
         EXTENSAO: classe nova obrigatória no train: acrescente o nome na tupla do laço.
         """
         complete_boxes = list(self.items[0]["boxes"])
-        for missing_name in ("pedaco_telha", "rufo_deslocado", "pedaco_telha_sobreposto", "fixador_telha_frouxo", "reparo_rufo", "pedaco_calha_sobre_telha"):
+        for missing_name in ("objeto_solto_cobertura", "rufo_danificado", "reparo_material_aplicado", "fixador_irregular"):
             with self.subTest(missing_class=missing_name):
                 missing_id = MVP_NAMES.index(missing_name)
                 self.items[0]["boxes"] = [box for box in complete_boxes if box["class_id"] != missing_id]
@@ -280,54 +280,20 @@ class TrainingProvenanceTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "classes ativas.*" + missing_name):
                     self.check()
 
-    def test_fragment_class_id8_remains_valid_in_human_provenance(self):
-        """A classe ID 8 (``pedaco_telha``) é contada e aceita pela validação."""
+    def test_every_v7_class_validates_human_provenance(self):
+        """As 9 classes da v7 são contadas na validação; a label de train mantém o autor humano."""
         self.build()
         result = self.check()
         self.assertTrue(result["ready_for_training"])
-        self.assertEqual(result["train_boxes_by_class"]["8"], 1)
-        self.assertEqual(MVP_NAMES[8], "pedaco_telha")
-
-    def test_displaced_flashing_class_id9_validates_human_provenance(self):
-        """A classe ID 9 (``rufo_deslocado``) é contada e aceita pela validação."""
-        self.build()
-        result = self.check()
-        self.assertTrue(result["ready_for_training"])
-        self.assertEqual(result["train_boxes_by_class"]["9"], 1)
-        self.assertEqual(MVP_NAMES[9], "rufo_deslocado")
-
-    def test_overlaid_fragment_and_loose_fastener_validate_as_ids10_and11(self):
-        """As classes ID 10 e 11 são contadas; o total de classes é 14."""
-        self.build()
-        result = self.check()
-        self.assertTrue(result["ready_for_training"])
-        self.assertEqual(MVP_NAMES[10:12], ("pedaco_telha_sobreposto", "fixador_telha_frouxo"))
-        self.assertEqual(len(result["train_boxes_by_class"]), 14)
-        for class_id in (10, 11):
+        self.assertEqual(len(result["train_boxes_by_class"]), 9)
+        for class_id in range(9):
             with self.subTest(class_id=class_id):
                 self.assertEqual(result["train_boxes_by_class"][str(class_id)], 1)
-
-    def test_flashing_repair_class_id12_validates_human_provenance(self):
-        """A classe ID 12 (``reparo_rufo``) aparece na label de train e mantém o autor humano."""
-        self.build()
-        result = self.check()
-        self.assertTrue(result["ready_for_training"])
-        self.assertEqual(MVP_NAMES[12], "reparo_rufo")
-        self.assertEqual(len(result["train_boxes_by_class"]), 14)
-        self.assertEqual(result["train_boxes_by_class"]["12"], 1)
+        self.assertEqual(MVP_NAMES[3], "objeto_solto_cobertura")
         sample = next(item for item in self.provenance["images"] if item["split"] == "train")
         label = self.output / sample["label"]
-        self.assertIn("12", [line.split()[0] for line in label.read_text(encoding="utf-8").splitlines()])
+        self.assertIn("8", [line.split()[0] for line in label.read_text(encoding="utf-8").splitlines()])
         self.assertEqual(sample["approval_author"], "human_test")
-
-    def test_gutter_piece_on_tile_class_id13_validates_human_provenance(self):
-        """A classe ID 13 (``pedaco_calha_sobre_telha``) é contada e aceita."""
-        self.build()
-        result = self.check()
-        self.assertTrue(result["ready_for_training"])
-        self.assertEqual(MVP_NAMES[13], "pedaco_calha_sobre_telha")
-        self.assertEqual(len(result["train_boxes_by_class"]), 14)
-        self.assertEqual(result["train_boxes_by_class"]["13"], 1)
 
     def test_single_ceasa_draft_cannot_train(self):
         """Um rascunho com um único prédio não pode treinar ("estruturalmente inválido")."""

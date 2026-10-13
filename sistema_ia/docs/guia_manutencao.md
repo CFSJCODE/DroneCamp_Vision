@@ -218,7 +218,7 @@ aponta para `src/dronecamp_ia/` é onde começar.
 | "Feedback não corresponde à versão original da revisão". | O arquivo exportado pela página veio de outra versão do registro. | Abra a página da versão atual e exporte de novo. `review_data.import_human_feedback`. |
 | "Saída já existe; use uma nova versão da revisão". | Proteção contra sobrescrever. | Use outro `--output` (ex.: `..._v11`). |
 | "A foto original mudou" / "Imagem original diverge". | A foto em disco não tem mais o mesmo SHA-256 (editada, girada, recomprimida). | Restaure a original; nunca edite fotos dentro de `data/reviews/`. `io.file_hash`. |
-| "Checkpoint não corresponde às N classes ativas". | Pesos treinados com outra lista de classes. | Use pesos treinados com a taxonomia atual ou treine de novo. `backend.check_domain_names`. |
+| "Checkpoint não corresponde às N classes ativas". | Pesos treinados com outra lista de classes. | Use pesos treinados com a taxonomia atual ou treine de novo. Pesos v6 servem para comparar e sugerir na v7 pelo mapa de fusão; `predict`, exportação e treino exigem a taxonomia atual. `backend.check_domain_names`. |
 | Treino parou no meio (queda de energia, Ctrl+C). | — | `train-pilot --resume runs\pilot_train_<...>` ou `resume-pilot runs\pilot_train_<...>`. `training.resume_pilot`. |
 | Treino terminou mas a plataforma o mostra como falho. | A auditoria final reprovou o resultado. | `runs/<treino>/summary.json`, campo `reasons`. `training.review_training_result`. |
 | Tarefa iniciada pela página falhou. | Erro no comando filho. | `.runtime/jobs/<data>_<comando>.log` (a seção Monitoramento mostra o fim do log). |
@@ -289,13 +289,30 @@ As opções `--epochs/--imgsz/--batch` do `train-pilot` sobrescrevem o YAML numa
 2. Em `taxonomy.json`: suba `version`, passe a classe para `phase: 1` com o **próximo ID
    ativo** (as ativas precisam ser 0, 1, 2... sem buraco; as de fase 2 vêm depois) e
    registre a mudança em `migration`. Nunca renumere nem apague classes antigas.
-3. `review_render.COLORS`: acrescente uma cor para cada ID ativo novo (hoje há 14 cores,
-   IDs 0–13; marcador `ATENCAO:`).
+3. `review_render.COLORS`: confira se há cor para cada ID novo (hoje há 15 cores, uma por
+   classe da v7; acima disso as cores se repetem em vez de quebrar o `render-review`).
 4. `migrate-review --registry <revisão> --previous-taxonomy <snapshot> --output <nova>` em
    cada revisão que continuará em uso, e `render-review` na nova.
 5. Revise as fotos (a página marca as classes que precisam de conferência).
 6. Só depois de haver caixas aprovadas: `build-pilot-data` → `train-pilot` →
    `compare-models`. Pesos antigos são recusados com a taxonomia nova (é esperado).
+
+### Fundir classes (como a v6 → v7)
+Fundir é diferente de acrescentar: os IDs mudam. A v7 (13/10/2026) fez isso e é o modelo
+a seguir; detalhes em [taxonomia_v7.md](taxonomia_v7.md).
+1. Snapshot da versão atual (como `taxonomy_ceasa_v6_pedaco_calha_sobre_telha.json`, com
+   bytes idênticos, para o SHA-256 bater com revisões e pesos).
+2. Na taxonomia nova, `migration.active_class_map` diz para onde vai cada slug ativo antigo
+   (`{"to": slug_novo, "attributes": {...}}`), com `from_taxonomy_sha256`,
+   `from_active_classes` e `unchanged_scope_classes`. Só fusão: dividir uma classe exige
+   redesenho humano.
+3. `MVP_NAMES`, `configs/dataset.yaml`, `zero_shot_prompts.json`, `laudo_abnt.CHECKLIST` e
+   as cores acompanham.
+4. O mesmo `migrate-review` faz a fusão (troca o ID, guarda `previous_class_slug` e os
+   atributos) e marca para conferência as classes que ficaram mais amplas.
+5. Pesos antigos entram em `compare-models`/`measure-models`/`suggest` pelo mapa
+   (`check_domain_names(..., taxonomy=...)`); treino, exportação e `predict` continuam
+   exigindo pesos da taxonomia atual.
 
 Mudar só o nome de exibição, a cor ou desativar uma classe: use a seção Classes da
 plataforma (grava em `taxonomy_overrides.json`, sem treino).
@@ -335,7 +352,7 @@ Registre o motivo em `docs/decisoes.md`: afrouxar a regra faz modelo pior parece
 - **Paridade Python × JavaScript.** Os nomes legíveis existem em `naming.py` e no
   `platform.js`; mude os dois juntos.
 - **HTML e PDF do laudo** são desenhados separadamente (`render_html` e `write_pdf`).
-- **Paleta de 14 cores** em `review_render.COLORS` para as classes ativas.
+- **Paleta de 15 cores** em `review_render.COLORS` (uma por classe da v7; repete acima disso).
 - **A Ultralytics só é importada dentro de cada comando** (`cli.main`) e só por
   `backend.py`; comandos leves (`categories`, `platform`) abrem rápido por isso.
 - **Windows.** O `if __name__ == "__main__"` do `__main__.py` é obrigatório (a Ultralytics

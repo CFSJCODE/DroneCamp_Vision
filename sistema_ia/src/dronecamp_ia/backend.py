@@ -10,7 +10,7 @@ O que faz:
 - ``load_inference_model``: abre ``.pt`` ou ``.onnx`` para sugerir/avaliar; o ONNX
   roda por padrão na GPU via DirectML (gancho em ``ONNXBackend.load_model``).
 - ``onnx_source_checkpoint``: acha (e confere pelo SHA-256) o ``.pt`` que gerou um ``.onnx``.
-- ``check_domain_names``: recusa pesos cujas classes não são as 14 do projeto.
+- ``check_domain_names``: recusa pesos cujas classes não são as ativas do projeto (aceita pesos v6 pelo mapa de fusão da v7).
 - ``runtime_info``: versões de Python/torch/Ultralytics e hash do checkpoint.
 - Internas da GPU: ``_directml_session`` (sessão ONNX Runtime no DirectML) e
   ``_install_directml_hook`` (troca a sessão criada pela Ultralytics).
@@ -358,7 +358,7 @@ def load_inference_model(config: ProjectConfig, weights: str, onnx_provider: str
 
 # ATENCAO: se aparecer "Checkpoint não corresponde às N classes", os pesos foram treinados com
 # outra lista de classes ativas (ex.: depois de ativar uma classe nova). Só um treino novo resolve.
-def check_domain_names(model, expected: list[str], allow_prefix: bool = False) -> list[str]:
+def check_domain_names(model, expected: list[str], allow_prefix: bool = False, taxonomy: dict | None = None) -> list[str]:
     """Evite apresentar classes COCO como patologias: nomes precisam coincidir.
 
     Parâmetros:
@@ -368,6 +368,13 @@ def check_domain_names(model, expected: list[str], allow_prefix: bool = False) -
             classes são o início exato da atual (a migração só acrescenta classes no
             fim, então os IDs antigos continuam valendo). Só para sugestões: o modelo
             não propõe as classes novas, e quem chama deve avisar isso ao revisor.
+        taxonomy (dict | None): taxonomia atual. Quando ela declara o mapa de fusão
+            (``migration.active_class_map``, ex.: v6 → v7) e os nomes do peso são classes
+            ativas antigas cobertas pelo mapa, o peso é aceito e ganha
+            ``model.dronecamp_class_remap`` (ID antigo → ID novo), que ``detect_boxes``
+            aplica, e ``model.dronecamp_partial_classes`` (classes ampliadas que o peso
+            conhece só em parte). Só para comparação e sugestões; treino e exportação
+            exigem igualdade.
 
     Retorna:
         list[str]: classes da taxonomia que o modelo não conhece (vazia quando os
@@ -385,6 +392,19 @@ def check_domain_names(model, expected: list[str], allow_prefix: bool = False) -
     # ATENCAO: prefixo exato (mesmos nomes, mesma ordem, nenhum a mais); qualquer troca de ID é recusada.
     if allow_prefix and actual and len(actual) < len(expected) and expected[:len(actual)] == actual:
         return expected[len(actual):]
+    # Peso de uma taxonomia anterior com classes fundidas na atual (v6 → v7).
+    if taxonomy is not None and actual:
+        from .config import active_class_remap
+        try:
+            remap = active_class_remap(taxonomy, actual)
+        except ValueError:
+            remap = None  # nomes fora do mapa (ex.: COCO): cai na recusa abaixo
+        if remap is not None:
+            from .config import remap_partial_classes
+            model.dronecamp_class_remap = [entry["to_id"] for entry in remap]
+            # Classes ampliadas na fusão: os pesos antigos só conhecem parte delas.
+            model.dronecamp_partial_classes = remap_partial_classes(taxonomy, actual)
+            return [name for index, name in enumerate(expected) if index not in model.dronecamp_class_remap]
     raise ValueError(f"Checkpoint não corresponde às {len(expected)} classes ativas do projeto. Treine com o dataset revisado; para testar pesos gerais use predict --demo explicitamente.")
 
 
