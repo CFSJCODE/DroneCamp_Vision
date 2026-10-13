@@ -282,6 +282,28 @@ class CalibrationTests(unittest.TestCase):
         self.assertEqual(X.shape, (2, len(feature_names(len(NAMES)))))
         self.assertEqual(X[0, feature_names(len(NAMES)).index("class_3")], 1.0)
 
+    def test_lightgbm_calibrator_learns_an_interaction_the_logistic_misses(self):
+        """LightGBM (fit-calibrator --algorithm lightgbm) ganha da confiança crua numa interação.
+
+        Rótulo = sinal de a×b: invisível para a regressão logística, fácil para árvores.
+        """
+        try:
+            import lightgbm  # noqa: F401
+        except ImportError:
+            self.skipTest("lightgbm não instalado (extra learning)")
+        from dronecamp_ia.calibration import cross_validate
+
+        generator = np.random.default_rng(1)
+        size = 240
+        raw = generator.uniform(0.1, 0.9, size)
+        a, b = generator.normal(size=size), generator.normal(size=size)
+        y = (a * b > 0).astype(int)
+        X = np.column_stack([raw, a, b])
+        groups = np.repeat(np.arange(12), size // 12)
+        self.assertTrue(cross_validate(X, y, groups, raw, algorithm="lightgbm")["improves_over_raw_confidence"])
+        with self.assertRaises(ValueError):
+            cross_validate(X, y, groups, raw, algorithm="xgboost")
+
     def test_cross_validation_reports_gain_when_a_feature_explains_acceptance(self):
         """A validação cruzada por grupo detecta ganho quando uma feature explica o aceite.
 

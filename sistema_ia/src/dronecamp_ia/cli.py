@@ -342,6 +342,8 @@ def build_parser() -> argparse.ArgumentParser:
     calibrate.add_argument("--conf", type=float, default=0.01)
     calibrate.add_argument("--include-trained", action="store_true",
                            help="Usar também fotos do treino destes pesos (enviesado; só para testes).")
+    calibrate.add_argument("--algorithm", choices=["logistic", "lightgbm"], default="logistic",
+                           help="logistic (padrão) ou lightgbm (gradient boosting; precisa do pacote lightgbm).")
     # Comando compare-models: model_gate.compare_models. Grava runs/gate_<data>_<id>/gate.json
     # (métricas por classe dos dois modelos e a decisão de adoção).
     # EXTENSAO: para expor os limites da regra de adoção (min_map_gain etc.), crie as
@@ -642,7 +644,8 @@ def main(argv: list[str] | None = None) -> int:
         # imprime os primeiros 2000 caracteres do calibrator.json.
         elif args.command == "fit-calibrator":
             from .calibration import fit_calibrator
-            output = fit_calibrator(config, args.data, args.weights, args.conf, args.include_trained)
+            output = fit_calibrator(config, args.data, args.weights, args.conf, args.include_trained,
+                                    algorithm=args.algorithm)
             print((output / "calibrator.json").read_text(encoding="utf-8")[:2000])
         # Ramo compare-models: model_gate.compare_models; grava runs/gate_*/gate.json e
         # imprime só adopt, reasons e images_evaluated.

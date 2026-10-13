@@ -268,11 +268,19 @@ def collect_examples(config: ProjectConfig, data_path: Path, weights: str, conf:
 # Treino e avaliação do calibrador.
 # ---------------------------------------------------------------------------
 
-def _pipeline(seed: int):
-    """Modelo do calibrador: padronização + regressão logística (scikit-learn).
+# Algoritmos aceitos pelo fit-calibrator --algorithm. "lightgbm" exige o pacote lightgbm.
+ALGORITHMS = ("logistic", "lightgbm")
+
+
+def _pipeline(seed: int, algorithm: str = "logistic"):
+    """Modelo do calibrador: padronização + regressão logística (scikit-learn) ou LightGBM.
 
     Parâmetros:
         seed: semente do solver (resultado reproduzível).
+        algorithm: "logistic" (padrão) ou "lightgbm" (árvores com gradient boosting;
+            capta interações classe × tamanho × confiança que a regressão não vê). Com
+            poucas decisões as árvores ficam rasas e muito regularizadas; a validação
+            cruzada decide se ganhou da confiança crua, como no logístico.
 
     Retorna:
         ``sklearn.pipeline.Pipeline`` ainda não treinado.
@@ -281,6 +289,16 @@ def _pipeline(seed: int):
     from sklearn.pipeline import make_pipeline
     from sklearn.preprocessing import StandardScaler
 
+    if algorithm == "lightgbm":
+        from lightgbm import LGBMClassifier
+
+        # Poucos exemplos: árvores de até 7 folhas, 20+ exemplos por folha e subamostragem.
+        return LGBMClassifier(n_estimators=150, learning_rate=0.05, num_leaves=7, min_child_samples=20,
+                              subsample=0.8, subsample_freq=1, colsample_bytree=0.8, reg_lambda=1.0,
+                              random_state=seed, n_jobs=1, verbose=-1)
+    if algorithm != "logistic":
+        raise ValueError(f"Algoritmo de calibração desconhecido: {algorithm} (use {', '.join(ALGORITHMS)}).")
+
     # C pequeno = regularização forte. Sem class_weight="balanced": ele desloca as
     # probabilidades para cima e destrói a calibração, que é o objetivo aqui.
     # EXTENSAO: para testar outro modelo (ex.: C=1.0 ou outro classificador com
@@ -288,7 +306,8 @@ def _pipeline(seed: int):
     return make_pipeline(StandardScaler(), LogisticRegression(C=0.5, max_iter=2000, random_state=seed))
 
 
-def cross_validate(X: np.ndarray, y: np.ndarray, groups: np.ndarray, raw: np.ndarray, seed: int = 42) -> dict:
+def cross_validate(X: np.ndarray, y: np.ndarray, groups: np.ndarray, raw: np.ndarray, seed: int = 42,
+                   algorithm: str = "logistic") -> dict:
     """Probabilidades fora da dobra (GroupKFold por cena) comparadas com a confiança crua.
 
     Parâmetros:
@@ -320,7 +339,7 @@ def cross_validate(X: np.ndarray, y: np.ndarray, groups: np.ndarray, raw: np.nda
         if len(set(y[train_index].tolist())) < 2:
             out_of_fold[test_index] = y[train_index].mean()  # dobra sem as duas classes: prevê a taxa base
             continue
-        model = _pipeline(seed).fit(X[train_index], y[train_index])
+        model = _pipeline(seed, algorithm).fit(X[train_index], y[train_index])
         # Coluna 1 do predict_proba = P(y = 1), a probabilidade de aceitação.
         out_of_fold[test_index] = model.predict_proba(X[test_index])[:, 1]
 
@@ -350,7 +369,7 @@ def cross_validate(X: np.ndarray, y: np.ndarray, groups: np.ndarray, raw: np.nda
 
 # ENTRADA: comando ``fit-calibrator`` (cli.py chama esta função).
 def fit_calibrator(config: ProjectConfig, data_path: Path, weights: str, conf: float = 0.01,
-                   include_trained: bool = False, seed: int = 42) -> Path:
+                   include_trained: bool = False, seed: int = 42, algorithm: str = "logistic") -> Path:
     """Coleta exemplos, avalia por validação cruzada, treina com tudo e grava em runs/calibrator_*.
 
     Parâmetros:
@@ -381,9 +400,9 @@ def fit_calibrator(config: ProjectConfig, data_path: Path, weights: str, conf: f
         raise ValueError(f"Exemplos insuficientes para calibrar: {positives} acertos e {negatives} erros "
                          f"(mínimo 5 de cada). Revise mais fotos fora do treino do modelo.")
     # 2. Avaliação honesta (validação cruzada por cena) ANTES de treinar com tudo.
-    report = cross_validate(examples["X"], y, examples["groups"], examples["raw_confidence"], seed)
+    report = cross_validate(examples["X"], y, examples["groups"], examples["raw_confidence"], seed, algorithm)
     # 3. Modelo final treinado com todos os exemplos.
-    model = _pipeline(seed).fit(examples["X"], y)
+    model = _pipeline(seed, algorithm).fit(examples["X"], y)
     # 4. Pasta nova em runs/ (nunca sobrescreve) e o modelo serializado.
     run = make_run_directory(config.root, "calibrator")
     model_path = run / "calibrator.joblib"
@@ -393,7 +412,8 @@ def fit_calibrator(config: ProjectConfig, data_path: Path, weights: str, conf: f
     # carregar, leia em Calibrator.__init__ (self.metadata).
     metadata = {
         "schema_version": SCHEMA, "created_at": datetime.now(timezone.utc).isoformat(),
-        "kind": "acceptance_probability_logistic_regression", "sklearn_version": sklearn.__version__,
+        "kind": "acceptance_probability_logistic_regression" if algorithm == "logistic" else f"acceptance_probability_{algorithm}",
+        "algorithm": algorithm, "sklearn_version": sklearn.__version__,
         "model_file": model_path.name, "model_sha256": file_hash(model_path),
         "features": feature_names(len(examples["names"])), "class_names": examples["names"],
         "taxonomy_sha256": file_hash(config.taxonomy_path),
