@@ -1934,9 +1934,11 @@ function renderMonitor() {
     $('ringText').textContent = `${Math.round(fraction * 100)}%`;
     $('ringSub').textContent = `época ${run.epochs_done}/${planned}`;
     // Fatos da execução (tempo decorrido, restante estimado, s/época, dispositivo, pesos iniciais, última escrita).
-    const elapsed = run.last && run.last.time;
+    // Antes da 1ª época não há results.csv: o tempo decorrido vem do início da execução.
+    const firstEpoch = run.state === 'running' && !run.epochs_done;
+    const elapsed = run.last ? run.last.time : firstEpoch && run.started_at ? (Date.now() - Date.parse(run.started_at)) / 1000 : null;
     const remaining = run.state === 'running' && run.seconds_per_epoch ? run.seconds_per_epoch * (planned - run.epochs_done) : null;
-    const facts = [['Tempo decorrido', duration(elapsed)], ['Tempo restante', run.state === 'running' ? duration(remaining) : '—'], ['Por época', duration(run.seconds_per_epoch)], ['Dispositivo', run.device || OPS.device || '—'], ['Pesos iniciais', run.checkpoint || '—'], ['Última escrita', run.updated_at ? new Date(run.updated_at).toLocaleTimeString('pt-BR') : '—']];
+    const facts = [['Tempo decorrido', duration(elapsed)], ['Tempo restante', firstEpoch ? 'após a 1ª época' : run.state === 'running' ? duration(remaining) : '—'], ['Por época', duration(run.seconds_per_epoch)], ['Dispositivo', run.device || OPS.device || '—'], ['Pesos iniciais', run.checkpoint || '—'], ['Última escrita', run.updated_at ? new Date(run.updated_at).toLocaleTimeString('pt-BR') : '—']];
     $('monitorFacts').replaceChildren(...facts.flatMap(([key, value]) => [el('dt', {}, key), el('dd', {}, value)]));
     // Cartões: valor da última época e variação em pontos percentuais contra a anterior.
     const last = run.curves[run.curves.length - 1] || {}, before = run.curves[run.curves.length - 2] || {};
@@ -1945,8 +1947,10 @@ function renderMonitor() {
       return el('div', { class: 'tile' }, el('span', {}, serie.label), el('b', {}, pct(value)), el('span', { class: 'delta ' + (delta > 0 ? 'up' : delta < 0 ? 'down' : '') }, delta == null ? '—' : `${delta >= 0 ? '+' : ''}${(delta * 100).toFixed(1)} p.p.`))
     }))
   }
-  lineChart($('liveLossChart'), run ? run.curves : [], LOSS_SERIES);
-  lineChart($('liveMetricChart'), run ? run.curves : [], METRIC_SERIES, { percent: true, marker: run && run.best_epoch ? run.best_epoch.epoch : null });
+  // Treino em andamento sem época gravada: os gráficos explicam quando os pontos aparecem.
+  const waiting = run && run.state === 'running' && !run.curves.length ? '1ª época em andamento: os pontos aparecem ao fim de cada época.' : undefined;
+  lineChart($('liveLossChart'), run ? run.curves : [], LOSS_SERIES, { empty: waiting });
+  lineChart($('liveMetricChart'), run ? run.curves : [], METRIC_SERIES, { percent: true, marker: run && run.best_epoch ? run.best_epoch.epoch : null, empty: waiting });
   // ATENCAO: aqui value.weights.best é lido sem checar se value.weights existe (em renderUpload há a checagem);
   // uma execução sem o campo weights no instantâneo quebraria esta seção.
   fillSelect($('suggestWeights'), OPS.weights.filter(path => path.startsWith('runs/')).map(path => [path, weightLabel(path)]), (OPS.runs.find(value => value.weights.best) || { weights: {} }).weights.best);
