@@ -175,6 +175,22 @@ class TaxonomyMigrationTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             check_domain_names(checkpoint, self.names)
 
+    def test_prefix_checkpoint_only_suggests_with_allow_prefix(self) -> None:
+        """Pesos de taxonomia anterior servem para sugestões (allow_prefix) e listam as classes novas."""
+        checkpoint = SimpleNamespace(names=dict(enumerate(self.names[:-1])))
+        self.assertEqual(check_domain_names(checkpoint, self.names, allow_prefix=True), self.names[-1:])
+        self.assertEqual(check_domain_names(SimpleNamespace(names=dict(enumerate(self.names))), self.names,
+                                            allow_prefix=True), [])
+        with self.assertRaises(ValueError):
+            check_domain_names(checkpoint, self.names)
+        # Ordem trocada ou classe estranha continua recusada mesmo em modo sugestão.
+        swapped = [self.names[1], self.names[0], *self.names[2:-1]]
+        with self.assertRaises(ValueError):
+            check_domain_names(SimpleNamespace(names=dict(enumerate(swapped))), self.names, allow_prefix=True)
+        with self.assertRaises(ValueError):
+            check_domain_names(SimpleNamespace(names=dict(enumerate([*self.names, "extra"]))), self.names,
+                               allow_prefix=True)
+
     def test_previous_snapshot_preserves_ten_classes_and_phase2_fixation_ids(self) -> None:
         """A v3 congelada (10 classes) é prefixo da atual e seu checkpoint é recusado."""
         path = self.config.taxonomy_path.with_name("taxonomy_ceasa_v3_pedaco_telha_rufo_deslocado.json")

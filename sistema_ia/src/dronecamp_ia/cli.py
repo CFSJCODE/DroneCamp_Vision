@@ -296,6 +296,10 @@ def build_parser() -> argparse.ArgumentParser:
                          help="Somar a busca aberta (YOLOE + configs/zero_shot_prompts.json) às sugestões do piloto.")
     suggest.add_argument("--onnx-provider", choices=["directml", "cpu"], default="directml",
                          help="Para --weights .onnx (comando export): directml usa a GPU; cpu, o ONNX Runtime na CPU.")
+    suggest.add_argument("--keep-decided", type=Path, action="append",
+                         help="Arquivo de revisão salvo pela página: fotos com decisão mantêm as sugestões atuais (repita).")
+    suggest.add_argument("--imgsz", type=int,
+                         help="Tamanho de inferência; para pesos piloto fora de runs/ (sem summary.json), use o do treino (ex.: 640).")
     # EXTENSAO: opção nova do suggest: acrescente aqui e passe-a nas DUAS chamadas do
     # ramo "suggest" em main (suggest_for_registry e create_review_for_new_images),
     # que recebem os argumentos por posição.
@@ -338,6 +342,8 @@ def build_parser() -> argparse.ArgumentParser:
     calibrate.add_argument("--conf", type=float, default=0.01)
     calibrate.add_argument("--include-trained", action="store_true",
                            help="Usar também fotos do treino destes pesos (enviesado; só para testes).")
+    calibrate.add_argument("--algorithm", choices=["logistic", "lightgbm"], default="logistic",
+                           help="logistic (padrão) ou lightgbm (gradient boosting; precisa do pacote lightgbm).")
     # Comando compare-models: model_gate.compare_models. Grava runs/gate_<data>_<id>/gate.json
     # (métricas por classe dos dois modelos e a decisão de adoção).
     # EXTENSAO: para expor os limites da regra de adoção (min_map_gain etc.), crie as
@@ -390,7 +396,7 @@ def build_parser() -> argparse.ArgumentParser:
     describe.add_argument("--registry", type=Path, required=True)
     describe.add_argument("--include-suggestions", action="store_true", help="Descrever também as sugestões pendentes do modelo.")
     describe.add_argument("--limit", type=int, help="Máximo de chamadas nesta execução (limites dos modelos gratuitos).")
-    describe.add_argument("--model", help="Slug do OpenRouter (padrão: configs/vlm_assist.json ou OPENROUTER_MODEL).")
+    describe.add_argument("--model", help="Slug do OpenRouter, vários separados por vírgula (reserva), ou free-vision = todos os VLMs gratuitos (padrão: configs/vlm_assist.json ou OPENROUTER_MODEL).")
     describe.add_argument("--no-resume", action="store_true", help="Ignorar descrições já gravadas para este registro.")
     # Comando report-support: vlm_assist.draft_report_support. Grava laudo_apoio.json e
     # laudo_apoio.md na pasta da revisão (ou --output); campos técnicos ficam em branco.
@@ -600,14 +606,19 @@ def main(argv: list[str] | None = None) -> int:
             if args.registry:
                 # ATENCAO: argumentos por POSIÇÃO; a ordem tem de ser a da assinatura
                 # de suggest_for_registry (confira lá ao acrescentar um).
+                # --keep-decided: fotos com decisão (status != pending) nos arquivos de revisão salvos.
+                decided = {entry["image_sha256"] for path in (args.keep_decided or [])
+                           for entry in json.loads(Path(path).read_text(encoding="utf-8")).get("images", [])
+                           if entry.get("status", "pending") != "pending"}
                 output = suggest_for_registry(config, args.registry, args.weights, args.conf, args.calibrator,
-                                              args.allow_unproven_calibrator, args.zero_shot, args.onnx_provider)
+                                              args.allow_unproven_calibrator, args.zero_shot, args.onnx_provider, args.imgsz,
+                                              decided)
             else:
                 if not args.output or not args.group:
                     raise ValueError("Fotos novas exigem --output e --group.")
                 output = create_review_for_new_images(config, args.source, args.output, args.group, args.weights,
                                                       args.conf, args.calibrator, args.allow_unproven_calibrator,
-                                                      args.zero_shot, args.onnx_provider)
+                                                      args.zero_shot, args.onnx_provider, args.imgsz)
         # Ramo import-media: ingest.ingest_media; imprime o resumo e devolve a pasta da revisão nova.
         elif args.command == "import-media":
             from .ingest import ingest_media
@@ -633,7 +644,8 @@ def main(argv: list[str] | None = None) -> int:
         # imprime os primeiros 2000 caracteres do calibrator.json.
         elif args.command == "fit-calibrator":
             from .calibration import fit_calibrator
-            output = fit_calibrator(config, args.data, args.weights, args.conf, args.include_trained)
+            output = fit_calibrator(config, args.data, args.weights, args.conf, args.include_trained,
+                                    algorithm=args.algorithm)
             print((output / "calibrator.json").read_text(encoding="utf-8")[:2000])
         # Ramo compare-models: model_gate.compare_models; grava runs/gate_*/gate.json e
         # imprime só adopt, reasons e images_evaluated.

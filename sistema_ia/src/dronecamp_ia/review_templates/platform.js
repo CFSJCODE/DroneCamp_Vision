@@ -581,6 +581,94 @@ function dismissSuggestion(suggestion) {
   message('Sugestão descartada nesta revisão.')
 }
 
+/* Decisão rápida da foto inteira (aceitar ou recusar o que a IA e o registro propõem).
+   Pensada para pré-classificação: o revisor olha a foto, confere caixas e sugestões e
+   decide com um clique ou uma tecla, sem desenhar. Continua sendo decisão humana: só
+   vale para o que está visível na tela, fica no rascunho local e exige salvar o arquivo
+   de revisão e import-review, como qualquer outra decisão.
+   ATENCAO: sugestões abaixo do limite de confiança da tela não foram vistas; o aceite
+   rápido não as aceita nem as descarta (continuam pendentes). */
+
+/**
+ * Próxima foto (depois da aberta, dando a volta) ainda sem decisão minha; -1 se todas têm.
+ * Parâmetros: nenhum. Retorna: índice em DATA.images. Chamada por: acceptPhoto, rejectPhoto.
+ */
+function nextUndecided() {
+  for (let step = 1; step < DATA.images.length; step++) {
+    const index = (state.index + step) % DATA.images.length;
+    const photo = DATA.images[index], value = state.drafts[photo.image_sha256];
+    // Sem rascunho, foto já aprovada por humano na taxonomia atual não precisa de nova decisão.
+    if (value ? value.status === 'pending' : !(photo.human_approved && !photo.taxonomy_recheck_pending)) return index
+  }
+  return -1
+}
+/**
+ * Junta uma linha às observações do rascunho sem apagar o que o revisor já escreveu.
+ * Parâmetros: text (linha nova). Retorna: nada.
+ */
+function appendNote(text) {
+  const current = (active.notes || '').trim();
+  active.notes = current ? `${current}\n${text}` : text;
+}
+/**
+ * Grava a decisão rápida no rascunho, avisa e abre a próxima foto sem decisão.
+ * Parâmetros: status (positive|negative|ambiguous), confirmed (bool), text (mensagem/toast).
+ */
+function commitQuickDecision(status, confirmed, text) {
+  active.status = status; active.confirmed_complete = confirmed;
+  $('decision').value = status; $('notes').value = active.notes; $('confirmed').checked = confirmed;
+  persist(); queue();
+  toast(`Foto ${state.index + 1}: ${decisionNames[status]}`, text);
+  const next = nextUndecided();
+  if (next >= 0) openPhoto(next);
+  else { renderBoxes(); message(`${text} Todas as fotos já têm decisão; salve o arquivo de revisão.`) }
+}
+// IoU a partir do qual, no aceite da foto inteira, a sugestão é o mesmo objeto de uma caixa existente
+// da mesma classe. 0,5 é o critério de acerto das avaliações (iou_match); o duplicate_iou (0,7) do
+// aceite individual deixaria passar quase-duplicatas (medido: sugestões a 0,54-0,57 de caixas humanas).
+const QUICK_MATCH_IOU = 0.5;
+/**
+ * Aceitar foto (botão e tecla Enter): aceita as sugestões visíveis, mantém as caixas já
+ * registradas e confirma a foto. Sem nenhuma caixa ao final, a foto vira negativa.
+ * Sugestão que cai sobre caixa existente da mesma classe (IoU >= QUICK_MATCH_IOU) é
+ * descartada: a caixa conferida fica; nada de duplicata nem troca silenciosa de geometria,
+ * diferente do acceptSuggestion.
+ * Parâmetros: nenhum. Retorna: nada.
+ */
+function acceptPhoto() {
+  if (!HAS_IMAGES) return;
+  let added = 0, merged = 0;
+  pendingSuggestions().forEach(({ suggestion }) => {
+    if (active.boxes.some(box => box.class_id === suggestion.class_id && boxIou(box.bbox_xyxy, suggestion.bbox_xyxy) >= QUICK_MATCH_IOU)) {
+      active.dismissed_suggestions = [...(active.dismissed_suggestions || []), suggestion.id]; merged++;
+    } else {
+      active.boxes.push({ class_id: suggestion.class_id, bbox_xyxy: suggestion.bbox_xyxy.map(Math.round), note: `Sugestão do modelo aceita (confiança ${Math.round(suggestion.confidence * 100)}%) no aceite da foto inteira.` });
+      added++;
+    }
+  });
+  const status = active.boxes.length ? 'positive' : 'negative';
+  appendNote(`Aceite da foto inteira: ${active.boxes.length} caixa(s) confirmada(s), ${added} sugestão(ões) da IA aceita(s)` + (merged ? `, ${merged} já coberta(s) por caixa existente` : '') + '.');
+  commitQuickDecision(status, true, status === 'positive'
+    ? `${active.boxes.length} caixa(s) confirmada(s), ${added} vinda(s) da IA.`
+    : 'Nenhuma ocorrência: foto registrada como negativa.')
+}
+/**
+ * Recusar foto (botão e tecla R): descarta as sugestões visíveis e marca a foto como
+ * "Há dúvida" (ambígua), que import-review não usa como exemplo de treino. As caixas do
+ * registro ficam no rascunho para quem for corrigir depois; nada é apagado.
+ * Parâmetros: nenhum. Retorna: nada.
+ */
+function rejectPhoto() {
+  if (!HAS_IMAGES) return;
+  const pending = pendingSuggestions();
+  active.dismissed_suggestions = [...(active.dismissed_suggestions || []), ...pending.map(({ suggestion }) => suggestion.id)];
+  appendNote(`Recusada na decisão rápida: as caixas/sugestões mostradas não descrevem a foto (${pending.length} sugestão(ões) da IA descartada(s)). Corrigir antes de usar em treino.`);
+  commitQuickDecision('ambiguous', false, 'Proposta recusada; a foto fica como "Há dúvida" e fora do treino até ser corrigida.')
+}
+// ENTRADA: botões da decisão rápida (Aceitar foto / Recusar).
+$('acceptPhoto').onclick = acceptPhoto;
+$('rejectPhoto').onclick = rejectPhoto;
+
 /**
  * Desenha o painel de sugestões da IA da foto aberta (lista com confiança, aceitar e descartar).
  * Parâmetros: nenhum. Retorna: nada. Chamada por: renderBoxes.
@@ -592,7 +680,10 @@ function renderSuggestions() {
   $('showSuggestionsLabel').classList.toggle('hidden', !meta);
   $('confFilterLabel').classList.toggle('hidden', !meta);
   if (!meta || !HAS_IMAGES) return;
-  $('suggestionMeta').textContent = `${meta.model_label} · confiança mínima ${Math.round(meta.conf * 100)}%. ${meta.warning}`;
+  // uncovered_classes: classes novas da taxonomia que os pesos (de treino anterior) não sugerem; ficam
+  // sempre no fim da lista de classes, porque a migração só acrescenta classes.
+  const uncovered = (meta.uncovered_classes || []).length ? DATA.classes.slice(-meta.uncovered_classes.length).map(category => category.label) : [];
+  $('suggestionMeta').textContent = `${meta.model_label} · confiança mínima ${Math.round(meta.conf * 100)}%. ${meta.warning}` + (uncovered.length ? ` Este modelo não sugere: ${uncovered.join('; ')}.` : '');
   const list = $('suggestions');
   list.replaceChildren();
   const pending = pendingSuggestions();
@@ -611,6 +702,14 @@ function renderSuggestions() {
     // acceptance_probability vem do calibrador; source/prompt vêm de suggest --zero-shot (busca aberta, YOLOE).
     if (suggestion.acceptance_probability != null) metaRow.append(el('span', {}, `Aceitação estimada ${Math.round(suggestion.acceptance_probability * 100)}%`));
     if (suggestion.prompt) metaRow.append(el('span', {}, `Busca aberta: “${suggestion.prompt}”`));
+    // vlm: segunda opinião do VLM gratuito (describe-occurrences --include-suggestions), só informativa.
+    if (suggestion.vlm) {
+      const guess = suggestion.vlm.class_guess;
+      const known = DATA.classes.find(category => category.slug === guess);
+      metaRow.append(el('span', {}, guess === 'nenhuma' ? 'VLM: não vê ocorrência'
+        : guess === 'incerto' ? 'VLM: incerto'
+        : `VLM: ${known ? known.label : guess}${known && known.id === suggestion.class_id ? ' (concorda)' : ''}`));
+    }
     // EXTENSAO: ação nova por sugestão = outro botão aqui, acrescentado na div .actions abaixo.
     const accept = el('button', { type: 'button', class: 'small ai' }, covered >= 0 ? `Substituir caixa ${covered + 1}` : 'Aceitar');
     accept.onclick = () => acceptSuggestion(suggestion);
@@ -979,7 +1078,7 @@ function fillReviewPicker(items, current) {
 fillReviewPicker(REVIEWS && REVIEWS.items, REVIEWS && REVIEWS.current);
 
 // Atalhos de teclado só na revisão e fora de campos de texto.
-// ENTRADA: atalhos de teclado da revisão (setas, b, a, x, Delete, +, -, 0).
+// ENTRADA: atalhos de teclado da revisão (setas, b, a, x, Enter, r, Delete, +, -, 0).
 // EXTENSAO: atalho novo = mais um "else if (event.key === ...)" antes do "else return".
 document.addEventListener('keydown', event => {
   if (state.view !== 'review' || !HAS_IMAGES || event.ctrlKey || event.metaKey || event.altKey) return;
@@ -991,6 +1090,9 @@ document.addEventListener('keydown', event => {
   else if (event.key.toLowerCase() === 'b') toggleDrawing();
   else if (event.key.toLowerCase() === 'a' && first) acceptSuggestion(first.suggestion);
   else if (event.key.toLowerCase() === 'x' && first) dismissSuggestion(first.suggestion);
+  // Enter num botão/link focado é o clique dele; só vale como "aceitar foto" fora deles.
+  else if (event.key === 'Enter' && !['button', 'a'].includes(tag)) acceptPhoto();
+  else if (event.key.toLowerCase() === 'r') rejectPhoto();
   else if (event.key === 'Delete') deleteSelected();
   else if (event.key === '+' || event.key === '=') zoomTo(zoom.scale * 1.25);
   else if (event.key === '-' || event.key === '_') zoomTo(zoom.scale / 1.25);

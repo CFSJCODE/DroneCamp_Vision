@@ -82,7 +82,7 @@ Esses campos são sempre ``None`` e ``status``/``validation`` ficam pendentes.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timezone
 from hashlib import sha256
 from io import BytesIO
@@ -459,8 +459,13 @@ class OpenRouterClient:
         # Corpo da requisição no formato OpenAI.
         # EXTENSAO: novo parâmetro de geração (ex.: "top_p", "response_format"): acrescente aqui,
         # crie o campo em VLMSettings e inclua-o em resume_digest se ele mudar a resposta.
-        payload = {"model": self.settings.model, "messages": messages, "temperature": self.settings.temperature,
+        # Vários slugs separados por vírgula viram a lista de reserva do OpenRouter ("models"):
+        # se o primeiro falhar ou estiver limitado, o próprio OpenRouter tenta o próximo.
+        chain = model_chain(self.settings.model)
+        payload = {"model": chain[0], "messages": messages, "temperature": self.settings.temperature,
                    "max_tokens": self.settings.max_output_tokens}
+        if len(chain) > 1:
+            payload["models"] = chain
 
         def extract(data: dict) -> tuple[str, dict]:
             # Extrai o texto da primeira escolha; estrutura diferente vira VLMUnavailable
@@ -491,7 +496,10 @@ class OpenRouterClient:
 
         Chamada por: ``ai_panel.save_settings`` (submenu Configuração da IA).
         """
-        payload = {"model": self.settings.model, "messages": [{"role": "user", "content": "ping"}], "max_tokens": 1}
+        # Cadeia "a,b" ou atalho free-vision: o teste usa um slug real (o primeiro / o preferido).
+        first = model_chain(self.settings.model)[0]
+        payload = {"model": PREFERRED_FREE_VISION[0] if first == FREE_VISION else first,
+                   "messages": [{"role": "user", "content": "ping"}], "max_tokens": 1}
         return self._measured(payload, lambda data: {"model_used": data.get("model")})
 
     def _measured(self, payload: dict, extract):
@@ -535,6 +543,49 @@ class OpenRouterClient:
         """
         data = self._request("/models", None)
         return list(data.get("data", [])) if isinstance(data, dict) else []
+
+
+def model_chain(model: str) -> list[str]:
+    """Slugs de ``model`` na ordem de preferência (aceita ``"a:free,b:free"``).
+
+    Parâmetros: ``model`` (um slug ou vários separados por vírgula). Retorna: lista
+    sem vazios nem repetidos; nunca vazia (devolve ``[model]`` se só houver vírgulas).
+    Chamada por: ``OpenRouterClient.chat``.
+    """
+    chain = []
+    for slug in (part.strip() for part in model.split(",")):
+        if slug and slug not in chain:
+            chain.append(slug)
+    return chain or [model]
+
+
+# Atalho do --model: todos os VLMs gratuitos em cadeia de reserva (free_vision_chain).
+FREE_VISION = "free-vision"
+# Gratuitos com entrada de imagem que não descrevem fotos: o roteador openrouter/free
+# sorteia também modelos sem visão útil (medido em 12/10: 36 de 40 respostas sem
+# leitura), e "content-safety" só classifica segurança do conteúdo.
+# EXTENSAO: outro modelo gratuito que não serve para descrever recortes: acrescente
+# um trecho do slug aqui.
+NOT_DESCRIPTIVE = ("openrouter/free", "content-safety")
+# Preferência na cadeia: modelos medidos melhor primeiro; o resto em ordem alfabética.
+PREFERRED_FREE_VISION = ("google/gemma-4-31b-it:free", "google/gemma-4-26b-a4b-it:free")
+
+
+def free_vision_chain(settings: VLMSettings, transport=None) -> str:
+    """Todos os VLMs gratuitos úteis do catálogo atual, em cadeia ``"a,b,c"`` para ``--model``.
+
+    Usa ``list_free_vision_models``, mantém só slugs ``:free`` (prévias sem sufixo
+    podem ser cobradas) e tira ``NOT_DESCRIPTIVE``. A cadeia não aumenta a cota: o
+    limite diário de chamadas gratuitas do OpenRouter vale para a conta inteira.
+
+    Erros: ``VLMUnavailable`` (sem chave/rede) ou quando nenhum modelo sobra.
+    """
+    ids = [row["id"] for row in list_free_vision_models(settings, transport)
+           if row["id"].endswith(":free") and not any(part in row["id"] for part in NOT_DESCRIPTIVE)]
+    ordered = [slug for slug in PREFERRED_FREE_VISION if slug in ids] + [slug for slug in ids if slug not in PREFERRED_FREE_VISION]
+    if not ordered:
+        raise VLMUnavailable("Nenhum modelo gratuito com visão disponível no OpenRouter agora.")
+    return ",".join(ordered)
 
 
 def list_free_vision_models(settings: VLMSettings, transport=None) -> list[dict]:
@@ -907,6 +958,10 @@ def describe_occurrences(config: ProjectConfig, registry_path: Path, include_sug
     names = [item["slug"] for item in taxonomy["classes"] if item.get("phase") == 1]
     # 2. Configurações e cliente; sem chave o comando falha aqui, antes de abrir fotos.
     settings = load_vlm_settings(config, model, environ)
+    # --model free-vision: troca o atalho pela cadeia de todos os VLMs gratuitos úteis
+    # (o OpenRouter cai para o próximo quando um falha ou está limitado).
+    if settings.model == FREE_VISION:
+        settings = replace(settings, model=free_vision_chain(settings, transport))
     # Cada chamada entra no consumo local (.runtime/ai_usage.jsonl, submenu Uso e limites).
     client = OpenRouterClient(settings, transport, usage_log=usage_logger(config.root, "describe"))  # falha cedo sem chave
     # 3. Chaves de retomada: prompt, parâmetros do modelo e versão do registro.

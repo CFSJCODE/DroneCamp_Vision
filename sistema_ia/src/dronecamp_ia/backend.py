@@ -358,15 +358,20 @@ def load_inference_model(config: ProjectConfig, weights: str, onnx_provider: str
 
 # ATENCAO: se aparecer "Checkpoint não corresponde às N classes", os pesos foram treinados com
 # outra lista de classes ativas (ex.: depois de ativar uma classe nova). Só um treino novo resolve.
-def check_domain_names(model, expected: list[str]) -> None:
+def check_domain_names(model, expected: list[str], allow_prefix: bool = False) -> list[str]:
     """Evite apresentar classes COCO como patologias: nomes precisam coincidir.
 
     Parâmetros:
         model: modelo carregado (``.names`` é dict ``{id: nome}`` ou lista).
         expected (list[str]): ``config.detection_names(...)``, na ordem dos IDs.
+        allow_prefix (bool): aceita pesos treinados numa taxonomia anterior cujas
+            classes são o início exato da atual (a migração só acrescenta classes no
+            fim, então os IDs antigos continuam valendo). Só para sugestões: o modelo
+            não propõe as classes novas, e quem chama deve avisar isso ao revisor.
 
     Retorna:
-        None quando os nomes coincidem exatamente, na mesma ordem.
+        list[str]: classes da taxonomia que o modelo não conhece (vazia quando os
+        nomes coincidem exatamente).
 
     Erros:
         ValueError: "Checkpoint não corresponde às N classes ativas do projeto..."
@@ -375,8 +380,12 @@ def check_domain_names(model, expected: list[str]) -> None:
     names = model.names
     # A Ultralytics guarda names como dict {0: "a", 1: "b"}; converte para lista na ordem dos IDs.
     actual = [names[i] for i in range(len(names))] if isinstance(names, dict) else list(names)
-    if actual != expected:
-        raise ValueError(f"Checkpoint não corresponde às {len(expected)} classes ativas do projeto. Treine com o dataset revisado; para testar pesos gerais use predict --demo explicitamente.")
+    if actual == expected:
+        return []
+    # ATENCAO: prefixo exato (mesmos nomes, mesma ordem, nenhum a mais); qualquer troca de ID é recusada.
+    if allow_prefix and actual and len(actual) < len(expected) and expected[:len(actual)] == actual:
+        return expected[len(actual):]
+    raise ValueError(f"Checkpoint não corresponde às {len(expected)} classes ativas do projeto. Treine com o dataset revisado; para testar pesos gerais use predict --demo explicitamente.")
 
 
 def runtime_info(model, config: ProjectConfig) -> dict:

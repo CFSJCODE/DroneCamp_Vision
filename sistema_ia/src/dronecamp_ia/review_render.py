@@ -140,6 +140,29 @@ def _load_suggestions(directory: Path, registry_path: Path, class_count: int) ->
     return suggestions
 
 
+def _vlm_opinions(directory: Path, registry_path: Path) -> dict:
+    """Segunda opinião do VLM (``ai_notes.json``) sobre as sugestões, por foto e id.
+
+    Lê só notas deste registro (mesmo hash), de origem ``"sugestao"`` e com resposta
+    interpretada. Retorna ``{hash da foto: {id da sugestão: {"class_guess",
+    "legibility", "model_used"}}}`` (vazio sem arquivo). Só informa a página: não
+    aceita nem descarta nada.
+    """
+    path = directory / "ai_notes.json"
+    if not path.is_file():
+        return {}
+    notes = json.loads(path.read_text(encoding="utf-8"))
+    if notes.get("registry_sha256") != file_hash(registry_path):
+        return {}
+    opinions: dict = {}
+    for digest, entries in (notes.get("images") or {}).items():
+        for entry in entries:
+            if entry.get("source") == "sugestao" and entry.get("parsed") and entry.get("box_id"):
+                opinions.setdefault(digest, {})[entry["box_id"]] = {
+                    key: entry.get(key) for key in ("class_guess", "legibility", "model_used")}
+    return opinions
+
+
 # ---------------------------------------------------------------------------
 # Montagem do HTML e dados da página
 # ---------------------------------------------------------------------------
@@ -317,7 +340,9 @@ def render_review_package(config: ProjectConfig, registry_path: Path) -> Path:
         raise ValueError("Imagem duplicada no registro de revisão.")
     # Rótulo legível por ID de classe ativa (ex.: 0 -> "Telha quebrada").
     labels = {item["id"]: item["label"] for item in taxonomy["classes"] if item["phase"] == 1}
+    slugs = {item["id"]: item["slug"] for item in taxonomy["classes"] if item["phase"] == 1}
     suggestions = _load_suggestions(directory, registry_path, len(names))
+    vlm = _vlm_opinions(directory, registry_path)
     # 2. Cada foto: confere o original, copia, desenha as caixas e prepara os dados da página.
     browser_images, rows = [], []
     for item in registry["images"]:
@@ -361,7 +386,8 @@ def render_review_package(config: ProjectConfig, registry_path: Path) -> Path:
         # leia-a em review_templates/platform.js.
         browser_images.append({**item, "source_path": None, "image_url": copied.relative_to(directory).as_posix(),
                                "evidence_url": f"evidence/{digest}.jpg",
-                               "model_suggestions": suggestions["images"].get(digest, []) if suggestions else []})
+                               "model_suggestions": [{**value, **({"vlm": vlm[digest][value.get("id")]} if value.get("id") in vlm.get(digest, {}) else {})}
+                                                     for value in (suggestions["images"].get(digest, []) if suggestions else [])]})
         # 2f. Linha do CSV (mesma ordem do cabeçalho da etapa 3). Páginas separadas por ";".
         # ATENCAO: item["notes"] é obrigatório aqui (KeyError se a foto não tiver "notes").
         rows.append([digest, item["filename"], ";".join(map(str,item["pages"])), item["status"], len(item["boxes"]),
@@ -388,12 +414,13 @@ def render_review_package(config: ProjectConfig, registry_path: Path) -> Path:
                "display_name": review_name(registry["version"], registry.get("display_name")), "images": browser_images,
                "taxonomy_recheck_pending": any(item.get("taxonomy_recheck_pending") for item in registry["images"]),
                "classes_requiring_review": [labels[key] for key in sorted(pending_class_ids)],
-               "classes": [{"id": key, "label": value, "color": COLORS[key]} for key,value in labels.items()],
+               # slug: nome técnico da classe, usado pela página para ler a opinião do VLM (class_guess).
+               "classes": [{"id": key, "label": value, "color": COLORS[key], "slug": slugs[key]} for key,value in labels.items()],
                "duplicate_iou": config.pilot.get("duplicate_iou"),
                # weights_run_id: execução dos pesos das sugestões (só o id, nunca o caminho do PC),
                # para a página ligar o modelo em uso ao treino sem depender de uma comparação salva.
                # EXTENSAO: novo metadado das sugestões para a página: acrescente a chave na tupla.
-               "suggestions": {**{key: suggestions.get(key) for key in ("model_label", "conf", "warning", "weights_sha256", "pilot", "calibrator")},
+               "suggestions": {**{key: suggestions.get(key) for key in ("model_label", "conf", "warning", "weights_sha256", "pilot", "calibrator", "uncovered_classes")},
                                "weights_run_id": run_id_from_path(suggestions.get("weights"))} if suggestions else None}
     write_json(directory / "browser_data.json", payload)
     (directory / "index.html").write_text(build_page(payload, collect_operations(config, directory)), encoding="utf-8")

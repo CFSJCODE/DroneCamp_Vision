@@ -65,6 +65,8 @@ Outros comandos:
 .\.venv\Scripts\python.exe -m dronecamp_ia report-support --registry data\reviews\ceasa_v8_revisao002_ff34e226416c\registry.json
 ```
 
+**Cadeia de modelos gratuitos (12/10/2026).** `--model` aceita vários slugs separados por vírgula: o OpenRouter usa o primeiro e cai para o próximo quando ele falha ou está limitado (campo `models` da API). `--model free-vision` monta essa cadeia com todos os modelos `:free` com entrada de imagem do catálogo atual, Gemma 4 primeiro, sem o roteador `openrouter/free` e sem classificadores de segurança: no teste de 12/10 o roteador mandou 36 de 40 recortes para modelos que não descreveram a foto. A cadeia **não** aumenta a cota: o limite diário de chamadas gratuitas vale para a conta inteira (no teste, HTTP 429 depois de ~40 chamadas). Exemplo: `describe-occurrences --registry ... --include-suggestions --model free-vision`. Com `--include-suggestions`, a opinião do VLM sobre cada sugestão do detector aparece na página de revisão ("VLM: não vê ocorrência", "VLM: <classe> (concorda)"), só como informação; aceitar ou descartar continua sendo decisão humana.
+
 `report-support` grava `laudo_apoio.json` e `laudo_apoio.md` na pasta da revisão (o registro precisa estar na taxonomia atual, conferida pelo hash, como no `suggest`): só fotos com aprovação humana, uma ocorrência por caixa, com classe, critério da taxonomia, nota do revisor, gravidade histórica do laudo de referência (só como referência) e a descrição da IA quando existir. Gravidade, diagnóstico e recomendação saem como `null`/"a definir pelo responsável técnico". A plataforma pode consumir `draft_report_support()` e `describe_occurrences()` de `vlm_assist.py`.
 
 ### 2.2 Segurança da chave
