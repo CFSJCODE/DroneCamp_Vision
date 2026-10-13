@@ -55,5 +55,18 @@ class ParentWatchTests(unittest.TestCase):
                     process.kill()
 
 
+class AutoinstallTests(unittest.TestCase):
+    """Nenhum comando do pacote deixa a Ultralytics instalar pacotes sozinha."""
+
+    def test_package_import_disables_ultralytics_autoinstall(self):
+        """Importar só ``dronecamp_ia`` já define YOLO_AUTOINSTALL=false (antes da Ultralytics)."""
+        code = ("import os; os.environ.pop('YOLO_AUTOINSTALL', None); import sys; "
+                f"sys.path.insert(0, {str(ROOT / 'src')!r}); import dronecamp_ia; "
+                "print(os.environ.get('YOLO_AUTOINSTALL'))")
+        environment = {key: value for key, value in os.environ.items() if key != "YOLO_AUTOINSTALL"}
+        result = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, env=environment, timeout=60)
+        self.assertEqual(result.stdout.strip(), "false")
+
+
 if __name__ == "__main__":
     unittest.main()
