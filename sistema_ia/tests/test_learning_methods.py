@@ -111,8 +111,8 @@ class MatchingTests(unittest.TestCase):
         """
         report = per_class_report([image_errors([], [truth(0, [0, 0, 5, 5])])], NAMES)
         self.assertEqual(report[NAMES[0]]["recall"], 0.0)
-        self.assertIsNone(report[NAMES[12]]["recall"])
-        self.assertIsNone(report[NAMES[12]]["precision"])
+        self.assertIsNone(report[NAMES[8]]["recall"])
+        self.assertIsNone(report[NAMES[8]]["precision"])
 
 
 # ---------------------------------------------------------------------------
@@ -192,13 +192,13 @@ class LinUCBTests(unittest.TestCase):
 
         Retorna: None.
         """
-        self.rarity = class_rarity({0: 99, 11: 0}, len(NAMES))
+        self.rarity = class_rarity({0: 99, 8: 0}, len(NAMES))
 
     def test_prior_ranks_uncertain_rare_suggestions_above_confident_common_ones(self):
         """Sem aprendizado (alpha 0), sugestão incerta de classe rara vem antes de comum e confiante."""
         policy = LinUCBPolicy(alpha=0.0)
         confident = image_context([prediction(0, [0, 0, 10, 10], 0.95)], self.rarity, False)
-        uncertain_rare = image_context([prediction(11, [0, 0, 10, 10], 0.5)], self.rarity, False)
+        uncertain_rare = image_context([prediction(8, [0, 0, 10, 10], 0.5)], self.rarity, False)
         self.assertGreater(policy.score(uncertain_rare)["score"], policy.score(confident)["score"])
 
     def test_rewards_move_the_policy_and_shrink_exploration(self):
@@ -214,7 +214,7 @@ class LinUCBTests(unittest.TestCase):
 
     def test_reward_is_high_when_model_misses_a_rare_class(self):
         """Revisão que revela classe rara perdida pelo modelo rende mais que uma correta."""
-        missed = review_reward([], [truth(11, [0, 0, 10, 10])], self.rarity)
+        missed = review_reward([], [truth(8, [0, 0, 10, 10])], self.rarity)
         correct = review_reward([prediction(0, [0, 0, 10, 10], 0.9)], [truth(0, [0, 0, 10, 10])], self.rarity)
         self.assertGreater(missed["reward"], correct["reward"])
         self.assertEqual(missed["fn"], 1)
@@ -242,13 +242,13 @@ class ReviewQueueTests(unittest.TestCase):
         # 3 fotos com hash falso de 64 dígitos; só a 0 tem aprovação humana (classe 11).
         images = [{"image_sha256": f"{index:064x}", "filename": f"{index}.jpg", "building_group": "galpao_b",
                    "human_approved": index == 0, "status": "positive" if index == 0 else "ambiguous",
-                   "boxes": [truth(11, [0, 0, 10, 10])] if index == 0 else []} for index in range(3)]
+                   "boxes": [truth(8, [0, 0, 10, 10])] if index == 0 else []} for index in range(3)]
         write_json(self.registry, {"images": images})
         # Sugestões da IA por hash: foto 1 comum e confiante, foto 2 rara e incerta.
         write_json(self.root / "suggestions.json", {"weights_sha256": "w1", "images": {
             images[0]["image_sha256"]: [],
             images[1]["image_sha256"]: [prediction(0, [0, 0, 10, 10], 0.97)],
-            images[2]["image_sha256"]: [prediction(11, [0, 0, 10, 10], 0.45), prediction(4, [0, 0, 10, 10], 0.4)],
+            images[2]["image_sha256"]: [prediction(8, [0, 0, 10, 10], 0.45), prediction(4, [0, 0, 10, 10], 0.4)],
         }})
 
     def test_queue_skips_decided_photos_and_puts_uncertain_rare_photo_first(self):

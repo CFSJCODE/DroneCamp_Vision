@@ -1,7 +1,7 @@
 """Reamostragem por fator de repetição (RFS) para classes raras no treino.
 
-Função no projeto: classes com poucas caixas (ex.: ``fixador_telha_frouxo`` com 1
-caixa, ``rufo_deslocado`` com 1) quase não aparecem nos lotes de treino e o
+Função no projeto: classes com poucas caixas (ex.: ``fixador_irregular`` com 1
+caixa na v7) quase não aparecem nos lotes de treino e o
 detector aprende a ignorá-las. A RFS repete, só na lista de treino, as fotos que
 contêm essas classes, sem copiar arquivo nem alterar label.
 

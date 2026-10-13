@@ -367,7 +367,7 @@ def export_onnx(config: ProjectConfig, weights: str, demo: bool = False, parity_
     # (extra "export" do pyproject). Falha cedo, antes de criar pastas.
     if importlib.util.find_spec("onnx") is None:
         raise ValueError("Dependência ONNX ausente. Instale o extra export documentado no README antes de exportar.")
-    # 1. Modelo com as 14 classes; pesos piloto exportam no tamanho de treino.
+    # 1. Modelo com as classes ativas; pesos piloto exportam no tamanho de treino.
     model = load_detector(config, weights)
     if not demo:
         from .training import pilot_inference_config

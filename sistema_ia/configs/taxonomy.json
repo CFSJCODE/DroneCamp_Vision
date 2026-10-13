@@ -1,20 +1,61 @@
 {
   "schema_version": 1,
-  "version": "ceasa-v6-proposta-pedaco-calha-sobre-telha",
+  "version": "ceasa-v7-classes-sem-sobreposicao",
   "source": "CEASA Minas - Pavilão A - Laudo.pdf",
   "status": "proposta_para_revisao_tecnica",
   "severity_policy": "Níveis históricos do laudo de referência; não atribuir automaticamente a novas inspeções.",
+  "design_rule": "A classe diz o que o objeto é e em que estado está, nunca onde está apoiado. Detalhes (tipo, material, apoio, elemento) são atributos opcionais da caixa. Uma região, uma caixa, uma classe.",
+  "precedence": [
+    "telha_ausente",
+    "rufo_ausente",
+    "telha_danificada",
+    "rufo_danificado",
+    "calha_danificada",
+    "telha_deslocada",
+    "fixador_irregular",
+    "corrosao_metalica",
+    "vedacao_falha",
+    "reparo_material_aplicado",
+    "objeto_solto_cobertura",
+    "residuos_cobertura",
+    "calha_obstruida",
+    "crescimento_biologico",
+    "agua_empocada"
+  ],
   "classes": [
     {
       "id": 0,
-      "slug": "telha_quebrada",
-      "label": "Telha quebrada",
+      "slug": "telha_danificada",
+      "label": "Telha danificada",
       "phase": 1,
       "pages": [
         5
       ],
-      "reference_severity": "gravissima",
-      "criterion": "Ruptura visível do corpo da telha; não confundir sombra ou junta com quebra."
+      "reference_severity": null,
+      "reference_severity_by_v6_class": {
+        "telha_quebrada": "gravissima"
+      },
+      "origin": "taxonomia_v7_classes_sem_sobreposicao_2026-10-13",
+      "merged_from_v6": [
+        "telha_quebrada",
+        "telha_trincada_ou_perfurada",
+        "telha_translucida_danificada"
+      ],
+      "criterion": "Ruptura, trinca, furo ou trecho faltando no corpo de uma telha que continua instalada (metálica, fibrocimento ou translúcida).",
+      "excludes": "Telha inteira faltando (ID 1); fragmento já solto (ID 3); oxidação de superfície (ID 11); furo previsto de fixação ou tubulação; sombra ou junta.",
+      "annotation_policy": "Uma região, uma caixa, uma classe; em conflito vale a ordem de precedência da taxonomia. Objetos diferentes na mesma foto têm caixas próprias. Atributos são opcionais e preenchidos pelo revisor; sem identificação segura, registrar dúvida.",
+      "attributes": {
+        "tipo": [
+          "quebra",
+          "trinca",
+          "furo"
+        ],
+        "material": [
+          "opaca",
+          "translucida"
+        ]
+      },
+      "physical_diagnosis": "Não inferir causa, gravidade, estanqueidade, risco ou vida útil pelo rótulo visual."
     },
     {
       "id": 1,
@@ -26,394 +67,407 @@
         6,
         7
       ],
-      "reference_severity": "gravissima",
-      "criterion": "Lacuna no local esperado de uma telha, com contexto suficiente; não confundir abertura prevista."
+      "reference_severity": null,
+      "reference_severity_by_v6_class": {
+        "telha_ausente": "gravissima"
+      },
+      "origin": "taxonomia_v7_classes_sem_sobreposicao_2026-10-13",
+      "merged_from_v6": [
+        "telha_ausente"
+      ],
+      "criterion": "Lacuna da largura de uma telha inteira onde se espera telha, com contexto suficiente.",
+      "excludes": "Se resta qualquer parte da telha, é ID 0. Abertura prevista (claraboia, exaustor).",
+      "annotation_policy": "Uma região, uma caixa, uma classe; em conflito vale a ordem de precedência da taxonomia. Objetos diferentes na mesma foto têm caixas próprias. Atributos são opcionais e preenchidos pelo revisor; sem identificação segura, registrar dúvida.",
+      "attributes": {},
+      "physical_diagnosis": "Não inferir causa, gravidade, estanqueidade, risco ou vida útil pelo rótulo visual."
     },
     {
       "id": 2,
-      "slug": "residuos_telha",
-      "label": "Resíduos sobre telhas",
+      "slug": "residuos_cobertura",
+      "label": "Resíduos sobre a cobertura",
       "phase": 1,
       "pages": [
         7,
         8
       ],
-      "reference_severity": "media",
-      "criterion": "Acúmulo delimitável sobre a telha; diferenciar textura, envelhecimento, mancha e sombra."
+      "reference_severity": null,
+      "reference_severity_by_v6_class": {
+        "residuos_telha": "media"
+      },
+      "origin": "taxonomia_v7_classes_sem_sobreposicao_2026-10-13",
+      "merged_from_v6": [
+        "residuos_telha"
+      ],
+      "criterion": "Acúmulo difuso de material solto sem forma individual (terra, poeira grossa, folhas, detritos miúdos) sobre telhas ou laje.",
+      "excludes": "Objeto individual reconhecível (ID 3); material dentro da calha (ID 4); musgo ou líquen aderido (ID 14); mancha, textura ou envelhecimento.",
+      "annotation_policy": "Uma região, uma caixa, uma classe; em conflito vale a ordem de precedência da taxonomia. Objetos diferentes na mesma foto têm caixas próprias. Atributos são opcionais e preenchidos pelo revisor; sem identificação segura, registrar dúvida.",
+      "attributes": {},
+      "physical_diagnosis": "Não inferir causa, gravidade, estanqueidade, risco ou vida útil pelo rótulo visual."
     },
     {
       "id": 3,
-      "slug": "reparo_telha",
-      "label": "Reparo em telha",
+      "slug": "objeto_solto_cobertura",
+      "label": "Objeto solto sobre a cobertura",
+      "phase": 1,
+      "pages": [
+        5,
+        7,
+        8,
+        30,
+        33
+      ],
+      "reference_severity": null,
+      "reference_severity_by_v6_class": {
+        "objeto_estranho_cobertura": "baixa"
+      },
+      "origin": "taxonomia_v7_classes_sem_sobreposicao_2026-10-13",
+      "merged_from_v6": [
+        "pedaco_telha",
+        "pedaco_telha_sobreposto",
+        "pedaco_calha_sobre_telha",
+        "objeto_estranho_cobertura"
+      ],
+      "criterion": "Peça individual com contorno próprio, solta sobre a cobertura: pedaço de telha, segmento de calha ou rufo, tábua, pipa, parafuso, sacaria. A classe não muda com o apoio (sobre telha instalada ou não).",
+      "excludes": "Peça ainda presa ao lugar (IDs 0, 6, 9); acúmulo sem forma individual (ID 2); remendo aderido (ID 7).",
+      "annotation_policy": "Uma região, uma caixa, uma classe; em conflito vale a ordem de precedência da taxonomia. Objetos diferentes na mesma foto têm caixas próprias. Atributos são opcionais e preenchidos pelo revisor; sem identificação segura, registrar dúvida.",
+      "attributes": {
+        "material": [
+          "telha",
+          "calha",
+          "rufo_cumeeira",
+          "outro"
+        ],
+        "apoio": [
+          "sobre_telha_instalada",
+          "outro"
+        ]
+      },
+      "physical_diagnosis": "Não inferir causa, gravidade, estanqueidade, risco ou vida útil pelo rótulo visual."
+    },
+    {
+      "id": 4,
+      "slug": "calha_obstruida",
+      "label": "Calha com resíduos ou vegetação",
+      "phase": 1,
+      "pages": [
+        30,
+        31
+      ],
+      "reference_severity": null,
+      "reference_severity_by_v6_class": {
+        "residuos_calha": "gravissima",
+        "vegetacao_calha": "grave"
+      },
+      "origin": "taxonomia_v7_classes_sem_sobreposicao_2026-10-13",
+      "merged_from_v6": [
+        "residuos_calha",
+        "vegetacao_calha",
+        "ralo_obstruido"
+      ],
+      "criterion": "Qualquer material dentro do canal da calha ou na boca do ralo: detritos, folhas, galhos, plantas, musgo.",
+      "excludes": "Água sem material (ID 13); deformação da própria calha (ID 9); objeto solto fora da calha (ID 3). Não inferir vazão ou obstrução total.",
+      "annotation_policy": "Uma região, uma caixa, uma classe; em conflito vale a ordem de precedência da taxonomia. Objetos diferentes na mesma foto têm caixas próprias. Atributos são opcionais e preenchidos pelo revisor; sem identificação segura, registrar dúvida.",
+      "attributes": {
+        "tipo": [
+          "detritos",
+          "vegetacao"
+        ],
+        "local": [
+          "canal",
+          "saida_ralo"
+        ]
+      },
+      "physical_diagnosis": "Não inferir causa, gravidade, estanqueidade, risco ou vida útil pelo rótulo visual."
+    },
+    {
+      "id": 5,
+      "slug": "rufo_ausente",
+      "label": "Rufo ou cumeeira ausente",
+      "phase": 1,
+      "pages": [
+        20
+      ],
+      "reference_severity": null,
+      "reference_severity_by_v6_class": {
+        "rufo_ausente": "grave"
+      },
+      "origin": "taxonomia_v7_classes_sem_sobreposicao_2026-10-13",
+      "merged_from_v6": [
+        "rufo_ausente",
+        "cumeeira_danificada"
+      ],
+      "criterion": "Trecho sem rufo ou cumeeira onde a peça é esperada; exige reconhecer a junção.",
+      "excludes": "Peça presente, mas quebrada ou fora de posição (ID 6).",
+      "annotation_policy": "Uma região, uma caixa, uma classe; em conflito vale a ordem de precedência da taxonomia. Objetos diferentes na mesma foto têm caixas próprias. Atributos são opcionais e preenchidos pelo revisor; sem identificação segura, registrar dúvida.",
+      "attributes": {
+        "elemento": [
+          "rufo",
+          "cumeeira"
+        ]
+      },
+      "physical_diagnosis": "Não inferir causa, gravidade, estanqueidade, risco ou vida útil pelo rótulo visual."
+    },
+    {
+      "id": 6,
+      "slug": "rufo_danificado",
+      "label": "Rufo ou cumeeira danificado",
+      "phase": 1,
+      "pages": [
+        8,
+        21,
+        22,
+        23,
+        24
+      ],
+      "reference_severity": null,
+      "reference_severity_by_v6_class": {
+        "rufo_quebrado": "gravissima"
+      },
+      "origin": "taxonomia_v7_classes_sem_sobreposicao_2026-10-13",
+      "merged_from_v6": [
+        "rufo_quebrado",
+        "rufo_deslocado",
+        "cumeeira_danificada"
+      ],
+      "criterion": "Rufo ou cumeeira presente com quebra, amassado, levantamento, deslocamento ou desalinhamento visível.",
+      "excludes": "Trecho inteiro faltando (ID 5); peça já solta sobre a cobertura (ID 3); emenda ou sobreposição regular; sombra.",
+      "annotation_policy": "Uma região, uma caixa, uma classe; em conflito vale a ordem de precedência da taxonomia. Objetos diferentes na mesma foto têm caixas próprias. Atributos são opcionais e preenchidos pelo revisor; sem identificação segura, registrar dúvida.",
+      "attributes": {
+        "tipo": [
+          "quebra",
+          "deslocamento"
+        ],
+        "elemento": [
+          "rufo",
+          "cumeeira"
+        ]
+      },
+      "physical_diagnosis": "Não inferir causa, gravidade, estanqueidade, risco ou vida útil pelo rótulo visual."
+    },
+    {
+      "id": 7,
+      "slug": "reparo_material_aplicado",
+      "label": "Reparo ou material aplicado",
       "phase": 1,
       "pages": [
         9,
         10,
         11,
         12,
-        13
+        13,
+        18
       ],
-      "reference_severity": "baixa",
-      "criterion": "Remendo, fita, manta ou intervenção visual; presença de reparo não comprova falha técnica por si só."
-    },
-    {
-      "id": 4,
-      "slug": "rufo_ausente",
-      "label": "Rufo ausente",
-      "phase": 1,
-      "pages": [
-        20
+      "reference_severity": null,
+      "reference_severity_by_v6_class": {
+        "reparo_telha": "baixa",
+        "reparo_selante_fixador_telha": "baixa"
+      },
+      "origin": "taxonomia_v7_classes_sem_sobreposicao_2026-10-13",
+      "merged_from_v6": [
+        "reparo_telha",
+        "reparo_rufo",
+        "reparo_selante_fixador_telha",
+        "residuo_tinta_argamassa"
       ],
-      "reference_severity": "grave",
-      "criterion": "Trecho sem rufo onde sua presença é esperada; requer conhecimento do elemento e da junção."
-    },
-    {
-      "id": 5,
-      "slug": "rufo_quebrado",
-      "label": "Rufo quebrado",
-      "phase": 1,
-      "pages": [
-        21,
-        22,
-        23,
-        24
-      ],
-      "reference_severity": "gravissima",
-      "criterion": "Ruptura visível do rufo; diferenciar junta normal e falta completa do elemento."
-    },
-    {
-      "id": 6,
-      "slug": "residuos_calha",
-      "label": "Resíduos em calha",
-      "phase": 1,
-      "pages": [
-        30,
-        31
-      ],
-      "reference_severity": "gravissima",
-      "criterion": "Detritos no canal da calha; não inferir vazão, obstrução total ou água acumulada só pela caixa."
-    },
-    {
-      "id": 7,
-      "slug": "vegetacao_calha",
-      "label": "Vegetação em calha",
-      "phase": 1,
-      "pages": [
-        31
-      ],
-      "reference_severity": "grave",
-      "criterion": "Vegetação ou seus resquícios dentro da calha; diferenciar vegetação fora do telhado."
+      "criterion": "Remendo, fita, manta, selante, argamassa ou tinta aplicados e aderidos sobre telha, rufo, calha ou fixador. A presença de reparo não comprova falha.",
+      "excludes": "Material solto (IDs 2 e 3); vedação original regular; sombra.",
+      "annotation_policy": "Uma região, uma caixa, uma classe; em conflito vale a ordem de precedência da taxonomia. Objetos diferentes na mesma foto têm caixas próprias. Atributos são opcionais e preenchidos pelo revisor; sem identificação segura, registrar dúvida.",
+      "attributes": {
+        "elemento": [
+          "telha",
+          "rufo",
+          "calha",
+          "fixador"
+        ],
+        "intencional": [
+          "sim",
+          "nao"
+        ]
+      },
+      "physical_diagnosis": "Não inferir causa, gravidade, estanqueidade, risco ou vida útil pelo rótulo visual."
     },
     {
       "id": 8,
-      "slug": "pedaco_telha",
-      "label": "Pedaço de telha",
+      "slug": "fixador_irregular",
+      "label": "Fixador irregular",
       "phase": 1,
       "pages": [
-        5,
-        7,
-        8,
-        30
+        15,
+        16,
+        17,
+        25,
+        28
       ],
       "reference_severity": null,
-      "origin": "categoria_adicionada_por_solicitacao_do_usuario_em_2026-10-03",
-      "criterion": "Fragmento solto de telha visualmente reconhecível, separado do elemento instalado. Anotar o fragmento individual; dano na telha instalada permanece telha_quebrada. Mistura, detrito sem identificação ou composição incerta não comprova pedaço de telha.",
-      "annotation_policy": "Não duplicar a mesma caixa e objeto como pedaço de telha e resíduos. IDs 2 e 6 descrevem acúmulos/contexto; caixas de escala distinta só quando representam evidências distintas, com nota e revisão. Sem identificação segura, registrar dúvida.",
-      "physical_diagnosis": "Não inferir composição, origem da quebra, gravidade, vazão ou risco pelo rótulo visual."
+      "reference_severity_by_v6_class": {
+        "fixador_telha_ausente": "media",
+        "fixador_telha_corroido": "media",
+        "fixador_rufo_corroido": "media",
+        "fixador_rufo_ausente": "media"
+      },
+      "origin": "taxonomia_v7_classes_sem_sobreposicao_2026-10-13",
+      "merged_from_v6": [
+        "fixador_telha_frouxo",
+        "fixador_telha_ausente",
+        "fixador_telha_corroido",
+        "fixador_rufo_corroido",
+        "fixador_rufo_ausente"
+      ],
+      "criterion": "Parafuso ou gancho de fixação frouxo, solto, faltando ou corroído, em telha ou rufo. Exige vista próxima ou recorte.",
+      "excludes": "Parafuso caído longe do ponto de fixação (ID 3); selante no fixador (IDs 7 ou 12); arruela prevista.",
+      "annotation_policy": "Uma região, uma caixa, uma classe; em conflito vale a ordem de precedência da taxonomia. Objetos diferentes na mesma foto têm caixas próprias. Atributos são opcionais e preenchidos pelo revisor; sem identificação segura, registrar dúvida.",
+      "attributes": {
+        "tipo": [
+          "frouxo",
+          "ausente",
+          "corroido"
+        ],
+        "elemento": [
+          "telha",
+          "rufo"
+        ]
+      },
+      "physical_diagnosis": "Não inferir causa, gravidade, estanqueidade, risco ou vida útil pelo rótulo visual."
     },
     {
       "id": 9,
-      "slug": "rufo_deslocado",
-      "label": "Rufo deslocado/desalinhado",
-      "phase": 1,
-      "pages": [
-        8
-      ],
-      "reference_severity": null,
-      "origin": "categoria_solicitada_a_partir_de_recorte_do_usuario_em_2026-10-03",
-      "criterion": "Elemento identificado como rufo com deslocamento, levantamento ou desalinhamento visível em relação ao arremate esperado. Diferenciar junta regular, sobreposição prevista, sombra e fragmento solto. Ruptura deve ser anotada separadamente somente quando visível.",
-      "annotation_policy": "Confirmar a identidade do elemento e a posição esperada antes de aprovar. Quando a fotografia não distinguir junta, desprendimento ou rufo de outro arremate, manter a imagem ambígua. Não duplicar uma caixa idêntica como deslocamento e quebra sem evidências distintas.",
-      "physical_diagnosis": "Não inferir ausência de fixação, falha de vedação, estanqueidade, causa, risco ou severidade."
-    },
-    {
-      "id": 10,
-      "slug": "pedaco_telha_sobreposto",
-      "label": "Pedaço de telha sobreposto à telha",
-      "phase": 1,
-      "pages": [],
-      "reference_severity": null,
-      "origin": "categoria_adicionada_por_solicitacao_do_usuario_em_2026-10-03",
-      "criterion": "Fragmento solto de telha visualmente reconhecível apoiado sobre uma telha instalada, com limites e superfície de apoio identificáveis. Diferenciar a sobreposição regular entre telhas inteiras, remendo aderido, sombra e ruptura ainda pertencente à telha instalada.",
-      "annotation_policy": "Delimitar o fragmento, sem incluir toda a telha de apoio. Preferir esta classe ao ID8 quando o apoio sobre uma telha instalada estiver confirmado; não duplicar o mesmo objeto nas duas classes. Usar ID8 para fragmento reconhecível em outro local ou sem apoio identificável. Fragmento ou apoio incerto permanece ambíguo.",
-      "physical_diagnosis": "Não inferir material, origem, ausência de travamento, aderência, risco ou severidade pelo rótulo visual."
-    },
-    {
-      "id": 11,
-      "slug": "fixador_telha_frouxo",
-      "label": "Elemento de fixação de telha solto/frouxo",
-      "phase": 1,
-      "pages": [
-        17
-      ],
-      "reference_severity": null,
-      "criterion": "Elemento de fixação associado à telha com soltura, desprendimento, deslocamento ou folga visualmente identificável. Diferenciar fixador instalado corretamente, arruela prevista, sombra e objeto avulso sem vínculo identificável com a telha.",
-      "previous_reference_severity": "media",
-      "origin": "categoria_fase2_ativada_por_solicitacao_do_usuario_em_2026-10-03",
-      "annotation_policy": "Delimitar o fixador e incluir contexto suficiente para identificar a evidência de soltura. Cabeça elevada ou falta de contato aparente, isoladamente, pode ser dúvida: manter ambíguo quando não houver confirmação visual. Ausência completa permanece fixador_telha_ausente; corrosão não comprova folga.",
-      "physical_diagnosis": "Não inferir torque, aperto, estabilidade mecânica, causa, estanqueidade, risco ou severidade pela fotografia."
-    },
-    {
-      "id": 12,
-      "slug": "reparo_rufo",
-      "label": "Reparo em rufo",
-      "phase": 1,
-      "pages": [],
-      "reference_severity": null,
-      "origin": "categoria_adicionada_por_solicitacao_do_usuario_em_2026-10-03",
-      "criterion": "Intervenção visualmente identificável no próprio rufo: remendo, fita, manta, aplicação de selante ou peça de reparo. Confirmar a identidade do rufo e diferenciar vedação original regular, junta prevista, sujeira, sombra e material solto apenas apoiado sobre o elemento.",
-      "annotation_policy": "Delimitar a área de intervenção visível, sem incluir todo o rufo. Reparo sobre telha permanece ID3 reparo_telha; a categoria depende do elemento reparado. Se a foto não distinguir rufo de telha ou reparo de acabamento original, manter ambíguo. Não converter caixas antigas nem duplicar uma caixa idêntica como reparo e quebra/deslocamento sem evidências distintas.",
-      "physical_diagnosis": "Presença de reparo não comprova falha ou não conformidade por si só. Não inferir aderência, estanqueidade, causa, eficácia, risco, urgência ou severidade pela fotografia."
-    },
-    {
-      "id": 13,
-      "slug": "pedaco_calha_sobre_telha",
-      "label": "Pedaço de calha sobre telha",
-      "phase": 1,
-      "pages": [],
-      "reference_severity": null,
-      "origin": "categoria_adicionada_por_solicitacao_do_usuario_em_2026-10-11",
-      "criterion": "Segmento solto de calha (perfil metálico ou de PVC, alongado, com bordas dobradas ou seção em U) apoiado sobre a superfície das telhas, fora da posição de instalação da calha. Diferenciar calha instalada, rufo, cumeeira, faixa de reparo aderida, fita, reflexo e sombra.",
-      "annotation_policy": "Delimitar somente o segmento solto, sem incluir as telhas de apoio nem a calha instalada. Preferir esta classe a ID2 residuos_telha quando o objeto for reconhecível como pedaço de calha; não duplicar o mesmo objeto nas duas classes. Rufo solto ou deslocado permanece ID9 rufo_deslocado; fragmento de telha permanece ID8/ID10. Se a foto não distinguir calha de rufo ou de outro perfil metálico, manter ambíguo.",
-      "physical_diagnosis": "Não inferir origem, material, ausência de calha no trecho, falha de escoamento, risco de queda, causa ou severidade pela fotografia.",
-      "requires_training": true
-    },
-    {
-      "id": 14,
-      "slug": "junta_rufo_sem_selante",
-      "label": "Junta de rufo sem selante",
-      "phase": 2,
-      "pages": [
-        26
-      ],
-      "reference_severity": "media",
-      "criterion": "Ausência observável de selante na junta; sombra não é comprovação."
-    },
-    {
-      "id": 15,
-      "slug": "selante_fixador_rufo_ausente_ou_falho",
-      "label": "Selante de fixador de rufo ausente ou falho",
-      "phase": 2,
-      "pages": [
-        27
-      ],
-      "reference_severity": "media",
-      "criterion": "Ausência ou descontinuidade visível no selante do fixador."
-    },
-    {
-      "id": 16,
-      "slug": "fixador_rufo_corroido",
-      "label": "Fixador de rufo corroído",
-      "phase": 2,
-      "pages": [
-        28
-      ],
-      "reference_severity": "media",
-      "criterion": "Corrosão visível no fixador de rufo em resolução suficiente."
-    },
-    {
-      "id": 17,
-      "slug": "objeto_estranho_cobertura",
-      "label": "Objeto estranho sobre a cobertura",
-      "phase": 2,
-      "pages": [
-        33
-      ],
-      "reference_severity": "baixa",
-      "criterion": "Objeto alheio ao sistema; o laudo registra pipa e parafuso solto."
-    },
-    {
-      "id": 18,
-      "slug": "passagem_telha_sem_selante",
-      "label": "Passagem pela telha sem selante",
-      "phase": 2,
-      "pages": [
-        35
-      ],
-      "reference_severity": "media",
-      "criterion": "Perfuração com objeto passante sem vedação observável; requer vista próxima."
-    },
-    {
-      "id": 19,
-      "slug": "telha_sobreposta_sem_travamento",
-      "label": "Telha sobreposta sem travamento",
-      "phase": 2,
-      "pages": [
-        3
-      ],
-      "reference_severity": "media",
-      "criterion": "Sobreposição irregular; ausência de travamento só quando verificável em vista adequada."
-    },
-    {
-      "id": 20,
-      "slug": "fixador_telha_ausente",
-      "label": "Fixador de telha ausente",
-      "phase": 2,
-      "pages": [
-        15,
-        16
-      ],
-      "reference_severity": "media",
-      "criterion": "Ponto de fixação esperado sem fixador; requer resolução e contexto."
-    },
-    {
-      "id": 21,
-      "slug": "fixador_telha_corroido",
-      "label": "Fixador de telha corroído",
-      "phase": 2,
-      "pages": [
-        16
-      ],
-      "reference_severity": "media",
-      "criterion": "Sinal de corrosão no fixador em imagem próxima e nítida."
-    },
-    {
-      "id": 22,
-      "slug": "reparo_selante_fixador_telha",
-      "label": "Reparo com selante em fixador de telha",
-      "phase": 2,
-      "pages": [
-        18
-      ],
-      "reference_severity": "baixa",
-      "criterion": "Aplicação visível de selante; registrar intervenção sem inferir estanqueidade."
-    },
-    {
-      "id": 23,
-      "slug": "fixador_rufo_ausente",
-      "label": "Fixador de rufo ausente",
-      "phase": 2,
-      "pages": [
-        25
-      ],
-      "reference_severity": "media",
-      "criterion": "Ponto de fixação de rufo esperado sem fixador."
-    },
-    {
-      "id": 24,
       "slug": "calha_danificada",
       "label": "Calha danificada",
       "phase": 2,
       "pages": [],
       "reference_severity": null,
-      "requires_training": true,
-      "origin": "proposta_da_analise_de_taxonomia_em_2026-10-11",
-      "basis": "Item “As calhas estão danificadas?” da lista de verificação do laudo CEASA, sem categoria até a v6.",
-      "criterion": "Deformação, amassamento, ruptura, emenda separada ou desalinhamento visível do próprio perfil da calha instalada. Diferenciar resíduos (ID6), vegetação (ID7), pedaço de calha solto sobre as telhas (ID13), emenda regular e sombra.",
-      "physical_diagnosis": "Não inferir vazão, transbordamento, estanqueidade, causa ou severidade."
+      "reference_severity_by_v6_class": {},
+      "origin": "taxonomia_v7_classes_sem_sobreposicao_2026-10-13",
+      "merged_from_v6": [
+        "calha_danificada"
+      ],
+      "criterion": "Perfil da calha instalada amassado, rompido, com emenda aberta ou desalinhado.",
+      "excludes": "Material dentro da calha (ID 4); segmento solto (ID 3); emenda regular; sombra.",
+      "annotation_policy": "Uma região, uma caixa, uma classe; em conflito vale a ordem de precedência da taxonomia. Objetos diferentes na mesma foto têm caixas próprias. Atributos são opcionais e preenchidos pelo revisor; sem identificação segura, registrar dúvida.",
+      "attributes": {},
+      "physical_diagnosis": "Não inferir causa, gravidade, estanqueidade, risco ou vida útil pelo rótulo visual.",
+      "requires_training": true
     },
     {
-      "id": 25,
-      "slug": "telha_trincada_ou_perfurada",
-      "label": "Telha trincada ou perfurada",
+      "id": 10,
+      "slug": "telha_deslocada",
+      "label": "Telha deslocada",
+      "phase": 2,
+      "pages": [
+        3
+      ],
+      "reference_severity": null,
+      "reference_severity_by_v6_class": {
+        "telha_sobreposta_sem_travamento": "media"
+      },
+      "origin": "taxonomia_v7_classes_sem_sobreposicao_2026-10-13",
+      "merged_from_v6": [
+        "telha_sobreposta_sem_travamento"
+      ],
+      "criterion": "Telha inteira presente, mas fora de posição (sobreposição irregular, levantada).",
+      "excludes": "Telha com ruptura (ID 0); lacuna (ID 1). Ausência de travamento só quando verificável.",
+      "annotation_policy": "Uma região, uma caixa, uma classe; em conflito vale a ordem de precedência da taxonomia. Objetos diferentes na mesma foto têm caixas próprias. Atributos são opcionais e preenchidos pelo revisor; sem identificação segura, registrar dúvida.",
+      "attributes": {},
+      "physical_diagnosis": "Não inferir causa, gravidade, estanqueidade, risco ou vida útil pelo rótulo visual.",
+      "requires_training": true
+    },
+    {
+      "id": 11,
+      "slug": "corrosao_metalica",
+      "label": "Corrosão em superfície metálica",
       "phase": 2,
       "pages": [],
       "reference_severity": null,
-      "requires_training": true,
-      "origin": "proposta_da_analise_de_taxonomia_em_2026-10-11",
-      "basis": "Item “Existem trincas ou furos nas telhas?” do laudo CEASA e termo “hole in roof” da busca aberta.",
-      "criterion": "Fissura linear ou furo pontual no corpo da telha, sem separação de partes. Ruptura com perda de material permanece ID0 telha_quebrada; passagem prevista de tubulação ou fixação não é furo. Requer vista próxima e nítida.",
-      "physical_diagnosis": "Não inferir infiltração, estanqueidade, causa ou severidade."
+      "reference_severity_by_v6_class": {},
+      "origin": "taxonomia_v7_classes_sem_sobreposicao_2026-10-13",
+      "merged_from_v6": [
+        "corrosao_telha"
+      ],
+      "criterion": "Oxidação visível (ferrugem, descamação, perda de revestimento) na superfície de telha, calha ou rufo metálico.",
+      "excludes": "Fixador corroído (ID 8); sujeira alaranjada, reflexo; ruptura (IDs 0, 6, 9).",
+      "annotation_policy": "Uma região, uma caixa, uma classe; em conflito vale a ordem de precedência da taxonomia. Objetos diferentes na mesma foto têm caixas próprias. Atributos são opcionais e preenchidos pelo revisor; sem identificação segura, registrar dúvida.",
+      "attributes": {
+        "elemento": [
+          "telha",
+          "calha",
+          "rufo"
+        ]
+      },
+      "physical_diagnosis": "Não inferir causa, gravidade, estanqueidade, risco ou vida útil pelo rótulo visual.",
+      "requires_training": true
     },
     {
-      "id": 26,
-      "slug": "corrosao_telha",
-      "label": "Corrosão em telha metálica",
+      "id": 12,
+      "slug": "vedacao_falha",
+      "label": "Vedação ausente ou falha",
+      "phase": 2,
+      "pages": [
+        26,
+        27,
+        35
+      ],
+      "reference_severity": null,
+      "reference_severity_by_v6_class": {
+        "junta_rufo_sem_selante": "media",
+        "selante_fixador_rufo_ausente_ou_falho": "media",
+        "passagem_telha_sem_selante": "media"
+      },
+      "origin": "taxonomia_v7_classes_sem_sobreposicao_2026-10-13",
+      "merged_from_v6": [
+        "junta_rufo_sem_selante",
+        "selante_fixador_rufo_ausente_ou_falho",
+        "passagem_telha_sem_selante"
+      ],
+      "criterion": "Selante ausente ou descontínuo em junta de rufo, fixador ou passagem pela telha. Exige vista próxima; sombra não comprova.",
+      "excludes": "Selante presente aplicado como reparo (ID 7).",
+      "annotation_policy": "Uma região, uma caixa, uma classe; em conflito vale a ordem de precedência da taxonomia. Objetos diferentes na mesma foto têm caixas próprias. Atributos são opcionais e preenchidos pelo revisor; sem identificação segura, registrar dúvida.",
+      "attributes": {
+        "local": [
+          "junta_rufo",
+          "fixador",
+          "passagem"
+        ]
+      },
+      "physical_diagnosis": "Não inferir causa, gravidade, estanqueidade, risco ou vida útil pelo rótulo visual.",
+      "requires_training": true
+    },
+    {
+      "id": 13,
+      "slug": "agua_empocada",
+      "label": "Água empoçada",
       "phase": 2,
       "pages": [],
       "reference_severity": null,
-      "requires_training": true,
-      "origin": "proposta_da_analise_de_taxonomia_em_2026-10-11",
-      "basis": "Termo “rust on roof sheet” da busca aberta, registrado como não catalogado.",
-      "criterion": "Oxidação visível (ferrugem, descamação, perda de revestimento) na superfície da telha metálica. Diferenciar sujeira, reflexo, resíduo alaranjado e envelhecimento uniforme. Corrosão em fixador permanece ID21 fixador_telha_corroido.",
-      "physical_diagnosis": "Não inferir perda de espessura, perfuração, vida útil ou severidade."
+      "reference_severity_by_v6_class": {},
+      "origin": "taxonomia_v7_classes_sem_sobreposicao_2026-10-13",
+      "merged_from_v6": [
+        "agua_empocada_cobertura"
+      ],
+      "criterion": "Lâmina de água diretamente visível (superfície e reflexo) sobre telha, calha ou laje.",
+      "excludes": "Mancha escura ou umidade aparente. Água com material na calha: a caixa é ID 4.",
+      "annotation_policy": "Uma região, uma caixa, uma classe; em conflito vale a ordem de precedência da taxonomia. Objetos diferentes na mesma foto têm caixas próprias. Atributos são opcionais e preenchidos pelo revisor; sem identificação segura, registrar dúvida.",
+      "attributes": {},
+      "physical_diagnosis": "Não inferir causa, gravidade, estanqueidade, risco ou vida útil pelo rótulo visual.",
+      "requires_training": true
     },
     {
-      "id": 27,
-      "slug": "agua_empocada_cobertura",
-      "label": "Água empoçada sobre a cobertura",
-      "phase": 2,
-      "pages": [],
-      "reference_severity": null,
-      "requires_training": true,
-      "origin": "proposta_da_analise_de_taxonomia_em_2026-10-11",
-      "basis": "Item “Há sinais de acúmulo de água nas telhas ou nas calhas?” do laudo CEASA e termo “standing water on roof” da busca aberta.",
-      "criterion": "Lâmina de água diretamente visível (superfície líquida delimitada, reflexo especular) sobre telhas, calhas ou lajes. Mancha escura, umidade aparente ou marca de escorrimento não comprovam água. Difere da alegação excluída agua_acumulada_calha, que o laudo inferiu sem observação direta.",
-      "physical_diagnosis": "Não inferir caimento, entupimento, infiltração, causa ou severidade."
-    },
-    {
-      "id": 28,
-      "slug": "telha_translucida_danificada",
-      "label": "Telha translúcida danificada",
-      "phase": 2,
-      "pages": [],
-      "reference_severity": null,
-      "requires_training": true,
-      "origin": "proposta_da_analise_de_taxonomia_em_2026-10-11",
-      "basis": "Termo “damaged skylight” da busca aberta, registrado como não catalogado.",
-      "criterion": "Telha translúcida ou domo de iluminação com ruptura, furo, trinca ou trecho ausente visível. Diferenciar opacidade ou amarelamento, sujeira e reflexo.",
-      "physical_diagnosis": "Não inferir risco de queda, estanqueidade ou severidade."
-    },
-    {
-      "id": 29,
-      "slug": "ralo_obstruido",
-      "label": "Ralo ou bocal de descida obstruído",
-      "phase": 2,
-      "pages": [],
-      "reference_severity": null,
-      "requires_training": true,
-      "origin": "proposta_da_analise_de_taxonomia_em_2026-10-11",
-      "basis": "Saídas de água pluvial são ponto crítico de inspeção de coberturas industriais e não têm categoria própria.",
-      "criterion": "Obstrução visível na boca do ralo ou do bocal de descida da calha (detritos, vegetação ou objeto sobre a grelha). Resíduos espalhados no canal sem relação com a saída permanecem ID6 residuos_calha.",
-      "physical_diagnosis": "Não inferir vazão, entupimento interno do condutor, transbordamento ou severidade."
-    },
-    {
-      "id": 30,
-      "slug": "cumeeira_danificada",
-      "label": "Cumeeira danificada ou deslocada",
-      "phase": 2,
-      "pages": [],
-      "reference_severity": null,
-      "requires_training": true,
-      "origin": "proposta_da_analise_de_taxonomia_em_2026-10-11",
-      "basis": "Cumeeiras aparecem nas coberturas de fibrocimento e metálicas e hoje só caberiam por aproximação em classes de rufo.",
-      "criterion": "Peça de cumeeira com ruptura, trecho ausente ou deslocamento visível. Diferenciar rufo (IDs 4, 5, 9 e 12), sobreposição regular e sombra.",
-      "physical_diagnosis": "Não inferir fixação, estanqueidade, causa ou severidade."
-    },
-    {
-      "id": 31,
-      "slug": "residuo_tinta_argamassa",
-      "label": "Resíduo de tinta ou argamassa aderido",
-      "phase": 2,
-      "pages": [],
-      "reference_severity": null,
-      "requires_training": true,
-      "origin": "proposta_da_analise_de_taxonomia_em_2026-10-11",
-      "basis": "Proposta de 04/10 (docs/novas_classes_propostas.md) com evidência em fotos da internet; sem exemplo no CEASA.",
-      "criterion": "Tinta, argamassa, cimento ou selante derramado e solidificado sobre a telha, aderido e sem forma de intervenção intencional. Diferenciar reparo_telha (remendo delimitado), residuos_telha (material solto), mancha e envelhecimento.",
-      "physical_diagnosis": "Não inferir obstrução, estanqueidade, dano à telha ou severidade."
-    },
-    {
-      "id": 32,
+      "id": 14,
       "slug": "crescimento_biologico",
       "label": "Musgo, líquen ou bolor",
       "phase": 2,
       "pages": [],
       "reference_severity": null,
-      "requires_training": true,
-      "origin": "proposta_da_analise_de_taxonomia_em_2026-10-11",
-      "basis": "Proposta de 04/10 (docs/novas_classes_propostas.md); musgo não comprova umidade persistente nem infiltração.",
-      "criterion": "Cobertura biológica contínua (musgo, líquen, bolor) sobre telha ou calha. Diferenciar vegetacao_calha (plantas, galhos, folhas), sujeira e mancha de envelhecimento.",
-      "physical_diagnosis": "Não inferir umidade, infiltração, dano ao material ou severidade."
+      "reference_severity_by_v6_class": {},
+      "origin": "taxonomia_v7_classes_sem_sobreposicao_2026-10-13",
+      "merged_from_v6": [
+        "crescimento_biologico"
+      ],
+      "criterion": "Cobertura biológica contínua aderida sobre telha ou rufo.",
+      "excludes": "Dentro da calha (ID 4); planta ou galho solto (IDs 2 ou 3); mancha de envelhecimento.",
+      "annotation_policy": "Uma região, uma caixa, uma classe; em conflito vale a ordem de precedência da taxonomia. Objetos diferentes na mesma foto têm caixas próprias. Atributos são opcionais e preenchidos pelo revisor; sem identificação segura, registrar dúvida.",
+      "attributes": {},
+      "physical_diagnosis": "Não inferir causa, gravidade, estanqueidade, risco ou vida útil pelo rótulo visual.",
+      "requires_training": true
     }
   ],
   "excluded_positive_claims": [
@@ -440,45 +494,190 @@
     }
   ],
   "migration": {
-    "from_version": "ceasa-v5-proposta-reparo-rufo",
-    "preserved_active_ids": [
-      0,
-      1,
-      2,
-      3,
-      4,
-      5,
-      6,
-      7,
-      8,
-      9,
-      10,
-      11,
-      12
+    "kind": "remap",
+    "from_version": "ceasa-v6-proposta-pedaco-calha-sobre-telha",
+    "from_taxonomy_file": "configs/taxonomy_ceasa_v6_pedaco_calha_sobre_telha.json",
+    "from_taxonomy_sha256": "a4350ab8923b648642a653f4d30066b0c7745b0b9dabb1589a2b185c9ad9b08e",
+    "from_active_classes": [
+      "telha_quebrada",
+      "telha_ausente",
+      "residuos_telha",
+      "reparo_telha",
+      "rufo_ausente",
+      "rufo_quebrado",
+      "residuos_calha",
+      "vegetacao_calha",
+      "pedaco_telha",
+      "rufo_deslocado",
+      "pedaco_telha_sobreposto",
+      "fixador_telha_frouxo",
+      "reparo_rufo",
+      "pedaco_calha_sobre_telha"
     ],
-    "new_active_class_ids": [
-      13
+    "active_class_map": {
+      "telha_quebrada": {
+        "to": "telha_danificada",
+        "to_id": 0,
+        "attributes": {
+          "tipo": "quebra"
+        }
+      },
+      "telha_ausente": {
+        "to": "telha_ausente",
+        "to_id": 1,
+        "attributes": {}
+      },
+      "residuos_telha": {
+        "to": "residuos_cobertura",
+        "to_id": 2,
+        "attributes": {}
+      },
+      "reparo_telha": {
+        "to": "reparo_material_aplicado",
+        "to_id": 7,
+        "attributes": {
+          "elemento": "telha"
+        }
+      },
+      "rufo_ausente": {
+        "to": "rufo_ausente",
+        "to_id": 5,
+        "attributes": {
+          "elemento": "rufo"
+        }
+      },
+      "rufo_quebrado": {
+        "to": "rufo_danificado",
+        "to_id": 6,
+        "attributes": {
+          "tipo": "quebra",
+          "elemento": "rufo"
+        }
+      },
+      "residuos_calha": {
+        "to": "calha_obstruida",
+        "to_id": 4,
+        "attributes": {
+          "tipo": "detritos"
+        }
+      },
+      "vegetacao_calha": {
+        "to": "calha_obstruida",
+        "to_id": 4,
+        "attributes": {
+          "tipo": "vegetacao"
+        }
+      },
+      "pedaco_telha": {
+        "to": "objeto_solto_cobertura",
+        "to_id": 3,
+        "attributes": {
+          "material": "telha"
+        }
+      },
+      "rufo_deslocado": {
+        "to": "rufo_danificado",
+        "to_id": 6,
+        "attributes": {
+          "tipo": "deslocamento",
+          "elemento": "rufo"
+        }
+      },
+      "pedaco_telha_sobreposto": {
+        "to": "objeto_solto_cobertura",
+        "to_id": 3,
+        "attributes": {
+          "material": "telha",
+          "apoio": "sobre_telha_instalada"
+        }
+      },
+      "fixador_telha_frouxo": {
+        "to": "fixador_irregular",
+        "to_id": 8,
+        "attributes": {
+          "tipo": "frouxo",
+          "elemento": "telha"
+        }
+      },
+      "reparo_rufo": {
+        "to": "reparo_material_aplicado",
+        "to_id": 7,
+        "attributes": {
+          "elemento": "rufo"
+        }
+      },
+      "pedaco_calha_sobre_telha": {
+        "to": "objeto_solto_cobertura",
+        "to_id": 3,
+        "attributes": {
+          "material": "calha"
+        }
+      }
+    },
+    "catalog_class_map": {
+      "telha_trincada_ou_perfurada": [
+        "telha_danificada"
+      ],
+      "telha_translucida_danificada": [
+        "telha_danificada"
+      ],
+      "objeto_estranho_cobertura": [
+        "objeto_solto_cobertura"
+      ],
+      "ralo_obstruido": [
+        "calha_obstruida"
+      ],
+      "cumeeira_danificada": [
+        "rufo_ausente",
+        "rufo_danificado"
+      ],
+      "reparo_selante_fixador_telha": [
+        "reparo_material_aplicado"
+      ],
+      "residuo_tinta_argamassa": [
+        "reparo_material_aplicado"
+      ],
+      "fixador_telha_ausente": [
+        "fixador_irregular"
+      ],
+      "fixador_telha_corroido": [
+        "fixador_irregular"
+      ],
+      "fixador_rufo_corroido": [
+        "fixador_irregular"
+      ],
+      "fixador_rufo_ausente": [
+        "fixador_irregular"
+      ],
+      "calha_danificada": [
+        "calha_danificada"
+      ],
+      "telha_sobreposta_sem_travamento": [
+        "telha_deslocada"
+      ],
+      "corrosao_telha": [
+        "corrosao_metalica"
+      ],
+      "junta_rufo_sem_selante": [
+        "vedacao_falha"
+      ],
+      "selante_fixador_rufo_ausente_ou_falho": [
+        "vedacao_falha"
+      ],
+      "passagem_telha_sem_selante": [
+        "vedacao_falha"
+      ],
+      "agua_empocada_cobertura": [
+        "agua_empocada"
+      ],
+      "crescimento_biologico": [
+        "crescimento_biologico"
+      ]
+    },
+    "unchanged_scope_classes": [
+      "telha_ausente",
+      "residuos_cobertura"
     ],
-    "catalog_id_mapping": {
-      "13": 23
-    },
-    "prior_catalog_id_mapping": {
-      "8": 19,
-      "9": 20,
-      "10": 21,
-      "12": 22
-    },
-    "note": "IDs ativos 0–12 preservados. Nova classe 13 de pedaço de calha sobre telha; o antigo ID13 de fixador de rufo ausente, fase2, passa a23. Snapshot v5 preservado; pesos e revisões anteriores não aprendem a nova classe automaticamente. Catálogo ampliado com IDs 24–32 (fase 2, requires_training) pela análise de lacunas de 11/10; nenhum entra na detecção sem dados aprovados e novo treino.",
-    "new_catalog_class_ids": [
-      24,
-      25,
-      26,
-      27,
-      28,
-      29,
-      30,
-      31,
-      32
-    ]
+    "note": "Fusões apenas: cada classe ativa da v6 cabe inteira numa classe da v7, então as caixas mudam de ID sem redesenho e recebem atributos derivados da classe antiga. As classes de escopo ampliado exigem nova conferência humana. Snapshot v6 preservado com o mesmo SHA-256; pesos v6 são comparados na v7 pelo active_class_map."
   }
 }

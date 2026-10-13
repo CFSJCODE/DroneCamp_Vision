@@ -117,8 +117,8 @@ def make_review(root: Path, approved: bool = True) -> Path:
     review.mkdir(parents=True)
     images = []
     # Duas fotos 320x240; cada caixa é (class_id, [x1, y1, x2, y2] em px).
-    # Foto a: telha_quebrada (0) e residuos_calha (6); foto b: reparo_telha (3).
-    for index, (name, boxes) in enumerate((("a.jpg", [(0, [10, 10, 60, 50]), (6, [100, 120, 220, 180])]), ("b.jpg", [(3, [5, 5, 15, 15])]))):
+    # Foto a: telha_danificada (0) e calha_obstruida (4); foto b: reparo_material_aplicado (7).
+    for index, (name, boxes) in enumerate((("a.jpg", [(0, [10, 10, 60, 50]), (4, [100, 120, 220, 180])]), ("b.jpg", [(7, [5, 5, 15, 15])]))):
         path = review / name
         Image.new("RGB", (320, 240), (40 + 50 * index, 90, 140)).save(path, quality=90)
         images.append({"image_sha256": file_hash(path), "filename": name, "pages": [1], "width": 320, "height": 240,
@@ -136,7 +136,7 @@ def make_review(root: Path, approved: bool = True) -> Path:
 
 # Respostas prontas do modelo: GOOD é JSON puro; NONE vem dentro de cerca ```json.
 # EXTENSAO: novo formato de resposta a testar: acrescente outra constante aqui.
-GOOD = '{"descricao": "Telha com ruptura visível no corpo.", "classe_sugerida": "telha_quebrada", "evidencias": ["borda irregular", "fundo escuro"], "legibilidade": "boa"}'
+GOOD = '{"descricao": "Telha com ruptura visível no corpo.", "classe_sugerida": "telha_danificada", "evidencias": ["borda irregular", "fundo escuro"], "legibilidade": "boa"}'
 NONE = '```json\n{"descricao": "Superfície uniforme, sem alteração visível.", "classe_sugerida": "nenhuma", "evidencias": [], "legibilidade": "limitada"}\n```'
 
 
@@ -236,13 +236,13 @@ class PromptAndParsingTests(unittest.TestCase):
         system = messages[0]["content"]
         self.assertIn("Não estime gravidade", system)
         parts = messages[1]["content"]
-        self.assertIn("telha_quebrada", parts[0]["text"])
+        self.assertIn("telha_danificada", parts[0]["text"])
         self.assertTrue(parts[1]["image_url"]["url"].startswith("data:image/jpeg;base64,"))
         self.assertEqual(len(prompt_digest(load_taxonomy(REAL.taxonomy_path))), 64)
 
     def test_parse_accepts_fences_prose_and_rejects_unknown_classes(self):
         """A leitura aceita JSON cercado por ``` ou por texto, e troca classe desconhecida por "incerto"."""
-        self.assertEqual(parse_answer(GOOD, NAMES)["class_guess"], "telha_quebrada")
+        self.assertEqual(parse_answer(GOOD, NAMES)["class_guess"], "telha_danificada")
         fenced = parse_answer(NONE, NAMES)
         self.assertEqual((fenced["class_guess"], fenced["legibility"]), ("nenhuma", "limitada"))
         prose = parse_answer("Claro! Aqui está: " + GOOD + " Espero ter ajudado.", NAMES)
@@ -312,9 +312,9 @@ class DescribeOccurrencesTests(unittest.TestCase):
         # Concordância IA x humano por classe: respostas GOOD, NONE, GOOD para as 3 caixas humanas.
         agreement = notes["agreement"]
         self.assertEqual(agreement["human_boxes_described"], 3)
-        self.assertEqual(agreement["per_class"]["telha_quebrada"]["agree"], 1)
-        self.assertEqual(agreement["per_class"]["residuos_calha"]["none_or_uncertain"], 1)
-        self.assertEqual(agreement["per_class"]["reparo_telha"]["confusions"], {"telha_quebrada": 1})
+        self.assertEqual(agreement["per_class"]["telha_danificada"]["agree"], 1)
+        self.assertEqual(agreement["per_class"]["calha_obstruida"]["none_or_uncertain"], 1)
+        self.assertEqual(agreement["per_class"]["reparo_material_aplicado"]["confusions"], {"telha_danificada": 1})
 
     def test_resume_reuses_notes_and_limit_caps_calls(self):
         """``limit`` limita as chamadas; a rodada seguinte reaproveita o que já foi descrito."""
@@ -357,7 +357,7 @@ class DescribeOccurrencesTests(unittest.TestCase):
         entries = [entry for entries in notes["images"].values() for entry in entries]
         self.assertEqual(sorted(entry["source"] for entry in entries), ["humana", "humana", "proposta"])
         self.assertEqual(notes["agreement"]["human_boxes_described"], 2)
-        self.assertNotIn("reparo_telha", notes["agreement"]["per_class"])
+        self.assertNotIn("reparo_material_aplicado", notes["agreement"]["per_class"])
 
     def test_changing_the_model_invalidates_resumed_notes(self):
         """Mesmo modelo reaproveita as notas; trocar o modelo descreve tudo de novo."""
@@ -401,7 +401,7 @@ class ReportSupportTests(unittest.TestCase):
             self.assertEqual((report["approved_images"], report["images_without_human_approval"]), (1, 1))
             self.assertEqual(len(report["occurrences"]), 2)
             first = report["occurrences"][0]
-            self.assertEqual(first["class_slug"], "telha_quebrada")
+            self.assertEqual(first["class_slug"], "telha_danificada")
             self.assertEqual(first["human_notes"], "nota humana")
             self.assertEqual(first["ai_description"]["status"], "pendente")
             self.assertIn("ruptura", first["ai_description"]["text"])

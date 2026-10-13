@@ -8,6 +8,8 @@ O que faz:
 - ``load_config``: lê e valida ``configs/project.yaml``.
 - ``load_taxonomy``: lê ``configs/taxonomy.json`` (IDs e nomes das classes).
 - ``detection_names``: lista das classes ativas (fase 1), na ordem dos IDs.
+- ``active_class_remap``: mapa das classes ativas de uma taxonomia anterior para a
+  atual (fusões da v7), usado por ``migrate-review`` e pela comparação de pesos antigos.
 - ``PROJECT_ROOT``: a pasta ``sistema_ia`` (base de todos os caminhos relativos).
 
 Quando mexer: quase nunca. Para mudar valores, edite ``configs/project.yaml``.
@@ -221,7 +223,7 @@ def detection_names(taxonomy: dict) -> list[str]:
         taxonomy (dict): resultado de ``load_taxonomy``.
 
     Retorna:
-        list[str]: slugs das classes ativas, ex.: ``["telha_quebrada", "telha_ausente", ...]``.
+        list[str]: slugs das classes ativas, ex.: ``["telha_danificada", "telha_ausente", ...]``.
 
     Erros:
         ValueError: "IDs das classes ativas devem ser consecutivos a partir de zero."
@@ -240,3 +242,46 @@ def detection_names(taxonomy: dict) -> list[str]:
     if not active or [item["id"] for item in active] != list(range(len(active))):
         raise ValueError("IDs das classes ativas devem ser consecutivos a partir de zero.")
     return [item["slug"] for item in active]
+
+
+# ENTRADA: mapa de classes entre versões da taxonomia (fusões, ex.: v6 → v7).
+def active_class_remap(new_taxonomy: dict, old_names: list[str]) -> list[dict] | None:
+    """Traduza cada classe ativa antiga para a classe ativa nova que a contém.
+
+    A taxonomia nova declara em ``migration.active_class_map`` para onde vai cada
+    slug ativo antigo (``{"to": slug_novo, "attributes": {...}}``). Só fusões são
+    aceitas: cada classe antiga cabe inteira numa classe nova, então uma caixa
+    muda de ID sem redesenho.
+
+    Parâmetros:
+        new_taxonomy (dict): taxonomia atual (``load_taxonomy``).
+        old_names (list[str]): slugs ativos da taxonomia anterior, na ordem dos IDs
+            (``detection_names`` da anterior ou ``names`` gravados nos pesos).
+
+    Retorna:
+        list[dict] | None: um item por ID antigo, ``{"to_id", "to_slug", "attributes"}``;
+        ``None`` quando a taxonomia nova não declara mapa (expansão pura ou mesma versão).
+
+    Erros (ValueError): mapa sem algum slug antigo, destino que não é classe ativa
+    da taxonomia nova, ou atributo fora dos valores definidos na classe de destino.
+
+    Chamada por: review_data.migrate_review_taxonomy (remapeamento das revisões) e
+    model_gate/model_report (previsões de pesos antigos medidas nas classes novas).
+    """
+    mapping = (new_taxonomy.get("migration") or {}).get("active_class_map")
+    if not mapping:
+        return None
+    new_names = detection_names(new_taxonomy)
+    by_slug = {item["slug"]: item for item in new_taxonomy["classes"]}
+    remap = []
+    for slug in old_names:
+        entry = mapping.get(slug)
+        if not isinstance(entry, dict) or entry.get("to") not in new_names:
+            raise ValueError(f"Mapa de classes da taxonomia não cobre a classe ativa antiga '{slug}'.")
+        attributes = entry.get("attributes") or {}
+        allowed = by_slug[entry["to"]].get("attributes") or {}
+        # ATENCAO: atributo inventado no mapa viraria dado "revisado" sem ninguém ter visto.
+        if any(value not in allowed.get(key, []) for key, value in attributes.items()):
+            raise ValueError(f"Atributo inválido no mapa de '{slug}' para '{entry['to']}'.")
+        remap.append({"to_id": new_names.index(entry["to"]), "to_slug": entry["to"], "attributes": dict(attributes)})
+    return remap

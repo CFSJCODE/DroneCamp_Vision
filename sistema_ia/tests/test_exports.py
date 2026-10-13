@@ -107,9 +107,9 @@ class ExportsFixture(unittest.TestCase):
         # 2. Taxonomia de 2 classes com critério e gravidade de referência (que o laudo NÃO pode aplicar).
         self.taxonomy_path = self.root / "configs" / "taxonomy.json"
         write_json(self.taxonomy_path, {"version": "fixture", "classes": [
-            {"id": 0, "slug": "telha_quebrada", "label": "Telha quebrada", "phase": 1,
+            {"id": 0, "slug": "telha_danificada", "label": "Telha quebrada", "phase": 1,
              "criterion": "Ruptura visível do corpo da telha.", "reference_severity": "gravissima"},
-            {"id": 1, "slug": "residuos_calha", "label": "Resíduos em calha", "phase": 1,
+            {"id": 1, "slug": "calha_obstruida", "label": "Resíduos em calha", "phase": 1,
              "criterion": "Detritos no canal da calha.", "reference_severity": "media"}]})
         self.config = ProjectConfig(root=self.root, model="fixture.pt", requested_model="fixture.pt",
                                     taxonomy_path=self.taxonomy_path, dataset_path=self.root / "dataset.yaml",
@@ -449,7 +449,8 @@ class ReportTests(ExportsFixture):
         self.assertIn("ASSOCIAÇÃO BRASILEIRA DE NORMAS TÉCNICAS. NBR 16747: Inspeção predial", html)
         # Um item por categoria confirmada, com a pergunta do laudo CEASA e figuras numeradas na ordem.
         self.assertEqual([(item["label"], item["question"]) for item in data["items"]],
-                         [("Telha quebrada", "Existem telhas quebradas?"), ("Resíduos em calha", "Há acúmulo de resíduos nas calhas?")])
+                         [("Telha quebrada", "Existem telhas quebradas, trincadas ou furadas (inclusive translúcidas)?"),
+                          ("Resíduos em calha", "Há acúmulo de resíduos ou vegetação nas calhas e nas saídas (itens 28 e 29)?")])
         self.assertEqual([(figure["number"], figure["numero_foto"], figure["item"]) for figure in data["figures"]], [(1, 1, 1), (2, 2, 2)])
         self.assertEqual(html.count('<figure id="figura-'), 2)
         self.assertIn("Figura 1</b> – Telha quebrada (fotografia 001)", html)

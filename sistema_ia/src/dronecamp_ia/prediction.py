@@ -216,7 +216,7 @@ def serialize_boxes(rows: list[tuple[int, float, list[float]]], names, taxonomy:
             original)``. Ex.: ``(0, 0.8731, [120.4, 88.0, 310.9, 240.2])``.
         names (dict[int, str] | list[str]): nomes das classes do modelo,
             indexados pelo id (``model.names``/``result.names``). Num modelo do
-            projeto são os slugs da taxonomia (ex.: "telha_quebrada"); com
+            projeto são os slugs da taxonomia (ex.: "telha_danificada"); com
             ``--demo`` são nomes genéricos (ex.: "person").
         taxonomy (dict): conteúdo de ``configs/taxonomy.json``; usa ``source``
             (documento de referência) e ``classes`` (``slug``, ``label``,
@@ -321,7 +321,7 @@ def _draw_boxes(image, boxes: list[dict], names) -> "Image.Image":
         # EXTENSAO: cor das caixas (RGB laranja-avermelhado fixo). Para cor por
         # classe, use a paleta de review_render.COLORS indexada por class_id.
         draw.rectangle([x1, y1, x2, y2], outline=(255, 64, 32), width=stroke)
-        # Texto "slug confiança" com 2 casas (ex.: "telha_quebrada 0.87").
+        # Texto "slug confiança" com 2 casas (ex.: "telha_danificada 0.87").
         label = f"{names[int(box['class_id'])]} {box['confidence']:.2f}"
         # Rótulo logo acima da caixa (12 px por unidade de espessura); max(0, ...)
         # impede que saia da imagem quando a caixa encosta no topo.

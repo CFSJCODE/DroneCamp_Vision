@@ -5,20 +5,64 @@
   "conf": 0.15,
   "max_area_fraction": 0.5,
   "classes": {
-    "telha_quebrada": ["broken roof tile", "cracked roof sheet", "broken fiber cement roof sheet"],
-    "telha_ausente": ["missing roof tile", "hole in the roof where a tile is missing"],
-    "residuos_telha": ["debris on roof", "pile of rubble on roof tiles", "trash on the roof"],
-    "reparo_telha": ["patched roof tile", "repair patch on roof sheet", "tape on roof"],
-    "rufo_ausente": ["missing roof flashing"],
-    "rufo_quebrado": ["broken roof flashing", "damaged metal flashing"],
-    "residuos_calha": ["debris in roof gutter", "dirt and leaves inside gutter", "clogged gutter"],
-    "vegetacao_calha": ["plants growing in gutter", "grass growing inside gutter", "moss in gutter"],
-    "pedaco_telha": ["loose piece of roof tile", "fragment of broken tile"],
-    "rufo_deslocado": ["displaced roof flashing", "lifted metal flashing"],
-    "pedaco_telha_sobreposto": ["piece of broken tile lying on roof sheet"],
-    "fixador_telha_frouxo": ["loose roof screw", "loose roof hook bolt", "missing washer on roof fastener"],
-    "reparo_rufo": ["sealant repair on flashing", "patched metal flashing"],
-    "pedaco_calha_sobre_telha": ["loose piece of metal gutter lying on roof sheets", "detached gutter section on roof"]
+    "telha_danificada": [
+      "broken roof tile",
+      "cracked roof sheet",
+      "broken fiber cement roof sheet",
+      "hole in roof",
+      "damaged skylight"
+    ],
+    "telha_ausente": [
+      "missing roof tile",
+      "hole in the roof where a tile is missing"
+    ],
+    "residuos_cobertura": [
+      "debris on roof",
+      "pile of rubble on roof tiles",
+      "trash on the roof"
+    ],
+    "objeto_solto_cobertura": [
+      "loose piece of roof tile",
+      "fragment of broken tile",
+      "piece of broken tile lying on roof sheet",
+      "loose piece of metal gutter lying on roof sheets",
+      "detached gutter section on roof",
+      "bird nest on roof"
+    ],
+    "calha_obstruida": [
+      "debris in roof gutter",
+      "dirt and leaves inside gutter",
+      "clogged gutter",
+      "plants growing in gutter",
+      "grass growing inside gutter",
+      "moss in gutter"
+    ],
+    "rufo_ausente": [
+      "missing roof flashing",
+      "missing roof ridge cap"
+    ],
+    "rufo_danificado": [
+      "broken roof flashing",
+      "damaged metal flashing",
+      "displaced roof flashing",
+      "lifted metal flashing",
+      "damaged roof ridge cap"
+    ],
+    "reparo_material_aplicado": [
+      "patched roof tile",
+      "repair patch on roof sheet",
+      "tape on roof",
+      "sealant repair on flashing",
+      "patched metal flashing"
+    ],
+    "fixador_irregular": [
+      "loose roof screw",
+      "loose roof hook bolt",
+      "missing washer on roof fastener"
+    ]
   },
-  "uncatalogued": ["rust on roof sheet", "standing water on roof", "hole in roof", "bird nest on roof", "damaged skylight"]
+  "uncatalogued": [
+    "rust on roof sheet",
+    "standing water on roof"
+  ]
 }

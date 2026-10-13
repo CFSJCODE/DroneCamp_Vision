@@ -1,7 +1,7 @@
 """Calibração das sugestões com scikit-learn: probabilidade de o revisor aceitar.
 
 Função no projeto: a confiança do YOLO piloto não é probabilidade. Uma sugestão
-com 0,30 de ``residuos_telha`` e outra com 0,30 de ``fixador_telha_frouxo`` não
+com 0,30 de ``residuos_cobertura`` e outra com 0,30 de ``fixador_irregular`` não
 acertam na mesma taxa. Este módulo aprende, com as decisões humanas já
 registradas, P(sugestão reencontra uma caixa aprovada | características da
 sugestão) e usa essa probabilidade para ordenar as sugestões na revisão.

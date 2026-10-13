@@ -490,6 +490,16 @@ function selectBox(index) {
 }
 
 /**
+ * Detalhes opcionais da caixa (taxonomia v7), ex.: " · material: telha, apoio: sobre telha instalada".
+ * Parâmetros: box (caixa do registro). Retorna: texto (vazio sem atributos).
+ * Os valores vêm de configs/taxonomy.json (attributes de cada classe) e da migração v6 → v7.
+ */
+function boxAttributesText(box) {
+  const entries = Object.entries(box.attributes || {});
+  return entries.length ? ' · ' + entries.map(([key, value]) => `${key}: ${String(value).replaceAll('_', ' ')}`).join(', ') : '';
+}
+
+/**
  * Redesenha a lista de caixas (#boxes), o contador, o painel de sugestões e o canvas.
  * Parâmetros: nenhum. Retorna: nada. Chamada por: quase toda edição na revisão.
  */
@@ -501,7 +511,7 @@ function renderBoxes() {
     const category = classOf(box.class_id);
     const button = el('button', { type: 'button', class: 'box-item' + (index === state.selected ? ' selected' : '') });
     button.style.setProperty('--box-color', category.color);
-    button.textContent = `${index + 1}. ${category.label}` + (box.proposed_new_class ? ` · nova classe sugerida: ${box.proposed_new_class}` : '');
+    button.textContent = `${index + 1}. ${category.label}` + boxAttributesText(box) + (box.proposed_new_class ? ` · nova classe sugerida: ${box.proposed_new_class}` : '');
     button.append(el('div', { class: 'box-caption' }, box.bbox_xyxy.map(Math.round).join(', ') + ' pixels'));
     button.onclick = () => selectBox(index);
     list.append(button)
@@ -815,7 +825,7 @@ function openPhoto(index) {
   const pendingClasses = DATA.classes.filter(category => !reviewedClasses.includes(category.id)).map(category => category.label);
   $('historyNotice').classList.toggle('hidden', !photo.previous_human_approved);
   $('historyNotice').textContent = photo.previous_human_approved
-    ? `Suas caixas e categorias da revisão anterior foram preservadas. Confira a foto inteira para as categorias acrescentadas: ${pendingClasses.join('; ')}. Depois registre uma nova confirmação.` : '';
+    ? `Suas caixas e categorias da revisão anterior foram preservadas. Confira a foto inteira para as categorias novas ou ampliadas: ${pendingClasses.join('; ')}. Depois registre uma nova confirmação.` : '';
   $('taxonomyNotice').classList.toggle('hidden', !photo.taxonomy_recheck_pending);
   $('taxonomyNotice').textContent = `Categorias que ainda precisam de conferência integral nesta foto: ${pendingClasses.join('; ')}.`;
   $('originalLink').href = photo.image_url;
@@ -860,6 +870,11 @@ function commitBox(coordinates) {
   if (state.selected < 0 && classOf(classId).active === false) { message('Categoria inativa: reative-a na seção Classes para usá-la em caixas novas.', true); return }
   // Caixa válida: insere ou substitui, e a foto volta a pendente (exige nova confirmação).
   const box = { class_id: classId, bbox_xyxy: coordinates, note: 'Caixa conferida/editada na revisão local.' };
+  // Editar a caixa sem trocar a categoria mantém os detalhes e a classe anterior (migração v6 → v7).
+  const previous = state.selected < 0 ? null : active.boxes[state.selected];
+  if (previous && previous.class_id === classId) {
+    ['attributes', 'previous_class_id', 'previous_class_slug'].forEach(key => { if (previous[key] !== undefined) box[key] = previous[key] });
+  }
   if (state.selected < 0) active.boxes.push(box); else active.boxes[state.selected] = box;
   active.confirmed_complete = false; active.status = 'pending';
   $('confirmed').checked = false; $('decision').value = 'pending';

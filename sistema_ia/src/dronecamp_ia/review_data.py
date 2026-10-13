@@ -11,7 +11,8 @@ O que faz:
   partir de propostas e segunda leitura por IA (comando ``prepare-review``).
 - ``import_human_feedback``: importa o JSON exportado pela página (``import-review``).
 - ``apply_ai_proposals``: leva propostas visuais de IA como candidatas (``add-ai-proposals``).
-- ``migrate_review_taxonomy``: acrescenta classes preservando caixas (``migrate-review``).
+- ``migrate_review_taxonomy``: acrescenta classes ou funde classes (mapa da taxonomia
+  nova, ex.: v6 → v7) preservando caixas (``migrate-review``).
 
 Toda saída é uma versão nova: registros anteriores nunca são sobrescritos.
 Propostas visuais nunca viram aprovação humana sozinhas.
@@ -91,7 +92,8 @@ Cada foto em ``images`` (dict):
   ``scene_group`` (opcional): agrupa cenas parecidas (usado pelo piloto).
 - ``severity``: sempre ``None``. ATENCAO: gravidade nunca é inferida por este sistema.
 - ``taxonomy_recheck_pending`` (bool) e ``classes_reviewed_before_migration`` (list[int]):
-  pendência de rever classes acrescentadas por migração.
+  pendência de rever classes acrescentadas (ou ampliadas por fusão) na migração; os IDs
+  são sempre da taxonomia ATUAL do registro.
 - Campos de histórico gravados pela migração: ``previous_status``,
   ``previous_visual_review_status``, ``historical_visual_review_status``,
   ``previous_human_approved``, ``historical_human_review``.
@@ -107,7 +109,10 @@ Cada caixa em ``boxes`` (dict):
 - Opcionais (não validados aqui, só preservados): ``note`` (texto),
   ``identity_verified``, ``proposed_new_class`` (slug de classe sugerida por IA;
   validado em apply_ai_proposals), ``source``/``confidence``/``acceptance_probability``
-  quando a caixa veio de uma sugestão aceita na página.
+  quando a caixa veio de uma sugestão aceita na página; ``attributes`` (dict de
+  detalhes opcionais da caixa, ex.: ``{"material": "telha"}``, valores definidos em
+  ``attributes`` da classe na taxonomia) e ``previous_class_id``/``previous_class_slug``
+  (classe da taxonomia anterior, gravados pela migração com fusão).
 
 Onde mexer:
 - Para aceitar um novo status de foto: acrescente em ``IMAGE_STATUSES`` e confira as
@@ -117,8 +122,10 @@ Onde mexer:
   exportação em ``review_templates/platform.js``.
 - Para um novo campo por caixa que precise ser validado: ``validate_boxes``.
 - Para mudar o resumo ``review_summary.json``: ``write_review_summary``.
-- Para outro tipo de migração (renomear/remover classe): crie uma função nova ao lado
-  de ``migrate_review_taxonomy``; ela só aceita ACRÉSCIMO de classes.
+- Para outro tipo de migração: ``migrate_review_taxonomy`` aceita ACRÉSCIMO de classes
+  ou FUSÃO declarada em ``migration.active_class_map`` da taxonomia nova
+  (``config.active_class_remap``). Divisão de uma classe em duas não é automática: exige
+  redesenho humano e uma função nova.
 """
 
 from __future__ import annotations
@@ -131,7 +138,7 @@ import re
 
 from PIL import Image
 
-from .config import ProjectConfig, detection_names, load_taxonomy
+from .config import ProjectConfig, active_class_remap, detection_names, load_taxonomy
 from .io import file_hash, resolve_local_path, write_json
 
 # ---------------------------------------------------------------------------
@@ -726,14 +733,63 @@ def apply_ai_proposals(config: ProjectConfig, registry_path: Path, proposals_pat
     return registry
 
 
+def _remap_box(box: dict, remap: list[dict], old_names: list[str]) -> dict:
+    """Caixa na classe nova, com a classe antiga e os atributos do mapa.
+
+    Parâmetros: box (caixa já validada na taxonomia antiga); remap (``active_class_remap``);
+    old_names (slugs ativos antigos). Retorna: dict novo (a caixa original não muda).
+    Atributos já gravados na caixa vencem os derivados do mapa.
+    """
+    entry = remap[box["class_id"]]
+    # setdefault: numa segunda fusão, a classe mais antiga continua registrada.
+    new_box = dict(box, class_id=entry["to_id"], attributes={**entry["attributes"], **(box.get("attributes") or {})})
+    new_box.setdefault("previous_class_id", box["class_id"])
+    new_box.setdefault("previous_class_slug", old_names[box["class_id"]])
+    return new_box
+
+
+def _merge_overlaps(boxes: list[dict], limit: float) -> int:
+    """Pares de caixas que a fusão juntou na mesma classe e se sobrepõem (IoU >= limit).
+
+    Antes eram classes diferentes; depois da fusão podem ser o mesmo objeto marcado duas
+    vezes. Não apaga nada: o número fica na foto para o revisor decidir.
+    """
+    from .pilot import box_iou  # import local: pilot importa este módulo
+    pairs = 0
+    for first in range(len(boxes)):
+        for second in range(first + 1, len(boxes)):
+            a, b = boxes[first], boxes[second]
+            if (a["class_id"] == b["class_id"] and a.get("previous_class_id") != b.get("previous_class_id")
+                    and box_iou(a["bbox_xyxy"], b["bbox_xyxy"]) >= limit):
+                pairs += 1
+    return pairs
+
+
+def _remapped_reviewed_ids(old_ids: list[int], remap: list[dict], new_names: list[str], unchanged: set[str]) -> list[int]:
+    """Classes novas que continuam revistas depois da fusão.
+
+    Uma classe nova só conta como revista se o escopo dela não cresceu (está em
+    ``unchanged``) e TODAS as classes antigas que a formam tinham sido revistas.
+    """
+    reviewed = []
+    for new_id, name in enumerate(new_names):
+        sources = [old_id for old_id, entry in enumerate(remap) if entry["to_id"] == new_id]
+        if name in unchanged and sources and all(old_id in old_ids for old_id in sources):
+            reviewed.append(new_id)
+    return reviewed
+
+
 # ENTRADA: comando migrate-review. Use depois de mudar configs/taxonomy.json: cria uma cópia
 # da revisão na taxonomia nova; a revisão original fica intacta.
 def migrate_review_taxonomy(config: ProjectConfig, registry_path: Path, previous_taxonomy: Path, output: Path) -> dict:
-    """Acrescente classes sem inventar caixas ou transferir aprovações antigas.
+    """Acrescente ou funda classes sem inventar caixas ou transferir aprovações antigas.
 
-    Apenas expansão com IDs ativos anteriores preservados é suportada. Mudanças
-    de significado, remoções ou reordenação exigem uma migração de anotações
-    específica. O registro anterior e a taxonomia de origem continuam intactos.
+    Dois casos: (a) expansão, com IDs ativos anteriores preservados e classes novas ao
+    fim; (b) fusão, quando a taxonomia nova declara ``migration.active_class_map``
+    (v6 → v7): cada caixa muda para o ID da classe que contém a antiga, guarda
+    ``previous_class_id``/``previous_class_slug`` e recebe os ``attributes`` do mapa.
+    Divisão de classe não é suportada. O registro anterior e a taxonomia de origem
+    continuam intactos.
 
     Parâmetros:
         config (ProjectConfig): configuração; ``config.taxonomy_path`` é a taxonomia NOVA.
@@ -748,13 +804,13 @@ def migrate_review_taxonomy(config: ProjectConfig, registry_path: Path, previous
         ``taxonomy_recheck_pending=True`` e com o histórico da aprovação anterior.
 
     Erros (ValueError): saída existe; taxonomia anterior não confere; a nova não é um
-    acréscimo puro; foto duplicada/original alterado; dimensões divergentes; caixas
+    acréscimo puro nem declara mapa de fusão a partir da anterior; foto duplicada/original alterado; dimensões divergentes; caixas
     inválidas; escopo de classes revisadas inválido; histórico de migrações malformado.
 
     Grava: ``output`` e ``review_summary.json`` na pasta de ``output``.
 
     ATENCAO: depois da migração nenhuma foto está aprovada; é preciso revisar de novo
-    na página (as novas classes) e importar com import-review antes de treinar.
+    na página (as classes novas ou ampliadas) e importar com import-review antes de treinar.
     """
     # 1. Saída nova e taxonomias: a nova precisa começar exatamente com as classes antigas.
     if output.exists():
@@ -765,11 +821,24 @@ def migrate_review_taxonomy(config: ProjectConfig, registry_path: Path, previous
     old_names, new_names = detection_names(old_taxonomy), detection_names(new_taxonomy)
     if registry.get("schema_version") != REVIEW_SCHEMA or registry.get("taxonomy_sha256") != file_hash(previous_taxonomy):
         raise ValueError("Taxonomia anterior não corresponde ao registro de origem.")
-    # ATENCAO: IDs antigos precisam continuar iguais (prefixo); só se acrescenta ao fim.
-    if len(new_names) <= len(old_names) or new_names[:len(old_names)] != old_names:
-        raise ValueError("Esta migração suporta somente acréscimo de classes com IDs anteriores preservados.")
     source_registry_sha256 = file_hash(registry_path)
     previous_taxonomy_sha256 = file_hash(previous_taxonomy)
+    # 1a. Expansão (IDs antigos iguais, classes novas ao fim) ou fusão declarada pela taxonomia nova.
+    remap = None
+    if len(new_names) <= len(old_names) or new_names[:len(old_names)] != old_names:
+        declared = new_taxonomy.get("migration") or {}
+        # ATENCAO: o mapa só vale para a taxonomia de onde ele foi escrito (mesmo SHA-256) ou
+        # para uma anterior a ela por acréscimo (classes ativas antigas = início da lista de
+        # origem, ex.: revisão v5 direto para a v7).
+        source_names = declared.get("from_active_classes") or []
+        if (declared.get("from_taxonomy_sha256") != previous_taxonomy_sha256
+                and source_names[:len(old_names)] != old_names):
+            raise ValueError("Esta migração suporta acréscimo de classes ou fusão declarada a partir da taxonomia anterior.")
+        remap = active_class_remap(new_taxonomy, old_names)
+        if remap is None:
+            raise ValueError("Taxonomia nova não declara o mapa de classes (migration.active_class_map).")
+        # Classes novas cujo escopo é exatamente o das antigas: a revisão anterior continua valendo.
+        unchanged = set(declared.get("unchanged_scope_classes", []))
     seen = set()
     # 2. Cada foto: confere o original e converte aprovação atual em histórico.
     for item in registry["images"]:
@@ -813,11 +882,19 @@ def migrate_review_taxonomy(config: ProjectConfig, registry_path: Path, previous
                 raise ValueError("Escopo de classes revisadas antes da migração é inválido.")
         else:
             reviewed_ids = list(range(len(old_names)))
+        # 2c'. Fusão: troca o ID das caixas e traduz o escopo revisado para os IDs novos.
+        old_reviewed_ids = reviewed_ids
+        if remap is not None:
+            item["boxes"] = [_remap_box(box, remap, old_names) for box in item["boxes"]]
+            overlaps = _merge_overlaps(item["boxes"], config.pilot.get("duplicate_iou", 0.7))
+            if overlaps:
+                item["taxonomy_merge_overlaps"] = overlaps
+            reviewed_ids = _remapped_reviewed_ids(old_reviewed_ids, remap, new_names, unchanged)
         # 2d. Guarda quem aprovou, quando e em que taxonomia (rastreabilidade).
         if current_human_approval:
             item["historical_human_review"] = {
                 "taxonomy_sha256": previous_taxonomy_sha256,
-                "classes_reviewed": reviewed_ids,
+                "classes_reviewed": old_reviewed_ids,  # IDs da taxonomia anterior
                 "source_registry_sha256": source_registry_sha256,
                 "reviewer": item["human_reviewer"],
                 "review_at": item.get("human_review_at"),
@@ -850,6 +927,15 @@ def migrate_review_taxonomy(config: ProjectConfig, registry_path: Path, previous
         "new_class_ids": list(range(len(old_names), len(new_names))),
         "note": "Caixas anteriores preservadas. Revisão integral das novas classes e aprovação humana pendentes.",
     }
+    if remap is not None:
+        widened = sorted(index for index, name in enumerate(new_names) if name not in unchanged)
+        migration.update(
+            kind="remap", new_class_ids=widened,
+            class_map=[{"from_id": index, "from_slug": name, "to_id": entry["to_id"], "to_slug": entry["to_slug"],
+                        "attributes": entry["attributes"]} for index, (name, entry) in enumerate(zip(old_names, remap))],
+            merge_overlap_images=sum(bool(item.get("taxonomy_merge_overlaps")) for item in registry["images"]),
+            note=("Classes fundidas pelo mapa da taxonomia nova; caixas preservadas com o ID novo, a classe "
+                  "anterior e atributos derivados. Conferência humana das classes ampliadas pendente."))
     # 4. Histórico de migrações: a anterior entra na lista (sem duplicar) e depois esta.
     # O último vínculo continua disponível para leitores antigos. O histórico
     # mantém os hashes das etapas anteriores, inclusive das revisões humanas.
@@ -871,7 +957,8 @@ def migrate_review_taxonomy(config: ProjectConfig, registry_path: Path, previous
     registry["parent_registry_version"] = registry.get("version")
     registry.pop("display_name", None)  # nome digitado no envio vale só para a versão de origem
     registry["version"] = output.parent.name
-    registry["scope"] = "propostas_preservadas_expansao_de_taxonomia_pendente_de_revisao"
+    registry["scope"] = ("propostas_preservadas_fusao_de_classes_pendente_de_revisao" if remap is not None
+                         else "propostas_preservadas_expansao_de_taxonomia_pendente_de_revisao")
     write_json(output, registry)
     write_review_summary(output.parent, registry)
     return registry

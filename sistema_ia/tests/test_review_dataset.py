@@ -233,7 +233,7 @@ class ApprovedDatasetTests(unittest.TestCase):
         self.three_groups()
         # Para cada classe obrigatória: remove só as caixas dela e exporta numa pasta nova.
         complete_boxes = list(self.images[0]["boxes"])
-        for missing_name in ("pedaco_telha", "rufo_deslocado", "pedaco_telha_sobreposto", "fixador_telha_frouxo", "reparo_rufo", "pedaco_calha_sobre_telha"):
+        for missing_name in ("objeto_solto_cobertura", "rufo_danificado", "reparo_material_aplicado", "fixador_irregular"):
             with self.subTest(missing_class=missing_name):
                 missing_id = MVP_NAMES.index(missing_name)
                 self.images[0]["boxes"] = [box for box in complete_boxes if box["class_id"] != missing_id]
@@ -243,77 +243,29 @@ class ApprovedDatasetTests(unittest.TestCase):
                 self.assertFalse(result["ready_for_training"])
                 self.assertTrue(any(missing_name in reason for reason in result["reasons"]))
 
-    def test_fragment_class_id8_is_exported_without_changing_previous_ids(self) -> None:
-        """``pedaco_telha`` é exportada com ID 8 sem mexer nos IDs 0..7."""
-        self.three_groups()
-        result = self.build()
-        self.assertTrue(result["ready_for_training"])
-        self.assertEqual(MVP_NAMES[8], "pedaco_telha")
-        self.assertEqual(MVP_NAMES[7], "vegetacao_calha")
-        label = self.output / "labels/train" / (self.images[0]["image_sha256"] + ".txt")
-        self.assertIn("8", [line.split()[0] for line in label.read_text(encoding="utf-8").splitlines()])
-        self.assertEqual(result["train_boxes_by_class"]["8"], 1)
+    def test_v7_classes_export_as_ids0_to_8_with_nc_9(self) -> None:
+        """As 9 classes da v7 saem com IDs 0..8 e ``nc`` 9; o par ambíguo da v6 é uma classe só.
 
-    def test_displaced_flashing_class_id9_is_exported_with_stable_prior_ids(self) -> None:
-        """``rufo_deslocado`` é exportada com ID 9, logo após ``pedaco_telha``."""
-        self.three_groups()
-        result = self.build()
-        self.assertTrue(result["ready_for_training"])
-        self.assertEqual(MVP_NAMES[8:10], ("pedaco_telha", "rufo_deslocado"))
-        label = self.output / "labels/train" / (self.images[0]["image_sha256"] + ".txt")
-        self.assertIn("9", [line.split()[0] for line in label.read_text(encoding="utf-8").splitlines()])
-        self.assertEqual(result["train_boxes_by_class"]["9"], 1)
-
-    def test_new_classes_export_as_ids10_and11_with_previous_ids_preserved(self) -> None:
-        """IDs 10 e 11 vêm depois dos 10 anteriores; ``nc`` total é 14.
-
-        ATENCAO: ao acrescentar classe na taxonomia, o 14 aqui (nc e range) precisa subir.
+        ATENCAO: ao acrescentar classe na taxonomia, o 9 aqui (nc e range) precisa subir.
         """
         self.three_groups()
         result = self.build()
         self.assertTrue(result["ready_for_training"])
-        previous_names = (
-            "telha_quebrada", "telha_ausente", "residuos_telha", "reparo_telha",
-            "rufo_ausente", "rufo_quebrado", "residuos_calha", "vegetacao_calha",
-            "pedaco_telha", "rufo_deslocado",
-        )
-        self.assertEqual(MVP_NAMES[:10], previous_names)
-        self.assertEqual(MVP_NAMES[10:12], ("pedaco_telha_sobreposto", "fixador_telha_frouxo"))
+        self.assertEqual(MVP_NAMES, (
+            "telha_danificada", "telha_ausente", "residuos_cobertura", "objeto_solto_cobertura",
+            "calha_obstruida", "rufo_ausente", "rufo_danificado", "reparo_material_aplicado",
+            "fixador_irregular",
+        ))
+        self.assertNotIn("pedaco_telha_sobreposto", MVP_NAMES)
         exported = yaml.safe_load((self.output / "dataset.yaml").read_text(encoding="utf-8"))
-        self.assertEqual(exported["nc"], 14)
-        self.assertEqual(len(exported["names"]), 14)
+        self.assertEqual(exported["nc"], 9)
+        self.assertEqual(exported["names"][3], "objeto_solto_cobertura")
         label = self.output / "labels/train" / (self.images[0]["image_sha256"] + ".txt")
         rows = [line.split() for line in label.read_text(encoding="utf-8").splitlines()]
-        self.assertEqual([int(row[0]) for row in rows], list(range(14)))
-        for class_id in (10, 11):
+        self.assertEqual([int(row[0]) for row in rows], list(range(9)))
+        for class_id in range(9):
             with self.subTest(class_id=class_id):
                 self.assertEqual(result["train_boxes_by_class"][str(class_id)], 1)
-
-    def test_flashing_repair_class_id12_is_exported_after_existing_classes(self) -> None:
-        """``reparo_rufo`` é exportada com ID 12, depois das classes existentes."""
-        self.three_groups()
-        result = self.build()
-        self.assertTrue(result["ready_for_training"])
-        self.assertEqual(MVP_NAMES[12], "reparo_rufo")
-        self.assertEqual(MVP_NAMES[11], "fixador_telha_frouxo")
-        exported = yaml.safe_load((self.output / "dataset.yaml").read_text(encoding="utf-8"))
-        self.assertEqual(exported["names"][12], "reparo_rufo")
-        label = self.output / "labels/train" / (self.images[0]["image_sha256"] + ".txt")
-        self.assertIn("12", [line.split()[0] for line in label.read_text(encoding="utf-8").splitlines()])
-        self.assertEqual(result["train_boxes_by_class"]["12"], 1)
-
-    def test_gutter_piece_on_tile_class_id13_is_exported_after_existing_classes(self) -> None:
-        """``pedaco_calha_sobre_telha`` é exportada com ID 13, a última classe atual."""
-        self.three_groups()
-        result = self.build()
-        self.assertTrue(result["ready_for_training"])
-        self.assertEqual(MVP_NAMES[13], "pedaco_calha_sobre_telha")
-        self.assertEqual(MVP_NAMES[12], "reparo_rufo")
-        exported = yaml.safe_load((self.output / "dataset.yaml").read_text(encoding="utf-8"))
-        self.assertEqual(exported["names"][13], "pedaco_calha_sobre_telha")
-        label = self.output / "labels/train" / (self.images[0]["image_sha256"] + ".txt")
-        self.assertIn("13", [line.split()[0] for line in label.read_text(encoding="utf-8").splitlines()])
-        self.assertEqual(result["train_boxes_by_class"]["13"], 1)
 
     def test_approved_negative_has_explicit_empty_label(self) -> None:
         """Imagem negativa aprovada gera arquivo de label vazio (negativa explícita)."""
