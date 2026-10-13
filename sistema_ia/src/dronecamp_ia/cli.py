@@ -296,6 +296,8 @@ def build_parser() -> argparse.ArgumentParser:
                          help="Somar a busca aberta (YOLOE + configs/zero_shot_prompts.json) às sugestões do piloto.")
     suggest.add_argument("--onnx-provider", choices=["directml", "cpu"], default="directml",
                          help="Para --weights .onnx (comando export): directml usa a GPU; cpu, o ONNX Runtime na CPU.")
+    suggest.add_argument("--keep-decided", type=Path, action="append",
+                         help="Arquivo de revisão salvo pela página: fotos com decisão mantêm as sugestões atuais (repita).")
     suggest.add_argument("--imgsz", type=int,
                          help="Tamanho de inferência; para pesos piloto fora de runs/ (sem summary.json), use o do treino (ex.: 640).")
     # EXTENSAO: opção nova do suggest: acrescente aqui e passe-a nas DUAS chamadas do
@@ -602,8 +604,13 @@ def main(argv: list[str] | None = None) -> int:
             if args.registry:
                 # ATENCAO: argumentos por POSIÇÃO; a ordem tem de ser a da assinatura
                 # de suggest_for_registry (confira lá ao acrescentar um).
+                # --keep-decided: fotos com decisão (status != pending) nos arquivos de revisão salvos.
+                decided = {entry["image_sha256"] for path in (args.keep_decided or [])
+                           for entry in json.loads(Path(path).read_text(encoding="utf-8")).get("images", [])
+                           if entry.get("status", "pending") != "pending"}
                 output = suggest_for_registry(config, args.registry, args.weights, args.conf, args.calibrator,
-                                              args.allow_unproven_calibrator, args.zero_shot, args.onnx_provider, args.imgsz)
+                                              args.allow_unproven_calibrator, args.zero_shot, args.onnx_provider, args.imgsz,
+                                              decided)
             else:
                 if not args.output or not args.group:
                     raise ValueError("Fotos novas exigem --output e --group.")
