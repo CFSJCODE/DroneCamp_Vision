@@ -692,6 +692,14 @@ function renderSuggestions() {
     // acceptance_probability vem do calibrador; source/prompt vêm de suggest --zero-shot (busca aberta, YOLOE).
     if (suggestion.acceptance_probability != null) metaRow.append(el('span', {}, `Aceitação estimada ${Math.round(suggestion.acceptance_probability * 100)}%`));
     if (suggestion.prompt) metaRow.append(el('span', {}, `Busca aberta: “${suggestion.prompt}”`));
+    // vlm: segunda opinião do VLM gratuito (describe-occurrences --include-suggestions), só informativa.
+    if (suggestion.vlm) {
+      const guess = suggestion.vlm.class_guess;
+      const known = DATA.classes.find(category => category.slug === guess);
+      metaRow.append(el('span', {}, guess === 'nenhuma' ? 'VLM: não vê ocorrência'
+        : guess === 'incerto' ? 'VLM: incerto'
+        : `VLM: ${known ? known.label : guess}${known && known.id === suggestion.class_id ? ' (concorda)' : ''}`));
+    }
     // EXTENSAO: ação nova por sugestão = outro botão aqui, acrescentado na div .actions abaixo.
     const accept = el('button', { type: 'button', class: 'small ai' }, covered >= 0 ? `Substituir caixa ${covered + 1}` : 'Aceitar');
     accept.onclick = () => acceptSuggestion(suggestion);

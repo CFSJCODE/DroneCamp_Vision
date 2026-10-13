@@ -45,7 +45,7 @@ from dronecamp_ia.config import detection_names, load_config, load_taxonomy
 from dronecamp_ia.io import file_hash, write_json
 from dronecamp_ia.vlm_assist import (ENV_KEY, NOTES_FILE, OpenRouterClient, VLMUnavailable, build_messages, crop_box,
                                      describe_occurrences, draft_report_support, list_free_vision_models,
-                                     load_vlm_settings, parse_answer, prompt_digest)
+                                     free_vision_chain, load_vlm_settings, model_chain, parse_answer, prompt_digest)
 
 # ---------------------------------------------------------------------------
 # Dados comuns: configuração real, chave falsa e transporte falso
@@ -143,11 +143,40 @@ NONE = '```json\n{"descricao": "Superfície uniforme, sem alteração visível."
 # ---------------------------------------------------------------------------
 # Configuração e cliente HTTP
 # ---------------------------------------------------------------------------
+class ModelChainTests(unittest.TestCase):
+    """Cadeia de modelos gratuitos (reserva do OpenRouter) e o atalho free-vision."""
+    def test_comma_list_becomes_fallback_models(self):
+        """Vários slugs viram "models" no payload, na ordem, sem repetidos."""
+        self.assertEqual(model_chain("a:free, b:free,a:free,"), ["a:free", "b:free"])
+        settings = replace(load_vlm_settings(REAL, environ={ENV_KEY: KEY}), model="a:free,b:free")
+        transport = FakeTransport([answer("x")])
+        OpenRouterClient(settings, transport).chat([{"role": "user", "content": "oi"}])
+        body = transport.calls[0]["body"]
+        self.assertEqual(body["model"], "a:free")
+        self.assertEqual(body["models"], ["a:free", "b:free"])
+
+    def test_free_vision_skips_router_safety_and_paid_previews(self):
+        """free-vision: só ":free" com imagem, sem o roteador nem o classificador de segurança; preferidos antes."""
+        catalog = {"data": [
+            {"id": "openrouter/free", "pricing": {}, "architecture": {"input_modalities": ["text", "image"]}},
+            {"id": "nvidia/x-content-safety:free", "architecture": {"input_modalities": ["text", "image"]}},
+            {"id": "google/lyria-3-clip-preview", "pricing": {"prompt": "0", "completion": "0"}, "architecture": {"input_modalities": ["image"]}},
+            {"id": "a/texto:free", "architecture": {"input_modalities": ["text"]}},
+            {"id": "z/visao:free", "architecture": {"input_modalities": ["image", "text"]}},
+            {"id": "google/gemma-4-31b-it:free", "architecture": {"input_modalities": ["image", "text"]}},
+        ]}
+        settings = load_vlm_settings(REAL, environ={ENV_KEY: KEY})
+        chain = free_vision_chain(settings, FakeTransport([json.dumps(catalog)]))
+        self.assertEqual(chain, "google/gemma-4-31b-it:free,z/visao:free")
+
+
 class SettingsAndClientTests(unittest.TestCase):
     """Testes de configuração (chave/modelo) e do cliente HTTP do OpenRouter."""
     def test_missing_key_fails_before_any_network_call(self):
         """Sem chave, o cliente falha (VLMUnavailable) antes de qualquer chamada de rede."""
-        settings = load_vlm_settings(REAL, environ={})
+        # root temporário: um sistema_ia/.env real neste PC não pode entrar no teste.
+        with TemporaryDirectory() as folder:
+            settings = load_vlm_settings(replace(REAL, root=Path(folder)), environ={})
         self.assertIsNone(settings.api_key)
         with self.assertRaisesRegex(VLMUnavailable, ENV_KEY):
             OpenRouterClient(settings, FakeTransport([answer("x")]))

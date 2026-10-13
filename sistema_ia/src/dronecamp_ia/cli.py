@@ -392,7 +392,7 @@ def build_parser() -> argparse.ArgumentParser:
     describe.add_argument("--registry", type=Path, required=True)
     describe.add_argument("--include-suggestions", action="store_true", help="Descrever também as sugestões pendentes do modelo.")
     describe.add_argument("--limit", type=int, help="Máximo de chamadas nesta execução (limites dos modelos gratuitos).")
-    describe.add_argument("--model", help="Slug do OpenRouter (padrão: configs/vlm_assist.json ou OPENROUTER_MODEL).")
+    describe.add_argument("--model", help="Slug do OpenRouter, vários separados por vírgula (reserva), ou free-vision = todos os VLMs gratuitos (padrão: configs/vlm_assist.json ou OPENROUTER_MODEL).")
     describe.add_argument("--no-resume", action="store_true", help="Ignorar descrições já gravadas para este registro.")
     # Comando report-support: vlm_assist.draft_report_support. Grava laudo_apoio.json e
     # laudo_apoio.md na pasta da revisão (ou --output); campos técnicos ficam em branco.
