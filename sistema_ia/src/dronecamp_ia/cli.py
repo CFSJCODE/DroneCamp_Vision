@@ -195,6 +195,11 @@ def build_parser() -> argparse.ArgumentParser:
     pilot_data.add_argument("--seed", type=int, default=42)
     pilot_data.add_argument("--sequence-block", type=int, default=0,
                             help="Agrupar fotos sequenciais de voo (DJI_0194…) em blocos de N no split (ex.: 10).")
+    # Comando remap-pilot-data: pilot.remap_pilot_dataset. Copia um piloto da taxonomia
+    # anterior para --output com as classes trocadas pelo mapa da migração atual.
+    pilot_remap = commands.add_parser("remap-pilot-data", help="Copiar um piloto da taxonomia anterior com as classes da migração (só fusões).")
+    pilot_remap.add_argument("--source", type=Path, required=True, help="Pasta do piloto na taxonomia anterior.")
+    pilot_remap.add_argument("--output", type=Path, required=True)
     # Fatiamento em alta resolução (Tiling / Patch Slicing) para pequenos defeitos em fotos de drone.
     # Comando tile-dataset: tiling.build_tiled_dataset. Grava em --output o dataset
     # fatiado (janelas + labels), dataset.yaml e tiling_manifest.json.
@@ -534,6 +539,11 @@ def main(argv: list[str] | None = None) -> int:
             report = build_pilot_dataset(config, args.registry, args.output, args.seed,
                                          sequence_block=args.sequence_block)
             print(json.dumps(report, ensure_ascii=False, indent=2))
+            return 0
+        # Ramo remap-pilot-data: pilot.remap_pilot_dataset; valida a cópia antes de devolver.
+        elif args.command == "remap-pilot-data":
+            from .pilot import remap_pilot_dataset
+            print(json.dumps(remap_pilot_dataset(config, args.source, args.output), ensure_ascii=False, indent=2))
             return 0
         # Ramo tile-dataset: tiling.build_tiled_dataset; grava o dataset fatiado em --output.
         elif args.command == "tile-dataset":
