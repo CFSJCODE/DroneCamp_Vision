@@ -173,6 +173,14 @@ class TaxonomyMigrationTests(unittest.TestCase):
             check_domain_names(checkpoint, self.names)
         self.assertEqual(check_domain_names(checkpoint, self.names, taxonomy=self.taxonomy), [])
         self.assertEqual(checkpoint.dronecamp_class_remap, [0, 1, 2, 7, 5, 6, 4, 4, 3, 6, 3, 8, 7, 3])
+        # Só telha_ausente manteve o escopo da v6; as outras 8 foram ampliadas e a página avisa
+        # que o peso v6 as conhece só em parte (ex.: fixador ausente/corroído, resíduos em laje).
+        self.assertEqual(checkpoint.dronecamp_partial_classes, [name for name in self.names if name != "telha_ausente"])
+        self.assertEqual(self.taxonomy["migration"]["unchanged_scope_classes"], ["telha_ausente"])
+        # Peso v5 (sem as classes 9..13 da v6): telha_ausente continua inteira, as outras não.
+        v5 = SimpleNamespace(names=dict(enumerate(self.v6_names[:9])))
+        check_domain_names(v5, self.names, taxonomy=self.taxonomy)
+        self.assertNotIn("telha_ausente", v5.dronecamp_partial_classes)
         # Pesos v5 (13 classes, prefixo da v6) também; nomes estranhos (COCO) continuam recusados.
         v5 = SimpleNamespace(names=dict(enumerate(self.v6_names[:13])))
         self.assertEqual(check_domain_names(v5, self.names, taxonomy=self.taxonomy), [])

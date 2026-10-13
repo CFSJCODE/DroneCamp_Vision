@@ -471,6 +471,7 @@ function queue() {
 function resetSelection() {
   state.selected = -1;
   ['x1', 'y1', 'x2', 'y2'].forEach(id => $(id).value = '');
+  renderAttributeFields({});
   $('applyBox').textContent = 'Adicionar caixa';
   $('deleteBox').disabled = true
 }
@@ -483,6 +484,7 @@ function selectBox(index) {
   const box = active.boxes[index];
   state.selected = index;
   $('classId').value = box.class_id;
+  renderAttributeFields(box.attributes || {});
   ['x1', 'y1', 'x2', 'y2'].forEach((id, position) => $(id).value = box.bbox_xyxy[position]);
   $('applyBox').textContent = 'Atualizar caixa';
   $('deleteBox').disabled = false;
@@ -497,6 +499,32 @@ function selectBox(index) {
 function boxAttributesText(box) {
   const entries = Object.entries(box.attributes || {});
   return entries.length ? ' · ' + entries.map(([key, value]) => `${key}: ${String(value).replaceAll('_', ' ')}`).join(', ') : '';
+}
+
+/**
+ * Monta um campo de escolha por detalhe opcional da categoria escolhida em #classId.
+ * Parâmetros: values (detalhes já gravados na caixa, ex.: {material: 'telha'}). Retorna: nada.
+ * Chamada por: selectBox, resetSelection e troca de categoria. Os valores possíveis vêm de
+ * configs/taxonomy.json (attributes da classe); "não informado" deixa o detalhe fora da caixa.
+ */
+function renderAttributeFields(values) {
+  const container = $('attributeFields');
+  container.replaceChildren();
+  const classId = $('classId').value === '' ? NaN : Number($('classId').value);
+  const schema = Number.isInteger(classId) ? classOf(classId).attributes || {} : {};
+  Object.entries(schema).forEach(([key, options]) => {
+    const select = el('select', { id: `attr-${key}`, 'data-attribute': key }, el('option', { value: '' }, 'não informado'));
+    options.forEach(option => select.append(el('option', { value: option }, option.replaceAll('_', ' '))));
+    select.value = options.includes(values[key]) ? values[key] : '';
+    container.append(el('div', {}, el('label', { for: `attr-${key}` }, key.charAt(0).toUpperCase() + key.slice(1)), select))
+  });
+}
+
+/** Lê os detalhes escolhidos em #attributeFields. Retorna: objeto só com os detalhes informados. */
+function readAttributeFields() {
+  const values = {};
+  $('attributeFields').querySelectorAll('select[data-attribute]').forEach(select => { if (select.value) values[select.dataset.attribute] = select.value });
+  return values;
 }
 
 /**
@@ -690,10 +718,13 @@ function renderSuggestions() {
   $('showSuggestionsLabel').classList.toggle('hidden', !meta);
   $('confFilterLabel').classList.toggle('hidden', !meta);
   if (!meta || !HAS_IMAGES) return;
-  // uncovered_classes: classes novas da taxonomia que os pesos (de treino anterior) não sugerem; ficam
-  // sempre no fim da lista de classes, porque a migração só acrescenta classes.
-  const uncovered = (meta.uncovered_classes || []).length ? DATA.classes.slice(-meta.uncovered_classes.length).map(category => category.label) : [];
-  $('suggestionMeta').textContent = `${meta.model_label} · confiança mínima ${Math.round(meta.conf * 100)}%. ${meta.warning}` + (uncovered.length ? ` Este modelo não sugere: ${uncovered.join('; ')}.` : '');
+  // uncovered_classes: classes que os pesos (de treino anterior) não sugerem; partial_classes: classes
+  // ampliadas na fusão v6 → v7 que eles conhecem só em parte. Os dois vêm como slugs.
+  const labelsFor = slugs => (slugs || []).map(slug => (DATA.classes.find(category => category.slug === slug) || { label: slug }).label);
+  const uncovered = labelsFor(meta.uncovered_classes), partial = labelsFor(meta.partial_classes);
+  $('suggestionMeta').textContent = `${meta.model_label} · confiança mínima ${Math.round(meta.conf * 100)}%. ${meta.warning}`
+    + (uncovered.length ? ` Este modelo não sugere: ${uncovered.join('; ')}.` : '')
+    + (partial.length ? ` Este modelo conhece só parte de: ${partial.join('; ')}.` : '');
   const list = $('suggestions');
   list.replaceChildren();
   const pending = pendingSuggestions();
@@ -870,10 +901,12 @@ function commitBox(coordinates) {
   if (state.selected < 0 && classOf(classId).active === false) { message('Categoria inativa: reative-a na seção Classes para usá-la em caixas novas.', true); return }
   // Caixa válida: insere ou substitui, e a foto volta a pendente (exige nova confirmação).
   const box = { class_id: classId, bbox_xyxy: coordinates, note: 'Caixa conferida/editada na revisão local.' };
-  // Editar a caixa sem trocar a categoria mantém os detalhes e a classe anterior (migração v6 → v7).
+  // Detalhes escolhidos nos campos da categoria; editar sem trocar a categoria mantém a classe anterior (migração v6 → v7).
+  const attributes = readAttributeFields();
+  if (Object.keys(attributes).length) box.attributes = attributes;
   const previous = state.selected < 0 ? null : active.boxes[state.selected];
   if (previous && previous.class_id === classId) {
-    ['attributes', 'previous_class_id', 'previous_class_slug'].forEach(key => { if (previous[key] !== undefined) box[key] = previous[key] });
+    ['previous_class_id', 'previous_class_slug'].forEach(key => { if (previous[key] !== undefined) box[key] = previous[key] });
   }
   if (state.selected < 0) active.boxes.push(box); else active.boxes[state.selected] = box;
   active.confirmed_complete = false; active.status = 'pending';
@@ -884,6 +917,8 @@ function commitBox(coordinates) {
 // ENTRADA: botões e campos do editor de caixas (Adicionar/Atualizar, Nova caixa, notas da foto).
 $('applyBox').onclick = () => commitBox(['x1', 'y1', 'x2', 'y2'].map(id => $(id).value === '' ? NaN : Number($(id).value)));
 $('newBox').onclick = () => { resetSelection(); renderBoxes() };
+// Trocar a categoria troca os campos de detalhe; a caixa selecionada mantém os que valem na categoria nova.
+$('classId').onchange = () => renderAttributeFields(state.selected < 0 ? {} : active.boxes[state.selected].attributes || {});
 $('notes').oninput = () => { active.notes = $('notes').value; persist() };
 
 // Excluir uma caixa também exige nova decisão humana sobre a foto inteira.

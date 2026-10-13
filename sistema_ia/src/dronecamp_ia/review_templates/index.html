@@ -407,6 +407,8 @@ __PLATFORM_CSS__
         <p class="muted small-text">Selecione uma caixa para corrigir. Para criar uma nova, desenhe sobre a foto ou preencha as coordenadas.</p>
         <div class="boxes" id="boxes"></div>
         <label for="classId">Categoria da caixa</label><select id="classId"></select>
+        <!-- Detalhes opcionais da categoria (taxonomia v7: tipo, material, apoio, elemento...); montados por renderAttributeFields(). -->
+        <div class="attribute-fields" id="attributeFields"></div>
         <!-- Coordenadas em pixels da foto original (canto superior esquerdo x1,y1 e inferior direito x2,y2).
                      validBox() exige área positiva e a caixa dentro da foto. -->
         <div class="coordinates"><div><label for="x1">X inicial</label><input id="x1" type="number" min="0" step="1"></div><div><label for="y1">Y inicial</label><input id="y1" type="number" min="0" step="1"></div><div><label for="x2">X final</label><input id="x2" type="number" min="0" step="1"></div><div><label for="y2">Y final</label><input id="y2" type="number" min="0" step="1"></div></div>

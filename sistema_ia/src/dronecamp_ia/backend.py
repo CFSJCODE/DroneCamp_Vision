@@ -372,7 +372,9 @@ def check_domain_names(model, expected: list[str], allow_prefix: bool = False, t
             (``migration.active_class_map``, ex.: v6 → v7) e os nomes do peso são classes
             ativas antigas cobertas pelo mapa, o peso é aceito e ganha
             ``model.dronecamp_class_remap`` (ID antigo → ID novo), que ``detect_boxes``
-            aplica. Só para comparação e sugestões; treino e exportação exigem igualdade.
+            aplica, e ``model.dronecamp_partial_classes`` (classes ampliadas que o peso
+            conhece só em parte). Só para comparação e sugestões; treino e exportação
+            exigem igualdade.
 
     Retorna:
         list[str]: classes da taxonomia que o modelo não conhece (vazia quando os
@@ -398,7 +400,10 @@ def check_domain_names(model, expected: list[str], allow_prefix: bool = False, t
         except ValueError:
             remap = None  # nomes fora do mapa (ex.: COCO): cai na recusa abaixo
         if remap is not None:
+            from .config import remap_partial_classes
             model.dronecamp_class_remap = [entry["to_id"] for entry in remap]
+            # Classes ampliadas na fusão: os pesos antigos só conhecem parte delas.
+            model.dronecamp_partial_classes = remap_partial_classes(taxonomy, actual)
             return [name for index, name in enumerate(expected) if index not in model.dronecamp_class_remap]
     raise ValueError(f"Checkpoint não corresponde às {len(expected)} classes ativas do projeto. Treine com o dataset revisado; para testar pesos gerais use predict --demo explicitamente.")
 

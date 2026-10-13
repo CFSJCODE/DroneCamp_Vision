@@ -291,7 +291,8 @@ def suggest_for_registry(config: ProjectConfig, registry_path: Path, weights: st
             registro), para que aceites e descartes já feitos continuem valendo.
 
     Pesos de uma taxonomia anterior (classes = início exato das atuais) são aceitos;
-    as classes que eles não conhecem vão em ``uncovered_classes`` do JSON e na página.
+    as classes que eles não conhecem vão em ``uncovered_classes`` do JSON e na página, e as
+    que eles conhecem só em parte (fusão v6 → v7) vão em ``partial_classes``.
     Os ids das sugestões levam os 8 primeiros caracteres do hash dos pesos (ex.:
     ``809d823e-s001``): descartes guardados no navegador para sugestões de outro
     modelo não escondem as novas por coincidência de id.
@@ -324,6 +325,8 @@ def suggest_for_registry(config: ProjectConfig, registry_path: Path, weights: st
     # ATENCAO: recusa pesos cujas classes não sejam exatamente as da taxonomia (ex.: COCO).
     taxonomy = load_taxonomy(config.taxonomy_path)
     uncovered = check_domain_names(model, detection_names(taxonomy), allow_prefix=True, taxonomy=taxonomy)
+    # Pesos v6 traduzidos para a v7: classes ampliadas que eles só conhecem em parte.
+    partial = getattr(model, "dronecamp_partial_classes", [])
     pilot = is_pilot_checkpoint(model.dronecamp_source)
     # A partir daqui "config" é a cópia ajustada (imgsz do piloto/ONNX, ou o --imgsz explícito).
     config = pilot_inference_config(config, model)
@@ -389,13 +392,13 @@ def suggest_for_registry(config: ProjectConfig, registry_path: Path, weights: st
         "created_at": datetime.now(timezone.utc).isoformat(),
         "weights": str(checkpoint), "weights_sha256": weights_sha256, "pilot": pilot,
         # Classes da taxonomia que estes pesos não propõem (pesos de taxonomia anterior).
-        "uncovered_classes": uncovered, "imgsz_override": imgsz,
+        "uncovered_classes": uncovered, "partial_classes": partial, "imgsz_override": imgsz,
         # Fotos já decididas que mantiveram as sugestões anteriores (não reclassificadas).
         "kept_previous": {"images": len(kept), "weights_sha256": previous.get("weights_sha256")} if kept else None,
         # Pesos fora de runs/ não são reconhecidos como piloto; com classes a menos ou --imgsz
         # são de um treino anterior e também não foram validados para produção.
         "model_label": "Modelo piloto (não validado)" if pilot
-        else "Modelo de treino anterior (não validado)" if uncovered or imgsz is not None else "Modelo especializado",
+        else "Modelo de treino anterior (não validado)" if uncovered or partial or imgsz is not None else "Modelo especializado",
         "runtime": model.dronecamp_runtime, "source_checkpoint": str(model.dronecamp_source),
         "tiling": config.pilot.get("tiling"),
         "conf": conf, "imgsz": config.prediction["imgsz"], "warning": SUGGESTION_WARNING, "images": images,

@@ -285,3 +285,36 @@ def active_class_remap(new_taxonomy: dict, old_names: list[str]) -> list[dict] |
             raise ValueError(f"Atributo inválido no mapa de '{slug}' para '{entry['to']}'.")
         remap.append({"to_id": new_names.index(entry["to"]), "to_slug": entry["to"], "attributes": dict(attributes)})
     return remap
+
+
+def remap_partial_classes(new_taxonomy: dict, old_names: list[str]) -> list[str]:
+    """Classes novas que pesos de taxonomia anterior conhecem só em parte.
+
+    Depois de ``active_class_remap`` toda classe nova pode receber previsões antigas,
+    mas uma classe ampliada (fora de ``migration.unchanged_scope_classes``, ex.:
+    ``fixador_irregular`` passou a incluir fixador ausente ou corroído) ou formada
+    por classes antigas que os pesos não têm (pesos v5 na v7) não foi aprendida
+    inteira. A página avisa o revisor por estes slugs.
+
+    Parâmetros:
+        new_taxonomy (dict): taxonomia atual.
+        old_names (list[str]): classes dos pesos, na ordem dos IDs.
+
+    Retorna:
+        list[str]: slugs ativos novos, na ordem dos IDs; vazia sem mapa de fusão.
+
+    Chamada por: backend.check_domain_names (sugestões com pesos antigos).
+    """
+    remap = active_class_remap(new_taxonomy, old_names)
+    if remap is None:
+        return []
+    migration = new_taxonomy["migration"]
+    unchanged = set(migration.get("unchanged_scope_classes", []))
+    mapping = migration["active_class_map"]
+    reached = {entry["to_slug"] for entry in remap}
+    partial = []
+    for slug in detection_names(new_taxonomy):
+        sources = [old for old in migration.get("from_active_classes", []) if (mapping.get(old) or {}).get("to") == slug]
+        if slug in reached and (slug not in unchanged or any(old not in old_names for old in sources)):
+            partial.append(slug)
+    return partial

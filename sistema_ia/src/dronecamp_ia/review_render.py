@@ -349,6 +349,8 @@ def render_review_package(config: ProjectConfig, registry_path: Path) -> Path:
     # Rótulo legível por ID de classe ativa (ex.: 0 -> "Telha quebrada").
     labels = {item["id"]: item["label"] for item in taxonomy["classes"] if item["phase"] == 1}
     slugs = {item["id"]: item["slug"] for item in taxonomy["classes"] if item["phase"] == 1}
+    # Detalhes opcionais por classe (v7), ex.: {"tipo": ["quebra", "trinca", "furo"]}; a página monta os campos.
+    attributes = {item["id"]: item.get("attributes") or {} for item in taxonomy["classes"] if item["phase"] == 1}
     suggestions = _load_suggestions(directory, registry_path, len(names))
     vlm = _vlm_opinions(directory, registry_path)
     # 2. Cada foto: confere o original, copia, desenha as caixas e prepara os dados da página.
@@ -422,12 +424,12 @@ def render_review_package(config: ProjectConfig, registry_path: Path) -> Path:
                "taxonomy_recheck_pending": any(item.get("taxonomy_recheck_pending") for item in registry["images"]),
                "classes_requiring_review": [labels[key] for key in sorted(pending_class_ids)],
                # slug: nome técnico da classe, usado pela página para ler a opinião do VLM (class_guess).
-               "classes": [{"id": key, "label": value, "color": class_color(key), "slug": slugs[key]} for key,value in labels.items()],
+               "classes": [{"id": key, "label": value, "color": class_color(key), "slug": slugs[key], "attributes": attributes[key]} for key,value in labels.items()],
                "duplicate_iou": config.pilot.get("duplicate_iou"),
                # weights_run_id: execução dos pesos das sugestões (só o id, nunca o caminho do PC),
                # para a página ligar o modelo em uso ao treino sem depender de uma comparação salva.
                # EXTENSAO: novo metadado das sugestões para a página: acrescente a chave na tupla.
-               "suggestions": {**{key: suggestions.get(key) for key in ("model_label", "conf", "warning", "weights_sha256", "pilot", "calibrator", "uncovered_classes")},
+               "suggestions": {**{key: suggestions.get(key) for key in ("model_label", "conf", "warning", "weights_sha256", "pilot", "calibrator", "uncovered_classes", "partial_classes")},
                                "weights_run_id": run_id_from_path(suggestions.get("weights"))} if suggestions else None}
     write_json(directory / "browser_data.json", payload)
     (directory / "index.html").write_text(build_page(payload, collect_operations(config, directory)), encoding="utf-8")

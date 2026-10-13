@@ -68,7 +68,7 @@ Revisões ainda na v5 vão direto para a v7 com `--previous-taxonomy configs\tax
 O que a migração grava:
 
 - Cada caixa: `class_id` novo, `previous_class_id`, `previous_class_slug` e `attributes`. Coordenadas, notas e hashes não mudam.
-- Cada foto: `human_approved: false` e `taxonomy_recheck_pending: true`, com a aprovação anterior no histórico. Só `telha_ausente` e `residuos_cobertura` contam como já revistas (escopo igual ao da v6); a página pede conferência das outras 7, que ficaram mais amplas (ex.: uma trinca não era classe na v6). **Enter aceita a foto** como está.
+- Cada foto: `human_approved: false` e `taxonomy_recheck_pending: true`, com a aprovação anterior no histórico. Só `telha_ausente` conta como já revista (escopo igual ao da v6); a página pede conferência das outras 8, que ficaram mais amplas (ex.: uma trinca não era classe na v6; resíduos agora inclui laje). **Enter aceita a foto** como está.
 - `taxonomy_merge_overlaps`: pares de caixas que a fusão juntou na mesma classe sobre o mesmo objeto (IoU ≥ `pilot.duplicate_iou`). Nada é apagado. Nas revisões do repositório (v8 e pré-revisão do Lado A) não houve nenhum.
 
 Ensaio na nuvem com a v8 (38 fotos, taxonomia v5): 246 caixas preservadas (17, 4, 79, 20, 27, 9, 47, 42, 1 por classe v7), 0 sobreposições criadas pela fusão, `render-review` sem erro e a página listando "Objeto solto sobre a cobertura · material: telha, apoio: sobre telha instalada".
@@ -93,6 +93,6 @@ Ensaio na nuvem com a v8 (38 fotos, taxonomia v5): 246 caixas preservadas (17, 4
 | `review_render.COLORS` | 15 cores (cada classe ativa herdou a cor da classe v6 dominante); acima disso as cores se repetem em vez de quebrar o `render-review`. |
 | `laudo_abnt.CHECKLIST` | Perguntas da v7, citando os itens do laudo CEASA fundidos. |
 | `configs/zero_shot_prompts.json` | Frases da busca aberta reagrupadas; "hole in roof", "damaged skylight" e "bird nest" passaram a classes. A primeira busca aberta recria o checkpoint YOLOE. |
-| `platform.js` | Lista de caixas mostra os atributos; editar uma caixa sem trocar a categoria mantém atributos e classe anterior. |
+| `platform.js` | Lista de caixas mostra os atributos; o editor tem um campo por atributo; editar uma caixa sem trocar a categoria mantém a classe anterior. Sugestões de pesos v6 avisam as classes que o modelo conhece só em parte (`partial_classes`). |
 
-Pendente: a página ainda não tem um campo para o revisor escolher atributos em caixas novas (eles vêm da migração). Cores e nomes de exibição continuam editáveis na seção Classes.
+O editor de caixas mostra um campo por atributo da categoria escolhida ("não informado" deixa o atributo fora da caixa); trocar a categoria mantém só os atributos que valem na nova. Cores e nomes de exibição continuam editáveis na seção Classes.

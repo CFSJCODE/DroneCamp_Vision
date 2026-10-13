@@ -675,8 +675,7 @@
       ]
     },
     "unchanged_scope_classes": [
-      "telha_ausente",
-      "residuos_cobertura"
+      "telha_ausente"
     ],
     "note": "Fusões apenas: cada classe ativa da v6 cabe inteira numa classe da v7, então as caixas mudam de ID sem redesenho e recebem atributos derivados da classe antiga. As classes de escopo ampliado exigem nova conferência humana. Snapshot v6 preservado com o mesmo SHA-256; pesos v6 são comparados na v7 pelo active_class_map."
   }
