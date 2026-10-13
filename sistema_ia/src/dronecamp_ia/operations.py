@@ -280,7 +280,13 @@ def _run_state(summary: dict | None, results_csv: Path, now: float) -> str:
     if summary:
         if summary.get("state") == "completed" and summary.get("complete", True):
             return "completed"
-        if summary.get("state") == "failed" or summary.get("complete") is False:
+        # ATENCAO: o train-pilot grava summary.json com state "running" e complete=false no
+        # INÍCIO do treino; esse caso não é falha e segue para o heartbeat abaixo (sem isto
+        # um treino em andamento aparecia como "falhou" no Monitoramento).
+        # "interrupted": treino parado de propósito (ex.: trocado por outro modelo) e anotado no summary.
+        if summary.get("state") == "interrupted":
+            return "interrupted"
+        if summary.get("state") == "failed" or (summary.get("complete") is False and summary.get("state") != "running"):
             return "failed"
     # fit/heartbeat é tocado a cada minuto pelo treino (training.py): uma época longa
     # deixa results.csv parado por mais que a janela sem que o treino tenha morrido.
