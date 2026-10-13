@@ -82,6 +82,10 @@ pilot:
     # Sem parada antecipada: a validação do piloto tem ~6 fotos e oscila demais
     # para escolher a época; o treino v8 parou na 66 com a 41 ainda subtreinada.
     patience: 0
+    # Threads de CPU do treino. A Ultralytics usa 8 por padrão; neste Ryzen 5 4600G (6 núcleos/
+    # 12 threads) 12 deram passo ~5% mais rápido que 8, e 6 foi o mais lento (13/10/2026,
+    # yolo26x, treino pausado). Flush de desnormais e channels_last não mudaram o tempo.
+    cpu_threads: 12
     plots: true              # grava gráficos (curvas, matriz de confusão) em runs/.../fit
   # Reamostragem de classes raras (sampling.py, docs/aprendizado_rl_sklearn.md).
   # Desligada até um treino completo mostrar ganho no compare-models; para ligar:

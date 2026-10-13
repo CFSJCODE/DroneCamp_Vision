@@ -270,6 +270,19 @@ def train(config: ProjectConfig, data_path: Path, weights: str | None = None) ->
 #                   (desligado hoje); NÃO vai ao model.train: ativa _apply_repeat_factor_sampling
 #   gpu_eval        --gpu-eval* > pilot.gpu_eval (enabled false, every 5, directml, val, 1800 s)
 # O tune-pilot-bandit (hparam_bandit.py) também passa overrides (ex.: lr0, mosaic).
+def apply_cpu_threads(threads: int | None) -> None:
+    """Fixa as threads de CPU do treino acima do limite de 8 que a Ultralytics impõe.
+
+    Parâmetros: ``threads`` (None ou 0 = mantém o padrão da Ultralytics).
+    Retorna: None. Usa ``gpu_eval.limit_worker_threads``, que ajusta o torch e a
+    constante ``NUM_THREADS`` da Ultralytics (ela reaplica esse valor no select_device).
+    """
+    if threads:
+        from .gpu_eval import limit_worker_threads
+
+        limit_worker_threads(int(threads))
+
+
 def train_pilot(config: ProjectConfig, data_path: Path, weights: str | None = None, overrides: dict | None = None,
                 gpu_eval: dict | None = None) -> Path:
     """Treino real e exploratório com o dataset piloto; nunca aprova o modelo para uso.
@@ -334,6 +347,10 @@ def train_pilot(config: ProjectConfig, data_path: Path, weights: str | None = No
         # Junção de dicts: a chave repetida mais à direita vence (ver tabela acima da função).
         parameters = {**config.training, **config.pilot.get("training", {}), **(overrides or {})}
         parameters["nms"] = config.prediction["nms"]
+        # cpu_threads (pilot.training): a Ultralytics fixa 8 threads de CPU em qualquer máquina;
+        # no Ryzen 5 4600G (6 núcleos/12 threads) 12 threads deram passo 5% mais rápido (13,0 s
+        # contra 13,7 s por lote de 4 do yolo26x, medido em 13/10 com o treino pausado).
+        apply_cpu_threads(parameters.pop("cpu_threads", None))
         # EXTENSAO: opção nova que NÃO é argumento da Ultralytics = ``parameters.pop("nome", padrão)``
         # aqui (como tile e repeat_factor_threshold abaixo), antes do model.train; registre o efeito
         # em pilot_details para ir ao execution.json/summary.json.
@@ -633,6 +650,7 @@ def resume_pilot(config: ProjectConfig, run_path: Path) -> Path:
     _write_training_summary(run, ["A preparação e o treinamento piloto ainda não concluíram."], state="running", **pilot_details)
     try:
         model = load_detector(config, str(last_pt))
+        apply_cpu_threads((config.pilot.get("training") or {}).get("cpu_threads"))
         # resume=True: a Ultralytics lê época, otimizador e argumentos de dentro do last.pt.
         model.train(resume=True)
     except Exception as error:
