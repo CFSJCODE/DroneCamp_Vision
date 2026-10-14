@@ -623,9 +623,9 @@ def _copy_back_fit(staging: Path, run: Path) -> None:
 
 
 # ENTRADA: train-pilot --resume <run> e resume-pilot <run> (cli.py).
-# ATENCAO: a retomada não registra o batimento (fit/heartbeat), não reativa a avaliação na
-# GPU e não faz a cópia de volta da área de gravação; a Ultralytics retoma com os argumentos
-# gravados no last.pt (inclusive a pasta de saída do treino original).
+# ATENCAO: a retomada usa o last.pt da área de gravação quando ele existe, registra o
+# batimento e espelha o results.csv, mas não reativa a avaliação paralela na GPU; a
+# Ultralytics retoma com os argumentos gravados no last.pt (inclusive a pasta de saída).
 def resume_pilot(config: ProjectConfig, run_path: Path) -> Path:
     """Retoma um treino piloto interrompido a partir de fit/weights/last.pt.
 
@@ -642,8 +642,14 @@ def resume_pilot(config: ProjectConfig, run_path: Path) -> Path:
     """
     run = run_path.resolve()
     last_pt = run / "fit" / "weights" / "last.pt"
+    # Treino com área de gravação (DRONECAMP_FIT_STAGING) interrompido sem a cópia de volta
+    # (ex.: queda de energia): o last.pt mais novo só existe em <staging>/<run>/fit.
+    staging = _fit_staging(run)
+    if staging and (staging / "weights" / "last.pt").is_file():
+        last_pt = staging / "weights" / "last.pt"
     if not last_pt.is_file():
         raise ValueError(f"Checkpoint last.pt não encontrado em {last_pt}.")
+    staging = staging if staging and last_pt.is_relative_to(staging) else None
     names = detection_names(load_taxonomy(config.taxonomy_path))
     pilot_details = {"pilot": True, "production_ready": False}
     # Volta o summary para "running" enquanto retoma (o anterior dizia "failed").
@@ -651,8 +657,30 @@ def resume_pilot(config: ProjectConfig, run_path: Path) -> Path:
     try:
         model = load_detector(config, str(last_pt))
         apply_cpu_threads((config.pilot.get("training") or {}).get("cpu_threads"))
-        # resume=True: a Ultralytics lê época, otimizador e argumentos de dentro do last.pt.
-        model.train(resume=True)
+        # Mesmo acompanhamento do treino original: results.csv espelhado para o monitor e batimento.
+        if staging:
+            model.add_callback("on_fit_epoch_end", lambda trainer: _mirror_results(staging, run))
+        heartbeat = {"path": run / "fit" / "heartbeat", "at": 0.0}
+
+        def beat(trainer):
+            """Callback de fim de lote: toca fit/heartbeat no máximo 1x por minuto (ver train_pilot)."""
+            now = time.time()
+            if now - heartbeat["at"] >= HEARTBEAT_SECONDS:
+                heartbeat["at"] = now
+                try:
+                    heartbeat["path"].parent.mkdir(parents=True, exist_ok=True)
+                    heartbeat["path"].write_text(datetime.now(timezone.utc).isoformat(), encoding="utf-8")
+                except OSError:
+                    pass
+
+        model.add_callback("on_train_batch_end", beat)
+        try:
+            # resume=True: a Ultralytics lê época, otimizador e argumentos de dentro do last.pt
+            # (inclusive a pasta de saída, que continua sendo a da área de gravação).
+            model.train(resume=True)
+        finally:
+            if staging:
+                _copy_back_fit(staging, run)
     except Exception as error:
         reason = f"Execução interrompida por {type(error).__name__}: {error}"
         _write_training_summary(run, [reason], state="failed", **pilot_details)
