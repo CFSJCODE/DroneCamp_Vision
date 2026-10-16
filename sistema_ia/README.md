@@ -187,6 +187,10 @@ O comando verifica o histórico NDJSON, métricas e artefatos depois da busca. S
 
 Reserve `evaluate --split test` para a avaliação final, depois de escolher parâmetros com `val`. Este comando não impede o pesquisador de repetir o teste; a disciplina experimental continua necessária.
 
+## Aprendizado mútuo entre YOLO26, RF-DETR e D-FINE
+
+`dml-plan`, `dml-train`, `dml-cache` e `dml-evaluate` treinam os três detectores aprendendo uns com os outros (Deep Mutual Learning), com um controlador por reforço do peso da consistência; `dml-lan-coordinator` e `dml-lan-worker` distribuem as rodadas entre máquinas da rede local. Instale com `pip install -e ".[dml]"`. Formulação, comandos, teste na rede local e limites em [`docs/aprendizado_mutuo_dml_rl.md`](docs/aprendizado_mutuo_dml_rl.md). Os pesos gerados são candidatos: adoção só com melhoria por classe no `compare-models`/`dml-evaluate`.
+
 ## Exportação
 
 ONNX FP32 tem função própria e depende do extra de exportação:
