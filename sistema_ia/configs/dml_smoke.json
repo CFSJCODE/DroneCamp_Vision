@@ -1,0 +1,12 @@
+{
+  "_comentario": "Teste de fumaça da rede local (HP-Z230 e 6006U): modelos pequenos e poucas épocas. Valida o fluxo, não a qualidade.",
+  "imgsz": 640,
+  "models": [
+    {"name": "yolo26", "family": "yolo26", "weights": "yolo26n.pt", "lr": 0.001, "grad_clip": 10.0},
+    {"name": "rfdetr", "family": "rfdetr", "variant": "nano", "lr": 0.0001, "grad_clip": 0.1},
+    {"name": "dfine", "family": "dfine", "variant": "ustc-community/dfine-small-coco", "lr": 0.0001, "grad_clip": 0.1}
+  ],
+  "train": {"epochs": 1, "batch": 2, "seed": 42, "threads": 4, "device": "cpu"},
+  "consistency": {"lambda": 0.5, "ramp_rounds": 1, "tau": 0.3, "anchor": "gt"},
+  "rl": {"enabled": true}
+}

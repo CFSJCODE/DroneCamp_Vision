@@ -166,6 +166,9 @@ Regras que atravessam toda a jornada (não as quebre):
 | Modelo | `training.py` | Treino piloto/produção, avaliação, auditoria do resultado. | `train-pilot`, `train`, `evaluate`, `tune`, `resume-pilot` |
 | Modelo | `gpu_eval.py` | Avaliação na GPU (DirectML) durante o treino na CPU. | `train-pilot --gpu-eval` |
 | Modelo | `hparam_bandit.py` | Busca de hiperparâmetros por successive halving. | `tune-pilot-bandit` |
+| Modelo | `detector_adapters.py` | YOLO26, RF-DETR e D-FINE atrás de uma interface comum (perda + previsões cruas). | — |
+| Modelo | `mutual_learning.py`, `dml_controller.py` | Aprendizado mútuo (DML) entre os três, destilação e RL (UCB descontado) do peso de consistência. | `dml-plan`, `dml-train`, `dml-cache`, `dml-evaluate` |
+| Modelo | `dml_lan.py` | DML em rodadas distribuído na rede local (coordenador HTTP + trabalhadores). | `dml-lan-coordinator`, `dml-lan-worker` |
 | Modelo | `exporting.py`, `prediction.py` | ONNX com paridade; inferência com evidências. | `export`, `predict` |
 | Avaliação | `matching.py` | Régua comum: TP/FP/FN por classe (IoU ≥ 0,5). | — |
 | Avaliação | `model_gate.py` | Comparação por classe e regra de adoção. | `compare-models`, `measure-models` |

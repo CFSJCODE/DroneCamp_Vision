@@ -22,6 +22,9 @@ Comandos e onde está o código de cada um:
 - Plataforma comercial: ``import-media`` → ``ingest.py`` (fotos e vídeos enviados viram revisão nova)
 - Fatiamento de dataset: ``tile-dataset`` → ``tiling.build_tiled_dataset``
 - Retomar treino: ``resume-pilot`` (ou ``train-pilot --resume``) → ``training.resume_pilot``
+- Aprendizado mútuo YOLO26 + RF-DETR + D-FINE com RL: ``dml-plan`` / ``dml-train`` / ``dml-cache`` /
+  ``dml-evaluate`` → ``mutual_learning.py`` (+ ``dml_controller.py``, ``detector_adapters.py``);
+  rede local: ``dml-lan-coordinator`` / ``dml-lan-worker`` → ``dml_lan.py``
 
 Quando mexer: para criar um comando novo ou uma opção nova (``--algo``) em um
 comando existente. A lógica do comando fica no arquivo indicado acima.
@@ -414,6 +417,64 @@ def build_parser() -> argparse.ArgumentParser:
     # Imprime a lista; grava o JSON só com --output.
     free_models = commands.add_parser("list-free-models", help="Modelos gratuitos com entrada de imagem no OpenRouter.")
     free_models.add_argument("--output", type=Path, help="Salvar a lista em JSON.")
+    # Aprendizado mútuo (DML) entre YOLO26, RF-DETR e D-FINE + RL do peso de consistência
+    # (mutual_learning.py, dml_controller.py) e rodadas na rede local (dml_lan.py).
+    # Todos leem o --models (padrão configs/dml.json). Doc: docs/aprendizado_mutuo_dml_rl.md.
+    # Comando dml-plan: mutual_learning.plan_dml. Mede o tempo por passo de cada modelo
+    # nesta máquina e estima as horas; grava o JSON só com --output.
+    dml_plan = commands.add_parser("dml-plan", help="DML: dependências e tempo medido por modelo nesta máquina.")
+    dml_plan.add_argument("--data", type=Path, required=True)
+    dml_plan.add_argument("--models", type=Path, default=Path("configs/dml.json"))
+    dml_plan.add_argument("--batches", type=int, default=3, help="Passos medidos por modelo (o 1.º é aquecimento).")
+    dml_plan.add_argument("--output", type=Path)
+    # Comando dml-train: mutual_learning.train_mutual. Grava runs/dml_*/ (pesos por modelo,
+    # history.jsonl, controller.json, summary.json).
+    dml_train = commands.add_parser("dml-train", help="DML: treino mútuo online, destilação ou com cache dos pares.")
+    dml_train.add_argument("--data", type=Path, required=True)
+    dml_train.add_argument("--models", type=Path, default=Path("configs/dml.json"))
+    dml_train.add_argument("--mode", choices=("online", "distill", "cached", "solo"), default="online")
+    dml_train.add_argument("--student", help="Modelo que aprende (modos distill, cached e solo).")
+    dml_train.add_argument("--peer-cache", type=Path, help="Pasta com <par>.npz (modo cached).")
+    dml_train.add_argument("--epochs", type=int)
+    dml_train.add_argument("--batch", type=int)
+    dml_train.add_argument("--device", help="cpu ou cuda (padrão: train.device do JSON).")
+    dml_train.add_argument("--threads", type=int, help="Threads de CPU do torch.")
+    dml_train.add_argument("--no-rl", action="store_true", help="Desliga o controlador RL (usa λ fixo).")
+    dml_train.add_argument("--max-batches", type=int, help="Só para teste rápido: lotes por época.")
+    # Comando dml-cache: mutual_learning.build_peer_cache. Grava <saída>/<modelo>.npz/.json.
+    dml_cache = commands.add_parser("dml-cache", help="DML: gravar as previsões de um modelo nas fotos de treino.")
+    dml_cache.add_argument("--data", type=Path, required=True)
+    dml_cache.add_argument("--models", type=Path, default=Path("configs/dml.json"))
+    dml_cache.add_argument("--model", required=True, help="Nome do modelo no JSON (use weights apontando para o treino).")
+    dml_cache.add_argument("--weights", help="Pesos a usar no lugar do weights do JSON.")
+    dml_cache.add_argument("--split", default="train")
+    dml_cache.add_argument("--output", type=Path, required=True)
+    # Comando dml-evaluate: mutual_learning.evaluate_models. Grava runs/dml_eval_*/evaluation.json.
+    dml_eval = commands.add_parser("dml-evaluate", help="DML: medir cada modelo, a complementaridade e o ensemble por classe.")
+    dml_eval.add_argument("--data", type=Path, required=True)
+    dml_eval.add_argument("--models", type=Path, default=Path("configs/dml.json"))
+    dml_eval.add_argument("--split", default="test")
+    # Comando dml-lan-coordinator: dml_lan.serve_coordinator (servidor até o fim das rodadas).
+    lan_coord = commands.add_parser("dml-lan-coordinator", help="DML na rede local: coordenador das rodadas.")
+    lan_coord.add_argument("--models", type=Path, default=Path("configs/dml.json"))
+    lan_coord.add_argument("--host", required=True, help="IP desta máquina na rede local (ex.: 192.168.0.82).")
+    lan_coord.add_argument("--port", type=int, default=8790)
+    lan_coord.add_argument("--rounds", type=int, default=4, help="Rodadas (a 0 treina cada modelo sozinho).")
+    lan_coord.add_argument("--epochs-per-round", type=int, default=5)
+    lan_coord.add_argument("--token", help="Segredo compartilhado (padrão: gerado e impresso).")
+    lan_coord.add_argument("--resume", type=Path, help="Pasta runs/dml_lan_* para retomar.")
+    # Comando dml-lan-worker: dml_lan.run_worker (treina os --model desta máquina por rodada).
+    lan_worker = commands.add_parser("dml-lan-worker", help="DML na rede local: trabalhador que treina um ou mais modelos.")
+    lan_worker.add_argument("--data", type=Path, required=True)
+    lan_worker.add_argument("--models", type=Path, default=Path("configs/dml.json"))
+    lan_worker.add_argument("--model", action="append", required=True, help="Modelo desta máquina (repita para vários).")
+    lan_worker.add_argument("--coordinator", required=True, help="http://IP:porta do coordenador.")
+    lan_worker.add_argument("--token", required=True)
+    lan_worker.add_argument("--name", help="Nome desta máquina no estado do coordenador.")
+    lan_worker.add_argument("--device", help="cpu ou cuda.")
+    lan_worker.add_argument("--threads", type=int)
+    lan_worker.add_argument("--max-batches", type=int, help="Só para o teste de fumaça: lotes por época.")
+    lan_worker.add_argument("--workdir", type=Path, help="Pasta runs/dml_lan_worker_* anterior (retomar após reiniciar).")
     # EXTENSAO: comando novo: acrescente o add_parser aqui (antes do return) com um
     # comentário "Comando <nome>" no mesmo estilo, e o ramo elif correspondente em main.
     return parser
@@ -714,6 +775,50 @@ def main(argv: list[str] | None = None) -> int:
             from .review_data import migrate_review_taxonomy
             migrate_review_taxonomy(config, args.registry, args.previous_taxonomy, args.output)
             output = args.output
+        # Ramos dml-*: aprendizado mútuo (mutual_learning.py) e rede local (dml_lan.py).
+        # _dml_settings aplica as opções da CLI por cima do configs/dml.json.
+        elif args.command in {"dml-plan", "dml-train", "dml-cache", "dml-evaluate", "dml-lan-coordinator", "dml-lan-worker"}:
+            from .mutual_learning import load_dml_config
+            models_path = args.models if args.models.is_absolute() else config.root / args.models
+            settings = load_dml_config(models_path)
+            for key in ("epochs", "batch", "device", "threads"):
+                if getattr(args, key, None) is not None:
+                    settings["train"][key] = getattr(args, key)
+            if getattr(args, "no_rl", False):
+                settings["rl"]["enabled"] = False
+            if args.command == "dml-plan":
+                from .mutual_learning import plan_dml
+                report = plan_dml(args.data, settings, args.batches)
+                if args.output:
+                    write_json(args.output, report)
+                print(json.dumps(report, ensure_ascii=False, indent=2))
+                return 0
+            if args.command == "dml-train":
+                from .mutual_learning import train_mutual
+                output = train_mutual(config.root, args.data, settings, args.mode, args.student, args.peer_cache,
+                                      max_batches=args.max_batches)
+            elif args.command == "dml-cache":
+                from .detector_adapters import build_adapter
+                from .mutual_learning import TileDataset, build_peer_cache
+                spec = next((item for item in settings["models"] if item["name"] == args.model), None)
+                if spec is None:
+                    raise ValueError(f"Modelo {args.model} não está em {models_path}.")
+                if args.weights:
+                    spec = {**spec, "weights": args.weights}
+                dataset = TileDataset(args.data, args.split, int(settings["imgsz"]))
+                adapter = build_adapter(spec, dataset.names, int(settings["imgsz"])).to(settings["train"].get("device") or "cpu")
+                output = build_peer_cache(adapter, dataset, args.output, int(settings["train"]["batch"]))
+            elif args.command == "dml-evaluate":
+                from .mutual_learning import evaluate_models
+                output = evaluate_models(config.root, args.data, settings, args.split)
+            elif args.command == "dml-lan-coordinator":
+                from .dml_lan import serve_coordinator
+                output = serve_coordinator(config.root, settings, args.host, args.port, args.rounds,
+                                           args.epochs_per_round, args.token, args.resume)
+            else:
+                from .dml_lan import run_worker
+                output = run_worker(config.root, args.data, settings, args.model, args.coordinator, args.token,
+                                    host_label=args.name, max_batches=args.max_batches, workdir=args.workdir)
         # EXTENSAO: ramo de comando novo: acrescente aqui, ANTES do else, um
         # ``elif args.command == "<nome>":`` com o import do módulo dentro do ramo;
         # defina ``output`` (Path gravado) ou imprima e faça ``return 0``.
