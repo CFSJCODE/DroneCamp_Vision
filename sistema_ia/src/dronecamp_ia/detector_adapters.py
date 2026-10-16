@@ -156,6 +156,7 @@ class YOLO26Adapter(DetectorAdapter):
         weights: ``.pt`` (COCO ``yolo26x.pt`` ou um checkpoint do projeto) ou
             ``.yaml`` (``yolo26n.yaml``: pesos aleatórios, só para testes).
         epochs: total de épocas (a perda E2E da Ultralytics decai o peso one2many com ele).
+        start_epoch: épocas já feitas antes (retomada); posiciona esse decaimento.
         heads: cabeças usadas na consistência; ``one2many`` treina o backbone
             (a ``one2one`` recebe features destacadas), ``one2one`` é a usada na inferência.
 
@@ -167,7 +168,7 @@ class YOLO26Adapter(DetectorAdapter):
     family = "yolo26"
 
     def __init__(self, name: str, names: list[str], imgsz: int = 640, weights: str = "yolo26x.pt",
-                 epochs: int = 100, heads: tuple[str, ...] = ("one2many", "one2one")):
+                 epochs: int = 100, heads: tuple[str, ...] = ("one2many", "one2one"), start_epoch: int = 0):
         from ultralytics import YOLO
         from ultralytics.cfg import get_cfg
         from ultralytics.nn.tasks import DetectionModel
@@ -196,6 +197,12 @@ class YOLO26Adapter(DetectorAdapter):
         model.args = args
         model.names = {index: value for index, value in enumerate(self.names)}
         model.criterion = None
+        # Retomada (rodadas da rede local): o peso one2many da perda E2E decai por época;
+        # sem este ajuste cada rodada repetiria o começo do cronograma.
+        if start_epoch > 0:
+            model.criterion = model.init_criterion()
+            model.criterion.updates = int(start_epoch) - 1
+            model.criterion.update()
         self.module = model
         self.weights = str(weights)
 
@@ -461,7 +468,8 @@ def build_adapter(spec: dict, names: list[str], imgsz: int, epochs: int = 100) -
         raise ValueError(f"Família desconhecida: {family!r} (use {', '.join(FAMILIES)}).")
     if family == "yolo26":
         return YOLO26Adapter(spec["name"], names, imgsz, weights=spec.get("weights") or f"{spec.get('variant', 'yolo26x')}.pt",
-                             epochs=epochs, heads=tuple(spec.get("heads", ("one2many", "one2one"))))
+                             epochs=epochs, heads=tuple(spec.get("heads", ("one2many", "one2one"))),
+                             start_epoch=int(spec.get("start_epoch", 0)))
     if family == "rfdetr":
         return RFDETRAdapter(spec["name"], names, imgsz, variant=spec.get("variant", "medium"), weights=spec.get("weights"))
     return DFINEAdapter(spec["name"], names, imgsz, variant=spec.get("variant", "ustc-community/dfine-medium-coco"),

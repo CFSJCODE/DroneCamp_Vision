@@ -124,6 +124,8 @@ New-NetFirewallRule -DisplayName "DroneCamp DML 8790" -Direction Inbound -Protoc
 .\.venv\Scripts\python.exe -m dronecamp_ia dml-lan-worker --models configs\dml_smoke.json --data CAMINHO\dataset.yaml --model rfdetr --coordinator http://192.168.0.82:8790 --token TOKEN --name 6006U --max-batches 5
 ```
 
+Se uma máquina reiniciar no meio: o coordenador volta com `--resume runs\dml_lan_<...>` (mesmo token) e o trabalhador com `--workdir runs\dml_lan_worker_<...>` (a pasta que ele imprimiu ao começar), porque a rodada seguinte continua dos pesos guardados nela.
+
 Sucesso = `runs\dml_lan_*\state.json` com `"complete": true` e os três modelos em `uploads` das rodadas 0 e 1. Depois de validado, o 4600G entra como terceira máquina, e o treino real usa `configs\dml.json` sem `--max-batches`.
 
 ## 8. Comandos

@@ -474,6 +474,7 @@ def build_parser() -> argparse.ArgumentParser:
     lan_worker.add_argument("--device", help="cpu ou cuda.")
     lan_worker.add_argument("--threads", type=int)
     lan_worker.add_argument("--max-batches", type=int, help="Só para o teste de fumaça: lotes por época.")
+    lan_worker.add_argument("--workdir", type=Path, help="Pasta runs/dml_lan_worker_* anterior (retomar após reiniciar).")
     # EXTENSAO: comando novo: acrescente o add_parser aqui (antes do return) com um
     # comentário "Comando <nome>" no mesmo estilo, e o ramo elif correspondente em main.
     return parser
@@ -817,7 +818,7 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 from .dml_lan import run_worker
                 output = run_worker(config.root, args.data, settings, args.model, args.coordinator, args.token,
-                                    host_label=args.name, max_batches=args.max_batches)
+                                    host_label=args.name, max_batches=args.max_batches, workdir=args.workdir)
         # EXTENSAO: ramo de comando novo: acrescente aqui, ANTES do else, um
         # ``elif args.command == "<nome>":`` com o import do módulo dentro do ramo;
         # defina ``output`` (Path gravado) ou imprima e faça ``return 0``.

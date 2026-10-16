@@ -85,17 +85,20 @@ def dataset_fingerprint(data_path: Path, imgsz: int) -> str:
     """SHA-256 dos nomes, tamanhos e conteúdo das labels dos splits train e val.
 
     Duas máquinas com a mesma cópia do dataset têm a mesma impressão; foto ou
-    label diferente muda o valor. Não lê os pixels (seria lento), só o tamanho.
+    label diferente muda o valor (lê o conteúdo de cada foto: ~1 s por 100 MB).
     """
     from .mutual_learning import TileDataset, label_path
+
+    from .mutual_learning import image_key
 
     digest = hashlib.sha256()
     for split in ("train", "val"):
         dataset = TileDataset(data_path, split, imgsz)
         digest.update(f"{split}:{len(dataset)}".encode())
         for image in dataset.images:
-            digest.update(Path(image).name.encode())
-            digest.update(str(Path(image).stat().st_size).encode())
+            # Caminho relativo (a chave do cache) + conteúdo da foto + label.
+            digest.update(image_key(Path(image), dataset.root).encode())
+            digest.update(hashlib.sha256(Path(image).read_bytes()).digest())
             label = label_path(Path(image))
             digest.update(label.read_bytes() if label.exists() else b"-")
     return digest.hexdigest()
@@ -237,6 +240,11 @@ class CoordinatorState:
         nxt = current + 1
         self.data["round"] = nxt
         self.data["uploads"][str(nxt)] = {}
+        if not self.data["settings"]["rl"].get("enabled", True):
+            # RL desligado no configs/dml.json: multiplicador fixo 1 (λ da configuração com a rampa).
+            self.data["arms"][str(nxt)] = {}
+            self.data["multipliers"][str(nxt)] = {name: 1.0 for name in self.models}
+            return
         arms = {name: self.controllers[name].select() for name in self.models}
         self.data["arms"][str(nxt)] = arms
         self.data["multipliers"][str(nxt)] = {name: self.controllers[name].arms[arm] for name, arm in arms.items()}
@@ -421,7 +429,9 @@ def run_worker(config_root: Path, data_path: Path, settings: dict, models: list[
         coordinator: ``http://IP:porta`` do coordenador; ``token``: o segredo dele.
         host_label: nome desta máquina no ``state.json`` (ex.: ``HP-Z230``).
         max_batches, val_max_batches: limites para o teste de fumaça.
-        workdir: pasta de trabalho (padrão: ``runs/dml_lan_worker_*`` nova).
+        workdir: pasta de trabalho. ``None`` cria ``runs/dml_lan_worker_*`` nova; para
+            retomar depois de reiniciar a máquina, passe a MESMA pasta (``--workdir``):
+            a rodada seguinte precisa dos pesos ``last`` da anterior, que ficam nela.
 
     Retorna a pasta de trabalho. Etapas por rodada e modelo: 1. pede a tarefa;
     2. baixa os caches dos pares; 3. ``train_mutual`` (``solo`` na rodada 0,
@@ -438,6 +448,8 @@ def run_worker(config_root: Path, data_path: Path, settings: dict, models: list[
     info = client.register({"models": models, "fingerprint": dataset_fingerprint(data_path, imgsz),
                             "host": host_label or platform.node(), "device": settings["train"].get("device", "cpu")})
     workdir = Path(workdir) if workdir else make_run_directory(Path(config_root), "dml_lan_worker")
+    workdir.mkdir(parents=True, exist_ok=True)
+    print(f"Trabalhador DML: pasta {workdir} (use --workdir com ela para retomar)")
     specs = {model["name"]: dict(model) for model in settings["models"]}
     total_epochs = int(info["rounds"]) * int(info["epochs_per_round"])
     pending = list(models)
@@ -453,6 +465,7 @@ def run_worker(config_root: Path, data_path: Path, settings: dict, models: list[
             round_index = int(task["round"])
             # 1-2. Pesos da rodada anterior e caches dos pares desta rodada.
             spec = dict(specs[name])
+            spec["start_epoch"] = round_index * int(info["epochs_per_round"])
             previous = workdir / name / f"round_{round_index - 1}" / "weights" / name / "last"
             if round_index > 0:
                 candidates = [previous.with_suffix(".pt"), previous.with_suffix(".pth"), previous]
@@ -482,7 +495,8 @@ def run_worker(config_root: Path, data_path: Path, settings: dict, models: list[
             # 4. Cache das previsões do modelo treinado (pesos last) no split de treino.
             last = run / "weights" / name / "last"
             last = next((path for path in (last.with_suffix(".pt"), last.with_suffix(".pth"), last) if path.exists()))
-            adapter = build_adapter({**spec, "weights": str(last)}, TileDataset(data_path, "val", imgsz).names, imgsz)
+            adapter = build_adapter({**spec, "weights": str(last)}, TileDataset(data_path, "val", imgsz).names,
+                                    imgsz).to(local["train"].get("device") or "cpu")
             cache_dir = run / "cache"
             cache_path = build_peer_cache(adapter, TileDataset(data_path, "train", imgsz), cache_dir,
                                           batch=int(local["train"]["batch"]), max_batches=max_batches)

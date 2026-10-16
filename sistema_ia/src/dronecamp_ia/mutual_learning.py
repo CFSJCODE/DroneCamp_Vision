@@ -129,9 +129,11 @@ def load_dataset_spec(data_path: Path) -> tuple[dict, Path, list[str]]:
 
     data_path = Path(data_path)
     spec = yaml.safe_load(data_path.read_text(encoding="utf-8")) or {}
-    root = Path(spec.get("path") or data_path.parent)
+    # Sem "path" a raiz é a própria pasta do YAML (não juntar a pasta duas vezes).
+    root = Path(spec["path"]) if spec.get("path") else data_path.parent
     if not root.is_absolute():
-        root = (data_path.parent / root).resolve()
+        root = (data_path.parent / root) if spec.get("path") else root
+    root = root.resolve()
     names = spec.get("names")
     if isinstance(names, dict):
         names = [names[key] for key in sorted(names, key=int)]
@@ -442,7 +444,7 @@ def consistency_loss(boxes, logits, target_boxes, target_probs, target_weights, 
     import torch
     import torch.nn.functional as F
     from scipy.optimize import linear_sum_assignment
-    from torchvision.ops import generalized_box_iou
+    from torchvision.ops import box_iou, generalized_box_iou
 
     zero = logits.sum() * 0.0
     if target_boxes.shape[0] == 0:
@@ -462,7 +464,8 @@ def consistency_loss(boxes, logits, target_boxes, target_probs, target_weights, 
         rows, cols = linear_sum_assignment(cost.cpu().numpy())
         rows_t = torch.as_tensor(rows, dtype=torch.long, device=boxes.device)
         cols_t = torch.as_tensor(cols, dtype=torch.long, device=boxes.device)
-        valid = giou[rows_t, cols_t] > (2 * min_iou - 1)  # GIoU > 2·min_iou − 1 ≈ sobreposição mínima
+        # IoU real do par casado (GIoU pode ser > 0 mesmo com caixas disjuntas).
+        valid = torch.diag(box_iou(student_xyxy[rows_t], target_boxes[cols_t])) >= min_iou
         rows_t, cols_t = rows_t[valid], cols_t[valid]
     if rows_t.numel() == 0:
         return zero, {"matched": 0, "targets": int(target_boxes.shape[0])}
@@ -853,9 +856,12 @@ def train_mutual(config_root: Path, data_path: Path, settings: dict, mode: str =
     if mode == "cached":
         if not peer_cache:
             raise ValueError("O modo cached precisa de --peer-cache (pasta gerada pelo dml-cache).")
-        caches = [PeerCache(path) for path in sorted(Path(peer_cache).glob("*.npz")) if path.stem != student]
-        if not caches:
-            raise ValueError(f"Nenhum cache de par em {peer_cache} (esperado <modelo>.npz de outro modelo).")
+        # Só os pares configurados: um .npz antigo ou de outro experimento na pasta não entra na fusão.
+        expected = [name for name in specs if name != student]
+        missing = [name for name in expected if not (Path(peer_cache) / f"{name}.npz").exists()]
+        if missing:
+            raise ValueError(f"Faltam caches de par em {peer_cache}: {', '.join(m + '.npz' for m in missing)}.")
+        caches = [PeerCache(Path(peer_cache) / f"{name}.npz") for name in expected]
 
     history_path = run / "history.jsonl"
     with history_path.open("a", encoding="utf-8") as handle:
@@ -1038,6 +1044,7 @@ def plan_dml(data_path: Path, settings: dict, batches: int = 3) -> dict:
             optimizer = torch.optim.AdamW(adapter.parameters(), lr=float(spec["lr"]))
             timings, infer = [], []
             for images, targets, _ in iterate_batches(dataset, batch, shuffle=True, seed=0, max_batches=batches):
+                images = images.to(adapter.device)
                 start = time.time()
                 det, _ = adapter.forward_train(images, targets)
                 optimizer.zero_grad(set_to_none=True)

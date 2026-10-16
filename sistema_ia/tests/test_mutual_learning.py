@@ -205,6 +205,17 @@ class ConsistencyLossTests(unittest.TestCase):
         self.assertLess(float(loss), first * 0.2)
         self.assertGreater(float(logits[0, 0].sigmoid()), 0.85)  # a query casada é a 0 (perto do alvo)
 
+    def test_disjoint_match_is_discarded(self):
+        import torch
+
+        from dronecamp_ia.mutual_learning import consistency_loss, cxcywh_to_xyxy
+
+        # Única query perto do alvo, mas sem sobreposição: GIoU > −0,8, IoU = 0 → descartada.
+        boxes = torch.tensor([[0.30, 0.30, 0.1, 0.1]], requires_grad=True)
+        target = cxcywh_to_xyxy(torch.tensor([[0.42, 0.30, 0.1, 0.1]]))
+        _, stats = consistency_loss(boxes, torch.zeros(1, 2), target, torch.tensor([[0.9, 0.1]]), torch.ones(1))
+        self.assertEqual(stats["matched"], 0)
+
     def test_no_target_gives_zero_with_graph(self):
         import torch
 
@@ -280,6 +291,29 @@ class PeerCacheTests(unittest.TestCase):
             self.assertAlmostEqual(float(flipped[0, 1]), 0.6, places=3)
             self.assertIsNone(cache.lookup("nao_existe.jpg"))
 
+    def test_dataset_without_path_uses_yaml_folder(self):
+        from dronecamp_ia.mutual_learning import TileDataset
+
+        with tempfile.TemporaryDirectory() as folder:
+            data = _synthetic_dataset(Path(folder))
+            data.write_text("train: images/train\nval: images/val\nnames: [vermelho, azul]\n", encoding="utf-8")
+            self.assertEqual(len(TileDataset(data, "train", 320)), 4)
+
+    def test_cached_mode_rejects_missing_peer_cache(self):
+        from dronecamp_ia.mutual_learning import TileDataset, build_peer_cache, train_mutual
+
+        with tempfile.TemporaryDirectory() as folder:
+            data = _synthetic_dataset(Path(folder))
+            cache = Path(folder) / "cache"
+            adapter = _FakeAdapter()
+            adapter.name = "rfdetr"
+            build_peer_cache(adapter, TileDataset(data, "train", 320), cache)
+            adapter.name = "antigo"  # .npz de outro experimento: não pode entrar na fusão
+            build_peer_cache(adapter, TileDataset(data, "train", 320), cache)
+            with self.assertRaises(ValueError) as caught:
+                train_mutual(Path(folder), data, _tiny_settings(), "cached", "yolo26", cache, max_batches=1)
+            self.assertIn("dfine.npz", str(caught.exception))
+
     def test_dataset_flip_moves_boxes(self):
         from dronecamp_ia.mutual_learning import TileDataset
 
@@ -336,6 +370,18 @@ class CoordinatorTests(unittest.TestCase):
         reloaded = type(state)(Path(self.folder.name), _tiny_settings(), 2, 1)
         self.assertTrue(reloaded.data["complete"])
         self.assertEqual(reloaded.controllers["yolo26"].history[0]["reward"], 0.1)
+
+    def test_rl_disabled_keeps_fixed_multiplier(self):
+        from dronecamp_ia.dml_lan import CoordinatorState
+
+        settings = _tiny_settings()
+        settings["rl"]["enabled"] = False
+        with tempfile.TemporaryDirectory() as folder:
+            state = CoordinatorState(Path(folder), settings, rounds=3, epochs_per_round=1)
+            for name in ("yolo26", "rfdetr", "dfine"):
+                state.receive(0, name, _npz_bytes(), {"val_map50": 0.1})
+            self.assertEqual(state.task("yolo26")["multiplier"], 1.0)
+            self.assertEqual(state.controllers["yolo26"].history, [])
 
     def test_rejects_other_dataset_unknown_model_and_bad_files(self):
         state = self.state
@@ -432,6 +478,15 @@ class ThreeModelIntegrationTests(unittest.TestCase):
         from ultralytics import YOLO
 
         self.assertEqual(YOLO(str(run / "weights" / "yolo26" / "last.pt")).names, {0: "vermelho", 1: "azul"})
+
+    def test_yolo_resume_positions_e2e_schedule(self):
+        from dronecamp_ia.detector_adapters import build_adapter
+
+        fresh = build_adapter(TINY_MODELS[0], ["a", "b"], 320, epochs=10)
+        resumed = build_adapter({**TINY_MODELS[0], "start_epoch": 5}, ["a", "b"], 320, epochs=10)
+        self.assertIsNone(fresh.module.criterion)
+        self.assertEqual(resumed.module.criterion.updates, 5)
+        self.assertLess(resumed.module.criterion.o2m, 0.8)
 
     def test_lan_rounds_with_two_workers(self):
         from dronecamp_ia.dml_lan import run_worker, serve_coordinator
