@@ -187,6 +187,10 @@ O comando verifica o histórico NDJSON, métricas e artefatos depois da busca. S
 
 Reserve `evaluate --split test` para a avaliação final, depois de escolher parâmetros com `val`. Este comando não impede o pesquisador de repetir o teste; a disciplina experimental continua necessária.
 
+## Treino piloto na GPU do Kaggle
+
+`kaggle-package` (no PC) monta um pacote com as janelas do dataset piloto auditado, ou com as janelas, o `last.pt` e o `results.csv` de um treino em andamento para terminá-lo na GPU sem parar o do PC. `kaggle-train` (no notebook [`kaggle/treino_t4.ipynb`](kaggle/treino_t4.ipynb)) treina a partir do pacote numa T4 e grava um `runs/pilot_train_*` comum. O pacote contém recortes das fotos do cliente: enviar ao Kaggle depende de autorização. Passo a passo, limites e tempos em [`docs/treino_kaggle.md`](docs/treino_kaggle.md).
+
 ## Aprendizado mútuo entre YOLO26, RF-DETR e D-FINE
 
 `dml-plan`, `dml-train`, `dml-cache` e `dml-evaluate` treinam os três detectores aprendendo uns com os outros (Deep Mutual Learning), com um controlador por reforço do peso da consistência; `dml-lan-coordinator` e `dml-lan-worker` distribuem as rodadas entre máquinas da rede local. Instale com `pip install -e ".[dml]"`. Formulação, comandos, teste na rede local e limites em [`docs/aprendizado_mutuo_dml_rl.md`](docs/aprendizado_mutuo_dml_rl.md). Os pesos gerados são candidatos: adoção só com melhoria por classe no `compare-models`/`dml-evaluate`.

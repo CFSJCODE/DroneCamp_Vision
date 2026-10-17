@@ -22,6 +22,7 @@ Comandos e onde está o código de cada um:
 - Plataforma comercial: ``import-media`` → ``ingest.py`` (fotos e vídeos enviados viram revisão nova)
 - Fatiamento de dataset: ``tile-dataset`` → ``tiling.build_tiled_dataset``
 - Retomar treino: ``resume-pilot`` (ou ``train-pilot --resume``) → ``training.resume_pilot``
+- Treino em GPU do Kaggle: ``kaggle-package`` (no PC) / ``kaggle-train`` (no Kaggle) → ``kaggle_package.py``
 - Aprendizado mútuo YOLO26 + RF-DETR + D-FINE com RL: ``dml-plan`` / ``dml-train`` / ``dml-cache`` /
   ``dml-evaluate`` → ``mutual_learning.py`` (+ ``dml_controller.py``, ``detector_adapters.py``);
   rede local: ``dml-lan-coordinator`` / ``dml-lan-worker`` → ``dml_lan.py``
@@ -288,6 +289,26 @@ def build_parser() -> argparse.ArgumentParser:
     # O argumento "run" é posicional (sem "--").
     resume_pilot_cmd = commands.add_parser("resume-pilot", help="Retoma um treino piloto interrompido.")
     resume_pilot_cmd.add_argument("run", type=Path, help="Pasta da execução em runs/ (ex.: runs/pilot_train_...).")
+    # Comando kaggle-package: kaggle_package.build_package. Roda no PC; grava a pasta do pacote e o .zip.
+    kaggle_pkg = commands.add_parser("kaggle-package", help="Pacote do dataset em janelas para treinar numa GPU do Kaggle.")
+    kaggle_source = kaggle_pkg.add_mutually_exclusive_group(required=True)
+    kaggle_source.add_argument("--data", type=Path, help="dataset.yaml do piloto (build-pilot-data) para um treino novo.")
+    kaggle_source.add_argument("--resume-run", type=Path, help="runs/pilot_train_* a continuar a partir do last.pt.")
+    kaggle_pkg.add_argument("--output", type=Path, required=True, help="Pasta onde o pacote e o .zip são criados.")
+    kaggle_pkg.add_argument("--no-tile", action="store_true", help="Treino novo com fotos inteiras (padrão: janelas).")
+    kaggle_pkg.add_argument("--no-zip", action="store_true", help="Não gravar o .zip.")
+    # Comando kaggle-train: kaggle_package.train_from_package. Roda no Kaggle (ou em qualquer CUDA).
+    kaggle_train = commands.add_parser("kaggle-train", help="Treino piloto a partir de um pacote do kaggle-package.")
+    kaggle_train.add_argument("--package", type=Path, required=True, help="Pasta do pacote (ou /kaggle/input/<dataset>).")
+    kaggle_train.add_argument("--device", default="0", help="0 = primeira GPU; cpu para testar.")
+    kaggle_train.add_argument("--fresh", action="store_true", help="Ignora o checkpoint do pacote e treina do zero.")
+    kaggle_train.add_argument("--checkpoint", type=Path, help="resume.pt/last.pt de uma sessão anterior para continuar.")
+    kaggle_train.add_argument("--weights", help="Peso inicial do treino novo (padrão: o do pacote).")
+    kaggle_train.add_argument("--epochs", type=int)
+    kaggle_train.add_argument("--batch", type=int)
+    kaggle_train.add_argument("--workers", type=int)
+    kaggle_train.add_argument("--no-amp", action="store_true", help="Desliga a precisão mista na GPU.")
+    kaggle_train.add_argument("--max-hours", type=float, help="Para com segurança após esta duração (sessão do Kaggle: 12 h).")
     # Comando suggest: suggestions.suggest_for_registry (--registry) ou
     # suggestions.create_review_for_new_images (--source/--output/--group).
     # Grava suggestions.json ao lado do registro e regenera a página da revisão;
@@ -671,6 +692,19 @@ def main(argv: list[str] | None = None) -> int:
         elif args.command == "resume-pilot":
             from .training import resume_pilot
             output = resume_pilot(config, args.run)
+        # Ramo kaggle-package: kaggle_package.build_package (pasta do pacote + .zip).
+        elif args.command == "kaggle-package":
+            from .kaggle_package import build_package
+            output = build_package(config, args.output, data_path=args.data, resume_run=args.resume_run,
+                                   tile=not args.no_tile, make_zip=not args.no_zip)
+        # Ramo kaggle-train: kaggle_package.train_from_package; grava runs/pilot_train_*.
+        elif args.command == "kaggle-train":
+            from .kaggle_package import train_from_package
+            overrides = {key: value for key in ("epochs", "batch", "workers") if (value := getattr(args, key)) is not None}
+            if args.no_amp:
+                overrides["amp"] = False
+            output = train_from_package(config, args.package, device=args.device, overrides=overrides, fresh=args.fresh,
+                                        weights=args.weights, checkpoint=args.checkpoint, max_hours=args.max_hours)
         # Ramo suggest: exatamente um entre --registry (revisão existente) e --source
         # (fotos novas, exige --output e --group). Grava suggestions.json e a página.
         elif args.command == "suggest":
