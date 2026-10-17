@@ -12,6 +12,7 @@ Nada aqui aprova pesos. O run que volta do Kaggle é um `runs/pilot_train_*` com
 |---|---|---|
 | PC | `kaggle-package --data <piloto>/dataset.yaml --output <pasta>` | Reconfere o piloto contra as revisões humanas, gera as janelas de `pilot.tiling` (mesma semente do `train-pilot --tile`) e grava pasta + `.zip` |
 | PC | `kaggle-package --resume-run runs\pilot_train_<id> --output <pasta>` | Copia as janelas que aquele treino usa, o `last.pt` e o `results.csv` (só leitura: o treino do PC segue intocado) |
+| PC | `kaggle/enviar_kaggle.py --usuario <você> --run <run>` | Monta o pacote, sobe o Dataset privado e dispara o notebook na T4 (seção abaixo) |
 | Kaggle | `kaggle/treino_t4.ipynb` | Clona o repositório, prepara Python 3.12 + CUDA se preciso e chama `kaggle-train` |
 | Kaggle | `kaggle-train --package /kaggle/input --device 0 --max-hours 11` | Confere os hashes, treina (ou retoma) e grava `runs/pilot_train_*` |
 
@@ -56,6 +57,23 @@ O `kaggle-train` recusa o pacote se algum arquivo listado mudou ou se aparece um
 4. **Se não terminar em uma sessão:** com `--max-hours 11` (padrão do notebook), o treino para depois da primeira época que passar de 11 h, grava `fit/weights/resume.pt` (com o otimizador) e marca o `summary.json` como `interrupted`. Numa nova versão, adicione a saída anterior como Input e aponte `CONTINUE_FROM` para esse `resume.pt`. O `results.csv` anterior é copiado e as épocas continuam a numeração.
 
 5. **De volta ao PC:** baixe `runs/pilot_train_*` da aba Output, copie para `sistema_ia\runs\` e compare com o modelo de referência por classe, tamanho de caixa, falsos positivos e omissões.
+
+## Envio automático pelo PC
+
+`kaggle/enviar_kaggle.py` faz os passos 1 a 3 de uma vez: monta o pacote, sobe o `.zip` como Dataset **privado** (`dronecamp-pacote`; nas próximas vezes, como nova versão), espera o Kaggle processar e envia o notebook (`dronecamp-treino-t4`, privado, T4, internet ligada) com as opções da execução. O token não passa pelo script: o cliente `kaggle` o lê de `%USERPROFILE%\.kaggle\access_token` ou de `KAGGLE_API_TOKEN`.
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install kaggle
+# Teste: continua o treino do PC na T4 e para depois de ~15 min, o que mede o tempo por época.
+.\.venv\Scripts\python.exe kaggle\enviar_kaggle.py --usuario SEU_USUARIO --run "runs\pilot_train_..._614d070a" --max-horas 0.25
+# Acompanhar e baixar
+kaggle kernels status SEU_USUARIO/dronecamp-treino-t4
+kaggle kernels output SEU_USUARIO/dronecamp-treino-t4 -p C:\DroneCamp_kaggle\resultado
+```
+
+Antes do merge deste código na `main`, passe também `--branch claude/project-thread-sl8ytb`, porque o notebook clona o repositório no Kaggle. `--so-preparar` monta as pastas sem enviar nada, e `--pacote <pasta>` reaproveita um pacote já montado.
+
+Com o treino do PC rodando, a cópia do `last.pt` pode coincidir com a gravação do fim de uma época. O pacote abre a cópia para conferir e, se ela não abrir, pede para rodar de novo.
 
 ## Ajustes de GPU
 

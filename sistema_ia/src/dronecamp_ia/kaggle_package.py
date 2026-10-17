@@ -246,6 +246,11 @@ def _package_resume(config: ProjectConfig, run: Path, target: Path) -> dict:
     _write_package_yaml(target / "dataset", names, splits)
     (target / "checkpoint").mkdir()
     shutil.copy2(last, target / "checkpoint" / "last.pt")
+    # ATENCAO: com o treino do PC rodando, a cópia pode pegar o last.pt no meio da gravação
+    # do fim de uma época; uma cópia que não abre é recusada (rode de novo em seguida).
+    epoch = _checkpoint_epoch(target / "checkpoint" / "last.pt")
+    if epoch is None:
+        raise ValueError("A cópia do last.pt não abriu (o treino pode estar gravando a época); tente de novo.")
     if (fit / "results.csv").is_file():
         shutil.copy2(fit / "results.csv", target / "checkpoint" / "results.csv")
     # Relatórios do run de origem que explicam o que está sendo continuado.
@@ -254,9 +259,8 @@ def _package_resume(config: ProjectConfig, run: Path, target: Path) -> dict:
         if (run / name).is_file():
             shutil.copy2(run / name, target / "source_run" / name)
     execution = json.loads((run / "execution.json").read_text(encoding="utf-8")) if (run / "execution.json").is_file() else {}
-    epoch = _checkpoint_epoch(last)
     return {"mode": "resume", "names": names, "parameters": execution.get("parameters", {}),
-            "source": {"run": run.name, "checkpoint_sha256": file_hash(last)},
+            "source": {"run": run.name, "checkpoint_sha256": file_hash(target / "checkpoint" / "last.pt")},
             "checkpoint": {"path": "checkpoint/last.pt", "epoch_completed": epoch}}
 
 

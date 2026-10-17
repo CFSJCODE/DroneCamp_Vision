@@ -19,6 +19,8 @@ O que cada classe prepara
 -------------------------
 - ``PackageRuleTests``: um run piloto falso (janelas sintéticas, lista de classes raras
   e um ``last.pt`` mínimo) numa pasta temporária.
+- ``SendScriptTests``: ``kaggle/enviar_kaggle.py --so-preparar`` sobre o pacote falso
+  (nada é enviado; confere o notebook com as opções e os metadados do Kaggle).
 - ``PackageTrainingTests``: dataset piloto real da revisão v7 (taxonomia v5), pacote
   em janelas e dois treinos curtos: um parado pelo limite de horas e a continuação dele.
 """
@@ -138,6 +140,56 @@ class PackageRuleTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "não os dois"):
             build_package(self.config, self.base / "vazio")
         self.assertFalse((self.base / "vazio").exists())
+
+
+def load_send_script():
+    """Importa ``kaggle/enviar_kaggle.py`` (pasta de scripts, fora do pacote Python)."""
+    import importlib.util
+
+    spec = importlib.util.spec_from_file_location("enviar_kaggle", REAL.root / "kaggle" / "enviar_kaggle.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+class SendScriptTests(unittest.TestCase):
+    """Preparação do envio: notebook com as opções certas e Dataset/notebook privados na T4."""
+
+    def setUp(self):
+        self.temporary = TemporaryDirectory()
+        base = Path(self.temporary.name)
+        shutil.copytree(REAL.root / "configs", base / "configs")
+        config = replace(REAL, root=base, taxonomy_path=base / "configs" / REAL.taxonomy_path.name)
+        self.package = build_package(config, base / "out", resume_run=fake_run(base, detection_names(
+            load_taxonomy(config.taxonomy_path))))
+        self.saida = base / "saida"
+        self.send = load_send_script()
+
+    def tearDown(self):
+        self.temporary.cleanup()
+
+    def test_prepare_only_writes_patched_notebook_and_private_metadata(self):
+        """--so-preparar grava o zip, o notebook com branch/horas/extras e metadados privados."""
+        code = self.send.main(["--usuario", "Claudio", "--pacote", str(self.package), "--saida", str(self.saida),
+                               "--branch", "teste-ramo", "--max-horas", "0.25", "--extra", "--batch 8", "--so-preparar"])
+        self.assertEqual(code, 0)
+        dataset = json.loads((self.saida / f"envio_{self.package.name}" / "dataset-metadata.json").read_text(encoding="utf-8"))
+        self.assertEqual(dataset["id"], "claudio/dronecamp-pacote")
+        self.assertTrue((self.saida / f"envio_{self.package.name}" / f"{self.package.name}.zip").is_file())
+        kernel = json.loads((self.saida / "notebook" / "kernel-metadata.json").read_text(encoding="utf-8"))
+        self.assertTrue(kernel["is_private"] and kernel["enable_gpu"] and kernel["enable_internet"])
+        self.assertEqual((kernel["machine_shape"], kernel["dataset_sources"]), ("NvidiaTeslaT4", ["claudio/dronecamp-pacote"]))
+        notebook = json.loads((self.saida / "notebook" / "treino_t4.ipynb").read_text(encoding="utf-8"))
+        source = "".join("".join(cell["source"]) for cell in notebook["cells"])
+        for line in ("BRANCH = 'teste-ramo'", "MAX_HOURS = 0.25", "EXTRA_ARGS = ['--batch', '8']", "CONTINUE_FROM = None"):
+            self.assertIn(line, source)
+        # O comentário explicativo da linha continua lá.
+        self.assertIn("MAX_HOURS = 0.25                 # para com segurança", source)
+
+    def test_unknown_setting_is_refused(self):
+        """Opção que não existe na célula de configuração é erro, não silêncio."""
+        with self.assertRaisesRegex(ValueError, "ausentes"):
+            self.send.patch_notebook(self.send.NOTEBOOK.read_text(encoding="utf-8"), {"NAO_EXISTE": 1})
 
 
 @unittest.skipIf(os.environ.get("DRONECAMP_SKIP_E2E") == "1", "E2E desativado por DRONECAMP_SKIP_E2E=1.")
