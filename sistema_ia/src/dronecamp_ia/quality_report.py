@@ -168,8 +168,9 @@ def evaluate_weights(config, data_path: Path, weights: list[str], labels: list[s
     manifest = json.loads((root / "pilot.json").read_text(encoding="utf-8"))
     conf = float(conf if conf is not None else config.pilot.get("suggestion_conf", config.prediction["conf"]))
     loaded, excluded = _load_models(config, list(weights), names, onnx_provider)
-    samples = [sample for sample in manifest["images"]
-               if sample["split"] in splits and sample["image_sha256"] not in excluded]
+    candidates = [sample for sample in manifest["images"] if sample["split"] in splits]
+    samples = [sample for sample in candidates if sample["image_sha256"] not in excluded]
+    excluded_here = len(candidates) - len(samples)
     if not samples:
         raise ValueError("Nenhuma foto das divisões escolhidas ficou fora do treino de todos os pesos.")
     extra, csv_fields = load_conditions_csv(conditions_csv)
@@ -207,7 +208,7 @@ def evaluate_weights(config, data_path: Path, weights: list[str], labels: list[s
             "tiling": config.pilot.get("tiling") if regime == "janelas" else None,
             "max_det": config.prediction.get("max_det"), "imgsz": entry["config"].prediction["imgsz"],
             "consolidation": "detect_boxes: janelas sobrepostas unidas por NMS por classe (merge_iou) na foto original",
-            "images_excluded_seen_in_training": len(excluded), "runtime": entry["model"].dronecamp_runtime,
+            "images_excluded_seen_in_training": excluded_here, "runtime": entry["model"].dronecamp_runtime,
             "weights_executed": str(entry["used"]), "checkpoint": checkpoint}
         result = evaluate_detections(rows, names, conf, AP_CONF, size_edges, fp_budgets, fields, examples, protocol)
         for item in result["errors"]:

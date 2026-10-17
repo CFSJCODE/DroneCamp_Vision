@@ -74,7 +74,7 @@ Por classe:
   - Quantis da IoU das caixas casadas (mediana e p95).
   - Recall e precisão por faixa de tamanho. A faixa usa a área em px² na foto original: abaixo de 32² é pequeno, de 32² a 96² é médio, acima de 96² é grande.
 - **Curvas por confiança** (0,00 a 0,95, de 0,05 em 0,05), para o total e por classe: P, R, F1 e FP por foto, com a melhor F1 e a confiança em que ela ocorre.
-- **Recall com limite de falsos alarmes**: o maior recall possível sem passar de N falsos positivos por foto (`--fp-budget`), com a confiança que o alcança.
+- **Recall com limite de falsos alarmes**: o maior recall possível sem passar de N falsos positivos por foto (`--fp-budget`), com a confiança que o alcança. Previsões com a mesma confiança entram juntas, e no total contam também os alarmes de classes sem caixa humana na divisão.
 
 **Condições de captura**:
 - O relatório estratifica por `edificacao` e `cena` (vindas do `pilot.json`), por `periodo` (o mês da captura no EXIF, `AAAA-MM`) e pelas colunas do CSV de `--conditions`.

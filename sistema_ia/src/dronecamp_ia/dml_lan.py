@@ -200,8 +200,6 @@ class CoordinatorState:
         A rodada r está aberta quando todos os modelos enviaram a r−1; o modelo
         espera se já enviou a rodada atual.
         """
-        from .mutual_learning import ramp_weight
-
         with self.lock:
             if self.data["complete"]:
                 return {"action": "done", "round": self.data["round"]}
@@ -217,11 +215,17 @@ class CoordinatorState:
                 assigned[model] = {"host": self.data["workers"].get(model, {}).get("host"),
                                    "assigned_at": datetime.now(timezone.utc).isoformat(), "completed_at": None}
                 self.save()
-            cons = self.data["settings"]["consistency"]
-            weight = 0.0 if current == 0 else ramp_weight(current - 1, int(cons.get("ramp_rounds", 2)),
-                                                          float(cons["lambda"])) * multiplier
+            weight = self._applied_weight(current, multiplier)
             return {"action": "train", "round": current, "lambda": weight, "multiplier": multiplier,
                     "peers": peers, "epochs": self.data["epochs_per_round"]}
+
+    def _applied_weight(self, round_index: int, multiplier: float) -> float:
+        """Peso de consistência que o trabalhador usa na rodada: rampa(λ) × multiplicador do RL."""
+        from .mutual_learning import ramp_weight
+
+        cons = self.data["settings"]["consistency"]
+        return 0.0 if round_index == 0 else ramp_weight(round_index - 1, int(cons.get("ramp_rounds", 2)),
+                                                        float(cons["lambda"])) * multiplier
 
     def receive(self, round_index: int, model: str, cache: bytes, metrics: dict) -> dict:
         """Guarda o cache e as métricas de ``model`` na rodada; abre a próxima se todos chegaram.
@@ -283,7 +287,8 @@ class CoordinatorState:
                     choice = choices.get(name) or {"arm": arm, "multiplier": self.controllers[name].arms[arm]}
                     decisions[name] = decision_record(
                         self.controllers[name], choice, previous.get(name, {}).get("val_map50"),
-                        uploads[name].get("val_map50"), self.data["multipliers"][str(current)][name], step=current)
+                        uploads[name].get("val_map50"),
+                        self._applied_weight(current, self.data["multipliers"][str(current)][name]), step=current)
             self.data["decisions"][str(current)] = decisions
         # Ficha da rodada fechada: qual versão de cada modelo entrou no "checkpoint conjunto".
         write_json(self.directory / "rounds" / str(current) / "joint.json", {

@@ -91,6 +91,25 @@ class DetectionMetricsTests(unittest.TestCase):
         self.assertEqual(material["values"]["metal"]["images"], 2)
         self.assertEqual(material["values"]["desconhecido"]["images"], 2)
 
+    def test_ties_alarms_of_unsupported_classes_and_example_quota_per_type(self):
+        # Acerto e alarme com a MESMA confiança: com 0 FP/foto nenhum limiar real inclui o acerto.
+        tie = [{"image": "f", "truth": [_box(0, 10, 10)],
+                "predictions": [_box(0, 10, 10, conf=0.5), _box(0, 300, 300, conf=0.5)]}]
+        report = evaluate_detections(tie, self.names, conf=0.1, fp_budgets=(0.0,))
+        self.assertEqual(report["operating"]["_total"]["recall_at_fp_per_image"]["0.0"]["recall"], 0.0)
+        # Alarmes da classe c (sem caixa humana) contam no FP por foto do total.
+        alarms = [{"image": "g", "truth": [_box(0, 10, 10)],
+                   "predictions": [_box(0, 10, 10, conf=0.4), _box(2, 300, 300, conf=0.9)]}]
+        report = evaluate_detections(alarms, self.names, conf=0.1, fp_budgets=(0.5,))
+        self.assertEqual(report["operating"]["_total"]["recall_at_fp_per_image"]["0.5"]["recall"], 0.0)
+        # Cota por subtipo: 3 alarmes de fundo não escondem a classe trocada.
+        truth = [_box(1, 200, 200, 40)]
+        predictions = [_box(0, 200, 200, 40, conf=0.3)] + [_box(0, 400 + 50 * i, 0, conf=0.9) for i in range(3)]
+        report = evaluate_detections([{"image": "h", "truth": truth, "predictions": predictions}], self.names,
+                                     examples=1)
+        kinds = sorted(item["fp_type"] for item in report["errors"] if item["type"] == "falso_positivo")
+        self.assertEqual(kinds, ["classe_trocada", "fundo"])
+
     def test_size_bucket_edges(self):
         self.assertEqual(size_bucket(31 * 31, (32, 96)), "pequeno")
         self.assertEqual(size_bucket(50 * 50, (32, 96)), "medio")
@@ -124,6 +143,9 @@ class TrainingProgressTests(unittest.TestCase):
             self.assertEqual(timeline["attempts"], 2)
             self.assertEqual(timeline["redone_epochs"], [3])
             self.assertEqual(timeline["effective_seconds"], 100 + 100 + 110 + 110)
+            # Retomada cuja época refeita demora mais que o relógio anterior também é tentativa nova.
+            longer = epoch_timeline(read_results(_write_results(Path(folder), [(1, 100, 0.1), (1, 120, 0.1)])))
+            self.assertEqual((longer["attempts"], longer["effective_seconds"]), (2, 120))
             report = evolution(rows, patience=10, planned_epochs=120)
             self.assertEqual(report["best_epoch"], 2)
             self.assertEqual(report["epochs_since_best"], 2)
@@ -149,6 +171,19 @@ class TrainingProgressTests(unittest.TestCase):
 
 class RunRecordTests(unittest.TestCase):
     """Ficha imutável (``run_record``)."""
+
+    def test_interrupted_epoch_is_kept_in_attempt_totals(self):
+        from dronecamp_ia.run_record import start_attempt
+        from dronecamp_ia.training_monitor import TrainingMonitor
+
+        with tempfile.TemporaryDirectory() as folder:
+            run = Path(folder)
+            monitor = TrainingMonitor(run, start_attempt(run, "novo", {}), {"resource_seconds": 0})
+            monitor.epoch_counts.update({"batches": 3, "images": 12, "optimizer_steps": 3})
+            monitor.close("falhou", "queda simulada")
+            end = json.loads((run / "ficha" / "attempt_001_end.json").read_text(encoding="utf-8"))
+            self.assertEqual((end["batches"], end["images"], end["epochs_completed"]), (3, 12, 0))
+            self.assertEqual(end["partial_epoch"]["batches"], 3)
 
     def test_card_is_write_once_and_verify_detects_edits(self):
         from dronecamp_ia.run_record import end_attempt, run_card_summary, start_attempt, unfinished_attempts, \

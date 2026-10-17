@@ -273,8 +273,13 @@ def _operating_curves(samples: list[dict], matches: dict, class_ids: list[int], 
     for budget in fp_budgets:
         tp = fp = 0
         best_recall, best_conf = 0.0 if positives else None, None
-        for confidence, hit in scored:
-            tp, fp = tp + hit, fp + (not hit)
+        index = 0
+        # ATENCAO: previsões com a mesma confiança entram juntas (um limiar real inclui todas).
+        while index < len(scored):
+            confidence = scored[index][0]
+            while index < len(scored) and scored[index][0] == confidence:
+                tp, fp = tp + scored[index][1], fp + (not scored[index][1])
+                index += 1
             if images and fp / images > budget:
                 break
             if positives:
@@ -378,7 +383,9 @@ def evaluate_detections(samples: list[dict], names: list[str], conf: float = 0.2
              "fp_per_image": _ratio(fp, images), "fp_types": dict(fp_types)}
     # 4. Operação: curvas e recall com limite de alarmes, no total e por classe avaliada.
     class_index = {name: index for index, name in enumerate(names)}
-    operating = {"_total": _operating_curves(samples, matches, [class_index[n] for n in evaluated], images, fp_budgets)}
+    # Todas as classes no total: alarme de classe sem caixa humana nesta divisão é falso alarme
+    # e conta no FP por foto; o recall só tem positivos das classes avaliadas.
+    operating = {"_total": _operating_curves(samples, matches, list(range(len(names))), images, fp_budgets)}
     for name in evaluated:
         operating[name] = _operating_curves(samples, matches, [class_index[name]], images, fp_budgets)
     # 5. Condições de captura: o mesmo total por valor de cada campo, com o percentual desconhecido.
@@ -404,10 +411,14 @@ def evaluate_detections(samples: list[dict], names: list[str], conf: float = 0.2
                 "fp_per_image": _ratio(sfp, len(subset))}
     # 6. Exemplos de erro: os falsos positivos mais confiantes e as omissões, por classe.
     kept = []
-    for kind in ("fp", "fn"):
+    for kind, subtype in (("fp", "fp_type"), ("fn", "fn_reason")):
         for class_id, items in errors[kind].items():
-            items.sort(key=lambda item: -(item.get("confidence") or 0.0))
-            kept.extend(items[:examples])
+            groups = defaultdict(list)
+            for item in items:
+                groups[item[subtype]].append(item)
+            for group in groups.values():
+                group.sort(key=lambda item: -(item.get("confidence") or 0.0))
+                kept.extend(group[:examples])
     for sample in samples:
         sample.pop("_used_conf", None)
         sample.pop("_fp_types", None)

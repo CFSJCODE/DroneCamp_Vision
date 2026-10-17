@@ -405,9 +405,18 @@ class TrainingMonitor:
         if self.sampler is not None:
             self.sampler.stop_event.set()
             self.sampler.join(timeout=5)
+        totals = dict(self.totals)
+        partial = None
+        # Época interrompida no meio: o trabalho feito entra nos totais, mas ela não conta como concluída.
+        if self.epoch_open and self.epoch_counts["batches"]:
+            partial = {**self.epoch_counts, "seconds": round(time.perf_counter() - self.epoch_start, 1),
+                       "stages": {name: _stats(values) for name, values in self.stage.items()}}
+            for key in ("batches", "images", "optimizer_steps", "nonfinite_loss", "nonfinite_grad", "skipped_steps"):
+                totals[key] += self.epoch_counts[key]
+            totals["effective_seconds"] += partial["seconds"]
         end_attempt(self.attempt, status, reason, {
-            "global_epoch_reached": self.global_epoch,
-            **{key: (round(value, 1) if isinstance(value, float) else value) for key, value in self.totals.items()},
+            "global_epoch_reached": self.global_epoch, "partial_epoch": partial,
+            **{key: (round(value, 1) if isinstance(value, float) else value) for key, value in totals.items()},
             "resource_peaks": self.sampler.peaks if self.sampler else {},
             "resource_samples": self.sampler.samples if self.sampler else 0,
             "instrumentation_errors": self.errors})

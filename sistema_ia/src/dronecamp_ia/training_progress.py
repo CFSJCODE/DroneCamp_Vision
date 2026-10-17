@@ -103,17 +103,19 @@ def epoch_timeline(rows: list[dict]) -> dict:
         "effective_seconds", "median_epoch_seconds", "p95_epoch_seconds"}``. A primeira
         época de cada tentativa inclui a preparação (carregar dados e modelo).
     """
-    attempt, previous_time = 1, None
+    attempt, previous_time, previous_epoch = 1, None, None
     by_epoch: dict[int, dict] = {}
     redone = []
     for row in rows:
         epoch, elapsed = row.get("epoch"), row.get("time")
         if epoch is None or elapsed is None:
             continue
-        # Queda do relógio = a Ultralytics recomeçou a contar: nova tentativa (retomada).
-        if previous_time is not None and elapsed < previous_time:
+        # Queda do relógio ou época que não avança = a Ultralytics recomeçou: nova tentativa (retomada).
+        if previous_time is not None and (elapsed < previous_time or
+                                          (previous_epoch is not None and epoch <= previous_epoch)):
             attempt += 1
             previous_time = None
+        previous_epoch = epoch
         seconds = elapsed - (previous_time or 0.0)
         previous_time = elapsed
         if int(epoch) in by_epoch:
