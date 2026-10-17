@@ -81,6 +81,8 @@ O `project.yaml` foi calibrado para a CPU (`amp: false`, `batch: 4`, `workers: 0
 
 Na continuação, a Ultralytics usa os argumentos gravados no `last.pt` (dataset em `E:/`, saída em `C:\DroneCamp_runs`, `device=cpu`, `amp=False`). O `kaggle-train` grava uma cópia temporária do checkpoint com `data`, `save_dir`, `device` e os ajustes de GPU trocados (`rebase_checkpoint`) e a apaga no fim. O checkpoint do pacote não muda. `--epochs` não vale na continuação: o total de épocas é o do treino original.
 
+Na GPU Linux a Ultralytics guarda os pesos em `channels_last`, e o otimizador salvo no PC está em outro layout de memória; o AdamW da CUDA recusa essa mistura. Antes do primeiro passo, o `kaggle-train` copia o estado do otimizador para o layout de cada peso (`align_optimizer_state`), sem mudar valores, e registra quantos tensores ajustou em `optimizer_tensors_aligned` no `summary.json`.
+
 ## Tempos esperados (estimativa, ainda não medida)
 
 | Treino | 4600G (CPU) | T4 (estimado) |

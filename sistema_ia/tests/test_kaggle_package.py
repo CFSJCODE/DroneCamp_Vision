@@ -37,7 +37,8 @@ import unittest
 import yaml
 
 from dronecamp_ia.config import detection_names, load_config, load_taxonomy
-from dronecamp_ia.kaggle_package import build_package, find_package, rebase_checkpoint, verify_package
+from dronecamp_ia.kaggle_package import (align_optimizer_state, build_package, find_package, rebase_checkpoint,
+                                         verify_package)
 
 REAL = load_config()
 REGISTRY = REAL.root / "data" / "reviews" / "ceasa_v7_revisao002_ba8cc323c8a1" / "registry.json"
@@ -125,6 +126,28 @@ class PackageRuleTests(unittest.TestCase):
         nested = self.base / "input" / "dataset"
         shutil.copytree(self.package, nested / self.package.name)
         self.assertEqual(find_package(self.base / "input"), (nested / self.package.name).resolve())
+
+    def test_align_optimizer_state_follows_param_layout(self):
+        """Estado salvo no PC (NCHW, exp_avg em float16) passa a ter o layout/tipo do peso channels_last."""
+        import torch
+
+        param = torch.nn.Parameter(torch.randn(8, 4, 3, 3))
+        optimizer = torch.optim.AdamW([param])
+        param.grad = torch.randn_like(param)
+        optimizer.step()
+        saved = optimizer.state_dict()
+        saved["state"][0]["exp_avg"] = saved["state"][0]["exp_avg"].half()
+        moved = torch.nn.Parameter(param.detach().clone().to(memory_format=torch.channels_last))
+        resumed = torch.optim.AdamW([moved])
+        resumed.load_state_dict(saved)
+        before = resumed.state[moved]["exp_avg_sq"].clone()
+        self.assertNotEqual(resumed.state[moved]["exp_avg"].stride(), moved.stride())
+        self.assertEqual(align_optimizer_state(resumed), 2)
+        for key in ("exp_avg", "exp_avg_sq"):
+            self.assertEqual(resumed.state[moved][key].stride(), moved.stride())
+            self.assertEqual(resumed.state[moved][key].dtype, moved.dtype)
+        self.assertTrue(torch.equal(resumed.state[moved]["exp_avg_sq"], before))
+        self.assertEqual(align_optimizer_state(resumed), 0)
 
     def test_rebase_changes_copy_and_keeps_original(self):
         """A cópia recebe dados/device/amp novos; o last.pt do pacote não muda."""

@@ -429,6 +429,35 @@ def rebase_checkpoint(source: Path, destination: Path, updates: dict) -> Path:
     return destination
 
 
+def align_optimizer_state(optimizer) -> int:
+    """Põe o estado do otimizador no mesmo dispositivo, tipo e layout de memória de cada parâmetro.
+
+    ATENCAO: um checkpoint do PC (CPU, Windows) guarda ``exp_avg``/``exp_avg_sq`` em NCHW
+    (``exp_avg`` em float16, pela Ultralytics). Na GPU Linux a Ultralytics liga
+    ``channels_last`` sozinha, e o AdamW fundido da CUDA recusa estado com strides
+    diferentes dos pesos ("must have same dtype, device, and layout"). Copiar para
+    ``torch.empty_like(param)`` herda o layout do peso sem mudar os valores.
+
+    Parâmetros:
+        optimizer: otimizador já com o ``load_state_dict`` do checkpoint.
+
+    Retorna:
+        int: quantos tensores foram ajustados.
+    """
+    import torch
+
+    changed = 0
+    for group in optimizer.param_groups:
+        for param in group["params"]:
+            for key, value in optimizer.state.get(param, {}).items():
+                if key == "step" or not isinstance(value, torch.Tensor) or value.shape != param.shape:
+                    continue
+                if (value.device, value.dtype, value.stride()) != (param.device, param.dtype, param.stride()):
+                    optimizer.state[param][key] = torch.empty_like(param).copy_(value)
+                    changed += 1
+    return changed
+
+
 # ENTRADA: comando kaggle-train (cli.py) e notebook kaggle/treino_t4.ipynb.
 def train_from_package(config: ProjectConfig, package: Path, device: str = "0", overrides: dict | None = None,
                        fresh: bool = False, weights: str | None = None, checkpoint: Path | None = None,
@@ -529,10 +558,14 @@ def train_from_package(config: ProjectConfig, package: Path, device: str = "0", 
             write_json(run / "execution.json", {"runtime": runtime_info(model, config), "parameters": parameters,
                                                 "device": device, **details})
             model.add_callback("on_fit_epoch_end", time_guard)
+            # Depois do resume_training (que carrega o otimizador) e antes do primeiro passo.
+            model.add_callback("on_train_start", lambda trainer: state.update(
+                optimizer_tensors_aligned=align_optimizer_state(trainer.optimizer)))
             # Argumentos explícitos além da cópia: data/device/save_dir/batch/workers são aceitos
             # pela Ultralytics ao retomar (BaseTrainer.check_resume).
             model.train(resume=True, data=str(dataset), device=device, save_dir=str(run / "fit"),
                         **{key: updates[key] for key in ("batch", "workers") if key in updates})
+            details["optimizer_tensors_aligned"] = state.get("optimizer_tensors_aligned")
         else:
             # 3b. Treino novo com os parâmetros que o PC usaria, mais os ajustes de GPU.
             parameters = dict(manifest["parameters"])
