@@ -39,7 +39,8 @@ NOTEBOOK = HERE / "treino_t4.ipynb"
 
 def kaggle(*args: str, check: bool = True) -> subprocess.CompletedProcess:
     """Roda o cliente ``kaggle`` (``python -m kaggle``) e devolve o resultado com a saída em texto."""
-    result = subprocess.run([sys.executable, "-m", "kaggle", *args], capture_output=True, text=True)
+    result = subprocess.run([sys.executable, "-m", "kaggle", *args], capture_output=True, text=True,
+                            encoding="utf-8", errors="replace", env={**os.environ, "PYTHONIOENCODING": "utf-8"})
     if check and result.returncode:
         raise SystemExit(f"kaggle {' '.join(args)} falhou:\n{result.stdout}\n{result.stderr}")
     return result
