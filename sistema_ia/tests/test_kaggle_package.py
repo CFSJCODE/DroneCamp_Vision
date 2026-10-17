@@ -70,7 +70,8 @@ def fake_run(base: Path, names: list[str]) -> Path:
     (run / "execution.json").write_text(json.dumps({"parameters": {"epochs": 120, "imgsz": 640}}), encoding="utf-8")
     torch.save({"epoch": 60, "train_args": {"data": "E:/x/data.yaml", "device": "cpu", "amp": False}},
                run / "fit" / "weights" / "last.pt")
-    (run / "fit" / "results.csv").write_text("epoch,x\n1,0\n", encoding="utf-8")
+    # A época 62 simula o treino do PC fechando outra época depois da cópia do last.pt (época 61).
+    (run / "fit" / "results.csv").write_text("epoch,x\n60,0\n61,0\n62,0\n", encoding="utf-8")
     return run
 
 
@@ -95,7 +96,8 @@ class PackageRuleTests(unittest.TestCase):
         manifest = verify_package(self.package)
         self.assertEqual(manifest["mode"], "resume")
         self.assertEqual(manifest["checkpoint"]["epoch_completed"], 61)
-        self.assertTrue((self.package / "checkpoint" / "results.csv").is_file())
+        history = (self.package / "checkpoint" / "results.csv").read_text(encoding="utf-8").split()
+        self.assertEqual(history, ["epoch,x", "60,0", "61,0"])
         self.assertTrue(self.package.with_suffix(".zip").is_file())
         data = yaml.safe_load((self.package / "dataset" / "dataset.yaml").read_text(encoding="utf-8"))
         self.assertEqual(data["path"], ".")
@@ -134,6 +136,18 @@ class PackageRuleTests(unittest.TestCase):
         args = torch.load(copy, weights_only=False)["train_args"]
         self.assertEqual((args["data"], args["device"], args["amp"]), ("/kaggle/x.yaml", "0", True))
         self.assertEqual(source.read_bytes(), before)
+
+    def test_checkpoint_from_another_package_is_refused(self):
+        """--checkpoint de uma sessão que usou outro pacote é recusado antes de treinar."""
+        from dronecamp_ia.kaggle_package import train_from_package
+
+        previous = self.base / "anterior" / "fit" / "weights"
+        previous.mkdir(parents=True)
+        shutil.copy2(self.package / "checkpoint" / "last.pt", previous / "resume.pt")
+        (self.base / "anterior" / "summary.json").write_text(json.dumps({"package": {"package_sha256": "0" * 64}}),
+                                                             encoding="utf-8")
+        with self.assertRaisesRegex(ValueError, "outro pacote"):
+            train_from_package(self.config, self.package, device="cpu", checkpoint=previous / "resume.pt")
 
     def test_requires_exactly_one_source(self):
         """Sem origem, ou com as duas, o comando explica e não cria pasta."""

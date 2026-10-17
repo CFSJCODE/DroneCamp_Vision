@@ -252,7 +252,9 @@ def _package_resume(config: ProjectConfig, run: Path, target: Path) -> dict:
     if epoch is None:
         raise ValueError("A cópia do last.pt não abriu (o treino pode estar gravando a época); tente de novo.")
     if (fit / "results.csv").is_file():
-        shutil.copy2(fit / "results.csv", target / "checkpoint" / "results.csv")
+        # Só as épocas do checkpoint copiado: o treino do PC pode ter fechado outra época
+        # entre a cópia do last.pt e a do results.csv.
+        copy_results_until(fit / "results.csv", target / "checkpoint" / "results.csv", epoch)
     # Relatórios do run de origem que explicam o que está sendo continuado.
     (target / "source_run").mkdir()
     for name in ("execution.json", "summary.json", "pilot_provenance.json", "tiling_manifest.json", "sampling.json"):
@@ -308,6 +310,25 @@ def dataset_counts(dataset: Path, names: list[str]) -> dict:
                     boxes[names[int(line.split()[0])]] += 1
         counts[split] = {"images": sum(1 for path in image_dir.rglob("*") if path.is_file()), "boxes": boxes}
     return counts
+
+
+def copy_results_until(source: Path, destination: Path, epoch: int | None) -> int:
+    """Copia o ``results.csv`` só até a época ``epoch`` (1-based); None copia tudo.
+
+    Retorna:
+        int: linhas de época copiadas.
+    """
+    with source.open(encoding="utf-8", newline="") as handle:
+        rows = list(csv.reader(handle))
+    if not rows:
+        return 0
+    header, body = rows[0], rows[1:]
+    column = next((index for index, name in enumerate(header) if name.strip() == "epoch"), None)
+    if epoch is not None and column is not None:
+        body = [row for row in body if row and float(row[column]) <= epoch]
+    with destination.open("w", encoding="utf-8", newline="") as handle:
+        csv.writer(handle).writerows([header, *body])
+    return len(body)
 
 
 def _git_commit(root: Path) -> str | None:
@@ -452,7 +473,9 @@ def train_from_package(config: ProjectConfig, package: Path, device: str = "0", 
     run = make_run_directory(config.root, "pilot_train")
     details = {"pilot": True, "production_ready": False, "trained_on": "kaggle_package",
                "package": {"package_sha256": file_hash(package / "package.json"), "mode": manifest["mode"],
-                           "source": manifest.get("source"), "git_commit": manifest.get("git_commit")}}
+                           "source": manifest.get("source"), "git_commit": manifest.get("git_commit")},
+               # Código que treinou (pode ser mais novo que o que montou o pacote).
+               "runner_git_commit": _git_commit(config.root)}
     _write_training_summary(run, ["O treino a partir do pacote ainda não concluiu."], state="running", **details)
     write_json(run / "package_audit.json", {k: v for k, v in manifest.items() if k != "files"})
     overrides = dict(overrides or {})
@@ -486,11 +509,13 @@ def train_from_package(config: ProjectConfig, package: Path, device: str = "0", 
             # 3a. Continuação: results.csv anterior na pasta nova (a Ultralytics acrescenta linhas).
             if not source_checkpoint.is_file():
                 raise ValueError(f"Checkpoint não encontrado: {source_checkpoint}.")
+            if checkpoint:
+                _check_lineage(source_checkpoint, details["package"]["package_sha256"])
             (run / "fit").mkdir()
             previous_csv = source_checkpoint.parent / "results.csv" if source_checkpoint.parent.name == "checkpoint" \
                 else source_checkpoint.parent.parent / "results.csv"
             if previous_csv.is_file():
-                shutil.copy2(previous_csv, run / "fit" / "results.csv")
+                copy_results_until(previous_csv, run / "fit" / "results.csv", _checkpoint_epoch(source_checkpoint))
             updates = {"data": str(dataset), "device": device, "project": str(run), "name": "fit",
                        "save_dir": str(run / "fit"), "exist_ok": True}
             if gpu:
@@ -544,6 +569,24 @@ def train_from_package(config: ProjectConfig, package: Path, device: str = "0", 
     # 5. Mesma auditoria do train-pilot: pesos, results.csv finito e classes do pacote.
     review_training_result(run, model, names, **details)
     return run
+
+
+def _check_lineage(checkpoint: Path, package_sha256: str) -> None:
+    """Recusa continuar com um checkpoint treinado a partir de outro pacote.
+
+    O ``resume.pt``/``last.pt`` de uma sessão anterior fica em ``<run>/fit/weights``; o
+    ``summary.json`` daquele run registra o hash do ``package.json`` usado.
+
+    Erros:
+        ValueError: summary ausente/ilegível ou hash de pacote diferente.
+    """
+    summary_path = checkpoint.parent.parent.parent / "summary.json"
+    try:
+        recorded = json.loads(summary_path.read_text(encoding="utf-8"))["package"]["package_sha256"]
+    except (OSError, ValueError, KeyError, TypeError) as error:
+        raise ValueError(f"Não foi possível conferir de que pacote veio {checkpoint} ({summary_path}).") from error
+    if recorded != package_sha256:
+        raise ValueError("O checkpoint veio de outro pacote; use o mesmo Dataset da sessão anterior.")
 
 
 def _csv_epochs(path: Path) -> int:
