@@ -41,10 +41,17 @@ Conteúdo do arquivo:
 - ``CoordinatorClient`` + ``run_worker`` (ENTRADA de ``dml-lan-worker``).
 
 O que lê e grava no disco:
-- Coordenador: ``runs/dml_lan_<data>_<id>/state.json``, ``rounds/<r>/<modelo>.npz`` e
-  ``rounds/<r>/<modelo>.json`` (métricas enviadas).
+- Coordenador: ``runs/dml_lan_<data>_<id>/state.json``, ``rounds/<r>/<modelo>.npz``,
+  ``rounds/<r>/<modelo>.json`` (métricas enviadas) e ``rounds/<r>/joint.json`` (ficha da
+  rodada fechada: versão de cada modelo, máquina, hashes e decisão do RL).
 - Trabalhador: ``runs/dml_lan_worker_<data>_<id>/<modelo>/round_<r>/`` (uma pasta de
-  ``train_mutual`` por rodada, com pesos ``last``/``best``) e ``peers/<r>/``.
+  ``train_mutual`` por rodada, com pesos ``last``/``best``), ``peers/<r>/`` e
+  ``worker_log.jsonl`` (uma linha por rodada e modelo: espera, transferências, tentativas).
+
+Registro da coordenação (``state.json``, chave ``coordination``): por rodada e modelo,
+quando o trabalho foi atribuído e concluído, por qual máquina, bytes enviados e
+baixados, tempo de espera e tentativas informados pelo trabalhador, e as falhas
+(envio recusado, rodada errada) com o motivo.
 
 Onde mexer:
 - Porta padrão: ``DEFAULT_PORT``. Tempo entre consultas do trabalhador: ``POLL_SECONDS``.
@@ -68,7 +75,7 @@ import time
 from urllib import error as urlerror
 from urllib import request as urlrequest
 
-from .io import make_run_directory, write_json
+from .io import file_hash, make_run_directory, write_json
 
 # Porta TCP padrão do coordenador (fora das usadas pela plataforma, 8765).
 DEFAULT_PORT = 8790
@@ -104,6 +111,21 @@ def dataset_fingerprint(data_path: Path, imgsz: int) -> str:
     return digest.hexdigest()
 
 
+def _weights_hash(path: Path) -> str | None:
+    """SHA-256 dos pesos: do arquivo, ou de uma pasta (D-FINE) pelos hashes dos arquivos em ordem."""
+    path = Path(path)
+    if path.is_file():
+        return file_hash(path)
+    if path.is_dir():
+        digest = hashlib.sha256()
+        for item in sorted(path.rglob("*")):
+            if item.is_file():
+                digest.update(item.relative_to(path).as_posix().encode())
+                digest.update(file_hash(item).encode())
+        return digest.hexdigest()
+    return None
+
+
 # ---------------------------------------------------------------------------
 # Coordenador
 # ---------------------------------------------------------------------------
@@ -130,12 +152,16 @@ class CoordinatorState:
         if state_path.exists():
             self.data = json.loads(state_path.read_text(encoding="utf-8"))
             self.controllers = {name: DiscountedUCB.from_dict(value) for name, value in self.data["controllers"].items()}
+            # state.json de versão anterior (sem o registro da coordenação): completa as chaves.
+            self.data.setdefault("decisions", {})
+            self.data.setdefault("coordination", {"assignments": {}, "downloads": {}, "failures": []})
             return
         rl = settings["rl"]
         self.controllers = {name: DiscountedUCB(rl["arms"], rl["gamma"], rl["exploration"]) for name in self.models}
         self.data = {"rounds": int(rounds), "epochs_per_round": int(epochs_per_round), "round": 0,
                      "settings": settings, "fingerprint": None, "workers": {}, "uploads": {"0": {}},
                      "multipliers": {"0": {name: 0.0 for name in self.models}}, "arms": {"0": {}},
+                     "decisions": {}, "coordination": {"assignments": {}, "downloads": {}, "failures": []},
                      "created_at": datetime.now(timezone.utc).isoformat(), "complete": False}
         self.save()
 
@@ -185,6 +211,12 @@ class CoordinatorState:
                 return {"action": "wait", "round": current}
             peers = [name for name in self.models if name != model] if current > 0 else []
             multiplier = self.data["multipliers"].get(str(current), {}).get(model, 0.0)
+            # Registro: a primeira entrega da tarefa marca a atribuição (o trabalhador consulta várias vezes).
+            assigned = self.data["coordination"]["assignments"].setdefault(str(current), {})
+            if model not in assigned:
+                assigned[model] = {"host": self.data["workers"].get(model, {}).get("host"),
+                                   "assigned_at": datetime.now(timezone.utc).isoformat(), "completed_at": None}
+                self.save()
             cons = self.data["settings"]["consistency"]
             weight = 0.0 if current == 0 else ramp_weight(current - 1, int(cons.get("ramp_rounds", 2)),
                                                           float(cons["lambda"])) * multiplier
@@ -199,41 +231,68 @@ class CoordinatorState:
         import numpy as np
 
         with self.lock:
-            if model not in self.models:
-                raise ValueError(f"Modelo desconhecido: {model}.")
-            if round_index != self.data["round"]:
-                raise ValueError(f"Rodada {round_index} não está aberta (atual: {self.data['round']}).")
-            # Valida o arquivo antes de gravar: sem pickle e com as chaves esperadas.
-            with np.load(io.BytesIO(cache), allow_pickle=False) as data:
-                missing = {"keys", "offsets", "boxes", "probs"} - set(data.files)
-                if missing:
-                    raise ValueError(f"Cache sem {sorted(missing)}.")
+            try:
+                if model not in self.models:
+                    raise ValueError(f"Modelo desconhecido: {model}.")
+                if round_index != self.data["round"]:
+                    raise ValueError(f"Rodada {round_index} não está aberta (atual: {self.data['round']}).")
+                # Valida o arquivo antes de gravar: sem pickle e com as chaves esperadas.
+                with np.load(io.BytesIO(cache), allow_pickle=False) as data:
+                    missing = {"keys", "offsets", "boxes", "probs"} - set(data.files)
+                    if missing:
+                        raise ValueError(f"Cache sem {sorted(missing)}.")
+            except ValueError as error:
+                # Falha registrada antes de virar HTTP 400 (o trabalhador vê a mesma mensagem).
+                self.data["coordination"]["failures"].append({
+                    "at": datetime.now(timezone.utc).isoformat(), "event": "upload_recusado", "model": model,
+                    "round": round_index, "reason": str(error)})
+                self.save()
+                raise
             folder = self.directory / "rounds" / str(round_index)
             folder.mkdir(parents=True, exist_ok=True)
             (folder / f"{model}.npz").write_bytes(cache)
             write_json(folder / f"{model}.json", metrics)
+            received_at = datetime.now(timezone.utc).isoformat()
             self.data["uploads"].setdefault(str(round_index), {})[model] = {
-                "val_map50": metrics.get("val_map50"), "received_at": datetime.now(timezone.utc).isoformat()}
+                "val_map50": metrics.get("val_map50"), "received_at": received_at, "bytes": len(cache),
+                "sha256": hashlib.sha256(cache).hexdigest(), "host": self.data["workers"].get(model, {}).get("host"),
+                "weights_sha256": metrics.get("weights_sha256"), "worker": metrics.get("worker")}
+            assigned = self.data["coordination"]["assignments"].setdefault(str(round_index), {}).setdefault(
+                model, {"host": self.data["workers"].get(model, {}).get("host"), "assigned_at": None})
+            assigned["completed_at"] = received_at
             self._maybe_advance()
             self.save()
             return {"round": self.data["round"], "complete": self.data["complete"]}
 
     def _maybe_advance(self) -> None:
         """Fecha a rodada quando todos enviaram: recompensa do RL e multiplicadores da próxima."""
-        from .dml_controller import reward_from_metrics
+        from .dml_controller import decision_record
 
         current = self.data["round"]
         uploads = self.data["uploads"].get(str(current), {})
         if set(uploads) != set(self.models):
             return
         # Recompensa: Δ mAP50 de validação em relação à rodada anterior (rodada 0 não pontua).
+        decisions = {}
         if current > 0:
             previous = self.data["uploads"].get(str(current - 1), {})
+            choices = self.data.get("choices", {}).get(str(current), {})
             for name in self.models:
                 arm = self.data["arms"].get(str(current), {}).get(name)
                 if arm is not None:
-                    reward = reward_from_metrics(previous.get(name, {}).get("val_map50"), uploads[name].get("val_map50"))
-                    self.controllers[name].update(arm, reward, step=current)
+                    choice = choices.get(name) or {"arm": arm, "multiplier": self.controllers[name].arms[arm]}
+                    decisions[name] = decision_record(
+                        self.controllers[name], choice, previous.get(name, {}).get("val_map50"),
+                        uploads[name].get("val_map50"), self.data["multipliers"][str(current)][name], step=current)
+            self.data["decisions"][str(current)] = decisions
+        # Ficha da rodada fechada: qual versão de cada modelo entrou no "checkpoint conjunto".
+        write_json(self.directory / "rounds" / str(current) / "joint.json", {
+            "round": current, "closed_at": datetime.now(timezone.utc).isoformat(),
+            "models": {name: {key: uploads[name].get(key) for key in ("host", "sha256", "bytes", "weights_sha256",
+                                                                     "val_map50", "received_at")}
+                       for name in self.models},
+            "multipliers": self.data["multipliers"].get(str(current), {}), "rl_decisions": decisions,
+            "fingerprint": self.data.get("fingerprint")})
         if current + 1 >= self.data["rounds"]:
             self.data["complete"] = True
             return
@@ -245,7 +304,9 @@ class CoordinatorState:
             self.data["arms"][str(nxt)] = {}
             self.data["multipliers"][str(nxt)] = {name: 1.0 for name in self.models}
             return
-        arms = {name: self.controllers[name].select() for name in self.models}
+        choices = {name: self.controllers[name].select_details() for name in self.models}
+        arms = {name: choice["arm"] for name, choice in choices.items()}
+        self.data.setdefault("choices", {})[str(nxt)] = choices
         self.data["arms"][str(nxt)] = arms
         self.data["multipliers"][str(nxt)] = {name: self.controllers[name].arms[arm] for name, arm in arms.items()}
 
@@ -255,11 +316,20 @@ class CoordinatorState:
             raise ValueError("Pedido de cache inválido.")
         return self.directory / "rounds" / str(int(round_index)) / f"{model}.npz"
 
+    def note_download(self, round_index: int, model: str, size: int) -> None:
+        """Conta um cache servido a um trabalhador (bytes baixados por rodada e modelo)."""
+        with self.lock:
+            bucket = self.data["coordination"]["downloads"].setdefault(str(round_index), {}).setdefault(
+                model, {"count": 0, "bytes": 0})
+            bucket["count"] += 1
+            bucket["bytes"] += int(size)
+            self.save()
+
     def public(self) -> dict:
         """Resumo para ``GET /status`` (sem o token, sem caminhos locais)."""
         with self.lock:
             return {key: self.data[key] for key in ("round", "rounds", "epochs_per_round", "complete", "workers",
-                                                    "uploads", "multipliers")}
+                                                    "uploads", "multipliers", "decisions", "coordination")}
 
 
 def _handler(state: CoordinatorState, token: str):
@@ -305,7 +375,9 @@ def _handler(state: CoordinatorState, token: str):
                     path = state.peer_file(int(parts[1]), parts[2])
                     if not path.exists():
                         return self._reply(404, {"error": "cache ainda não recebido"})
-                    return self._reply(200, path.read_bytes(), "application/octet-stream")
+                    body = path.read_bytes()
+                    state.note_download(int(parts[1]), parts[2], len(body))
+                    return self._reply(200, body, "application/octet-stream")
                 return self._reply(404, {"error": "rota desconhecida"})
             except ValueError as error:
                 return self._reply(400, {"error": str(error)})
@@ -382,6 +454,9 @@ class CoordinatorClient:
 
     def __init__(self, url: str, token: str, retries: int = 5):
         self.url, self.token, self.retries = url.rstrip("/"), token, int(retries)
+        # Contadores do registro da coordenação (lidos e zerados pelo run_worker a cada rodada).
+        self.attempts_retried = 0
+        self.network_failures: list[str] = []
 
     def _call(self, method: str, path: str, data: bytes | None = None, headers: dict | None = None,
               raw: bool = False):
@@ -395,9 +470,11 @@ class CoordinatorClient:
             except urlerror.HTTPError as error:
                 detail = error.read().decode("utf-8", "replace")
                 raise RuntimeError(f"Coordenador recusou {path}: {error.code} {detail}") from error
-            except (urlerror.URLError, TimeoutError, ConnectionError):
+            except (urlerror.URLError, TimeoutError, ConnectionError) as error:
+                self.network_failures.append(f"{path}: {type(error).__name__}")
                 if attempt >= self.retries:
                     raise
+                self.attempts_retried += 1
                 time.sleep(2 ** (attempt + 1))
         raise RuntimeError("inalcançável")
 
@@ -453,6 +530,9 @@ def run_worker(config_root: Path, data_path: Path, settings: dict, models: list[
     specs = {model["name"]: dict(model) for model in settings["models"]}
     total_epochs = int(info["rounds"]) * int(info["epochs_per_round"])
     pending = list(models)
+    # Espera acumulada desde o último trabalho de cada modelo (registro da coordenação).
+    waiting = {name: 0.0 for name in models}
+    log_path = workdir / "worker_log.jsonl"
     while pending:
         progressed = False
         for name in list(pending):
@@ -463,6 +543,9 @@ def run_worker(config_root: Path, data_path: Path, settings: dict, models: list[
             if task["action"] == "wait":
                 continue
             round_index = int(task["round"])
+            assigned_at = time.time()
+            client.attempts_retried, client.network_failures = 0, []
+            transfer = {"downloaded_bytes": 0, "download_seconds": 0.0}
             # 1-2. Pesos da rodada anterior e caches dos pares desta rodada.
             spec = dict(specs[name])
             spec["start_epoch"] = round_index * int(info["epochs_per_round"])
@@ -478,7 +561,11 @@ def run_worker(config_root: Path, data_path: Path, settings: dict, models: list[
                 target = peer_dir / f"{peer}.npz"
                 if not target.exists():
                     peer_dir.mkdir(parents=True, exist_ok=True)
-                    target.write_bytes(client.peer(round_index - 1, peer))
+                    started = time.time()
+                    body = client.peer(round_index - 1, peer)
+                    target.write_bytes(body)
+                    transfer["downloaded_bytes"] += len(body)
+                    transfer["download_seconds"] += time.time() - started
             # 3. Treino da rodada: λ e multiplicador já vêm do coordenador (RL lá, não aqui).
             local = json.loads(json.dumps(settings))
             local["models"] = [spec if model["name"] == name else model for model in local["models"]]
@@ -488,9 +575,11 @@ def run_worker(config_root: Path, data_path: Path, settings: dict, models: list[
             run = workdir / name / f"round_{round_index}"
             run.mkdir(parents=True, exist_ok=True)
             mode = "cached" if task.get("peers") and float(task.get("lambda", 0.0)) > 0 else "solo"
+            train_started = time.time()
             train_mutual(Path(config_root), data_path, local, mode=mode, student=name,
                          peer_cache=peer_dir if mode == "cached" else None, max_batches=max_batches,
                          val_max_batches=val_max_batches, run=run)
+            train_seconds = time.time() - train_started
             summary = json.loads((run / "summary.json").read_text(encoding="utf-8"))["models"][name]
             # 4. Cache das previsões do modelo treinado (pesos last) no split de treino.
             last = run / "weights" / name / "last"
@@ -500,10 +589,27 @@ def run_worker(config_root: Path, data_path: Path, settings: dict, models: list[
             cache_dir = run / "cache"
             cache_path = build_peer_cache(adapter, TileDataset(data_path, "train", imgsz), cache_dir,
                                           batch=int(local["train"]["batch"]), max_batches=max_batches)
-            client.upload(round_index, name, cache_path.read_bytes(),
+            cache_bytes = cache_path.read_bytes()
+            worker_record = {"host": host_label or platform.node(), "round": round_index, "model": name,
+                             "mode": mode, "wait_seconds_before": round(waiting[name], 1),
+                             "train_seconds": round(train_seconds, 1), **{k: round(v, 2) if isinstance(v, float) else v
+                                                                         for k, v in transfer.items()},
+                             "uploaded_bytes": len(cache_bytes), "retries": client.attempts_retried,
+                             "network_failures": client.network_failures[-5:]}
+            weights_sha = _weights_hash(last)
+            started = time.time()
+            client.upload(round_index, name, cache_bytes,
                           {"val_map50": summary["last_val_map50"], "best_val_map50": summary["best_val_map50"],
-                           "mode": mode, "lambda": task.get("lambda")})
+                           "mode": mode, "lambda": task.get("lambda"), "weights_sha256": weights_sha,
+                           "worker": worker_record})
+            worker_record.update({"upload_seconds": round(time.time() - started, 2),
+                                  "total_seconds": round(time.time() - assigned_at, 1), "weights_sha256": weights_sha})
+            with log_path.open("a", encoding="utf-8") as handle:
+                handle.write(json.dumps(worker_record, ensure_ascii=False) + "\n")
+            waiting[name] = 0.0
             progressed = True
         if pending and not progressed:
             time.sleep(poll_seconds)
+            for name in pending:
+                waiting[name] += poll_seconds
     return workdir

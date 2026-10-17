@@ -126,6 +126,31 @@ class DiscountedUCB:
                 best, best_score = index, score
         return best
 
+    def select_details(self) -> dict:
+        """Mesma escolha de ``select``, com o raciocínio de cada braço (registro da decisão).
+
+        Retorna:
+            ``{"arm": posição escolhida, "multiplier", "reason": "nunca_tentado"|"maior_ucb",
+            "arms": [{"multiplier", "count", "mean", "bonus", "score"}]}``. ``mean`` é a
+            média descontada (aproveitamento) e ``bonus`` o termo de exploração;
+            ``None`` nos braços nunca tentados.
+
+        Chamada por: ``mutual_learning.train_mutual`` e ``dml_lan.CoordinatorState``.
+        """
+        arm = self.select()
+        total = sum(self.counts)
+        rows = []
+        for count, value, multiplier in zip(self.counts, self.sums, self.arms):
+            if count < _UNTRIED:
+                rows.append({"multiplier": multiplier, "count": 0.0, "mean": None, "bonus": None, "score": None})
+                continue
+            bonus = self.exploration * math.sqrt(XI * math.log(max(total, 1.0 + 1e-9)) / count)
+            rows.append({"multiplier": multiplier, "count": round(count, 4), "mean": round(value / count, 6),
+                         "bonus": round(bonus, 6), "score": round(value / count + bonus, 6)})
+        untried = rows[arm]["count"] == 0.0
+        return {"arm": arm, "multiplier": self.arms[arm], "reason": "nunca_tentado" if untried else "maior_ucb",
+                "arms": rows}
+
     def update(self, arm: int, reward: float, step: int | None = None) -> None:
         """Registra a recompensa observada depois de usar ``arm``.
 
@@ -187,6 +212,43 @@ class DiscountedUCB:
         policy.sums = [float(value) for value in data["sums"]]
         policy.history = list(data.get("history", []))
         return policy
+
+
+def decision_record(policy: "DiscountedUCB | None", choice: dict | None, before: float | None, after: float | None,
+                    applied_weight: float, step: int | None = None) -> dict:
+    """Registra uma decisão do UCB e aplica (ou ignora, com motivo) a atualização.
+
+    Parâmetros:
+        policy: o controlador (``None`` = RL desligado; nada é atualizado).
+        choice: saída de ``select_details`` no começo da época/rodada.
+        before, after: métrica de validação antes e depois (mAP50).
+        applied_weight: peso de consistência realmente usado (rampa × multiplicador).
+        step: época ou rodada.
+
+    Retorna:
+        ``{"step", "arm", "multiplier", "applied_weight", "reason", "arms",
+        "metric_before", "metric_after", "reward", "update": "aplicada"|"ignorada",
+        "ignored_reason"}``.
+
+    ATENCAO: a recompensa é Δ mAP50 de validação entre épocas; ela mistura o efeito
+    do multiplicador com o progresso natural do treino e com o ruído da validação.
+    Sozinha não prova que o controlador causou ganho: a prova é o ``dml-evaluate``
+    contra um treino de controle (braço 0 fixo ou modo ``solo``).
+    """
+    record = {"step": step, **(choice or {}), "applied_weight": round(float(applied_weight), 6),
+              "metric_before": before, "metric_after": after, "reward": None, "update": "ignorada",
+              "ignored_reason": None}
+    if policy is None or choice is None:
+        record["ignored_reason"] = "rl_desligado"
+        return record
+    if before is None or after is None:
+        # Sem as duas medidas a recompensa seria inventada; a época não conta para nenhum braço.
+        record["ignored_reason"] = "metrica_ausente_antes" if before is None else "metrica_ausente_depois"
+        return record
+    reward = reward_from_metrics(before, after)
+    policy.update(choice["arm"], reward, step=step)
+    record.update({"reward": round(reward, 6), "update": "aplicada"})
+    return record
 
 
 def reward_from_metrics(before: float | None, after: float | None) -> float:
