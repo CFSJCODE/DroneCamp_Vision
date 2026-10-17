@@ -104,24 +104,24 @@ O projeto já tinha dois bandits (PR #5): LinUCB para a fila de revisão e succe
 **Pré-requisitos em cada máquina** (HP-Z230 192.168.0.82 e 6006U 192.168.0.15, ambos no 192.168.0.x do mapa de rede):
 
 1. Clonar o repositório, criar o venv e instalar: `python -m pip install -e ".[dml]"`.
-2. Copiar a **mesma** pasta do dataset para as duas máquinas (o coordenador recusa um dataset diferente). Para o teste de fumaça serve um recorte pequeno; o teste valida o fluxo, não a qualidade.
+2. Copiar a **mesma** pasta do dataset para as duas máquinas (o coordenador recusa um dataset diferente). Para o teste de fumaça serve um recorte pequeno, como `data/datasets/e2e_test_v1`; o teste valida o fluxo, não a qualidade. O `data.yaml` desse recorte traz `path:` absoluto do 4600G: em outra máquina, apague a linha `path:` (a pasta do YAML passa a ser a raiz) ou ajuste o caminho.
 3. Liberar a porta só para a rede local na máquina do coordenador (PowerShell como administrador; é uma mudança no sistema que você faz):
 
 ```powershell
 New-NetFirewallRule -DisplayName "DroneCamp DML 8790" -Direction Inbound -Protocol TCP -LocalPort 8790 -RemoteAddress 192.168.0.0/24 -Action Allow
 ```
 
-**Teste de fumaça** (`configs/dml_smoke.json`: YOLO26n, RF-DETR Nano, D-FINE Small, 1 época por rodada). Coordenador e dois modelos no HP-Z230, que deve ter mais núcleos; o modelo mais leve no 6006U, que é um notebook de 2 núcleos (suposição: confira com `dml-plan`).
+**Teste de fumaça** (`configs/dml_smoke.json`: YOLO26n, RF-DETR Nano, D-FINE Small, 1 época por rodada). Coordenador e dois modelos no HP-Z230, que deve ter mais núcleos; o modelo mais leve, o YOLO26n, no 6006U (i3-6006U, 2 núcleos, 7,9 GB). Medido no 6006U com `dml-plan` em 17/10 (batch 2, imgsz 640): YOLO26n 3,6 s por passo, D-FINE Small 6,9 s, RF-DETR Nano 17,8 s. O RF-DETR Nano é o mais pesado dos três, apesar do nome, e vai para a máquina mais forte.
 
 ```powershell
 # HP-Z230 (192.168.0.82), terminal 1: coordenador (imprime o token)
 .\.venv\Scripts\python.exe -m dronecamp_ia dml-lan-coordinator --models configs\dml_smoke.json --host 192.168.0.82 --rounds 2 --epochs-per-round 1
 
-# HP-Z230, terminal 2: trabalhador do YOLO26 e do D-FINE
-.\.venv\Scripts\python.exe -m dronecamp_ia dml-lan-worker --models configs\dml_smoke.json --data CAMINHO\dataset.yaml --model yolo26 --model dfine --coordinator http://192.168.0.82:8790 --token TOKEN --name HP-Z230 --max-batches 5
+# HP-Z230, terminal 2: trabalhador do RF-DETR e do D-FINE
+.\.venv\Scripts\python.exe -m dronecamp_ia dml-lan-worker --models configs\dml_smoke.json --data CAMINHO\dataset.yaml --model rfdetr --model dfine --coordinator http://192.168.0.82:8790 --token TOKEN --name HP-Z230 --max-batches 5
 
-# 6006U (192.168.0.15): trabalhador do RF-DETR
-.\.venv\Scripts\python.exe -m dronecamp_ia dml-lan-worker --models configs\dml_smoke.json --data CAMINHO\dataset.yaml --model rfdetr --coordinator http://192.168.0.82:8790 --token TOKEN --name 6006U --max-batches 5
+# 6006U (192.168.0.15): trabalhador do YOLO26
+.\.venv\Scripts\python.exe -m dronecamp_ia dml-lan-worker --models configs\dml_smoke.json --data CAMINHO\dataset.yaml --model yolo26 --coordinator http://192.168.0.82:8790 --token TOKEN --name 6006U --max-batches 5
 ```
 
 Se uma máquina reiniciar no meio: o coordenador volta com `--resume runs\dml_lan_<...>` (mesmo token) e o trabalhador com `--workdir runs\dml_lan_worker_<...>` (a pasta que ele imprimiu ao começar), porque a rodada seguinte continua dos pesos guardados nela.
@@ -132,7 +132,7 @@ Sucesso = `runs\dml_lan_*\state.json` com `"complete": true` e os três modelos 
 
 ```powershell
 # Dependências e tempo medido por passo nesta máquina (decide onde treinar)
-.\.venv\Scripts\python.exe -m dronecamp_ia dml-plan --data CAMINHO\dataset.yaml --output runs\dml_plan.json
+.\.venv\Scripts\python.exe -m dronecamp_ia dml-plan --data CAMINHO\dataset.yaml --threads 2 --output runs\dml_plan.json  # --threads deixa CPU livre se outro treino estiver rodando
 
 # DML online (os três na memória) ou destilação em um aluno
 .\.venv\Scripts\python.exe -m dronecamp_ia dml-train --data CAMINHO\dataset.yaml --mode online

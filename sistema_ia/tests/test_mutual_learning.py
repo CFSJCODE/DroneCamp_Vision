@@ -135,6 +135,17 @@ class DiscountedUCBTests(unittest.TestCase):
 # ---------------------------------------------------------------------------
 
 @unittest.skipUnless(HAS_ALL, "precisa de torch, torchvision e scipy")
+class DmlConfigTests(unittest.TestCase):
+    def test_config_with_bom_from_powershell(self):
+        from dronecamp_ia.mutual_learning import load_dml_config
+
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / "dml.json"
+            # PowerShell 5.1 (Set-Content -Encoding UTF8) grava o BOM no início.
+            path.write_text('{"models": [{"name": "yolo26", "family": "yolo26"}]}', encoding="utf-8-sig")
+            self.assertEqual(load_dml_config(path)["models"][0]["name"], "yolo26")
+
+
 class FusionTests(unittest.TestCase):
     def setUp(self):
         import torch
