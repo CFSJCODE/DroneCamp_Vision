@@ -753,7 +753,8 @@ def load_dml_config(path: Path | None) -> dict:
 
     Erros: ValueError se não houver ``models`` ou houver nome repetido.
     """
-    data = json.loads(Path(path).read_text(encoding="utf-8")) if path else {}
+    # utf-8-sig: o PowerShell 5.1 grava JSON com BOM, e json.loads recusa o BOM.
+    data = json.loads(Path(path).read_text(encoding="utf-8-sig")) if path else {}
     settings = _merge(DEFAULT_SETTINGS, data)
     models = data.get("models") or []
     if not models:

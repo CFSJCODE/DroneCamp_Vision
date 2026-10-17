@@ -132,7 +132,7 @@ Sucesso = `runs\dml_lan_*\state.json` com `"complete": true` e os três modelos 
 
 ```powershell
 # Dependências e tempo medido por passo nesta máquina (decide onde treinar)
-.\.venv\Scripts\python.exe -m dronecamp_ia dml-plan --data CAMINHO\dataset.yaml --output runs\dml_plan.json
+.\.venv\Scripts\python.exe -m dronecamp_ia dml-plan --data CAMINHO\dataset.yaml --threads 2 --output runs\dml_plan.json  # --threads deixa CPU livre se outro treino estiver rodando
 
 # DML online (os três na memória) ou destilação em um aluno
 .\.venv\Scripts\python.exe -m dronecamp_ia dml-train --data CAMINHO\dataset.yaml --mode online

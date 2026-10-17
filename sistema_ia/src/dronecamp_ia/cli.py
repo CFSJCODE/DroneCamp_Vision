@@ -427,6 +427,7 @@ def build_parser() -> argparse.ArgumentParser:
     dml_plan.add_argument("--models", type=Path, default=Path("configs/dml.json"))
     dml_plan.add_argument("--batches", type=int, default=3, help="Passos medidos por modelo (o 1.º é aquecimento).")
     dml_plan.add_argument("--output", type=Path)
+    dml_plan.add_argument("--threads", type=int, help="Threads de CPU do torch (deixe livre parte da CPU para outro treino).")
     # Comando dml-train: mutual_learning.train_mutual. Grava runs/dml_*/ (pesos por modelo,
     # history.jsonl, controller.json, summary.json).
     dml_train = commands.add_parser("dml-train", help="DML: treino mútuo online, destilação ou com cache dos pares.")
