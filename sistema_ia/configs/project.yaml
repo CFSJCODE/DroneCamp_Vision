@@ -78,6 +78,13 @@ pilot:
     provider: directml     # directml = GPU; cpu = ONNX Runtime na CPU (só para testes)
     split: val             # val para acompanhar o treino; test fica para o compare-models
     timeout: 1800          # segundos de espera pelo worker no fim do treino
+  # Instrumentação dos treinos NOVOS (training_monitor.py, docs/metricas_treino_avaliacao.md):
+  # tempo por etapa, passos do otimizador, norma do gradiente, recursos da máquina e a
+  # ficha imutável em runs/<treino>/ficha. Treinos iniciados antes dela retomam sem monitor.
+  instrumentation:
+    enabled: true
+    resource_seconds: 30   # intervalo da amostra de CPU/RAM/disco/rede (0 = sem amostragem)
+    grad_norm: true        # norma L2 do gradiente a cada passo (custo: uma passada nos gradientes)
   training:
     epochs: 80
     imgsz: 640

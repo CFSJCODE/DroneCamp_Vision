@@ -73,6 +73,7 @@ import json
 import math
 import os
 import shutil
+import sys
 import time
 
 import yaml
@@ -385,6 +386,13 @@ def train_pilot(config: ProjectConfig, data_path: Path, weights: str | None = No
         execution = {"runtime": runtime_info(model, config), "parameters": parameters,
                      "class_counts": counts, "stage": "fine_tuning_piloto", **pilot_details}
         write_json(run / "execution.json", execution)
+        # 4c. Ficha imutável desta tentativa (run_record.py) e instrumentação leve por lote/época
+        #     (training_monitor.py): tempos por etapa, otimizador e recursos. Desliga com
+        #     pilot.instrumentation.enabled: false; uma falha aqui só desliga o registro.
+        monitor = _start_monitor(config, run, "novo", parameters,
+                                 weights=weights or config.pilot.get("model") or config.model, extra=pilot_details)
+        if monitor:
+            monitor.attach(model)
         # 5. Treino de verdade (Ultralytics); best.pt/last.pt vão para run/fit/weights
         #    (ou para a área de gravação no disco interno, copiada de volta no fim).
         # EXTENSAO: callback novo por época/lote = ``model.add_callback("on_...", função)`` aqui,
@@ -476,7 +484,9 @@ def train_pilot(config: ProjectConfig, data_path: Path, weights: str | None = No
                         name=staging.name if staging else "fit", exist_ok=False, **parameters)
             trained = True
         finally:
-            # Roda SEMPRE (sucesso, erro ou Ctrl+C): traz o fit/ de volta e fecha o worker da GPU.
+            # Roda SEMPRE (sucesso, erro ou Ctrl+C): fecha a ficha da tentativa, traz o fit/ de volta
+            # e fecha o worker da GPU.
+            _close_monitor(monitor, trained)
             if staging:
                 _copy_back_fit(staging, run)
             if gpu_settings:
@@ -674,11 +684,26 @@ def resume_pilot(config: ProjectConfig, run_path: Path) -> Path:
                     pass
 
         model.add_callback("on_train_batch_end", beat)
+        # Ficha da retomada: checkpoint pai (hash do last.pt) + instrumentação, como no treino novo.
+        # ATENCAO: só para treinos que já nasceram com ficha. Treino iniciado antes da
+        # instrumentação (ex.: 614d070a) retoma exatamente como antes, sem monitor.
+        execution = run / "execution.json"
+        parameters = json.loads(execution.read_text(encoding="utf-8")).get("parameters", {}) if execution.is_file() else {}
+        monitor = None
+        if (run / "ficha").is_dir():
+            monitor = _start_monitor(config, run, "retomada", parameters, parent=last_pt)
+        else:
+            print("Treino sem ficha (iniciado antes da instrumentação): retomando sem training_monitor.")
+        if monitor:
+            monitor.attach(model)
+        trained = False
         try:
             # resume=True: a Ultralytics lê época, otimizador e argumentos de dentro do last.pt
             # (inclusive a pasta de saída, que continua sendo a da área de gravação).
             model.train(resume=True)
+            trained = True
         finally:
+            _close_monitor(monitor, trained)
             if staging:
                 _copy_back_fit(staging, run)
     except Exception as error:
@@ -687,6 +712,47 @@ def resume_pilot(config: ProjectConfig, run_path: Path) -> Path:
         raise ValueError(f"Treino piloto incompleto: {reason}. Revise {run}.") from error
     review_training_result(run, model, names, **pilot_details)
     return run
+
+
+def _start_monitor(config: ProjectConfig, run: Path, kind: str, parameters: dict, weights=None, parent: Path | None = None,
+                   extra: dict | None = None):
+    """Abre a tentativa na ficha e cria o ``TrainingMonitor`` (``None`` se desligado ou se falhar).
+
+    Parâmetros:
+        config: usa ``pilot.instrumentation``.
+        run: pasta do treino.
+        kind: ``"novo"`` ou ``"retomada"``.
+        parameters: parâmetros efetivos do ``model.train``.
+        weights: peso inicial (treino novo); parent: ``last.pt`` da retomada.
+        extra: dados do piloto gravados junto (``pilot_details``).
+
+    Chamada por: ``train_pilot`` (etapa 4c) e ``resume_pilot``.
+    """
+    from .run_record import start_attempt
+    from .training_monitor import TrainingMonitor, monitor_settings
+
+    settings = monitor_settings(config)
+    if settings is None:
+        return None
+    try:
+        attempt = start_attempt(run, kind, parameters, weights, parent, {"pilot_details": extra} if extra else None)
+        return TrainingMonitor(run, attempt, settings)
+    except Exception as error:  # noqa: BLE001 - registro nunca impede o treino
+        print(f"instrumentação desligada nesta tentativa: {type(error).__name__}: {error}")
+        return None
+
+
+def _close_monitor(monitor, trained: bool) -> None:
+    """Fecha a tentativa com o motivo (chamada no ``finally`` do ``model.train``; lê a exceção em curso)."""
+    if monitor is None:
+        return
+    error = sys.exc_info()[1]
+    if trained:
+        monitor.close("concluida", None)
+    elif isinstance(error, KeyboardInterrupt):
+        monitor.close("interrompida_pelo_usuario", "Ctrl+C ou encerramento pedido")
+    else:
+        monitor.close("falhou", f"{type(error).__name__}: {error}" if error else "sem exceção registrada")
 
 
 def _apply_repeat_factor_sampling(run: Path, dataset: Path, threshold: float, seed: int) -> dict:

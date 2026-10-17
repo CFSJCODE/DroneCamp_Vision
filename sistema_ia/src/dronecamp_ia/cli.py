@@ -16,6 +16,9 @@ Comandos e onde está o código de cada um:
   ``compare-models`` / ``measure-models`` → ``model_gate.py``; ``tune-pilot-bandit`` → ``hparam_bandit.py``;
   ``report-models`` → ``model_report.py``; ``train-pilot --gpu-eval`` / ``gpu-eval-worker`` → ``gpu_eval.py``;
   ``retrain-cycle`` → ``cycle.py``
+- Métricas de treino e avaliação: ``evaluate-detailed`` → ``quality_report.py`` (+ ``detection_metrics.py``);
+  ``data-coverage`` → ``data_coverage.py``; ``training-progress`` → ``training_progress.py``;
+  ``run-card`` → ``run_record.py`` (a ficha é gravada por ``training_monitor.py`` durante o treino)
 - Marcação automática: ``suggest --zero-shot`` e ``evaluate-autolabel`` → ``autolabel.py`` (YOLOE)
 - Família/versão do YOLO (26 → 27): ``model-info`` → ``model_family.py``
 - VLM gratuito (OpenRouter): ``describe-occurrences`` / ``report-support`` / ``list-free-models`` → ``vlm_assist.py``
@@ -378,6 +381,40 @@ def build_parser() -> argparse.ArgumentParser:
     measure.add_argument("--regime", action="append", choices=["janelas", "inteira"],
                          help="Regime de inferência por série (padrão: os dois quando pilot.tiling está ligado).")
     measure.add_argument("--output", type=Path, help="Pasta nova (padrão: runs/measure_<data>_<id>).")
+    # Comando evaluate-detailed: quality_report.evaluate_weights. Grava
+    # runs/quality_<data>_<id>/quality.json + report.md + errors/ (ou --output).
+    detailed = commands.add_parser("evaluate-detailed",
+                                   help="Qualidade por classe, erros por foto, IoU/tamanho e condições (mesmas fotos).")
+    detailed.add_argument("--data", type=Path, required=True)
+    detailed.add_argument("--weights", action="append", required=True, help=".pt ou .onnx; repita para vários.")
+    detailed.add_argument("--label", action="append", help="Nome de cada peso no relatório (mesma ordem de --weights).")
+    detailed.add_argument("--split", action="append", choices=["train", "val", "test"])
+    detailed.add_argument("--conf", type=float, help="Confiança do ponto de operação (padrão: inference.confidence).")
+    detailed.add_argument("--onnx-provider", choices=["directml", "cpu"], default="directml")
+    detailed.add_argument("--regime", choices=["janelas", "inteira"], default="janelas")
+    detailed.add_argument("--size-edges", type=float, nargs="+", help="Limites de tamanho em px (padrão: 32 96).")
+    detailed.add_argument("--fp-budget", type=float, action="append",
+                          help="Falsos alarmes por foto para o recall fixo; repita (padrão: 0.5 1 2 5).")
+    detailed.add_argument("--conditions", type=Path,
+                          help="CSV com image_sha256 na 1a coluna e etiquetas (material, angulo, iluminacao...).")
+    detailed.add_argument("--examples", type=int, help="Exemplos de erro guardados por classe e tipo (padrão: 8).")
+    detailed.add_argument("--no-crops", action="store_true", help="Não recortar as imagens dos erros.")
+    detailed.add_argument("--output", type=Path)
+    # Comando data-coverage: data_coverage.write_coverage. Grava runs/coverage_<data>_<id>/.
+    coverage = commands.add_parser("data-coverage", help="Fotos, objetos, recortes, cenas e prédios por classe e split.")
+    coverage.add_argument("--data", type=Path, required=True)
+    coverage.add_argument("--run", type=Path, help="Pasta do treino (recortes e repetições usados nele).")
+    coverage.add_argument("--baseline", type=Path, help="coverage.json anterior para comparar.")
+    coverage.add_argument("--output", type=Path)
+    # Comando training-progress: training_progress.write_progress. Só LÊ a pasta do treino;
+    # grava runs/progress_<treino>_<id>/ (funciona com o treino em andamento).
+    progress = commands.add_parser("training-progress",
+                                   help="Melhor época, distância ao melhor checkpoint, tempo efetivo e instrumentação.")
+    progress.add_argument("run", type=Path, help="Pasta do treino (com results.csv).")
+    progress.add_argument("--output", type=Path)
+    # Comando run-card: run_record.run_card_summary + verify_run_card. Só imprime.
+    card = commands.add_parser("run-card", help="Mostrar e conferir a ficha imutável de um treino.")
+    card.add_argument("run", type=Path, help="Pasta do treino (com ficha/).")
     # Comando tune-pilot-bandit: hparam_bandit.successive_halving. Grava
     # runs/bandit_<data>_<id>/bandit.json (e uma pasta de treino por braço/rodada).
     bandit = commands.add_parser("tune-pilot-bandit", help="Hiperparâmetros do piloto por successive halving (bandit).")
@@ -735,6 +772,30 @@ def main(argv: list[str] | None = None) -> int:
             from .model_gate import measure_models
             output = measure_models(config, args.data, args.weights, tuple(args.split or ["test"]), args.conf,
                                     args.onnx_provider, tuple(args.regime) if args.regime else None, args.output)
+        # Ramo evaluate-detailed: quality_report.evaluate_weights; grava runs/quality_*.
+        elif args.command == "evaluate-detailed":
+            from .detection_metrics import DEFAULT_EXAMPLES, DEFAULT_FP_BUDGETS, DEFAULT_SIZE_EDGES
+            from .quality_report import evaluate_weights
+            output = evaluate_weights(config, args.data, args.weights, args.label, tuple(args.split or ["test"]),
+                                      args.conf, args.onnx_provider, args.regime,
+                                      tuple(args.size_edges or DEFAULT_SIZE_EDGES),
+                                      tuple(args.fp_budget or DEFAULT_FP_BUDGETS), args.conditions,
+                                      DEFAULT_EXAMPLES if args.examples is None else args.examples,
+                                      not args.no_crops, args.output)
+        # Ramo data-coverage: data_coverage.write_coverage; grava runs/coverage_*.
+        elif args.command == "data-coverage":
+            from .data_coverage import write_coverage
+            output = write_coverage(config, args.data, args.run, args.baseline, args.output)
+        # Ramo training-progress: training_progress.write_progress; grava runs/progress_*.
+        elif args.command == "training-progress":
+            from .training_progress import write_progress
+            output = write_progress(config.root, args.run, args.output)
+        # Ramo run-card: imprime o resumo da ficha e a conferência dos hashes; não grava nada.
+        elif args.command == "run-card":
+            from .run_record import run_card_summary, verify_run_card
+            check = verify_run_card(args.run)
+            print(json.dumps({"ficha": run_card_summary(args.run), "conferencia": check}, ensure_ascii=False, indent=2))
+            return 0 if check["integrity"] == "ok" else 2
         # Ramo tune-pilot-bandit: hparam_bandit.successive_halving; grava runs/bandit_*.
         # fixed = valores fixos (não sorteados) de imgsz/batch, só os informados.
         elif args.command == "tune-pilot-bandit":
