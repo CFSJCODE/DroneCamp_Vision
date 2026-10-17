@@ -202,6 +202,10 @@ uv pip install --python .venv\Scripts\python.exe -e ".[export]"
 
 O exportador trabalha sobre cópia do checkpoint e registra hash do artefato. Em seguida roda o `.pt` e o `.onnx` (ONNX Runtime) nas mesmas fotos — padrão: 5 fotos de `data/reference/ceasa`, ou `--parity-source PASTA` — e grava `parity.json`: caixas pareadas por classe com IoU ≥ 0,9 (ou até 1 px), diferença de confiança ≤ 0,02. `runtime_parity_validated` só é verdadeiro se nenhuma caixa clara faltar ou sobrar. Qualidade e tempo no hardware de destino continuam sendo etapas próprias. TensorRT, quantização INT8, segmentação, classificação ordinal/CORAL, regras normativas, dashboard e emissão de laudo ainda não foram implementados.
 
+## Métricas de treino e avaliação
+
+`evaluate-detailed` mede cada peso nas mesmas fotos por classe (suporte, AP50/AP75/AP50–95, TP/FP/FN, F1, tipos de falso alarme, IoU, tamanho, condições de captura e recortes dos erros), `data-coverage` conta fotos, objetos, janelas e repetições por classe, e `training-progress` mostra melhor época, distância ao melhor checkpoint e tempo efetivo a partir do `results.csv` (funciona com o treino em andamento). Treinos novos gravam também tempo por etapa, passos do otimizador, gradientes e recursos (`training_monitor.py`) e uma ficha imutável em `runs/<treino>/ficha` (`run-card`). Detalhes e leitura em [`docs/metricas_treino_avaliacao.md`](docs/metricas_treino_avaliacao.md).
+
 ## Pontos de revisão no código
 
 1. **Categorias:** `configs/taxonomy.json` e `detection_names()` em `config.py`. Não alterar IDs depois de anotar sem migrar dataset e treinar novo modelo.

@@ -463,6 +463,23 @@ class ThreeModelIntegrationTests(unittest.TestCase):
         # 1.ª época: braço 0,5 do RL, com alvos dos pares; 2.ª: braço 0,0 (controle, sem consistência).
         self.assertTrue(all(line["multiplier"] == 0.5 and line["targets"] > 0 for line in first))
         self.assertTrue(all(line["multiplier"] == 0.0 and line["targets"] == 0 for line in lines if line["epoch"] == 1))
+        # Registro sem dupla contagem: alvos distintos por imagem, nunca somados por cabeça.
+        for line in first:
+            cooperation = line["cooperation"]
+            self.assertLessEqual(cooperation["matched_targets_final_head"], cooperation["matched_targets_any_head"])
+            self.assertLessEqual(cooperation["matched_targets_any_head"], cooperation["anchored_targets"])
+            self.assertGreaterEqual(cooperation["head_matches"], cooperation["matched_targets_any_head"])
+            self.assertEqual(line["matched"], cooperation["matched_targets_final_head"])
+            self.assertEqual(len(cooperation["per_peer"]), 2)
+            for peer in cooperation["per_peer"].values():
+                self.assertEqual(peer["received_total"], peer["used_total"] + sum(peer["discarded"].values()))
+            # Tempo próprio do modelo separado do relógio comum da época.
+            self.assertIn("forward_loss", line["seconds"]["model"])
+            self.assertLessEqual(line["seconds"]["model"]["forward_loss"], line["seconds"]["train_wall_shared"])
+            self.assertEqual(line["rl"]["reason"], "nunca_tentado")
+            self.assertEqual(line["rl"]["update"], "aplicada")
+            self.assertEqual(line["optimizer"]["steps"] + line["optimizer"]["skipped_nonfinite"], 1)
+            self.assertTrue(all("status" in row for row in line["val_per_class"].values()))
         self.assertTrue((run / "weights" / "yolo26" / "last.pt").exists())
         self.assertTrue((run / "weights" / "rfdetr" / "last.pth").exists())
         self.assertTrue((run / "weights" / "dfine" / "last" / "config.json").exists())
@@ -535,6 +552,13 @@ class ThreeModelIntegrationTests(unittest.TestCase):
         self.assertTrue(state["complete"])
         self.assertEqual(set(state["uploads"]["1"]), {"yolo26", "rfdetr", "dfine"})
         self.assertEqual(state["workers"]["rfdetr"]["host"], "6006U")
+        # Registro da coordenação: atribuição e conclusão por rodada, bytes e ficha da rodada.
+        self.assertTrue(all(item["completed_at"] for item in state["coordination"]["assignments"]["1"].values()))
+        self.assertTrue(state["coordination"]["downloads"]["0"])
+        joint = json.loads((result["dir"] / "rounds" / "0" / "joint.json").read_text(encoding="utf-8"))
+        self.assertEqual(set(joint["models"]), {"yolo26", "rfdetr", "dfine"})
+        self.assertTrue(all(model["weights_sha256"] for model in joint["models"].values()))
+        self.assertIn("1", state["decisions"])
 
 
 if __name__ == "__main__":

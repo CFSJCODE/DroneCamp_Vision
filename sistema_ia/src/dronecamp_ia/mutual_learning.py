@@ -301,7 +301,7 @@ def peer_view(raws: list, image: int):
 
 
 def fuse_peer_predictions(peers: list[tuple], tau: float, fuse_iou: float = 0.55, max_per_peer: int = 100,
-                          peer_nms_iou: float = 0.7):
+                          peer_nms_iou: float = 0.7, details: bool = False):
     """Funde as previsões dos pares de uma imagem em alvos de consistência.
 
     Parâmetros:
@@ -312,9 +312,14 @@ def fuse_peer_predictions(peers: list[tuple], tau: float, fuse_iou: float = 0.55
         max_per_peer: no máximo N previsões por par (as mais confiantes).
         peer_nms_iou: NMS sem classe dentro de cada par (remove as duplicatas da
             cabeça one2many/denoising antes de fundir).
+        details: devolve também quem contribuiu para cada alvo (registro de
+            cobertura da cooperação; não muda a fusão).
 
     Retorna:
-        ``(boxes xyxy [T,4], probs [T,K], weights [T])``; T pode ser 0.
+        ``(boxes xyxy [T,4], probs [T,K], weights [T])``; T pode ser 0. Com
+        ``details=True``, um 4.º item ``{"received": [[classe, ...] por par],
+        "members": [[(par, classe), ...] por alvo]}``: ``received`` são as previsões
+        de cada par que passaram por τ e pelo NMS interno (classe = maior probabilidade).
 
     Algoritmo: candidatos de todos os pares em ordem de confiança; cada um entra
     no primeiro grupo com IoU ≥ ``fuse_iou`` que ainda não tem previsão do MESMO
@@ -327,8 +332,10 @@ def fuse_peer_predictions(peers: list[tuple], tau: float, fuse_iou: float = 0.55
     import torch
     from torchvision.ops import box_iou, nms
 
+    info = {"received": [[] for _ in peers], "members": []}
     if not peers:
-        return torch.zeros((0, 4)), torch.zeros((0, 0)), torch.zeros((0,))
+        empty = (torch.zeros((0, 4)), torch.zeros((0, 0)), torch.zeros((0,)))
+        return (*empty, info) if details else empty
     num_classes = peers[0][1].shape[-1]
     device = peers[0][0].device
     candidates = []
@@ -343,9 +350,11 @@ def fuse_peer_predictions(peers: list[tuple], tau: float, fuse_iou: float = 0.55
         kept = nms(xyxy.float(), scores[keep].float(), peer_nms_iou)
         for position in kept.tolist():
             candidates.append((float(scores[keep][position]), peer_index, xyxy[position], probs[keep][position]))
+            info["received"][peer_index].append(int(probs[keep][position].argmax()))
     if not candidates:
-        return (torch.zeros((0, 4), device=device), torch.zeros((0, num_classes), device=device),
-                torch.zeros((0,), device=device))
+        empty = (torch.zeros((0, 4), device=device), torch.zeros((0, num_classes), device=device),
+                 torch.zeros((0,), device=device))
+        return (*empty, info) if details else empty
     # 2. Agrupamento guloso entre pares, do mais confiante para o menos.
     candidates.sort(key=lambda item: -item[0])
     groups: list[dict] = []
@@ -361,9 +370,11 @@ def fuse_peer_predictions(peers: list[tuple], tau: float, fuse_iou: float = 0.55
                     chosen = groups[position]
                     break
         if chosen is None:
-            groups.append({"peers": {peer_index}, "scores": [score], "boxes": [box], "probs": [prob], "box": box})
+            groups.append({"peers": {peer_index}, "scores": [score], "boxes": [box], "probs": [prob], "box": box,
+                           "members": [(peer_index, int(prob.argmax()))]})
         else:
             chosen["peers"].add(peer_index)
+            chosen["members"].append((peer_index, int(prob.argmax())))
             chosen["scores"].append(score)
             chosen["boxes"].append(box)
             chosen["probs"].append(prob)
@@ -375,23 +386,28 @@ def fuse_peer_predictions(peers: list[tuple], tau: float, fuse_iou: float = 0.55
     probs = torch.stack([torch.stack(group["probs"]).sum(0) / total for group in groups])
     weights = torch.tensor([sum(group["scores"]) / len(group["scores"]) * len(group["peers"]) / total
                             for group in groups], device=device)
+    if details:
+        info["members"] = [group["members"] for group in groups]
+        return boxes, probs, weights, info
     return boxes, probs, weights
 
 
-def anchor_to_truth(boxes, probs, weights, truth_xyxy, anchor_iou: float = 0.5):
+def anchor_to_truth(boxes, probs, weights, truth_xyxy, anchor_iou: float = 0.5, return_mask: bool = False):
     """Mantém só os alvos fundidos que coincidem com alguma caixa humana (modo ``anchor = "gt"``).
 
-    Parâmetros: alvos da fusão e caixas humanas xyxy normalizadas ``[n,4]``.
-    Retorna os mesmos três tensores filtrados.
+    Parâmetros: alvos da fusão e caixas humanas xyxy normalizadas ``[n,4]``;
+    ``return_mask`` devolve também a máscara booleana ``[T]`` dos alvos mantidos.
+    Retorna os mesmos três tensores filtrados (mais a máscara, se pedida).
     """
     import torch
     from torchvision.ops import box_iou
 
     if boxes.shape[0] == 0 or truth_xyxy.shape[0] == 0:
-        empty = torch.zeros((0,), dtype=torch.bool, device=boxes.device)
-        return boxes[empty], probs[empty], weights[empty]
-    keep = box_iou(boxes, truth_xyxy.to(boxes.device)).max(dim=1).values >= anchor_iou
-    return boxes[keep], probs[keep], weights[keep]
+        keep = torch.zeros((boxes.shape[0],), dtype=torch.bool, device=boxes.device)
+    else:
+        keep = box_iou(boxes, truth_xyxy.to(boxes.device)).max(dim=1).values >= anchor_iou
+    result = (boxes[keep], probs[keep], weights[keep])
+    return (*result, keep) if return_mask else result
 
 
 # ---------------------------------------------------------------------------
@@ -432,8 +448,10 @@ def consistency_loss(boxes, logits, target_boxes, target_probs, target_weights, 
         negatives: quantas queries não casadas entram no termo negativo.
 
     Retorna:
-        ``(perda escalar, {"matched": n, "targets": T})``; perda 0 ligada ao grafo
-        quando não há alvo (o ``backward`` continua válido).
+        ``(perda escalar, {"matched": n, "targets": T, "matched_targets": [j, ...]})``;
+        ``matched_targets`` são as posições dos alvos casados (cada alvo no máximo
+        uma vez nesta cabeça). Perda 0 ligada ao grafo quando não há alvo (o
+        ``backward`` continua válido).
 
     ATENCAO: o termo negativo pune o aluno por achar algo que os pares não acharam;
     num par fraco isso apaga acertos. Fica desligado por padrão e só deve ser ligado
@@ -448,7 +466,7 @@ def consistency_loss(boxes, logits, target_boxes, target_probs, target_weights, 
 
     zero = logits.sum() * 0.0
     if target_boxes.shape[0] == 0:
-        return zero, {"matched": 0, "targets": 0}
+        return zero, {"matched": 0, "targets": 0, "matched_targets": []}
     student_xyxy = cxcywh_to_xyxy(boxes).clamp(0, 1)
     target_boxes = target_boxes.to(boxes.device)
     target_probs = target_probs.to(boxes.device)
@@ -468,7 +486,7 @@ def consistency_loss(boxes, logits, target_boxes, target_probs, target_weights, 
         valid = torch.diag(box_iou(student_xyxy[rows_t], target_boxes[cols_t])) >= min_iou
         rows_t, cols_t = rows_t[valid], cols_t[valid]
     if rows_t.numel() == 0:
-        return zero, {"matched": 0, "targets": int(target_boxes.shape[0])}
+        return zero, {"matched": 0, "targets": int(target_boxes.shape[0]), "matched_targets": []}
     # 2. Classe (KL de Bernoulli) e caixa (L1 + 1 − GIoU) nos pares casados.
     weights = target_weights[cols_t]
     class_term = bernoulli_kl(target_probs[cols_t], logits[rows_t], temperature)
@@ -485,7 +503,8 @@ def consistency_loss(boxes, logits, target_boxes, target_probs, target_weights, 
             top = rest.max(-1).values.topk(min(negatives, rest.shape[0])).indices
             loss = loss + negative_weight * F.binary_cross_entropy_with_logits(
                 rest[top], torch.zeros_like(rest[top]), reduction="none").sum(-1).mean()
-    return loss, {"matched": int(rows_t.numel()), "targets": int(target_boxes.shape[0])}
+    return loss, {"matched": int(rows_t.numel()), "targets": int(target_boxes.shape[0]),
+                  "matched_targets": cols_t.tolist()}
 
 
 def ramp_weight(epoch: int, ramp_epochs: int, maximum: float) -> float:
@@ -542,14 +561,20 @@ def summarize_detections(per_image: list[tuple[list[dict], list[dict]]], names: 
 
     Parâmetros: lista de ``(sugestões, caixas humanas)`` por foto.
     Retorna ``{"map50", "per_class": {...}, "images"}``; mAP50 = média das classes
-    com caixa humana (classe sem caixa = não medida, fora da média).
+    com caixa humana (classe sem caixa = não medida, fora da média). Cada classe
+    traz também ``f1``, ``support_images`` (recortes com a classe) e ``status``
+    (``nao_avaliada`` quando não há caixa humana: suporte zero, não nota zero).
     """
+    from .detection_metrics import add_f1_and_status
     from .model_gate import average_precision
 
     scored = {index: [] for index in range(len(names))}
     positives = {index: 0 for index in range(len(names))}
+    support_images: dict[int, int] = {}
     errors = []
     for predictions, truth in per_image:
+        for class_id in {box["class_id"] for box in truth}:
+            support_images[class_id] = support_images.get(class_id, 0) + 1
         hits, _ = match_predictions(predictions, truth)
         for prediction, hit in zip(predictions, hits):
             scored.setdefault(prediction["class_id"], []).append((prediction["confidence"], hit))
@@ -563,6 +588,7 @@ def summarize_detections(per_image: list[tuple[list[dict], list[dict]]], names: 
         report[name]["ap50"] = ap
         if ap is not None:
             aps.append(ap)
+    add_f1_and_status(report, support_images, names)
     return {"map50": round(sum(aps) / len(aps), 4) if aps else None, "per_class": report, "images": len(per_image),
             "eval_conf": eval_conf}
 
@@ -766,6 +792,167 @@ def load_dml_config(path: Path | None) -> dict:
     return settings
 
 
+# ---------------------------------------------------------------------------
+# Registro por época do DML (influência dos pares, cooperação, tempos, decisões)
+# ---------------------------------------------------------------------------
+
+# Motivos de uma imagem não receber orientação útil dos pares (chaves de "no_guidance").
+NO_GUIDANCE_REASONS = ("peso_zero_na_epoca", "sem_pares", "pares_sem_previsao_acima_de_tau",
+                       "nada_coincide_com_caixa_humana", "sem_casamento_com_o_aluno")
+
+
+def _new_epoch_stats(peers: list[str]) -> dict:
+    """Acumuladores de UM aluno numa época (ver ``_epoch_line`` para o significado de cada um).
+
+    Parâmetros: ``peers`` = nomes dos pares que podem orientar este aluno.
+    """
+    from collections import Counter
+
+    return {"images": 0, "images_with_peers": 0, "images_with_useful_guidance": 0,
+            "no_guidance": {reason: 0 for reason in NO_GUIDANCE_REASONS},
+            "fused_targets": 0, "anchored_targets": 0, "matched_targets_final_head": 0,
+            "matched_targets_any_head": 0, "head_matches": 0, "heads": 0,
+            "peers": {peer: {"received": Counter(), "used": Counter()} for peer in peers},
+            "det": 0.0, "cons_raw": 0.0, "cons_applied": 0.0, "scale": 0.0, "batches": 0,
+            "optimizer_steps": 0, "skipped_nonfinite": 0, "grad_norms": [],
+            "seconds": {"forward_loss": 0.0, "consistency": 0.0, "backward_step": 0.0,
+                        "validation": 0.0, "checkpoint": 0.0}}
+
+
+def _consistency_for_image(name: str, index: int, raws: list, peer_views: dict, truth_xyxy, cons: dict,
+                           record: dict) -> list:
+    """Perdas de consistência de UMA imagem do aluno ``name`` e o registro da cooperação.
+
+    Denominadores (corrigem a ambiguidade do registro antigo, que somava casamentos
+    por imagem E por cabeça): ``fused_targets``/``anchored_targets`` contam cada alvo
+    uma vez por imagem; ``matched_targets_final_head`` conta alvos distintos casados
+    pela cabeça de inferência (a última); ``matched_targets_any_head`` conta alvos
+    distintos casados por pelo menos uma cabeça; ``head_matches`` mantém a soma antiga
+    (alvo × cabeça), só para referência.
+
+    Retorna: lista de perdas (uma por cabeça) para a média do lote; vazia sem alvo.
+    """
+    from collections import Counter
+
+    record["images"] += 1
+    named = [(other, views[index]) for other, views in peer_views.items()
+             if other != name and views[index] is not None]
+    if not named:
+        record["no_guidance"]["sem_pares"] += 1
+        return []
+    record["images_with_peers"] += 1
+    boxes, probs, weights, info = fuse_peer_predictions([view for _, view in named], float(cons["tau"]),
+                                                        float(cons["fuse_iou"]), int(cons["max_per_peer"]),
+                                                        details=True)
+    # Sugestões recebidas: previsões de cada par acima de τ (depois do NMS interno), por classe.
+    for (peer, _), classes in zip(named, info["received"]):
+        record["peers"].setdefault(peer, {"received": Counter(), "used": Counter()})
+        for class_id in classes:
+            record["peers"][peer]["received"][class_id] += 1
+    record["fused_targets"] += int(boxes.shape[0])
+    if boxes.shape[0] == 0:
+        record["no_guidance"]["pares_sem_previsao_acima_de_tau"] += 1
+        return []
+    members = info["members"]
+    if cons["anchor"] == "gt":
+        boxes, probs, weights, keep = anchor_to_truth(boxes, probs, weights, truth_xyxy, float(cons["anchor_iou"]),
+                                                      return_mask=True)
+        members = [member for member, kept in zip(members, keep.tolist()) if kept]
+    record["anchored_targets"] += int(boxes.shape[0])
+    if boxes.shape[0] == 0:
+        record["no_guidance"]["nada_coincide_com_caixa_humana"] += 1
+        return []
+    losses, matched_any, matched_final = [], set(), set()
+    for head, raw in enumerate(raws):
+        loss, stats = consistency_loss(raw.boxes[index], raw.logits[index], boxes, probs, weights,
+                                       float(cons["temperature"]), float(cons["box_weight"]),
+                                       float(cons["negative_weight"]))
+        losses.append(loss)
+        record["head_matches"] += stats["matched"]
+        matched_any.update(stats["matched_targets"])
+        if head == len(raws) - 1:
+            matched_final = set(stats["matched_targets"])
+    record["matched_targets_final_head"] += len(matched_final)
+    record["matched_targets_any_head"] += len(matched_any)
+    if matched_any:
+        record["images_with_useful_guidance"] += 1
+    else:
+        record["no_guidance"]["sem_casamento_com_o_aluno"] += 1
+    # Aproveitadas: previsões de par que formaram um alvo casado pela cabeça de inferência.
+    for position, member in enumerate(members):
+        if position in matched_final:
+            for peer_index, class_id in member:
+                record["peers"][named[peer_index][0]]["used"][class_id] += 1
+    return losses
+
+
+def _epoch_line(epoch: int, name: str, mode: str, ramp: float, choice: dict | None, record: dict, metrics: dict,
+                state, decision: dict, shared: dict, train_wall: float, students: int) -> dict:
+    """Linha do ``history.jsonl`` de um aluno numa época (registros pedidos para o DML).
+
+    Blocos:
+    - ``influence``: perda de detecção, consistência bruta e termo REALMENTE aplicado
+      (λ_rampa × multiplicador × s_i × consistência), com s_i médio. ATENCAO: as perdas
+      são as nativas de cada família; não compare ``det_loss`` entre arquiteturas.
+    - ``cooperation``: sugestões recebidas/aproveitadas/descartadas por par e classe,
+      imagens sem orientação útil e o motivo (ver ``_consistency_for_image``).
+    - ``val_per_class``: qualidade por classe na validação (classe sem caixa = não avaliada).
+    - ``rl``: decisão do UCB (``dml_controller.decision_record``).
+    - ``optimizer``: passos efetivos, passos pulados por valor não finito, norma do gradiente.
+    - ``seconds.model``: tempo PRÓPRIO deste modelo; ``seconds.shared``: leitura dos dados,
+      professores e cache dos pares (comuns); ``seconds.train_wall_shared``: relógio do
+      laço de treino da época, comum a todos os alunos (no modo online inclui os outros).
+    """
+    from .detection_metrics import _quantiles
+
+    batches = max(record["batches"], 1)
+    per_peer = {}
+    for peer, counts in record["peers"].items():
+        received, used = counts["received"], counts["used"]
+        per_peer[peer] = {"received": {metrics_name(metrics, k): v for k, v in sorted(received.items())},
+                          "used": {metrics_name(metrics, k): v for k, v in sorted(used.items())},
+                          "discarded": {metrics_name(metrics, k): received[k] - used.get(k, 0)
+                                        for k in sorted(received)},
+                          "received_total": sum(received.values()), "used_total": sum(used.values())}
+    own = record["seconds"]
+    per_class = {key: {field: value.get(field) for field in ("status", "support_images", "human_boxes", "tp", "fp",
+                                                             "fn", "precision", "recall", "f1", "ap50")}
+                 for key, value in metrics["per_class"].items()}
+    return {
+        "record": "epoch", "epoch": epoch, "model": name, "mode": mode,
+        "lambda_ramp": round(ramp, 6), "multiplier": choice["multiplier"] if choice else 1.0,
+        "det_loss": round(record["det"] / batches, 6), "cons_loss": round(record["cons_raw"] / batches, 6),
+        "influence": {"det_loss": round(record["det"] / batches, 6),
+                      "consistency_raw": round(record["cons_raw"] / batches, 6),
+                      "consistency_applied": round(record["cons_applied"] / batches, 6),
+                      "weight": round(ramp * (choice["multiplier"] if choice else 1.0), 6),
+                      "scale_s_mean": round(record["scale"] / batches, 6),
+                      "note": "perdas nativas da família; não comparar entre arquiteturas"},
+        # Compatível com o registro antigo, agora sem dupla contagem: alvos distintos por imagem.
+        "matched": record["matched_targets_final_head"], "targets": record["anchored_targets"],
+        "cooperation": {key: record[key] for key in ("images", "images_with_peers", "images_with_useful_guidance",
+                                                     "no_guidance", "fused_targets", "anchored_targets",
+                                                     "matched_targets_final_head", "matched_targets_any_head",
+                                                     "head_matches", "heads")} | {"per_peer": per_peer},
+        "val_map50": metrics["map50"], "best_val_map50": state.best_map, "best_epoch": state.best_epoch,
+        "epochs_since_best": None if state.best_epoch is None else epoch - state.best_epoch,
+        "val_per_class": per_class, "reward": decision.get("reward"), "rl": decision,
+        "optimizer": {"steps": record["optimizer_steps"], "skipped_nonfinite": record["skipped_nonfinite"],
+                      "lr": [round(group["lr"], 10) for group in state.optimizer.param_groups][:4],
+                      "grad_norm_before_clip": _quantiles([v for v in record["grad_norms"] if math.isfinite(v)])},
+        "seconds": {"model": {key: round(value, 2) for key, value in own.items()} | {
+                        "total_own": round(sum(own.values()), 2)},
+                    "shared": {key: round(value, 2) for key, value in shared.items()},
+                    "train_wall_shared": round(train_wall, 2), "students_in_process": students},
+    }
+
+
+def metrics_name(metrics: dict, class_id: int) -> str:
+    """Nome da classe ``class_id`` pela ordem do ``per_class`` da validação (ou o número)."""
+    names = [key for key in metrics.get("per_class", {}) if key != "_total"]
+    return names[class_id] if 0 <= class_id < len(names) else str(class_id)
+
+
 @dataclass
 class _Student:
     """Estado de treino de um aluno: adaptador, otimizador, médias móveis e controlador RL."""
@@ -778,6 +965,7 @@ class _Student:
     ema_cons: float | None = None
     best_map: float | None = None
     last_map: float | None = None
+    best_epoch: int | None = None
 
 
 def train_mutual(config_root: Path, data_path: Path, settings: dict, mode: str = "online",
@@ -808,7 +996,7 @@ def train_mutual(config_root: Path, data_path: Path, settings: dict, mode: str =
     import torch
 
     from .detector_adapters import build_adapter
-    from .dml_controller import DiscountedUCB, reward_from_metrics
+    from .dml_controller import DiscountedUCB, decision_record
 
     if mode not in {"online", "distill", "cached", "solo"}:
         raise ValueError(f"Modo desconhecido: {mode}.")
@@ -867,61 +1055,69 @@ def train_mutual(config_root: Path, data_path: Path, settings: dict, mode: str =
     history_path = run / "history.jsonl"
     with history_path.open("a", encoding="utf-8") as handle:
         for name, state in students.items():
-            handle.write(json.dumps({"epoch": -1, "model": name, "mode": mode, "val_map50": state.last_map}) + "\n")
+            handle.write(json.dumps({"record": "baseline", "epoch": -1, "model": name, "mode": mode,
+                                     "val_map50": state.last_map}) + "\n")
+    clock = time.perf_counter
     for epoch in range(epochs):
-        # 3. Peso da época: rampa × multiplicador escolhido pelo RL (1.0 sem RL).
+        # 3. Peso da época: rampa × multiplicador escolhido pelo RL (1.0 sem RL). select_details
+        #    devolve a mesma escolha de select() com o raciocínio de cada braço (registro do UCB).
         ramp = ramp_weight(epoch, int(cons["ramp_epochs"]), float(cons["lambda"]))
-        arms = {}
-        for name, state in students.items():
-            arms[name] = state.controller.select() if state.controller else None
-        sums = {name: {"det": 0.0, "cons": 0.0, "matched": 0, "targets": 0, "batches": 0} for name in students}
-        started = time.time()
+        choices = {name: state.controller.select_details() if state.controller else None
+                   for name, state in students.items()}
+        peer_names = [name for name in students] + list(teachers) + [cache.name for cache in caches]
+        stats = {name: _new_epoch_stats([other for other in peer_names if other != name]) for name in students}
+        # Tempos comuns a todos os alunos (não pertencem a nenhum modelo sozinho).
+        shared = {"data": 0.0, "teachers": 0.0, "peer_cache": 0.0}
+        epoch_start = fetch_start = clock()
         for images, targets, metas in iterate_batches(train_set, batch, shuffle=True, seed=seed + epoch,
                                                       max_batches=max_batches):
+            shared["data"] += clock() - fetch_start
             images = images.to(device)
             truth_xyxy = [cxcywh_to_xyxy(target["boxes"]).clamp(0, 1) for target in targets]
-            # 4a. Passo para frente de todos os alunos (mesmo lote, mesmo espelho).
-            outputs = {name: state.adapter.forward_train(images, targets) for name, state in students.items()}
+            # 4a. Passo para frente de cada aluno (mesmo lote, mesmo espelho), cronometrado por modelo.
+            outputs = {}
+            for name, state in students.items():
+                started = clock()
+                outputs[name] = state.adapter.forward_train(images, targets)
+                stats[name]["seconds"]["forward_loss"] += clock() - started
             # 4b. Visão dos pares por imagem, sem gradiente.
             peer_views: dict[str, list] = {}
             for name, (_, raws) in outputs.items():
                 peer_views[name] = [peer_view(raws, index) for index in range(len(targets))]
+            started = clock()
             for name, adapter in teachers.items():
                 raw = adapter.predict_raw(images)
                 peer_views[name] = [(raw.boxes[index], raw.logits[index].sigmoid()) for index in range(len(targets))]
+            shared["teachers"] += clock() - started
+            started = clock()
             for cache in caches:
                 views = []
                 for meta in metas:
                     found = cache.lookup(meta["key"], meta["hflip"], meta["vflip"])
                     views.append(tuple(value.to(device) for value in found) if found else None)
                 peer_views[cache.name] = views
+            shared["peer_cache"] += clock() - started
             for name, state in students.items():
+                record = stats[name]
                 det, raws = outputs[name]
-                multiplier = state.controller.arms[arms[name]] if state.controller else 1.0
+                multiplier = choices[name]["multiplier"] if choices[name] else 1.0
                 weight = ramp * multiplier
-                cons_total, matched, target_count = det * 0.0, 0, 0
+                cons_total = det * 0.0
+                record["heads"] = len(raws)
+                started = clock()
                 if weight > 0:
-                    # 4c. Consistência por imagem e por cabeça do aluno, contra os outros.
+                    # 4c. Consistência por imagem contra os outros. Cada alvo fundido conta UMA vez
+                    #     por imagem (não por cabeça): ver _consistency_for_image.
                     losses = []
                     for index in range(len(targets)):
-                        peers = [views[index] for other, views in peer_views.items()
-                                 if other != name and views[index] is not None]
-                        if not peers:
-                            continue
-                        boxes, probs, weights = fuse_peer_predictions(peers, float(cons["tau"]), float(cons["fuse_iou"]),
-                                                                      int(cons["max_per_peer"]))
-                        if cons["anchor"] == "gt":
-                            boxes, probs, weights = anchor_to_truth(boxes, probs, weights, truth_xyxy[index].to(device),
-                                                                    float(cons["anchor_iou"]))
-                        for raw in raws:
-                            loss, stats = consistency_loss(raw.boxes[index], raw.logits[index], boxes, probs, weights,
-                                                           float(cons["temperature"]), float(cons["box_weight"]),
-                                                           float(cons["negative_weight"]))
-                            losses.append(loss)
-                            matched += stats["matched"]
-                            target_count += stats["targets"]
+                        losses.extend(_consistency_for_image(
+                            name, index, raws, peer_views, truth_xyxy[index].to(device), cons, record))
                     if losses:
                         cons_total = torch.stack(losses).mean()
+                else:
+                    record["images"] += len(targets)
+                    record["no_guidance"]["peso_zero_na_epoca"] += len(targets)
+                record["seconds"]["consistency"] += clock() - started
                 # 4d. Escala s_i = EMA(det)/EMA(cons): λ sem unidade (ver cabeçalho).
                 decay = float(cons["ema"])
                 det_value, cons_value = float(det.detach()), float(cons_total.detach())
@@ -930,43 +1126,53 @@ def train_mutual(config_root: Path, data_path: Path, settings: dict, mode: str =
                     state.ema_cons = cons_value if state.ema_cons is None else decay * state.ema_cons + (1 - decay) * cons_value
                 scale = (state.ema_det / state.ema_cons) if state.ema_cons else 0.0
                 total = det + weight * scale * cons_total
+                # 4e. Retropropagação e passo, cronometrados; gradiente não finito não atualiza os pesos.
+                started = clock()
                 state.optimizer.zero_grad(set_to_none=True)
                 total.backward()
-                torch.nn.utils.clip_grad_norm_(state.adapter.parameters(), float(state.spec["grad_clip"]))
-                state.optimizer.step()
-                bucket = sums[name]
-                bucket["det"] += det_value
-                bucket["cons"] += cons_value
-                bucket["matched"] += matched
-                bucket["targets"] += target_count
-                bucket["batches"] += 1
-        # 5. Validação, recompensa do RL e registro da época.
+                grad_norm = float(torch.nn.utils.clip_grad_norm_(state.adapter.parameters(), float(state.spec["grad_clip"])))
+                if math.isfinite(grad_norm) and math.isfinite(float(total.detach())):
+                    state.optimizer.step()
+                    record["optimizer_steps"] += 1
+                else:
+                    # ATENCAO: passo pulado de propósito (NaN/Inf apagaria os pesos); fica contado.
+                    record["skipped_nonfinite"] += 1
+                    state.optimizer.zero_grad(set_to_none=True)
+                record["seconds"]["backward_step"] += clock() - started
+                record["grad_norms"].append(grad_norm)
+                record["det"] += det_value
+                record["cons_raw"] += cons_value
+                record["cons_applied"] += weight * scale * cons_value
+                record["scale"] += scale
+                record["batches"] += 1
+            fetch_start = clock()
+        train_wall = clock() - epoch_start
+        # 5. Validação, decisão do RL e registro da época (um bloco por aluno).
         for name, state in students.items():
+            record = stats[name]
             state.adapter.on_epoch_end()
+            started = clock()
             metrics = evaluate_adapter(state.adapter, val_set, batch, float(train_cfg["eval_conf"]),
                                        max_batches=val_max_batches)
+            record["seconds"]["validation"] = clock() - started
             current = metrics["map50"]
-            reward = None
-            if state.controller:
-                reward = reward_from_metrics(state.last_map, current)
-                state.controller.update(arms[name], reward, step=epoch)
+            weight = ramp * (choices[name]["multiplier"] if choices[name] else 1.0)
+            decision = decision_record(state.controller, choices[name], state.last_map, current, weight, step=epoch)
             state.last_map = current
-            bucket = sums[name]
-            line = {"epoch": epoch, "model": name, "mode": mode, "lambda_ramp": round(ramp, 6),
-                    "multiplier": state.controller.arms[arms[name]] if state.controller else 1.0,
-                    "det_loss": round(bucket["det"] / max(bucket["batches"], 1), 6),
-                    "cons_loss": round(bucket["cons"] / max(bucket["batches"], 1), 6),
-                    "matched": bucket["matched"], "targets": bucket["targets"],
-                    "val_map50": current, "reward": reward, "seconds": round(time.time() - started, 1)}
-            with history_path.open("a", encoding="utf-8") as handle:
-                handle.write(json.dumps(line, ensure_ascii=False) + "\n")
             # 6. Checkpoints no formato nativo (o YOLO26 .pt abre no compare-models).
+            started = clock()
             weights_dir = run / "weights" / name
             state.adapter.save(weights_dir / "last", names)
-            if current is not None and (state.best_map is None or current > state.best_map):
-                state.best_map = current
+            improved = current is not None and (state.best_map is None or current > state.best_map)
+            if improved:
+                state.best_map, state.best_epoch = current, epoch
                 state.adapter.save(weights_dir / "best", names)
-                write_json(weights_dir / "best_metrics.json", {"epoch": epoch, **metrics})
+                write_json(weights_dir / "best_metrics.json", {"epoch": epoch, "criterion": "maior val_map50", **metrics})
+            record["seconds"]["checkpoint"] = clock() - started
+            line = _epoch_line(epoch, name, mode, ramp, choices[name], record, metrics, state, decision, shared,
+                               train_wall, len(students))
+            with history_path.open("a", encoding="utf-8") as handle:
+                handle.write(json.dumps(line, ensure_ascii=False) + "\n")
         write_json(run / "controller.json", {name: state.controller.to_dict() for name, state in students.items()
                                              if state.controller})
     # 7. Resumo do experimento.
@@ -974,7 +1180,8 @@ def train_mutual(config_root: Path, data_path: Path, settings: dict, mode: str =
                "next_step": "Comparar no split test com dml-evaluate (e compare-models para o .pt do YOLO26) "
                             "contra o modelo em uso; adotar só com ganho por classe."}
     for name, state in students.items():
-        summary["models"][name] = {"best_val_map50": state.best_map, "last_val_map50": state.last_map,
+        summary["models"][name] = {"best_val_map50": state.best_map, "best_epoch": state.best_epoch,
+                                   "last_val_map50": state.last_map,
                                    "rl": state.controller.summary() if state.controller else None}
     write_json(run / "summary.json", summary)
     return run
